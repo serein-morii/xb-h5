@@ -1,11 +1,9 @@
-"use client";
-
 const DEVELOPMENT_API_BASE = "http://127.0.0.1:8080";
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = import.meta.env.DEV;
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ||
+export const API_BASE = import.meta.env.VITE_API_BASE ||
   (isDevelopment ? DEVELOPMENT_API_BASE : "https://gooop.top/prod-api");
-export const PUBLIC_API_BASE = process.env.NEXT_PUBLIC_PUBLIC_API_BASE ||
+export const PUBLIC_API_BASE = import.meta.env.VITE_PUBLIC_API_BASE ||
   (isDevelopment ? DEVELOPMENT_API_BASE : "https://m.gooop.top/prod-api");
 
 export class ApiError extends Error {

@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowDownAZ, Calculator, CheckCircle2, ClipboardCopy, FileSpreadsheet, LoaderCircle, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
 import { extractProvince, FreightCompany, FreightRow, parsePastedRows, priceFor } from "../freight-data";
@@ -57,7 +55,7 @@ function summary(results: CalcResult[], title = "计算明细") {
     item.total += row.price;
     stats.set(key, item);
   });
-  const statLines = Array.from(stats.entries()).map(([key, item]) => `${key}　¥${item.price} × ${item.count} = ¥${item.total}`);
+  const statLines = Array.from(stats.entries()).map(([key, item]) => `${key} ¥${item.price} × ${item.count} = ¥${item.total}`);
   return [`【${title}】`, ...results.map((row) => row.text), "", `成功 ${valid.length} 单 · 无价格 ${results.length - valid.length} 单`, `总运费：¥${total}`, ...(statLines.length ? ["", "【分类统计】", ...statLines] : [])].join("\n");
 }
 

@@ -1,35 +1,53 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-async function render(pathname = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
+const source = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-  return worker.fetch(
-    new Request(`http://localhost${pathname}`, { headers: { accept: "text/html" } }),
-    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
-}
+test("builds a self-contained static SPA for Nginx", async () => {
+  const [html, assets] = await Promise.all([
+    source("dist/index.html"),
+    readdir(new URL("../dist/assets/", import.meta.url)),
+  ]);
 
-test("renders the mobile order application shell", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
-  const html = await response.text();
   assert.match(html, /<html lang="zh-CN">/i);
   assert.match(html, /<title>喜八移动订单管理<\/title>/i);
+  assert.match(html, /id="root"/i);
   assert.match(html, /正在启动移动工作台/);
-  assert.match(html, /MobileAdmin-/);
+  assert.match(html, /\/assets\/index-[^"']+\.js/);
+  assert.ok(assets.some((name) => name.endsWith(".js")));
+  assert.ok(assets.some((name) => name.endsWith(".css")));
+  await assert.rejects(source("dist/server/index.js"));
+});
+
+test("keeps every public route in the client-side route table", async () => {
+  const app = await source("app/App.tsx");
+  const routes = [
+    ["/", "喜八移动订单管理"],
+    ["/order", "订单查询｜喜八"],
+    ["/tools", "公开工具｜喜八"],
+    ["/tools/order-search", "订单查询｜喜八工具箱"],
+    ["/tools/order", "链接订单详情｜喜八工具箱"],
+    ["/tools/order-link", "生成链接｜喜八"],
+    ["/tools/place-order", "专属下单｜喜八"],
+    ["/tools/purchasers", "买家管理｜喜八"],
+    ["/tools/freight-calculator", "运费计算｜喜八工具箱"],
+    ["/tools/freight-compare", "运费对比｜喜八工具箱"],
+  ];
+
+  for (const [pathname, title] of routes) {
+    assert.match(app, new RegExp(`"${pathname.replaceAll("/", "\\/")}"`));
+    assert.match(app, new RegExp(title));
+  }
+  assert.match(app, /<ToolsLayout>/);
+  assert.match(app, /normalizePath/);
+  assert.match(app, /window\.location\.pathname/);
 });
 
 test("contains all order module entries and authentication endpoints", async () => {
   const [app, api] = await Promise.all([
-    readFile(new URL("../app/MobileAdmin.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/api.ts", import.meta.url), "utf8"),
+    source("app/MobileAdmin.tsx"),
+    source("app/lib/api.ts"),
   ]);
 
   for (const menu of ["工作台", "订单管理", "订单录入", "账单管理", "快递管理", "价格管理", "店铺管理", "快递查询"]) {
@@ -59,13 +77,14 @@ test("contains all order module entries and authentication endpoints", async () 
   assert.match(app, /key: "isDelete", label: "营业状态"/);
   assert.match(app, /payload\.isDelete = Number/);
   assert.match(api, /Authorization/);
-  assert.match(api, /NEXT_PUBLIC_API_BASE/);
+  assert.match(api, /VITE_API_BASE/);
+  assert.doesNotMatch(api, /NEXT_PUBLIC_/);
 });
 
 test("keeps the migrated authenticated quick order entry workflow", async () => {
   const [admin, entry] = await Promise.all([
-    readFile(new URL("../app/MobileAdmin.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/AdminOrderEntry.tsx", import.meta.url), "utf8"),
+    source("app/MobileAdmin.tsx"),
+    source("app/AdminOrderEntry.tsx"),
   ]);
   assert.match(admin, /active === "orderEntry"/);
   for (const endpoint of ["/biz/purchaser/list", "/biz/purchaser", "/search/store", "/search/order-options", "/search/addr", "/biz/exp/getAllCom", "/biz/exp/getCom", "/biz/order"]) {
@@ -77,44 +96,20 @@ test("keeps the migrated authenticated quick order entry workflow", async () => 
   assert.doesNotMatch(entry, /captchaImage/);
 });
 
-test("renders the public order tracking route", async () => {
-  const response = await render("/order");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /<title>订单查询｜喜八<\/title>/i);
-  assert.match(html, /PublicOrder-/);
-
+test("keeps the public order tracking route", async () => {
   const [publicPage, admin] = await Promise.all([
-    readFile(new URL("../app/order/PublicOrder.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/MobileAdmin.tsx", import.meta.url), "utf8"),
+    source("app/order/PublicOrder.tsx"),
+    source("app/MobileAdmin.tsx"),
   ]);
   assert.match(publicPage, /publicApiRequest/);
   assert.match(publicPage, /\/search\/by/);
   assert.match(admin, /\/tools\/order#\$\{encodeURIComponent/);
 });
 
-test("renders the public tool menu and all merged tool routes", async () => {
-  const routes = [
-    ["/tools", /<title>公开工具｜喜八<\/title>/i],
-    ["/tools/order-search", /<title>订单查询｜喜八工具箱<\/title>/i],
-    ["/tools/order", /<title>链接订单详情｜喜八工具箱<\/title>/i],
-    ["/tools/order-link", /<title>生成链接｜喜八<\/title>/i],
-    ["/tools/place-order", /<title>专属下单｜喜八<\/title>/i],
-    ["/tools/purchasers", /<title>买家管理｜喜八<\/title>/i],
-    ["/tools/freight-calculator", /<title>运费计算｜喜八工具箱<\/title>/i],
-    ["/tools/freight-compare", /<title>运费对比｜喜八工具箱<\/title>/i],
-  ];
-  for (const [pathname, title] of routes) {
-    const response = await render(pathname);
-    assert.equal(response.status, 200, pathname);
-    assert.match(await response.text(), title, pathname);
-  }
-});
-
 test("keeps purchaser naming and the short-link order workflow consistent", async () => {
   const [creator, orderPage] = await Promise.all([
-    readFile(new URL("../app/tools/order-link/OrderLinkGenerator.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/place-order/PurchaserOrderPage.tsx", import.meta.url), "utf8"),
+    source("app/tools/order-link/OrderLinkGenerator.tsx"),
+    source("app/tools/place-order/PurchaserOrderPage.tsx"),
   ]);
   assert.match(creator, /\/biz\/purchaser\/match/);
   assert.match(creator, /\/biz\/purchaser/);
@@ -133,14 +128,14 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
 
 test("keeps the original public HTML capabilities in the integrated project", async () => {
   const [menu, linkQuery, search, orderList, calculator, compare, freightData, admin] = await Promise.all([
-    readFile(new URL("../app/tools/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/LinkQueryCard.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/order-search/OrderSearch.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/OrderList.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/freight-calculator/FreightCalculator.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/freight-compare/FreightCompare.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/tools/freight-data.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/MobileAdmin.tsx", import.meta.url), "utf8"),
+    source("app/tools/page.tsx"),
+    source("app/tools/LinkQueryCard.tsx"),
+    source("app/tools/order-search/OrderSearch.tsx"),
+    source("app/tools/OrderList.tsx"),
+    source("app/tools/freight-calculator/FreightCalculator.tsx"),
+    source("app/tools/freight-compare/FreightCompare.tsx"),
+    source("app/tools/freight-data.ts"),
+    source("app/MobileAdmin.tsx"),
   ]);
   for (const route of ["/tools/order-search", "/tools/freight-calculator", "/tools/freight-compare"]) assert.match(menu, new RegExp(route));
   assert.ok(menu.indexOf("<LinkQueryCard />") < menu.indexOf("freightTools.map"));

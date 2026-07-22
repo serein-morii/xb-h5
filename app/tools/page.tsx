@@ -1,9 +1,5 @@
-import type { Metadata } from "next";
-import Link from "next/link";
 import { ArrowRight, Calculator, PackageSearch, Scale, ShieldCheck, Sparkles } from "lucide-react";
 import LinkQueryCard from "./LinkQueryCard";
-
-export const metadata: Metadata = { title: "公开工具｜喜八", description: "无需登录使用订单查询、运费计算与运费对比工具。" };
 
 const orderTools = [
   { href: "/tools/order-search", title: "订单查询", desc: "使用手机号和验证码查询订单及物流", icon: PackageSearch, tone: "green", badge: "免登录" },
@@ -16,7 +12,7 @@ const freightTools = [
 
 function ToolCard({ item }: { item: (typeof orderTools)[number] }) {
   const Icon = item.icon;
-  return <Link href={item.href} className={`tools-menu-card tool-tone-${item.tone}`}><span><Icon size={24} /></span><div><em>{item.badge}</em><h2>{item.title}</h2><p>{item.desc}</p></div><ArrowRight size={18} /></Link>;
+  return <a href={item.href} className={`tools-menu-card tool-tone-${item.tone}`}><span><Icon size={24} /></span><div><em>{item.badge}</em><h2>{item.title}</h2><p>{item.desc}</p></div><ArrowRight size={18} /></a>;
 }
 
 export default function ToolsPage() {

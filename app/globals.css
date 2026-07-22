@@ -973,3 +973,48 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .admin-entry-express-code { grid-template-columns: 1fr 1fr; }
   .admin-entry-express-code input { grid-column: 1/-1; }
 }
+/* Static SPA bootstrap and fallback pages. */
+.app-starting,
+.spa-not-found {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  padding: 32px;
+  text-align: center;
+  color: #173d31;
+  background: #f3faf6;
+}
+
+.app-starting {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.spa-not-found span {
+  color: #1d9a64;
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.spa-not-found h1 {
+  margin: 18px 0 8px;
+  font-size: 28px;
+}
+
+.spa-not-found p {
+  margin: 0 0 24px;
+  color: #71847d;
+}
+
+.spa-not-found a {
+  width: min(280px, 80vw);
+  margin: 6px auto;
+  padding: 13px 18px;
+  border: 1px solid #cfe3d9;
+  border-radius: 16px;
+  color: #167a50;
+  background: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}

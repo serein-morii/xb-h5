@@ -1,10 +1,6 @@
-"use client";
-
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { CheckCircle2, Copy, ExternalLink, Link2, LoaderCircle, Phone, Search, Store, User, UserPlus } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { apiRequest, getStoredToken } from "../../lib/api";
 
 type StoreRow = { id?: number; name?: string; text?: string; value?: string; code?: string; isDelete?: number };
@@ -93,7 +89,7 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
     const value = orderLink(purchaser); await navigator.clipboard.writeText(value); setHistoryCopied(String(purchaser.shortId)); window.setTimeout(() => setHistoryCopied(""), 1600);
   }
 
-  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Link2 size={25} /></span><div><small>PRIVATE LINK CREATOR</small><h1>生成链接</h1><p>该功能会检索买家档案，需要先登录管理后台。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>登录后才能匹配买家、查看历史订单并生成专属链接。</p><Link href="/">前往管理登录</Link></section></div>;
+  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Link2 size={25} /></span><div><small>PRIVATE LINK CREATOR</small><h1>生成链接</h1><p>该功能会检索买家档案，需要先登录管理后台。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>登录后才能匹配买家、查看历史订单并生成专属链接。</p><a href="/">前往管理登录</a></section></div>;
 
   return <div className={`${embedded ? "admin-tool-module" : "tool-page"} order-link-page`}>
     <section className="tool-hero"><span><Link2 size={25} /></span><div><small>PURCHASER ORDER LINK</small><h1>生成链接</h1><p>店铺绑定在买家档案中，链接只保留6位短码。</p></div></section>

@@ -1,5 +1,3 @@
-"use client";
-
 import { CheckCircle2, ClipboardCopy, Download, FileSpreadsheet, LoaderCircle, Scale, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
 import { extractProvince, FreightRow, parsePastedRows, priceFor } from "../freight-data";

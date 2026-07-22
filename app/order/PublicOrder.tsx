@@ -1,6 +1,3 @@
-"use client";
-
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { Box, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";

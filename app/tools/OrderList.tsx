@@ -1,5 +1,3 @@
-"use client";
-
 import { CheckCircle2, ChevronDown, Clock3, Copy, MapPin, Search, Store, Truck, User } from "lucide-react";
 import { useMemo, useState } from "react";
 

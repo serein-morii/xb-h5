@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowRight, Link2, Search, ShieldCheck, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 

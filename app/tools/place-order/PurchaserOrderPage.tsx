@@ -1,6 +1,3 @@
-"use client";
-
-/* eslint-disable @next/next/no-img-element, react-hooks/set-state-in-effect */
 
 import { CheckCircle2, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Truck, User, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";

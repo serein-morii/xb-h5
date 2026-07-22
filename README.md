@@ -1,16 +1,59 @@
 # xb-h5｜喜八移动订单管理
 
-`xb-h5` 是专门为手机端操作设计的订单管理前端。项目复用 `xb` 后端的登录、订单、账单、物流、价格、店铺和买家接口，同时提供无需登录的订单查询、专属下单链接和运费工具。
+`xb-h5` 是专门为手机端操作设计的订单管理前端，包含登录、工作台、订单、账单、物流、价格、店铺、买家和免登录工具箱。
 
-线上仓库：[https://github.com/serein-morii/xb-h5](https://github.com/serein-morii/xb-h5)
+项目已经改为 **Vite + React 纯静态 SPA**。生产构建不需要 Node.js 服务、PM2、systemd、Cloudflare Worker 或 Docker，构建后的 `dist` 可以直接复制到 Nginx 网站目录。
+
+仓库地址：[https://github.com/serein-morii/xb-h5](https://github.com/serein-morii/xb-h5)
+
+## 最快发布方式
+
+在自己的开发电脑上执行：
+
+```bash
+cd xb-h5
+npm ci
+npm test
+```
+
+构建成功后会生成：
+
+```text
+dist/
+├── index.html
+├── favicon.svg
+└── assets/
+    ├── index-*.css
+    ├── index-*.js
+    └── xlsx-*.js
+```
+
+把整个 `dist` 目录中的内容复制到服务器，例如：
+
+```bash
+scp -r dist/* root@服务器IP:/var/www/xb-h5/
+```
+
+服务器只需要安装 Nginx，不需要安装 npm。Nginx 的关键配置是：
+
+```nginx
+root /var/www/xb-h5;
+index index.html;
+
+location / {
+    try_files $uri $uri/ /index.html;
+}
+```
+
+`try_files` 不能省略，否则直接刷新 `/tools/order-search`、`/order` 等页面会出现 404。
 
 ## 主要功能
 
 - 登录：账号、密码、验证码登录，密码使用后端公钥进行 RSA 加密。
-- 工作台：汇总订单状态、最近订单、最新物流和最近新增买家。
-- 订单管理：筛选、详情、物流轨迹、新增、修改、删除、导入、导出、批量操作。
+- 工作台：订单状态、最近订单、最新物流和最近新增买家。
+- 订单管理：筛选、详情、新增、修改、删除、导入、导出和批量操作。
 - 发货：支持批量一键发货，也支持逐单填写快递公司和快递单号。
-- 订单复制：订单详情、下单人查询链接、收件人查询链接和发货识别信息。
+- 订单复制：订单详情、下单人链接、收件人链接和发货识别信息。
 - 订单录入：选择或新建买家，识别收货地址后快速建单。
 - 买家管理：买家短 ID、店铺绑定/解绑及专属下单链接。
 - 账单管理：商品成本、包装费、快递费、附加费、销售价格和利润。
@@ -32,123 +75,74 @@
 | `/tools/freight-compare` | 运费对比 | 否 |
 | `/tools/freight-calculator` | 批量运费计算 | 否 |
 
-## 技术与运行方式
-
-- Node.js：`>= 22.13.0`
-- 包管理器：npm
-- 页面框架：React 19、Next.js App Router
-- 构建工具：Vite、vinext
-- 推荐生产运行环境：Cloudflare Workers 或项目内置 Sites 托管
-
-该项目不是纯静态站点。生产构建同时包含浏览器静态资源和 Worker 服务端代码：
-
-```text
-dist/
-├── client/              # 浏览器静态资源
-├── server/index.js      # Cloudflare Worker 入口
-└── .openai/             # Sites 托管元数据
-```
-
-因此不要只将 `dist/client` 上传到 Nginx，否则动态路由、React Server Components 和部分页面刷新会失效。
-
-## 最快上线方式
-
-当前项目最推荐发布到 Cloudflare Workers。第一次发布直接执行：
-
-```bash
-cd xb-h5
-npm ci
-npm run lint
-npm test
-npx wrangler login
-npx wrangler deploy --config dist/server/wrangler.json
-```
-
-其中 `npm test` 已包含生产构建。发布成功后，终端会返回一个 `workers.dev` 访问地址。
-
-以后更新线上版本只需要：
-
-```bash
-git pull origin main
-npm ci
-npm run lint
-npm test
-npx wrangler deploy --config dist/server/wrangler.json
-```
-
-如果需要更换后端地址、绑定自己的域名、配置 GitHub 自动发布或回滚版本，请继续阅读对应章节。
-
 ## 一、本地开发
 
-### 1. 克隆项目
+### 1. 环境要求
+
+- Node.js `>= 20.19.0`
+- npm
+
+Node.js 只在开发电脑或构建机上使用，Nginx 生产服务器不需要安装。
+
+### 2. 安装依赖
 
 ```bash
 git clone https://github.com/serein-morii/xb-h5.git
 cd xb-h5
-```
-
-### 2. 安装依赖
-
-仓库包含 `package-lock.json`，推荐使用 `npm ci`，以确保安装版本与生产环境一致：
-
-```bash
 npm ci
 ```
 
-### 3. 配置本地接口
+### 3. 本地接口配置
 
-开发模式默认连接：
+开发模式默认请求：
 
 ```text
-管理接口：http://127.0.0.1:8080
-公开接口：http://127.0.0.1:8080
+http://127.0.0.1:8080
 ```
 
-如果后端不在这个地址，在项目根目录创建 `.env.local`：
+如果后端地址不同，在项目根目录创建 `.env.local`：
 
 ```bash
-NEXT_PUBLIC_API_BASE=http://127.0.0.1:8080
-NEXT_PUBLIC_PUBLIC_API_BASE=http://127.0.0.1:8080
+VITE_API_BASE=http://127.0.0.1:8080
+VITE_PUBLIC_API_BASE=http://127.0.0.1:8080
 ```
 
-然后启动开发服务：
+启动开发服务：
 
 ```bash
 npm run dev
 ```
 
-终端会打印实际访问地址，通常为 `http://localhost:3000`。
+终端会显示本地访问地址，通常是 `http://localhost:5173`。
 
-## 二、生产环境变量
+## 二、生产接口配置
 
-生产构建默认使用以下线上接口：
+项目默认生产接口为：
 
 ```text
-NEXT_PUBLIC_API_BASE=https://gooop.top/prod-api
-NEXT_PUBLIC_PUBLIC_API_BASE=https://m.gooop.top/prod-api
+管理接口：https://gooop.top/prod-api
+公开接口：https://m.gooop.top/prod-api
 ```
 
-如需修改，在根目录创建 `.env.production`：
+如需修改，在项目根目录创建 `.env.production`：
 
 ```bash
-NEXT_PUBLIC_API_BASE=https://your-api.example.com/prod-api
-NEXT_PUBLIC_PUBLIC_API_BASE=https://your-public-api.example.com/prod-api
+VITE_API_BASE=https://your-api.example.com/prod-api
+VITE_PUBLIC_API_BASE=https://your-public-api.example.com/prod-api
 ```
-
-变量说明：
 
 | 变量 | 用途 |
 | --- | --- |
-| `NEXT_PUBLIC_API_BASE` | 登录后的管理接口，包括登录、订单、账单、买家和店铺等接口 |
-| `NEXT_PUBLIC_PUBLIC_API_BASE` | 免登录接口，包括订单查询、买家下单和公开字典等接口 |
+| `VITE_API_BASE` | 登录后的管理接口，包括订单、账单、买家和店铺等接口 |
+| `VITE_PUBLIC_API_BASE` | 免登录订单查询、买家下单和公开字典接口 |
 
-这两个变量以 `NEXT_PUBLIC_` 开头，会在构建时写入浏览器代码。修改后必须重新执行生产构建，仅重启服务不会生效。
+`VITE_*` 是构建时变量。修改接口地址后必须重新执行 `npm run build`，仅重新复制旧的 `dist` 不会生效。
 
-`.env.local`、`.env.production` 和其他 `.env*` 文件已被 Git 忽略，不要把令牌、密码或私密配置提交到仓库。仓库中的 `.env.example` 只保存无敏感信息的示例地址。
+环境文件已经被 Git 忽略，不要把令牌、密码或私密配置提交到仓库。
 
-## 三、构建生产版本
+## 三、生产构建
 
-推荐在一台干净环境中执行：
+推荐执行完整检查：
 
 ```bash
 git pull origin main
@@ -157,278 +151,71 @@ npm run lint
 npm test
 ```
 
-`npm test` 会先执行完整生产构建，再运行页面和关键功能测试。如果只需要构建，可以执行：
+`npm test` 会先执行 TypeScript 类型检查和生产构建，再运行 7 项关键功能测试。
+
+如果只需要快速构建：
 
 ```bash
 npm run build
 ```
 
-构建成功后应看到：
+检查静态产物：
+
+```bash
+test -f dist/index.html
+test -d dist/assets
+```
+
+在本机预览生产版本：
+
+```bash
+npm run preview
+```
+
+`npm run preview` 只用于本机检查，不需要在生产服务器运行。
+
+## 四、Nginx 直接部署 dist
+
+以下示例使用：
 
 ```text
-Build complete
-dist/server/index.js
-dist/client/
+域名：h5.example.com
+网站目录：/var/www/xb-h5
 ```
 
-可以使用下面的命令检查关键产物：
+请替换为自己的真实域名和目录。
+
+### 1. 在开发电脑打包
 
 ```bash
-test -f dist/server/index.js
-test -d dist/client
-```
-
-### 本地验证生产版本
-
-```bash
-npm run start
-```
-
-使用终端打印的地址打开网站，至少验证以下流程：
-
-1. 登录、验证码和退出登录。
-2. 工作台、订单列表和订单详情。
-3. 新增订单、选择买家和填写快递发货。
-4. `/tools/order-search` 免登录查询。
-5. `/tools/place-order#买家短ID` 专属下单。
-6. 手机浏览器下底部菜单、弹窗和验证码是否完整显示。
-
-## 四、推荐发布：Cloudflare Workers
-
-项目构建结果已经包含 Wrangler 所需的 Worker 配置，适合直接发布到 Cloudflare Workers。
-
-### 1. 登录 Cloudflare
-
-第一次发布需要登录：
-
-```bash
-npx wrangler login
-```
-
-浏览器会打开 Cloudflare 授权页面。授权完成后可确认当前账号：
-
-```bash
-npx wrangler whoami
-```
-
-### 2. 构建并发布
-
-```bash
-npm ci
-npm run lint
-npm test
-npx wrangler deploy --config dist/server/wrangler.json
-```
-
-最后一条命令会同时上传 Worker 服务端代码和 `dist/client` 静态资源。首次发布后 Cloudflare 会返回一个类似下面的地址：
-
-```text
-https://xb-h5.<你的账号子域>.workers.dev
-```
-
-后续更新执行：
-
-```bash
-git pull origin main
+cd xb-h5
 npm ci
 npm test
-npx wrangler deploy --config dist/server/wrangler.json
+tar -czf xb-h5-dist.tar.gz -C dist .
 ```
 
-### 3. 绑定自定义域名
-
-进入 Cloudflare 控制台：
-
-```text
-Workers & Pages → xb-h5 → Settings → Domains & Routes → Add Custom Domain
-```
-
-选择一个已经托管在当前 Cloudflare 账号中的域名，例如：
-
-```text
-m.example.com
-```
-
-域名生效后，需要同时在 `xb` 后端的跨域配置中允许该 H5 域名，否则浏览器会拦截登录和订单接口请求。
-
-## 五、通过项目内置 Sites 发布
-
-项目保留了 `.openai/hosting.json`，生产构建会自动将托管元数据放入 `dist/.openai`。在支持 Sites 的 Codex 环境中，可以直接要求 Codex：
-
-```text
-构建并发布当前 xb-h5 项目
-```
-
-发布前仍建议先执行：
+上传压缩包：
 
 ```bash
-npm ci
-npm test
+scp xb-h5-dist.tar.gz root@服务器IP:/tmp/
 ```
 
-Sites 会发布完整的 Worker 和静态资源，不需要手动上传 `dist/client`。如果后续使用 D1 或 R2，只在 `.openai/hosting.json` 中维护逻辑绑定名称，线上资源和运行时变量通过 Sites 管理。
-
-## 六、GitHub Actions 自动发布
-
-如需每次推送 `main` 后自动部署，可在 GitHub 仓库添加以下 Secrets：
-
-```text
-CLOUDFLARE_API_TOKEN
-CLOUDFLARE_ACCOUNT_ID
-```
-
-API Token 至少需要当前账号的 Workers Scripts 编辑权限。然后创建 `.github/workflows/deploy.yml`：
-
-```yaml
-name: Deploy xb-h5
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npx wrangler deploy --config dist/server/wrangler.json
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-```
-
-建议先手动发布成功一次，再启用自动发布，以确认 Cloudflare 账号、Worker 名称和自定义域名都正确。
-
-## 七、Nginx + Linux 服务器发布
-
-Nginx 可以部署本项目，但它负责的是域名、HTTPS 和反向代理，页面本身仍由 Node.js 生产服务运行：
-
-```text
-手机浏览器 → Nginx :443 → vinext/Node.js :3000
-```
-
-不要使用 `root /var/www/xb-h5/dist/client` 把它部署成纯静态站点，否则子页面刷新、动态路由和 React Server Components 会异常。
-
-以下示例以 Ubuntu/Debian、域名 `h5.example.com`、安装目录 `/var/www/xb-h5` 为例。请将域名替换成自己的真实域名。
-
-### 1. 准备服务器
-
-服务器需要安装：
-
-- Node.js 22.13.0 或更高版本。
-- npm。
-- Git。
-- Nginx。
-
-确认版本：
+### 2. 在服务器解压
 
 ```bash
-node -v
-npm -v
-nginx -v
-```
-
-### 2. 拉取代码并配置生产接口
-
-```bash
-sudo mkdir -p /var/www
-sudo chown -R "$USER":"$USER" /var/www
-git clone https://github.com/serein-morii/xb-h5.git /var/www/xb-h5
-cd /var/www/xb-h5
-npm ci
-```
-
-如果继续请求现有线上后端，可以不创建环境文件，项目会使用默认接口地址。如果需要连接自己的后端，在 `/var/www/xb-h5/.env.production` 中填写：
-
-```bash
-NEXT_PUBLIC_API_BASE=https://gooop.top/prod-api
-NEXT_PUBLIC_PUBLIC_API_BASE=https://m.gooop.top/prod-api
-```
-
-随后检查并构建：
-
-```bash
-npm run lint
-npm test
-```
-
-`npm test` 已经包含 `npm run build`，成功后会生成 `dist/server` 和 `dist/client`。
-
-### 3. 先手动启动验证
-
-```bash
-npm run start
-```
-
-看到下面的信息说明生产服务启动成功：
-
-```text
-Production server running at http://0.0.0.0:3000
-```
-
-另开一个终端验证：
-
-```bash
-curl -I http://127.0.0.1:3000/
-curl -I http://127.0.0.1:3000/tools
-```
-
-两个地址都应返回 `HTTP 200`。验证后按 `Ctrl+C` 停止临时服务。
-
-### 4. 使用 systemd 保持服务运行
-
-先确认 npm 的绝对路径：
-
-```bash
-which npm
-```
-
-创建 `/etc/systemd/system/xb-h5.service`：
-
-```ini
-[Unit]
-Description=xb-h5 mobile order application
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/xb-h5
-Environment=NODE_ENV=production
-Environment=PORT=3000
-ExecStart=/usr/bin/npm run start
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-如果 `which npm` 返回的不是 `/usr/bin/npm`，必须同步修改 `ExecStart`。然后将目录交给运行用户并启动：
-
-```bash
+sudo mkdir -p /var/www/xb-h5
+sudo tar -xzf /tmp/xb-h5-dist.tar.gz -C /var/www/xb-h5
 sudo chown -R www-data:www-data /var/www/xb-h5
-sudo systemctl daemon-reload
-sudo systemctl enable --now xb-h5
-sudo systemctl status xb-h5
 ```
 
-查看实时日志：
+确认服务器文件：
 
 ```bash
-sudo journalctl -u xb-h5 -f
+ls -la /var/www/xb-h5/index.html
+ls -la /var/www/xb-h5/assets
 ```
 
-### 5. 配置 Nginx 反向代理
+### 3. 配置 Nginx
 
 创建 `/etc/nginx/sites-available/xb-h5`：
 
@@ -438,17 +225,17 @@ server {
     listen [::]:80;
     server_name h5.example.com;
 
-    client_max_body_size 20m;
+    root /var/www/xb-h5;
+    index index.html;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 10s;
-        proxy_read_timeout 60s;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(?:js|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$ {
+        try_files $uri =404;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800";
     }
 }
 ```
@@ -461,15 +248,15 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-将 `h5.example.com` 的 DNS A 记录解析到服务器公网 IP，等待解析生效后访问：
+将域名的 DNS A 记录解析到服务器公网 IP，然后访问：
 
 ```text
 http://h5.example.com
 ```
 
-### 6. 配置 HTTPS
+### 4. 配置 HTTPS
 
-使用 Certbot 自动申请和续期 Let's Encrypt 证书：
+Ubuntu/Debian 可以使用 Certbot：
 
 ```bash
 sudo apt update
@@ -478,20 +265,56 @@ sudo certbot --nginx -d h5.example.com
 sudo certbot renew --dry-run
 ```
 
-生产环境应只对外开放 80 和 443 端口。3000 端口由 Nginx 在本机访问，不需要开放到公网。
+### 5. 验证 SPA 路由
 
-### 7. 可选：由同一个 Nginx 转发后端接口
-
-如果 `xb` 后端也运行在这台服务器的 `127.0.0.1:8080`，可以让前端和接口共用一个域名，从而减少跨域配置。
-
-在 `.env.production` 中设置：
+以下地址都应返回 HTTP 200：
 
 ```bash
-NEXT_PUBLIC_API_BASE=https://h5.example.com/prod-api
-NEXT_PUBLIC_PUBLIC_API_BASE=https://h5.example.com/prod-api
+curl -I https://h5.example.com/
+curl -I https://h5.example.com/order
+curl -I https://h5.example.com/tools
+curl -I https://h5.example.com/tools/order-search
+curl -I https://h5.example.com/tools/place-order
 ```
 
-在上面的 Nginx `server` 中、`location /` 之前加入：
+如果只有首页正常、其他地址返回 404，检查 Nginx 是否配置了：
+
+```nginx
+try_files $uri $uri/ /index.html;
+```
+
+## 五、服务器没有 npm 怎么办
+
+这是正常情况。纯静态部署的生产服务器不需要 npm。
+
+正确流程：
+
+```text
+开发电脑安装 Node.js/npm
+        ↓
+执行 npm test 或 npm run build
+        ↓
+得到 dist 目录
+        ↓
+上传 dist 到 Nginx 服务器
+        ↓
+Nginx 直接读取 index.html 和 assets
+```
+
+不要在服务器的 `dist` 目录执行 `npm run start`。`dist` 已经是最终网站文件，Nginx 可以直接读取。
+
+## 六、同域名代理后端接口（可选）
+
+如果 `xb` 后端运行在同一台服务器的 `127.0.0.1:8080`，可以通过 Nginx 代理 `/prod-api`，避免跨域问题。
+
+构建前在 `.env.production` 设置：
+
+```bash
+VITE_API_BASE=https://h5.example.com/prod-api
+VITE_PUBLIC_API_BASE=https://h5.example.com/prod-api
+```
+
+在 Nginx 的 `server` 中加入，并放在 `location /` 前面：
 
 ```nginx
 location ^~ /prod-api/ {
@@ -504,111 +327,122 @@ location ^~ /prod-api/ {
 }
 ```
 
-这里 `proxy_pass` 末尾的 `/` 会把外部 `/prod-api/xxx` 转成后端的 `/xxx`。修改 `.env.production` 后必须重新执行 `npm test` 并重启服务。
+修改 `.env.production` 后必须重新构建并上传新的 `dist`。
 
-### 8. 后续更新发布
+## 七、后续更新
 
-由于目录属于 `www-data`，建议先切换到该用户再更新：
+每次更新代码后，在开发电脑重新构建：
 
 ```bash
-sudo -u www-data -H bash
-cd /var/www/xb-h5
 git pull origin main
 npm ci
-npm run lint
 npm test
-exit
-sudo systemctl restart xb-h5
-sudo systemctl status xb-h5
+tar -czf xb-h5-dist.tar.gz -C dist .
+scp xb-h5-dist.tar.gz root@服务器IP:/tmp/
 ```
 
-最后验证线上地址：
+服务器重新解压并加载 Nginx：
 
 ```bash
-curl -I https://h5.example.com/
-curl -I https://h5.example.com/tools
+sudo tar -xzf /tmp/xb-h5-dist.tar.gz -C /var/www/xb-h5
+sudo chown -R www-data:www-data /var/www/xb-h5
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-如果更新失败，不要重启当前服务，旧进程会继续提供上一版页面。若新版本已经启动后才发现问题，可将 Git 切回上一个确认可用的提交，重新构建并重启 `xb-h5`。
+纯静态文件更新不需要重启 Node.js，因为服务器上没有 Node.js 应用进程。
 
-## 八、回滚 Cloudflare 版本
+## 八、Docker + Nginx（可选）
 
-查看最近部署：
+纯静态版本也可以放进 Nginx Docker 镜像：
+
+```dockerfile
+FROM nginx:1.27-alpine
+COPY dist/ /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+```
+
+其中 `nginx.conf` 同样必须包含 SPA 回退：
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+构建和启动：
 
 ```bash
-npx wrangler deployments list --name xb-h5
+docker build -t xb-h5:latest .
+docker run -d --name xb-h5 --restart unless-stopped -p 8088:80 xb-h5:latest
 ```
 
-确认要恢复的版本 ID 后执行：
+## 九、常见问题
 
-```bash
-npx wrangler rollback <version-id> --name xb-h5
+### `npm: command not found`
+
+如果是在 Nginx 生产服务器看到该提示，不需要安装 npm。在开发电脑构建 `dist`，然后把它上传到服务器即可。
+
+如果是在开发电脑构建，则需要安装 Node.js 20.19.0 或更高版本。
+
+### 刷新子页面出现 404
+
+Nginx 缺少 SPA 回退。添加：
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.html;
+}
 ```
 
-回滚只恢复 Cloudflare 上的运行版本，不会修改 GitHub 代码。确认线上恢复后，再决定是否在 Git 中创建修复提交。
+### 页面仍然请求旧接口
 
-## 九、后端和跨域检查
-
-H5 页面会从用户浏览器直接请求 `xb` 后端，因此发布前必须确认：
-
-- 管理接口和公开接口都可以通过 HTTPS 访问。
-- 后端允许生产 H5 域名跨域请求。
-- `Authorization` 请求头在跨域配置中被允许。
-- 登录、验证码、公开查询和下单接口没有被反向代理错误缓存。
-- 如果 H5 和接口使用不同子域名，两个域名的 TLS 证书均有效。
-- 后端部署版本已经包含买家表、`purchaser_short_id` 和相关接口。
-
-## 十、常见问题
-
-### 修改接口地址后页面仍请求旧地址
-
-`NEXT_PUBLIC_*` 是构建时变量。修改 `.env.production` 后重新执行：
+接口地址在构建时写入 JavaScript。修改 `.env.production` 后重新执行：
 
 ```bash
 npm run build
 ```
 
-然后重新发布。
+并重新上传整个 `dist`。
 
-### 刷新子页面后出现 404
+### 登录接口跨域失败
 
-说明只发布了静态资源，或者服务器没有运行 Worker/RSC 服务。请使用完整的 Cloudflare Workers 发布命令，或让 `npm run start` 常驻并通过 Nginx 反向代理。
+让后端允许 H5 域名、`Authorization` 和 `Content-Type` 请求头，或者使用上面的 Nginx `/prod-api` 同域代理方案。
 
-### 登录接口提示跨域错误
+### 页面打开后空白
 
-检查后端 CORS 是否允许当前 H5 域名、`Authorization` 和 `Content-Type` 请求头，并确认预检 `OPTIONS` 请求没有被网关拦截。
+打开浏览器开发者工具检查网络请求，确认：
 
-### Wrangler 发布时提示未登录
-
-```bash
-npx wrangler login
-npx wrangler whoami
-```
-
-CI 环境不要使用浏览器登录，应配置 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
-
-### 构建后目录很大
-
-不要提交或上传 `node_modules`、`.vinext`、`.wrangler`。正式发布只需要 Wrangler 根据 `dist/server/wrangler.json` 上传 `dist/server` 和 `dist/client`。
+- `/assets/index-*.js` 返回 200。
+- Nginx 的 `root` 指向包含 `index.html` 的目录。
+- 没有只复制 `index.html` 而漏掉 `assets`。
+- 网站部署在域名根目录，而不是未配置的二级子目录。
 
 ## 常用命令
 
 ```bash
 npm run dev       # 本地开发
 npm run lint      # 代码检查
-npm run build     # 生产构建
-npm test          # 生产构建 + 自动测试
-npm run start     # 本地运行生产版本
+npm run build     # 生成纯静态 dist
+npm test          # 构建并运行自动测试
+npm run preview   # 本机预览 dist
 ```
 
 ## 发布前检查清单
 
-- [ ] 已拉取 `main` 最新代码。
-- [ ] 已配置正确的生产接口地址。
+- [ ] 已配置正确的 `.env.production`。
 - [ ] `npm ci` 执行成功。
 - [ ] `npm run lint` 执行成功。
-- [ ] `npm test` 全部通过。
-- [ ] 后端已允许生产 H5 域名跨域。
+- [ ] `npm test` 的 7 项测试全部通过。
+- [ ] 已完整上传 `dist/index.html`、`dist/assets` 和图标文件。
+- [ ] Nginx 已配置 `try_files $uri $uri/ /index.html`。
+- [ ] 后端允许生产域名跨域，或者已经配置同域接口代理。
 - [ ] 登录、订单查询、专属下单和发货已在手机上验证。
-- [ ] 自定义域名已经启用 HTTPS。
-- [ ] 已保留上一个可用的 Cloudflare 部署版本，方便回滚。
+- [ ] 域名已经启用 HTTPS。

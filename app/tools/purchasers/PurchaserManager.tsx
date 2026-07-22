@@ -1,8 +1,4 @@
-"use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import Link from "next/link";
 import { CheckCircle2, Copy, Link2, LoaderCircle, Phone, Plus, RefreshCw, Search, Store, Unlink, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, getStoredToken } from "../../lib/api";
@@ -81,7 +77,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     finally { setBusyId(null); }
   }
 
-  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>查看、绑定或解绑买家的所属店铺。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>店铺绑定属于管理操作，登录后才可以查看和修改。</p><Link href="/">前往管理登录</Link></section></div>;
+  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>查看、绑定或解绑买家的所属店铺。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>店铺绑定属于管理操作，登录后才可以查看和修改。</p><a href="/">前往管理登录</a></section></div>;
 
   return <div className={`${embedded ? "admin-tool-module" : "tool-page"} purchaser-manager-page`}>
     <section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>一个买家绑定一个店铺；解绑后对应短链接立即失效。</p></div></section>

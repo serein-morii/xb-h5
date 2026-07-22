@@ -1,7 +1,3 @@
-"use client";
-
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, @next/next/no-img-element */
-
 import {
   ArrowLeft,
   BadgeDollarSign,
