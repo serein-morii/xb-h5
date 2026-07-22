@@ -1,0 +1,246 @@
+app/AdminOrderEntry.tsx
+  s_35bd473ffac2fa::t_cf3b63ad91183b 1-216
+app/tools/freight-compare/FreightCompare.tsx
+  s_35bd473ffac2fa::t_773acd1a1a6486 1-74
+app/tools/freight-data.ts
+  s_35bd473ffac2fa::t_c3824e2df761ec 1-74
+app/tools/layout.tsx
+  s_35bd473ffac2fa::t_1f12d72bf1f7c2 1-10
+examples/d1/app/api/notes/route.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-58
+.openai/hosting.json
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-4
+tests/rendered-html.test.mjs
+  s_35bd473ffac2fa::t_74521d60a03b7a 35,63-77
+  s_35bd473ffac2fa::t_a1fc01055a6c8e 122-123,130
+  s_35bd473ffac2fa::t_f9c1d140f1681f 50,52-54
+  s_35bd473ffac2fa::t_326cbdcad61dbf 93,100,135,139,150,155-159
+  s_35bd473ffac2fa::t_51d4d5c32019c9 146-147
+  s_35bd473ffac2fa::t_437274a7ab6437 5,11,78-92
+  s_35bd473ffac2fa::t_3b6215c756b186 56-60
+  s_35bd473ffac2fa::t_9374e73b54678e 151
+  s_35bd473ffac2fa::t_2db388348aa7ec 2,12-13,17,23-26,29-32,36-37,51,55,61-62
+  s_35bd473ffac2fa::t_882a2bea09adb3 47-49
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1,3-4,6-10,14-16,18-22,27-28,33-34,94
+  s_35bd473ffac2fa::t_e58a55ceac2c03 42-43,45-46
+  s_35bd473ffac2fa::t_5c863cf1bdcece 44
+  s_35bd473ffac2fa::t_1bcfb3637cebaa 95-99,104-111,132-134,136,138,140-144,153-154,160-165
+  s_35bd473ffac2fa::t_f870547555487e 38
+  s_35bd473ffac2fa::t_6510001813925b 101,103
+  s_35bd473ffac2fa::t_ed1e28c34fe07e 39-41
+  s_35bd473ffac2fa::t_142cff6e637c21 102,112-121,124-129,131
+  s_35bd473ffac2fa::t_a7d4feae464627 137,145,148-149,152
+app/order/PublicOrder.tsx
+  s_35bd473ffac2fa::t_7a8516b9eab9e0 1-2,7,9-10,13-16,19-24,26,28,30-32,35-36,38,44
+  s_35bd473ffac2fa::t_9374e73b54678e 11-12
+  s_35bd473ffac2fa::t_f0d8f07733a714 5-6,8,17-18,25,27,29,33-34,37,39-43
+  s_35bd473ffac2fa::t_8d3ca357c8abb7 3-4
+app/tools/freight-calculator/page.tsx
+  s_35bd473ffac2fa::t_773acd1a1a6486 1-6
+app/tools/OrderList.tsx
+  s_35bd473ffac2fa::t_f0d8f07733a714 1-94
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_35bd473ffac2fa::t_69800f9d3ab0b6 3
+  s_35bd473ffac2fa::t_1854a68c74b960 117
+  s_35bd473ffac2fa::t_96854f15550194 131
+  s_35bd473ffac2fa::t_52354495df612e 1-2,4-17,19-22,24-46,48-104,106-113,115-116,118-130,132-133
+  s_35bd473ffac2fa::t_8399628f334976 18,23,47,105,114
+app/globals.css
+  s_35bd473ffac2fa::t_e835ef30ae6ea0 83
+  s_35bd473ffac2fa::t_e2bbb946dadce0 750,899-920,922-924,936,952
+  s_35bd473ffac2fa::t_df7dda16dd9ad3 2-15,17-68,78-82,150,159-206,208-251,253-266,268-278,319-362,370,375,394,397-416,495-497,499-501,504-523,525,527-539,542-543
+  s_35bd473ffac2fa::t_882a2bea09adb3 301-318
+  s_35bd473ffac2fa::t_a3929f860874e7 949-950,966-968,973-974
+  s_35bd473ffac2fa::t_5b1606f587899f 85-118,130-149
+  s_35bd473ffac2fa::t_c1abab5016d4c0 69-71,396,493
+  s_35bd473ffac2fa::t_c4534e185df326 569,585-602,669-671,675-682,688,691-692,694-695,944
+  s_35bd473ffac2fa::t_e58a55ceac2c03 279-300
+  s_35bd473ffac2fa::t_0acfba9c7eec8e 151-158,526
+  s_35bd473ffac2fa::t_04b82d9fc0618c 925-935,953,964-965
+  s_35bd473ffac2fa::t_6c9cd4c29f994e 207
+  s_35bd473ffac2fa::t_3b35608cfd7d7f 84,267,376-393,524
+  s_35bd473ffac2fa::t_4edd4fec328e0d 767-784,921
+  s_35bd473ffac2fa::t_5567b9920b543a 371-374
+  s_35bd473ffac2fa::t_267bff0b6f8ded 732-749,751-766,785-833,871-890,893,896-898,945-948,951
+  s_35bd473ffac2fa::t_3a256d11fb4681 834-870
+  s_35bd473ffac2fa::t_6145173e33f850 395
+  s_35bd473ffac2fa::t_e0f71f9af2143c 418-492,494
+  s_35bd473ffac2fa::t_ed1e28c34fe07e 119-129
+  s_35bd473ffac2fa::t_e43538623fd0fc 969-972
+  s_35bd473ffac2fa::t_523c0cfdf5aed5 364
+  s_35bd473ffac2fa::t_6510001813925b 365-369
+  s_35bd473ffac2fa::t_e35076743e2d4b 72-77
+  s_35bd473ffac2fa::t_502c4924c999af 252,498
+  s_35bd473ffac2fa::t_d7874fc82ac2c1 658-660,672-674,696-699
+  s_35bd473ffac2fa::t_774bc24b9ec144 363
+  s_35bd473ffac2fa::t_96854f15550194 891-892,894-895
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1,16,417,502-503,540-541,544
+  s_35bd473ffac2fa::t_b2c3f1c57c920a 545-568,570-584,603-657,661-668,683-687,689-690,693,700-731,937-943,954-963,975
+app/tools/order/page.tsx
+  s_35bd473ffac2fa::t_f0d8f07733a714 1-6
+app/tools/purchasers/PurchaserManager.tsx
+  s_35bd473ffac2fa::t_fc6054c7d8ba1c 87
+  s_35bd473ffac2fa::t_34a909e5ab933b 6,10,68-73,91
+  s_35bd473ffac2fa::t_f634304ffd9b04 1-5,7-9,11-12,14-22,25-67,85,89-90,92,94-95
+  s_35bd473ffac2fa::t_71d7f300bd83fa 13,84,86
+  s_35bd473ffac2fa::t_68156679a15dc2 23-24,74-83,88,93
+drizzle.config.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-7
+app/tools/order-search/OrderSearch.tsx
+  s_35bd473ffac2fa::t_860e5281b8d63b 1-4,7,9-16,18-23,25-33,35,39-42,44-45
+  s_35bd473ffac2fa::t_f0d8f07733a714 5-6,8,17,24,34,36-38,43
+build/sites-vite-plugin.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-45
+app/tools/order-link/OrderLinkGenerator.tsx
+  s_35bd473ffac2fa::t_1854a68c74b960 68,70,77,84,102-103,105
+  s_35bd473ffac2fa::t_5cec9d8d9f2c81 56,108
+  s_35bd473ffac2fa::t_c1d72e7d305238 1-2,5-6,8-9,12,14,16-17,19-27,29-33,41-42,44-45,53-55,71-73,75-76,78-79,81-82,85-89,94-95,97,104,106-107,109-110,112-113
+  s_35bd473ffac2fa::t_34a909e5ab933b 11,18,28,34-40,43,46-49,52,90-93,111
+  s_35bd473ffac2fa::t_07b786fddadf93 10,101
+  s_35bd473ffac2fa::t_71d7f300bd83fa 15,96,98
+  s_35bd473ffac2fa::t_363917a2fbdcd0 13,50,67,74,80,83,100
+  s_35bd473ffac2fa::t_3e43d4eebd5ca1 51,57,59-66,69
+  s_35bd473ffac2fa::t_fc6054c7d8ba1c 58,99
+  s_35bd473ffac2fa::t_69800f9d3ab0b6 3-4,7
+app/lib/api.ts
+  s_35bd473ffac2fa::t_41916bef330242 3-9
+  s_35bd473ffac2fa::t_fd6d796a26b677 1-2,10-44,46-47,49-60,62-91,107-150
+  s_35bd473ffac2fa::t_34c8620ff6ee24 45,48,61
+  s_35bd473ffac2fa::t_b2808292222bb5 92-106
+app/page.tsx
+  s_35bd473ffac2fa::t_9122997fc5cfca 1,3-5,9
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 2,6-8,10
+app/tools/order-search/page.tsx
+  s_35bd473ffac2fa::t_860e5281b8d63b 1-5
+db/schema.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-4
+app/tools/freight-compare/page.tsx
+  s_35bd473ffac2fa::t_773acd1a1a6486 1-6
+vite.config.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-59
+examples/d1/db/schema.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-9
+app/tools/purchasers/page.tsx
+  s_35bd473ffac2fa::t_f634304ffd9b04 1-3,5-6
+  s_35bd473ffac2fa::t_6510001813925b 4
+README.md
+  s_35bd473ffac2fa::t_1bcfb3637cebaa 16-18,20-21
+  s_35bd473ffac2fa::t_b2808292222bb5 48
+  s_35bd473ffac2fa::t_7fc742516e98d6 3,5,7,9-12,14,23,25,27-28,34,36,38,40-42,44,46-47,49,51,53-56
+  s_35bd473ffac2fa::t_96dd5f0bf7d5dd 1
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 2,4,6,24,26,29-33,35,37,39,43,45,50,52
+  s_35bd473ffac2fa::t_d7874fc82ac2c1 15,19
+  s_35bd473ffac2fa::t_6c9cd4c29f994e 13
+  s_35bd473ffac2fa::t_f870547555487e 8
+  s_35bd473ffac2fa::t_a7d4feae464627 22
+app/tools/place-order/page.tsx
+  s_35bd473ffac2fa::t_ccaa0dcc7829e6 1,3,5
+  s_35bd473ffac2fa::t_363917a2fbdcd0 2,6
+  s_35bd473ffac2fa::t_1854a68c74b960 4
+app/order/page.tsx
+  s_35bd473ffac2fa::t_7a8516b9eab9e0 1-11
+app/MobileAdmin.tsx
+  s_35bd473ffac2fa::t_71d7f300bd83fa 66-67,144-145,916
+  s_35bd473ffac2fa::t_9f318b461c9901 634,671-677,753
+  s_35bd473ffac2fa::t_4fabbfdae3e7f3 755
+  s_35bd473ffac2fa::t_f18c449fc29236 925,927-932
+  s_35bd473ffac2fa::t_7fc742516e98d6 3-4,357-358,383
+  s_35bd473ffac2fa::t_2b0f2cf7064933 1-2,5-16,18-41,44-46,48-50,52-64,68-69,71,82,96-97,99-103,130-136,138,140-143,146-172,174-179,181-199,201-323,326-335,342-356,359-382,384,386-387,409-410,415-416,443-455,458,461,463-467,469-477,625,627-633,636-670,678-728,730-734,736-737,739-741,743,745-750,752,756-772,774-775,778-781,835-849,883-885,887-888,890-897,919-921,923-924,926,934-957
+  s_35bd473ffac2fa::t_3b35608cfd7d7f 173,180,200,898-900,906-912
+  s_35bd473ffac2fa::t_c186343825acc2 65,70,139,782,933
+  s_35bd473ffac2fa::t_107a201a8ce969 385,411-414,459-460,462,468,626
+  s_35bd473ffac2fa::t_5c863cf1bdcece 729
+  s_35bd473ffac2fa::t_257c626e2d5d0a 917-918
+  s_35bd473ffac2fa::t_d64d27645b5e06 17,43,137
+  s_35bd473ffac2fa::t_27a6c75056ec7a 47,51,72-81,83-95,108-118
+  s_35bd473ffac2fa::t_e35076743e2d4b 324
+  s_35bd473ffac2fa::t_691cfb154d3508 635,735,744,754
+  s_35bd473ffac2fa::t_ed1e28c34fe07e 533-534,537,541,551,560,562,565-566,576-589,592-594,616-617,914
+  s_35bd473ffac2fa::t_b3a943cae869e7 478-507
+  s_35bd473ffac2fa::t_c1abab5016d4c0 325
+  s_35bd473ffac2fa::t_6ed5d46989c724 922
+  s_35bd473ffac2fa::t_f14c9fefb76472 119-129
+  s_35bd473ffac2fa::t_826a6bb220b94e 790-793,797,799
+  s_35bd473ffac2fa::t_523c0cfdf5aed5 913
+  s_35bd473ffac2fa::t_2ed89a189c7b9d 525-532,535-536,538-540,542-550,552-558,561,563-564,567-575,590-591,595-615,618-624
+  s_35bd473ffac2fa::t_c60ad2e75beb74 850-869,871-882
+  s_35bd473ffac2fa::t_e3c6dbe0c63c61 98,807
+  s_35bd473ffac2fa::t_3a70ef956aec2d 388-408,417-442,456-457
+  s_35bd473ffac2fa::t_c4576da16193c9 508-524
+  s_35bd473ffac2fa::t_0c2d33fbdecade 738,742,751
+  s_35bd473ffac2fa::t_a8e9a4243e745e 783,786,813-815,817,833-834
+  s_35bd473ffac2fa::t_6510001813925b 901-905,915
+  s_35bd473ffac2fa::t_b5945467282995 773,776-777,784-785,787-789,794-796,798,800-806,808-812,816,818-827,831-832
+  s_35bd473ffac2fa::t_6c9cd4c29f994e 104-107,336-341,559,828-830,870,886,889
+  s_35bd473ffac2fa::t_88678dd65fdf7c 42
+app/tools/page.tsx
+  s_35bd473ffac2fa::t_6510001813925b 3
+  s_35bd473ffac2fa::t_51d4d5c32019c9 8,10-12,14,16-20,23
+  s_35bd473ffac2fa::t_1f12d72bf1f7c2 1-2,5-7,9,13,15,21-22,24
+  s_35bd473ffac2fa::t_0f52ba65207964 4
+app/tools/order-link/page.tsx
+  s_35bd473ffac2fa::t_c1d72e7d305238 1-3,5-6
+  s_35bd473ffac2fa::t_6510001813925b 4
+public/globe.svg
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1
+public/favicon.svg
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-6
+app/tools/LinkQueryCard.tsx
+  s_35bd473ffac2fa::t_d7874fc82ac2c1 42,56
+  s_35bd473ffac2fa::t_9374e73b54678e 11-12
+  s_35bd473ffac2fa::t_0f52ba65207964 1-10,13-41,43-55,57-64
+cloudflare-env.d.ts
+  s_35bd473ffac2fa::t_b4a02c79c07c33 1-5
+package.json
+  s_35bd473ffac2fa::t_ba84edff379326 27
+  s_35bd473ffac2fa::t_06ec7a3485aa47 22-23
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1,3-17,20-21,24-26,28-45
+  s_35bd473ffac2fa::t_96dd5f0bf7d5dd 2
+  s_35bd473ffac2fa::t_b759a7a78a9eb9 18-19
+tsconfig.json
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-11,13-35
+  s_35bd473ffac2fa::t_211d238ca4027c 12
+db/index.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-13
+.env.example
+  s_35bd473ffac2fa::t_b2808292222bb5 2
+  s_35bd473ffac2fa::t_7fc742516e98d6 1
+public/window.svg
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1
+app/chatgpt-auth.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-86
+app/layout.tsx
+  s_35bd473ffac2fa::t_9122997fc5cfca 5-6,19-20
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-4,7-18,21-23
+worker/index.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-47
+public/file.svg
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1
+next.config.ts
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-7
+.gitignore
+  s_35bd473ffac2fa::t_96dd5f0bf7d5dd 33,40
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-32,34-39,41-44
+postcss.config.mjs
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-7
+eslint.config.mjs
+  s_35bd473ffac2fa::t_17a7fcfa0f9ac2 1-18
+app/tools/freight-calculator/FreightCalculator.tsx
+  s_35bd473ffac2fa::t_773acd1a1a6486 1-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d84d6acb3efb7ca989fc97695b9450c88c049b3e",
+  "prompts": {},
+  "sessions": {
+    "s_35bd473ffac2fa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8a1a-414f-7d72-b871-125e547bfff9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
