@@ -22,7 +22,10 @@
       "Bash(grep -nE \"@media|^}|^$\")",
       "Bash(grep -c \"^}$\\\\|^  }$\")",
       "Bash(grep -nE \"@media|^}\\\\s*$\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mvn compile:*)",
+      "Bash(grep -rn \"mysql\\\\|jdbc\\\\|datasource\" /Users/xp/dev/xb/xb/src/main/resources/application*.yml)",
+      "Bash(grep -n \"sys_order\" /Users/xp/dev/xb/xb/sql/*.sql)"
     ]
   }
 }

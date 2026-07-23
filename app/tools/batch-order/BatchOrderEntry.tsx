@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, ClipboardPaste, FileSpreadshee
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../lib/api";
 
+type DictOption = { value: string; label: string };
 type Row = Record<string, any>;
 type ItemResult = { rowIndex: number; status: "success" | "duplicate" | "failed"; message: string; shortId?: string; orderCodes?: string; createdCount?: number };
 type BatchResponse = { totalCount: number; successCount: number; duplicateCount: number; failedCount: number; results: ItemResult[] };
@@ -30,13 +31,14 @@ const PRODUCT_EMOJI: Record<string, string> = {
 const emojiFor = (label: string) => PRODUCT_EMOJI[label] || "📦";
 
 // 从「收款项」文本里自动解析商品名（炎陵黄桃 / 炎陵奈李）和规格（五斤/10斤 等）
-function parseProductFromItem(orderItem: unknown): { orderName?: string; orderType?: string } {
+// 返回的 orderName / orderType 是字典 label（人类可读），由前端在提交时再按字典查 value
+function parseProductFromItem(orderItem: unknown): { orderNameDesc?: string; orderTypeDesc?: string } {
   const str = String(orderItem || "");
-  const result: { orderName?: string; orderType?: string } = {};
-  if (/炎陵黄桃/.test(str)) result.orderName = "炎陵黄桃";
-  else if (/炎陵奈李/.test(str)) result.orderName = "炎陵奈李";
+  const result: { orderNameDesc?: string; orderTypeDesc?: string } = {};
+  if (/炎陵黄桃/.test(str)) result.orderNameDesc = "炎陵黄桃";
+  else if (/炎陵奈李/.test(str)) result.orderNameDesc = "炎陵奈李";
   const sizeMatch = str.match(/[五5]斤|十斤|10斤/);
-  if (sizeMatch) result.orderType = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
+  if (sizeMatch) result.orderTypeDesc = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
   return result;
 }
 
@@ -91,6 +93,9 @@ export default function BatchOrderEntry() {
   const [results, setResults] = useState<BatchResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // 商品/规格字典（来自 /search/order-options），用来把解析出的 label 映射成 dictValue
+  const [productOptions, setProductOptions] = useState<DictOption[]>([]);
+  const [sizeOptions, setSizeOptions] = useState<DictOption[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -101,6 +106,13 @@ export default function BatchOrderEntry() {
         if (rows[0]?.code) setStoreCode(String(rows[0].code));
       })
       .catch(() => setError("店铺列表加载失败"));
+    // 加载商品/规格字典（与下单页面同源），用来把自动解析出的 label 映射成 dictValue
+    apiRequest<{ data?: { products?: DictOption[]; sizes?: DictOption[] } }>("/search/order-options", { auth: false })
+      .then((r) => {
+        setProductOptions(Array.isArray(r.data?.products) ? r.data!.products! : []);
+        setSizeOptions(Array.isArray(r.data?.sizes) ? r.data!.sizes! : []);
+      })
+      .catch(() => { /* 字典拉取失败不影响主流程，后端会回退查字典 */ });
   }, []);
 
   function parseText(text: string) {
@@ -283,19 +295,25 @@ export default function BatchOrderEntry() {
     setConfirmOpen(false);
     setBusy(true); setError(""); setResults(null);
     try {
-      // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId + purchaserName）
+      // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId + purchaserName + 商品/规格字典 value）
       const payloadItems = items.map((it, idx) => {
         const dec = decisions[idx] || "skip";
         const action = dec === "use" ? "use_existing" : dec === "create" ? "create_new" : "skip";
         // 「新建」时把用户可能改过的 purchaserName 发给后端；其他行保留原 purchaserName 供后端按付款人匹配
         const edited = dec === "create" ? (purchaserNameEdit[idx] || "").trim() : "";
+        // 商品/规格字典映射：把解析出的 label（如"炎陵黄桃"）查成 dictValue 再传给后端，
+        // 找不到 value 时不传这俩字段，交给后端按 orderItem 兜底 + insertOrder 内字典查询回填 desc
+        const nameValue = it.orderNameDesc ? productValueByLabel.get(String(it.orderNameDesc)) : undefined;
+        const typeValue = it.orderTypeDesc ? sizeValueByLabel.get(String(it.orderTypeDesc)) : undefined;
         return {
           ...it,
           buyerAction: action,
           existingPurchaserId: dec === "use" ? selectedPurchaser[idx] : undefined,
           purchaserName: dec === "create" ? edited : it.purchaserName,
-          // 新建买家时传入店铺编码，后端自动绑定到该店铺
-          storeCode: dec === "create" ? storeCode : undefined,
+          orderName: nameValue,
+          orderNameDesc: nameValue ? it.orderNameDesc : undefined,
+          orderType: typeValue,
+          orderTypeDesc: typeValue ? it.orderTypeDesc : undefined,
         };
       });
       const result = await apiRequest<{ data?: BatchResponse }>("/biz/batch-order/submit", {
@@ -320,6 +338,18 @@ export default function BatchOrderEntry() {
     if (!preview) return 0;
     return preview.items.filter((it) => decisions[it.rowIndex] !== "skip").length;
   }, [preview, decisions]);
+
+  // 把字典 label 映射成 dictValue（找不到时 value 为 undefined，提交时就不传，交给后端兜底查字典）
+  const productValueByLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    productOptions.forEach((opt) => { if (opt.label && opt.value) m.set(opt.label, opt.value); });
+    return m;
+  }, [productOptions]);
+  const sizeValueByLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    sizeOptions.forEach((opt) => { if (opt.label && opt.value) m.set(opt.label, opt.value); });
+    return m;
+  }, [sizeOptions]);
 
   const STATUS_LABEL: Record<string, string> = { exists: "已存在买家", new: "待新建买家", invalid: "无效行", duplicate: "疑似重复" };
   const STATUS_TONE: Record<string, string> = { exists: "success", new: "new", invalid: "failed", duplicate: "duplicate" };
@@ -395,10 +425,18 @@ export default function BatchOrderEntry() {
                       <span className="batch-order-card-label">{String(it.orderItem || "--")}</span>
                       {Number(it.quantity) > 1 ? <span className="batch-order-card-split">×{it.quantity}</span> : null}
                     </div>
-                    {(items[it.rowIndex]?.orderName || items[it.rowIndex]?.orderType) ? (
+                    {(items[it.rowIndex]?.orderNameDesc || items[it.rowIndex]?.orderTypeDesc) ? (
                       <div className="batch-order-card-auto">
-                        {items[it.rowIndex]?.orderName ? <span className="batch-order-auto-tag">商品 · {String(items[it.rowIndex].orderName)}</span> : null}
-                        {items[it.rowIndex]?.orderType ? <span className="batch-order-auto-tag">规格 · {String(items[it.rowIndex].orderType)}</span> : null}
+                        {items[it.rowIndex]?.orderNameDesc ? (() => {
+                          const label = String(items[it.rowIndex].orderNameDesc);
+                          const mapped = productValueByLabel.has(label);
+                          return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>商品 · {label}{mapped ? "" : " · 待映射"}</span>;
+                        })() : null}
+                        {items[it.rowIndex]?.orderTypeDesc ? (() => {
+                          const label = String(items[it.rowIndex].orderTypeDesc);
+                          const mapped = sizeValueByLabel.has(label);
+                          return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>规格 · {label}{mapped ? "" : " · 待映射"}</span>;
+                        })() : null}
                       </div>
                     ) : null}
                     <div className="batch-order-card-meta">

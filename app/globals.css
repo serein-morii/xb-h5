@@ -1613,6 +1613,7 @@ select:focus-visible {
 .batch-order-card-label { min-width: 0; flex: 1; word-break: break-word; }
 .batch-order-card-auto { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 6px; }
 .batch-order-auto-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; color: #1a9a68; background: #e8f7ef; font-size: 10px; font-weight: 700; letter-spacing: .1px; }
+.batch-order-auto-tag.is-unmapped { color: #a96e0b; background: #fff3d7; }
 .batch-order-card-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; font-size: 11px; line-height: 1.55; }
 .batch-order-card-meta > div { display: flex; gap: 4px; align-items: baseline; }
 .batch-order-card-meta-label { color: #8b9891; }
