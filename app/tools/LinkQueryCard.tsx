@@ -44,7 +44,7 @@ export default function LinkQueryCard() {
 
   return <>
     <button type="button" className="tools-menu-card tools-link-query-card tool-tone-peach" onClick={show}>
-      <span><Link2 size={24} /></span><div><em>安全链接</em><h2>链接查询</h2><p>粘贴订单链接或输入加密 ID 查看详情</p></div><ArrowRight size={18} />
+      <span><Link2 size={23} /></span><div><h2>链接查询</h2><p>通过加密链接查看订单详情</p></div><ArrowRight size={17} />
     </button>
     {open ? <div className="link-query-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <section className="link-query-dialog" role="dialog" aria-modal="true" aria-labelledby="link-query-title">
