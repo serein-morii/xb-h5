@@ -118,6 +118,16 @@ export default function BatchOrderEntry() {
       if (!item.payerNickname || !item.customerName || !item.phone) continue;
       // 把付款方昵称同步成 purchaserName，方便后端按「买家=付款人」匹配/新建买家档案
       item.purchaserName = item.payerNickname;
+
+      // 自动解析商品名和规格：收款项含炎陵黄桃/奈李则商品名取此值，含5斤/10斤等字样则规格取对应值
+      const orderItemStr = String(item.orderItem || "");
+      if (/炎陵黄桃/.test(orderItemStr)) item.orderName = "炎陵黄桃";
+      else if (/炎陵奈李/.test(orderItemStr)) item.orderName = "炎陵奈李";
+      const sizeMatch = orderItemStr.match(/[五5]斤|十斤|10斤/);
+      if (sizeMatch) {
+        item.orderType = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
+      }
+
       parsed.push(item);
     }
     setItems(parsed);
@@ -279,6 +289,8 @@ export default function BatchOrderEntry() {
           buyerAction: action,
           existingPurchaserId: dec === "use" ? selectedPurchaser[idx] : undefined,
           purchaserName: dec === "create" ? edited : it.purchaserName,
+          // 新建买家时传入店铺编码，后端自动绑定到该店铺
+          storeCode: dec === "create" ? storeCode : undefined,
         };
       });
       const result = await apiRequest<{ data?: BatchResponse }>("/biz/batch-order/submit", {
