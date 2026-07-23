@@ -1,0 +1,25 @@
+app/globals.css
+  s_7d34fef3c367cf::t_95b1b350906965 5892-5902,5904
+  s_7d34fef3c367cf::t_646e350c029bc2 339-370,372,5906-5908
+  s_7d34fef3c367cf::t_d9ed8f0c87782b 143
+  s_7d34fef3c367cf::t_66b60a6432842c 464,503-511,556-557,626-666,825-827,6880
+  s_7d34fef3c367cf::t_d47a03f7b66444 2979
+app/MobileAdmin.tsx
+  s_7d34fef3c367cf::t_decc86b4017601 1247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d25b24132c1f5052a7ce29487e8e8ea157d8ccb4",
+  "prompts": {},
+  "sessions": {
+    "s_7d34fef3c367cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8fd8-face-71c1-888e-256cc8946a2b",
+        "model": "deepseek-v4-flash"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
