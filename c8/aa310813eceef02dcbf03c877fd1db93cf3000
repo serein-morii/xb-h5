@@ -1,0 +1,21 @@
+app/tools/batch-order/BatchOrderEntry.tsx
+  s_7d34fef3c367cf::t_ea8953aca4d031 126
+  s_7d34fef3c367cf::t_bedcd13bf57048 292-293
+  s_7d34fef3c367cf::t_aa848d5c0c70dc 121-125,127-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c8aa310813eceef02dcbf03c877fd1db93cf3000",
+  "prompts": {},
+  "sessions": {
+    "s_7d34fef3c367cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8fd8-face-71c1-888e-256cc8946a2b",
+        "model": "deepseek-v4-flash"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
