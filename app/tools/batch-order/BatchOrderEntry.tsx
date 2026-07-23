@@ -12,6 +12,8 @@ type PreviewItem = { rowIndex: number; customerName: string; phone: string; orde
 type PreviewResponse = { summary: PreviewSummary; items: PreviewItem[] };
 // 用户对每行的决定：create / use / skip
 type Decision = "create" | "use" | "skip";
+// 买家列表条目
+type PurchaserOption = { id: number; name: string; phone: string; shortId: string; storeName?: string };
 
 // 简易 emoji 映射（防商品名没匹配上 PRODUCT_EMOJI 时显示 📦）
 const PRODUCT_EMOJI: Record<string, string> = {
@@ -64,6 +66,15 @@ export default function BatchOrderEntry() {
   const [previewing, setPreviewing] = useState(false);
   // 用户对每行的决定（rowIndex -> decision）
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
+  // 每行选中的买家 ID（rowIndex -> purchaserId），决定为 use 时用
+  const [selectedPurchaser, setSelectedPurchaser] = useState<Record<number, number | undefined>>({});
+  // 每行"用已有"展开状态（rowIndex -> 是否展开买家选择面板）
+  const [pickOpen, setPickOpen] = useState<Record<number, boolean>>({});
+  // 买家全量列表（懒加载，首次点"用已有"时拉）
+  const [purchasers, setPurchasers] = useState<PurchaserOption[] | null>(null);
+  const [purchaserLoading, setPurchaserLoading] = useState(false);
+  // 每行的搜索关键词
+  const [pickQuery, setPickQuery] = useState<Record<number, string>>({});
   const [results, setResults] = useState<BatchResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -167,12 +178,52 @@ export default function BatchOrderEntry() {
     reader.readAsText(file, "utf-8");
   }
 
+  async function loadPurchasers(): Promise<PurchaserOption[]> {
+    if (purchasers) return purchasers;
+    setPurchaserLoading(true);
+    try {
+      const res = await apiRequest<{ data?: any[] }>("/biz/purchaser/list");
+      const list = Array.isArray(res.data) ? res.data.map((p) => ({
+        id: Number(p.id), name: String(p.name || ""), phone: String(p.phone || ""),
+        shortId: String(p.shortId || ""), storeName: p.storeName ? String(p.storeName) : undefined,
+      })) : [];
+      setPurchasers(list);
+      return list;
+    } finally {
+      setPurchaserLoading(false);
+    }
+  }
+
+  async function togglePick(rowIndex: number, currentDecision: Decision) {
+    // 点"用已有"按钮：展开买家选择面板
+    if (currentDecision === "use") {
+      setPickOpen((c) => ({ ...c, [rowIndex]: !c[rowIndex] }));
+      if (!purchasers) await loadPurchasers();
+    }
+  }
+
+  function choosePurchaser(rowIndex: number, p: PurchaserOption) {
+    setSelectedPurchaser((c) => ({ ...c, [rowIndex]: p.id }));
+    setDecisions((c) => ({ ...c, [rowIndex]: "use" }));
+    setPickOpen((c) => ({ ...c, [rowIndex]: false }));
+  }
+
+  function setDecision(rowIndex: number, dec: Decision) {
+    setDecisions((c) => ({ ...c, [rowIndex]: dec }));
+    if (dec !== "use") {
+      setPickOpen((c) => ({ ...c, [rowIndex]: false }));
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!storeCode) return setError("请先选择店铺");
     if (items.length === 0) return setError("没有可录入的订单，请先粘贴并解析");
     const pending = preview?.items.filter((it) => decisions[it.rowIndex] !== "skip") ?? [];
     if (pending.length === 0) return setError("所有行都被跳过，没有可录入的订单");
+    // 校验：决定为 use 的行必须已选买家
+    const missingBuyer = pending.filter((it) => decisions[it.rowIndex] === "use" && !selectedPurchaser[it.rowIndex]);
+    if (missingBuyer.length > 0) return setError(`第 ${missingBuyer[0].rowIndex + 1} 行选了「用已有」但未选择买家`);
     setConfirmOpen(true);
   }
 
@@ -181,12 +232,10 @@ export default function BatchOrderEntry() {
     setBusy(true); setError(""); setResults(null);
     try {
       // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId）
-      const previewMap = new Map((preview?.items ?? []).map((it) => [it.rowIndex, it]));
       const payloadItems = items.map((it, idx) => {
-        const pi = previewMap.get(idx);
         const dec = decisions[idx] || "skip";
         const action = dec === "use" ? "use_existing" : dec === "create" ? "create_new" : "skip";
-        return { ...it, buyerAction: action, existingPurchaserId: dec === "use" ? pi?.existingPurchaser?.id : undefined };
+        return { ...it, buyerAction: action, existingPurchaserId: dec === "use" ? selectedPurchaser[idx] : undefined };
       });
       const result = await apiRequest<{ data?: BatchResponse }>("/biz/batch-order/submit", {
         method: "POST",
@@ -252,6 +301,12 @@ export default function BatchOrderEntry() {
             <div className="batch-order-list">
               {preview.items.map((it) => {
                 const dec = decisions[it.rowIndex] || "skip";
+                const canUseExisting = it.buyerStatus === "exists" || it.buyerStatus === "new" || it.buyerStatus === "duplicate";
+                const selectedP = purchasers?.find((p) => p.id === selectedPurchaser[it.rowIndex]);
+                const query = (pickQuery[it.rowIndex] || "").trim().toLowerCase();
+                const filteredPurchasers = purchasers?.filter((p) =>
+                  !query || p.name.toLowerCase().includes(query) || p.phone.includes(query) || p.shortId.toLowerCase().includes(query)
+                ) ?? [];
                 return (
                   <article key={it.rowIndex} className={`batch-order-card batch-order-card-${STATUS_TONE[it.buyerStatus]}`}>
                     <div className="batch-order-card-top">
@@ -269,15 +324,37 @@ export default function BatchOrderEntry() {
                       <div><span className="batch-order-card-meta-label">电话</span><span className="batch-order-card-meta-value">{String(it.phone || "--")}</span></div>
                     </div>
                     {it.existingPurchaser ? (
-                      <div className="batch-order-card-existing">已存在买家：{it.existingPurchaser.name} · ID {it.existingPurchaser.shortId} · 店铺 {it.existingPurchaser.storeName || "--"}</div>
+                      <div className="batch-order-card-existing">系统匹配到：{it.existingPurchaser.name} · ID {it.existingPurchaser.shortId} · 店铺 {it.existingPurchaser.storeName || "--"}</div>
                     ) : null}
                     <div className="batch-order-card-decisions">
-                      {it.buyerStatus === "exists" ? (
-                        <button type="button" className={`batch-order-decision ${dec === "use" ? "active" : ""}`} onClick={() => setDecisions((c) => ({ ...c, [it.rowIndex]: "use" }))}><UserCheck size={14} />用已有</button>
+                      {canUseExisting ? (
+                        <button type="button" className={`batch-order-decision ${dec === "use" ? "active" : ""}`} onClick={() => togglePick(it.rowIndex, dec)}><UserCheck size={14} />用已有</button>
                       ) : null}
-                      <button type="button" className={`batch-order-decision ${dec === "create" ? "active" : ""}`} onClick={() => setDecisions((c) => ({ ...c, [it.rowIndex]: "create" }))}><UserPlus size={14} />新建</button>
-                      <button type="button" className={`batch-order-decision batch-order-decision-skip ${dec === "skip" ? "active" : ""}`} onClick={() => setDecisions((c) => ({ ...c, [it.rowIndex]: "skip" }))}>跳过</button>
+                      <button type="button" className={`batch-order-decision ${dec === "create" ? "active" : ""}`} onClick={() => setDecision(it.rowIndex, "create")}><UserPlus size={14} />新建</button>
+                      <button type="button" className={`batch-order-decision batch-order-decision-skip ${dec === "skip" ? "active" : ""}`} onClick={() => setDecision(it.rowIndex, "skip")}>跳过</button>
                     </div>
+                    {dec === "use" && pickOpen[it.rowIndex] ? (
+                      <div className="batch-order-pick">
+                        {selectedP ? (
+                          <div className="batch-order-pick-selected">已选：{selectedP.name} · {selectedP.phone} · ID {selectedP.shortId}<button type="button" onClick={() => setSelectedPurchaser((c) => ({ ...c, [it.rowIndex]: undefined }))}>重选</button></div>
+                        ) : null}
+                        <input className="batch-order-pick-search" value={pickQuery[it.rowIndex] || ""} onChange={(e) => setPickQuery((c) => ({ ...c, [it.rowIndex]: e.target.value }))} placeholder="搜索姓名 / 手机号 / 短 ID" />
+                        {purchaserLoading ? <p className="batch-order-loading">加载买家列表…</p> : null}
+                        {!purchaserLoading && filteredPurchasers.length === 0 ? <p className="batch-order-empty">没有匹配的买家</p> : null}
+                        <div className="batch-order-pick-list">
+                          {filteredPurchasers.slice(0, 30).map((p) => (
+                            <button type="button" key={p.id} className={`batch-order-pick-item ${selectedPurchaser[it.rowIndex] === p.id ? "active" : ""}`} onClick={() => choosePurchaser(it.rowIndex, p)}>
+                              <span className="batch-order-pick-item-name">{p.name}</span>
+                              <span className="batch-order-pick-item-meta">{p.phone} · ID {p.shortId}{p.storeName ? ` · ${p.storeName}` : ""}</span>
+                            </button>
+                          ))}
+                          {filteredPurchasers.length > 30 ? <p className="batch-order-pick-more">还有 {filteredPurchasers.length - 30} 个，请用搜索缩小范围</p> : null}
+                        </div>
+                      </div>
+                    ) : null}
+                    {!pickOpen[it.rowIndex] && dec === "use" && selectedP ? (
+                      <div className="batch-order-card-existing">已选买家：{selectedP.name} · ID {selectedP.shortId}</div>
+                    ) : null}
                   </article>
                 );
               })}
