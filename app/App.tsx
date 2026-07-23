@@ -98,13 +98,32 @@ function NotFound() {
 export default function App() {
   const pathname = normalizePath(window.location.pathname);
   const route = routes[pathname];
+  // 动态路由：/tools/order/:shortId（6 位短码）→ 买家专属下单页
+  const orderShortIdMatch = pathname.match(/^\/tools\/order\/([2-9a-hj-km-np-z]{6})$/);
+
+  let content: ReactNode;
+  let title: string;
+  let description: string;
+  let isToolsRoute: boolean;
+  if (route) {
+    content = route.content;
+    title = route.title;
+    description = route.description;
+    isToolsRoute = !!route.tools;
+  } else if (orderShortIdMatch) {
+    content = <PurchaserOrderPage />;
+    title = "专属下单｜喜八工具箱";
+    description = "通过下单人专属短链接下单并免登录查询历史订单。";
+    isToolsRoute = true;
+  } else {
+    return <NotFound />;
+  }
 
   useEffect(() => {
-    document.title = route?.title || "页面不存在｜喜八";
-    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (description) description.content = route?.description || "喜八移动订单管理";
-  }, [route]);
+    document.title = title;
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (meta) meta.content = description;
+  }, [title, description]);
 
-  if (!route) return <NotFound />;
-  return route.tools ? <ToolsLayout>{route.content}</ToolsLayout> : route.content;
+  return isToolsRoute ? <ToolsLayout>{content}</ToolsLayout> : content;
 }

@@ -1,4 +1,5 @@
-const DEVELOPMENT_API_BASE = "http://127.0.0.1:8080";
+// dev 走相对路径，由 vite.config.ts 的 server.proxy 反代到 127.0.0.1:8080（与 xb-ui 一致）
+const DEVELOPMENT_API_BASE = "/prod-api";
 const isDevelopment = import.meta.env.DEV;
 
 export const API_BASE = import.meta.env.VITE_API_BASE ||

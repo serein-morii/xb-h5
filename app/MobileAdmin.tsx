@@ -61,6 +61,7 @@ import {
 import AdminOrderEntry from "./AdminOrderEntry";
 import OrderLinkGenerator from "./tools/order-link/OrderLinkGenerator";
 import PurchaserManager from "./tools/purchasers/PurchaserManager";
+import { buildOrderLink, formatOrderLinkCopy } from "./tools/order-link/format";
 
 type DataRow = Record<string, any>;
 type MenuKey = "home" | "orders" | "orderEntry" | "bills" | "express" | "prices" | "stores" | "orderLink" | "purchasers" | "tracking";
@@ -122,6 +123,25 @@ function shortDate(value: unknown, withTime = false) {
   if (!value) return "--";
   const normalized = String(value).replace("T", " ");
   return normalized.slice(0, withTime ? 19 : 10);
+}
+
+function maskPhone(value: string) {
+  if (!value || value.length < 7) return value || "--";
+  return `${value.slice(0, 3)}****${value.slice(-4)}`;
+}
+
+function maskEmail(value: string) {
+  if (!value || !value.includes("@")) return value || "--";
+  const [user, domain] = value.split("@");
+  if (!user || !domain || user.length <= 1) return value;
+  return `${user[0]}****@${domain}`;
+}
+
+function sexLabel(sex: unknown) {
+  const value = String(sex);
+  if (value === "0") return "男";
+  if (value === "1") return "女";
+  return "未设置";
 }
 
 const NAV_ITEMS: Array<{
@@ -537,10 +557,79 @@ const EMPTY_DASHBOARD: DashboardData = {
   orderTotal: 0, pending: 0, waiting: 0, sent: 0, completed: 0, billTotal: 0, storeTotal: 0, purchaserTotal: 0, boundPurchaserTotal: 0, recentOrders: [], recentExpress: [], recentPurchasers: [],
 };
 
-function DashboardPage({ username, onNavigate, notify }: { username: string; onNavigate: (key: MenuKey) => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+// 工作台随机鸡汤（按当前时间/待办/完成数取不同池子）
+const CHICKEN_SOUP_BUSY = [
+  "还有 {n} 笔待处理，先挑简单的？",
+  "{n} 单排队中，加把劲",
+  "今日还有 {n} 单没完，加油",
+  "{n} 单待处理，从最重要的开始",
+  "还有 {n} 单，挑一个下手吧",
+  "今日 {n} 单待办，节奏走起",
+  "积压 {n} 单，先啃硬骨头",
+  "还有 {n} 单排队，越早处理越轻松",
+];
+const CHICKEN_SOUP_DONE = [
+  "今日已搞定 {n} 笔，厉害",
+  "{n} 单完成，效率不错",
+  "已经处理 {n} 单，保持节奏",
+  "{n} 笔订单完成，可以喘口气",
+  "今日 {n} 单已结，奈斯",
+  "{n} 单交付，成就感拉满",
+  "今日 {n} 单搞定，手感在线",
+];
+const CHICKEN_SOUP_IDLE = [
+  "新的一天，从一杯水开始",
+  "一日之计在于晨",
+  "先把最棘手的那笔处理掉",
+  "别急，一件件来",
+  "忙了一上午，先去吃饭",
+  "中午了，热饭吃了吗",
+  "下午专注力最强",
+  "今天的辛苦，明天的底气",
+  "晚上好，记得按时回家",
+  "今天已经够拼了",
+  "事情一件件来，不慌",
+  "难得清闲，喝杯茶吧",
+  "夜深了，早点睡",
+  "还在加班？记得喝水",
+  "明天的活明天再说",
+  "专注当下，效率翻倍",
+  "你已经很努力了",
+  "忙里偷闲，笑一下",
+  "保持节奏，别急",
+  "持续改进比完美更重要",
+  "小步快跑，比完美更重要",
+  "深呼吸，再继续",
+  "今天也是好的一天",
+];
+const pickChicken = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+const greetByHour = (h: number) => {
+  if (h < 5) return "夜深了";
+  if (h < 11) return "早上好";
+  if (h < 13) return "中午好";
+  if (h < 18) return "下午好";
+  if (h < 22) return "晚上好";
+  return "夜深了";
+};
+
+function DashboardPage({ username, userInfo, onNavigate, notify }: { username: string; userInfo: DataRow | null; onNavigate: (key: MenuKey) => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const [data, setData] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [loading, setLoading] = useState(true);
   const today = useMemo(() => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date()), []);
+  const displayName = String(userInfo?.nickName || userInfo?.userName || username);
+  const deptName = String(userInfo?.dept?.deptName || "");
+  const primaryRole = Array.isArray(userInfo?.roles) && userInfo.roles.length ? String(userInfo.roles[0]?.roleName || "") : "";
+  const greeting = useMemo(() => greetByHour(new Date().getHours()), []);
+  const subtitle = useMemo(() => {
+    const pending = data.pending + data.waiting;
+    if (pending > 0) {
+      return pickChicken(CHICKEN_SOUP_BUSY).replace("{n}", String(pending));
+    }
+    if (data.completed > 0) {
+      return pickChicken(CHICKEN_SOUP_DONE).replace("{n}", String(data.completed));
+    }
+    return pickChicken(CHICKEN_SOUP_IDLE);
+  }, [data]);
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -576,7 +665,8 @@ function DashboardPage({ username, onNavigate, notify }: { username: string; onN
       return;
     }
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/tools/place-order#${encodeURIComponent(String(purchaser.shortId))}`);
+      const text = formatOrderLinkCopy(purchaser.name, buildOrderLink(purchaser.shortId));
+      await navigator.clipboard.writeText(text);
       notify(`${purchaser.name || "买家"}的下单链接已复制`, "success");
     } catch {
       notify("复制失败，请在买家管理中重试", "error");
@@ -594,7 +684,15 @@ function DashboardPage({ username, onNavigate, notify }: { username: string; onN
 
   return <div className="dashboard-page">
     <section className="dashboard-welcome">
-      <div><span className="eyebrow">{today}</span><h1>你好，{username}</h1><p>今天也要高效处理每一笔订单</p></div>
+      <div>
+        <span className="eyebrow">
+          {today}
+          {deptName ? ` · ${deptName}` : ""}
+          {primaryRole ? ` · ${primaryRole}` : ""}
+        </span>
+        <h1>{greeting}，{displayName}</h1>
+        <p>{subtitle}</p>
+      </div>
       <button type="button" onClick={load} aria-label="刷新工作台"><RefreshCw className={loading ? "spin" : ""} size={19} /></button>
       <span className="dashboard-orb" />
     </section>
@@ -891,7 +989,7 @@ function TrackingPage() {
   return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.name}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
-function MenuSheet({ open, active, username, onClose, onSelect, onLogout }: { open: boolean; active: MenuKey; username: string; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void }) {
+function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void }) {
   const [view, setView] = useState<"menu" | "profile">("menu");
   useEffect(() => { if (!open) setView("menu"); }, [open]);
   const renderItems = (keys: MenuKey[]) => keys.map((key) => {
@@ -899,10 +997,33 @@ function MenuSheet({ open, active, username, onClose, onSelect, onLogout }: { op
     const Icon = item.icon;
     return <button className={active === item.key ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}><span><Icon size={21} /></span><b>{item.label}</b><small>{item.description}</small></button>;
   });
-  const userButton = <button className="menu-user-button" type="button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{username.slice(0, 1).toUpperCase()}</span><small>用户</small></button>;
+  const displayName = String(userInfo?.nickName || userInfo?.userName || username);
+  const avatarChar = String(userInfo?.avatar || displayName).slice(0, 1).toUpperCase();
+  const dept = userInfo?.dept;
+  const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
+  const userButton = <button className="menu-user-button" type="button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button>;
   if (view === "profile") return <Sheet open={open} title="用户信息" onClose={onClose}><div className="profile-page">
-    <section className="profile-card"><span className="profile-avatar">{username.slice(0, 1).toUpperCase()}</span><div><small>当前登录用户</small><h3>{username}</h3><p><span />账号在线，登录状态正常</p></div></section>
-    <section className="profile-info"><div><span>登录账号</span><b>{username}</b></div><div><span>使用终端</span><b>喜八手机管理端</b></div><div><span>账号状态</span><b className="profile-status">正常</b></div></section>
+    <section className="profile-card">
+      <span className="profile-avatar">{avatarChar}</span>
+      <div>
+        <small>{dept?.deptName || "喜八移动工作台"}</small>
+        <h3>{displayName}</h3>
+        <p><span />{userInfo?.loginDate ? `上次登录 ${shortDate(userInfo.loginDate, true)}${userInfo?.loginIp ? ` · ${userInfo.loginIp}` : ""}` : "账号在线，登录状态正常"}</p>
+      </div>
+    </section>
+    {roles.length ? <section className="profile-roles">{roles.map((role) => <span key={String(role.roleId || role.roleKey)} className="profile-role-chip">{String(role.roleName || role.roleKey || "角色")}</span>)}</section> : null}
+    <section className="profile-info">
+      <div><span>登录账号</span><b>{userInfo?.userName || username}</b></div>
+      <div><span>昵称</span><b>{userInfo?.nickName || "--"}</b></div>
+      <div><span>所属部门</span><b>{dept?.deptName || "--"}</b></div>
+      <div><span>部门负责人</span><b>{dept?.leader || "--"}</b></div>
+      <div><span>手机号</span><b>{maskPhone(String(userInfo?.phonenumber || ""))}</b></div>
+      <div><span>邮箱</span><b>{maskEmail(String(userInfo?.email || ""))}</b></div>
+      <div><span>性别</span><b>{sexLabel(userInfo?.sex)}</b></div>
+      <div><span>最近登录 IP</span><b>{userInfo?.loginIp || "--"}</b></div>
+      <div><span>最近登录时间</span><b>{userInfo?.loginDate ? shortDate(userInfo.loginDate, true) : "--"}</b></div>
+      <div><span>账号状态</span><b className="profile-status">正常</b></div>
+    </section>
     <button className="profile-back" type="button" onClick={() => setView("menu")}><ArrowLeft size={18} />返回全部功能</button>
     <button className="logout-row profile-logout" type="button" onClick={onLogout}><LogOut size={18} />退出当前账号</button>
   </div></Sheet>;
@@ -919,20 +1040,29 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const [dictionaries, setDictionaries] = useState<Dictionaries>(EMPTY_DICTIONARIES);
+  const [userInfo, setUserInfo] = useState<DataRow | null>(null);
   const notify = useCallback((message: string, type: "success" | "error" | "info" = "info") => { setToast({ message, type }); window.setTimeout(() => setToast(null), 2600); }, []);
   useEffect(() => {
     let mounted = true;
     fetchDictionaries().then((result) => { if (mounted) setDictionaries(result); }).catch(() => notify("系统字典加载失败，列表将显示原始编码", "error"));
     return () => { mounted = false; };
   }, [notify]);
+  useEffect(() => {
+    let mounted = true;
+    // 拉一次 /getInfo，失败时静默降级到 username；仅在已登录后由 AdminShell 持有 token 时调用
+    apiRequest<DataRow>("/getInfo").then((result) => { if (mounted) setUserInfo((result.user as DataRow) || result); }).catch(() => { /* 接口失败时保留 username 兜底，不打扰用户 */ });
+    return () => { mounted = false; };
+  }, []);
   const configs = useMemo(() => createCrudConfigs(dictionaries), [dictionaries]);
-  return <DictionaryContext.Provider value={dictionaries}><div className="admin-shell"><aside className="desktop-sidebar"><AppLogo compact /><nav>{NAV_ITEMS.map((item) => { const Icon = item.icon; return <button className={active === item.key ? "active" : ""} key={item.key} onClick={() => setActive(item.key)}><span><Icon size={19} /></span><div><b>{item.label}</b><small>{item.description}</small></div><ChevronRight size={15} /></button>; })}</nav><a className="sidebar-public-tools" href="/tools"><Sparkles size={17} /><span><b>免登录工具箱</b><small>公开查询与运费工具</small></span><ExternalLink size={14} /></a><div className="sidebar-account"><span>{username.slice(0, 1).toUpperCase()}</span><div><b>{username}</b><small>已安全登录</small></div><button onClick={onLogout}><LogOut size={17} /></button></div></aside><div className="app-column"><main className="app-main">{active === "home" ? <DashboardPage username={username} onNavigate={setActive} notify={notify} /> : active === "orders" ? <OrdersPage notify={notify} /> : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} /> : active === "orderLink" ? <OrderLinkGenerator embedded /> : active === "purchasers" ? <PurchaserManager embedded /> : active === "tracking" ? <TrackingPage /> : <CrudModule config={configs[active as keyof typeof configs]} notify={notify} />}</main></div><nav className="bottom-nav"><button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button><button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button><button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button><button className={!['home','orders','bills'].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button></nav><MenuSheet open={menuOpen} active={active} username={username} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} /><Toast toast={toast} /></div></DictionaryContext.Provider>;
+  return <DictionaryContext.Provider value={dictionaries}><div className="admin-shell"><aside className="desktop-sidebar"><AppLogo compact /><nav>{NAV_ITEMS.map((item) => { const Icon = item.icon; return <button className={active === item.key ? "active" : ""} key={item.key} onClick={() => setActive(item.key)}><span><Icon size={19} /></span><div><b>{item.label}</b><small>{item.description}</small></div><ChevronRight size={15} /></button>; })}</nav><a className="sidebar-public-tools" href="/tools"><Sparkles size={17} /><span><b>免登录工具箱</b><small>公开查询与运费工具</small></span><ExternalLink size={14} /></a><div className="sidebar-account"><span>{String(userInfo?.avatar || userInfo?.nickName || userInfo?.userName || username).slice(0, 1).toUpperCase()}</span><div><b>{String(userInfo?.nickName || userInfo?.userName || username)}</b><small>已安全登录</small></div><button onClick={onLogout}><LogOut size={17} /></button></div></aside><div className="app-column"><main className="app-main">{active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} /> : active === "orders" ? <OrdersPage notify={notify} /> : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} /> : active === "orderLink" ? <OrderLinkGenerator embedded /> : active === "purchasers" ? <PurchaserManager embedded /> : active === "tracking" ? <TrackingPage /> : <CrudModule config={configs[active as keyof typeof configs]} notify={notify} />}</main></div><nav className="bottom-nav"><button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button><button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button><button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button><button className={!['home','orders','bills'].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button></nav><MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} /><Toast toast={toast} /></div></DictionaryContext.Provider>;
 }
 
 export default function MobileAdmin() {
   const [ready, setReady] = useState(false);
   const [token, setToken] = useState("");
   const [username, setUsername] = useState("管理员");
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
   useEffect(() => {
     const stored = getStoredToken();
     const savedName = window.localStorage.getItem("xb-mobile-username");
@@ -943,11 +1073,23 @@ export default function MobileAdmin() {
     window.addEventListener("xb-session-expired", expire);
     return () => window.removeEventListener("xb-session-expired", expire);
   }, []);
+  useEffect(() => {
+    if (!ready) return;
+    // 启动动画至少展示 ~700ms，让 logo 弹入 + 进度条跑一会儿，再淡出
+    const fadeTimer = window.setTimeout(() => setSplashFading(true), 700);
+    const hideTimer = window.setTimeout(() => setShowSplash(false), 1100);
+    return () => { window.clearTimeout(fadeTimer); window.clearTimeout(hideTimer); };
+  }, [ready]);
   async function logout() {
     try { await apiRequest("/logout", { method: "POST" }); } catch { /* local logout still proceeds */ }
     clearStoredToken(); setToken("");
   }
-  if (!ready) return <div className="app-loading"><LoaderCircle className="spin" size={28} /><span>正在启动移动工作台</span></div>;
+  if (showSplash) return <div className={`app-loading${splashFading ? " fading" : ""}`}>
+    <div className="brand-mark app-loading-mark"><span /></div>
+    <h1>xb</h1>
+    <div className="app-loading-bar"><span /></div>
+    <p>正在启动移动工作台</p>
+  </div>;
   if (!token) return <LoginScreen onLogin={(nextToken, nextUsername) => { setStoredToken(nextToken); setToken(nextToken); setUsername(nextUsername); }} />;
   return <AdminShell username={username} onLogout={logout} />;
 }

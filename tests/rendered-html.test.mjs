@@ -107,14 +107,17 @@ test("keeps the public order tracking route", async () => {
 });
 
 test("keeps purchaser naming and the short-link order workflow consistent", async () => {
-  const [creator, orderPage] = await Promise.all([
+  const [creator, format, orderPage] = await Promise.all([
     source("app/tools/order-link/OrderLinkGenerator.tsx"),
+    source("app/tools/order-link/format.ts"),
     source("app/tools/place-order/PurchaserOrderPage.tsx"),
   ]);
   assert.match(creator, /\/biz\/purchaser\/match/);
   assert.match(creator, /\/biz\/purchaser/);
-  assert.match(creator, /tools\/place-order#/);
-  assert.doesNotMatch(creator, /place-order#\$\{encodeURIComponent\(purchaser\.shortId\)\}~/);
+  assert.match(format, /tools\/order\//);
+  assert.match(format, /buildOrderLink/);
+  assert.match(format, /formatOrderLinkCopy/);
+  assert.match(format, /点击链接即可下单/);
   assert.match(creator, /storeCode/);
   assert.doesNotMatch(creator, /buyer/i);
   assert.match(orderPage, /purchaserShortId/);

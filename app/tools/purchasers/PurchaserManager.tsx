@@ -2,6 +2,7 @@
 import { CheckCircle2, Copy, Link2, LoaderCircle, Phone, Plus, RefreshCw, Search, Store, Unlink, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, getStoredToken } from "../../lib/api";
+import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
 type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; createTime?: string; updateTime?: string };
 type StoreRow = { code?: string; name?: string; text?: string; value?: string };
@@ -63,7 +64,8 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
 
   async function copyOrderLink(item: Purchaser) {
     if (!item.shortId || !item.storeId) return setError("该买家尚未绑定有效店铺，暂不能复制下单链接");
-    await navigator.clipboard.writeText(`${window.location.origin}/tools/place-order#${encodeURIComponent(item.shortId)}`);
+    const text = formatOrderLinkCopy(item.name, buildOrderLink(item.shortId));
+    await navigator.clipboard.writeText(text);
     setNotice(`已复制${item.name || "买家"}的下单链接`); window.setTimeout(() => setNotice(""), 1800);
   }
 
