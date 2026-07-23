@@ -1,0 +1,72 @@
+app/tools/order-link/format.ts
+  s_e4aa181a8c5e50::t_ce2792be9918e2 5-6,11
+  s_e4aa181a8c5e50::t_e0e94ded9ec63f 1-4,7-10,12
+app/MobileAdmin.tsx
+  s_e4aa181a8c5e50::t_53671307623ed5 128
+  s_e4aa181a8c5e50::t_dd434ae11a58ef 129-136
+  s_e4aa181a8c5e50::t_cb344b994eaad4 64
+  s_e4aa181a8c5e50::t_8065877e5fc08f 137-146
+  s_e4aa181a8c5e50::t_896b32b23f1c15 560-615,619-632,668-669,687-695,992,1000-1004,1006-1026,1043,1050-1055,1057,1064-1065,1076-1082,1087-1092
+vite.config.ts
+  s_e4aa181a8c5e50::t_fdd42033fc7c3c 10-12
+  s_e4aa181a8c5e50::t_8861098f16c572 13-15
+  s_e4aa181a8c5e50::t_b928b9a7bc5b35 16-21
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_e4aa181a8c5e50::t_f1ce39a39e9474 22
+  s_e4aa181a8c5e50::t_be02f374a2187a 136
+  s_e4aa181a8c5e50::t_0995feec43096c 137
+  s_e4aa181a8c5e50::t_e0a915f2225401 138
+  s_e4aa181a8c5e50::t_6a61e6094fd734 153
+  s_e4aa181a8c5e50::t_6d49a1a0dfb34d 167-189,191-195,225,231
+  s_e4aa181a8c5e50::t_654ed5dcad2bd9 18
+  s_e4aa181a8c5e50::t_4ef2b87b918b19 139-147
+  s_e4aa181a8c5e50::t_c6cbf16a8e2f3e 196-203
+  s_e4aa181a8c5e50::t_63eac8eea99f31 31
+  s_e4aa181a8c5e50::t_1513fe08134118 148-152,154-166
+  s_e4aa181a8c5e50::t_380845cae7948b 33
+  s_e4aa181a8c5e50::t_8f6c7df7a4b166 29-30
+  s_e4aa181a8c5e50::t_1dae5e8f71e5e7 121-134
+  s_e4aa181a8c5e50::t_e3db8473994aa2 26-28,32
+  s_e4aa181a8c5e50::t_d905f9bfaa6cc5 35-39,55-57,70,117,119-120
+  s_e4aa181a8c5e50::t_c3a0d874b28fc4 89,118
+  s_e4aa181a8c5e50::t_52c8421d501c4e 34
+  s_e4aa181a8c5e50::t_b6417b3712e724 83
+  s_e4aa181a8c5e50::t_ffc67766541798 2,13-17,19-21,23-25
+  s_e4aa181a8c5e50::t_e7d0887cced11c 135
+  s_e4aa181a8c5e50::t_20243bdfa810b6 222-224
+  s_e4aa181a8c5e50::t_96181dad19d04a 226-230
+  s_e4aa181a8c5e50::t_13565502e7ec30 232
+  s_e4aa181a8c5e50::t_a33da8c6f4cec8 219-221,242,244-245,248,252-322
+app/globals.css
+  s_e4aa181a8c5e50::t_863836206d7a41 25-26,31-43
+  s_e4aa181a8c5e50::t_d489e8e8af0365 407-409,821-822,835-836,893-954,966-967,971-974
+app/lib/api.ts
+  s_e4aa181a8c5e50::t_e6c6d03a1e8bd6 1-2
+app/tools/order-link/OrderLinkGenerator.tsx
+  s_e4aa181a8c5e50::t_f6f69d837651b2 5
+  s_e4aa181a8c5e50::t_bf38cad109b426 44,86-87,91-93
+app/App.tsx
+  s_e4aa181a8c5e50::t_c16323ec31e9f8 101-120,123-126,128
+app/tools/purchasers/PurchaserManager.tsx
+  s_e4aa181a8c5e50::t_f0dfbe4ad68dfc 5,67-68
+index.html
+  s_e4aa181a8c5e50::t_29b68477c31bf2 5
+tests/rendered-html.test.mjs
+  s_e4aa181a8c5e50::t_2f2339137201f9 110,112,117-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "8426d6ac126d388e1b07e13ff33b559d45ff18d6",
+  "prompts": {},
+  "sessions": {
+    "s_e4aa181a8c5e50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99a631df-de71-4628-a97b-ab347c3c0f89",
+        "model": "minimax-m3"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
