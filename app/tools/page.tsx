@@ -1,5 +1,6 @@
-import { ArrowRight, Calculator, PackageSearch, Scale, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calculator, PackageSearch, Scale } from "lucide-react";
 import LinkQueryCard from "./LinkQueryCard";
+import PrivacyPolicySheet from "./PrivacyPolicySheet";
 
 const orderTools = [
   { href: "/tools/order-search", title: "订单查询", desc: "手机号验证后查看订单物流", icon: PackageSearch },
@@ -34,6 +35,6 @@ export default function ToolsPage() {
         </div>
       </div>
     </section>
-    <footer className="tools-home-note"><ShieldCheck size={18} /><div><b>隐私保护</b><p>查询数据仅用于完成当前操作，不会在本机长期保存。</p></div><ArrowRight size={16} /></footer>
+    <PrivacyPolicySheet />
   </div>;
 }

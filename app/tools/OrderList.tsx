@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, Clock3, Copy, MapPin, Search, Store, Truck, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Copy, Inbox, MapPin, Search, Store, Truck, User } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export type TrackingItem = {
@@ -71,11 +71,12 @@ export default function OrderList({ orders, contact }: { orders: PublicOrderReco
   return <>
     <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div></section>
     <nav className="tool-status-tabs" aria-label="订单状态筛选"><button type="button" className={active === "ALL" ? "active" : ""} onClick={() => setActive("ALL")}>全部 {orders.length}</button>{statuses.map(([key, item]) => <button type="button" className={active === key ? "active" : ""} onClick={() => setActive(key)} key={key}>{item.label} {item.count}</button>)}</nav>
-    <section className="tool-order-results">{visible.map((order) => {
+    <section className="tool-order-results soft-list">{visible.map((order) => {
       const isOpen = expanded.has(order.id);
       const tracking = order.expInfoList || [];
-      return <article key={order.id}>
-        <header><div><small>订单编号</small><b>{order.orderCode || "--"}</b></div><span className={`tool-order-status-${statusTone(order.orderStatus)}`}>{order.orderStatusDesc || order.orderStatus || "未知"}</span></header>
+      const tone = statusTone(order.orderStatus);
+      return <article key={order.id} className="soft-card">
+        <header><div><small>订单编号</small><b>{order.orderCode || "--"}</b></div><span className={`pill tool-order-status-${tone}`}>{order.orderStatusDesc || order.orderStatus || "未知"}</span></header>
         <div className="tool-order-product"><b>{order.orderNameDesc || "未命名商品"}</b><span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span><time>{String(order.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</time></div>
         <div className="tool-order-address"><p><User size={14} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={14} />{order.address || "暂无地址"}</p></div>
         <div className="tool-order-exp"><Truck size={14} /><span><b>{order.expComDesc || "暂无快递"}</b><small>{order.expCode && order.expCode !== "无" ? order.expCode : "暂无快递单号"}</small></span></div>
@@ -86,7 +87,7 @@ export default function OrderList({ orders, contact }: { orders: PublicOrderReco
         <button type="button" className="tool-copy" onClick={() => copyOrder(order)}><Copy size={15} />复制订单</button>
       </article>;
     })}</section>
-    {!visible.length ? <div className="tool-list-empty">没有符合当前筛选条件的订单</div> : null}
+    {!visible.length ? <div className="tool-list-empty"><Inbox size={32} /><h3>没有符合当前筛选条件的订单</h3><p>试着切换状态、清除搜索词，或者刷新一下数据。</p></div> : null}
     {copied ? <div className="public-copy-toast"><CheckCircle2 size={16} />订单信息已复制</div> : null}
   </>;
 }

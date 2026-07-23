@@ -7,6 +7,6 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
       <nav><a href="/"><LogIn size={16} />登录</a></nav>
     </header>
     <main className="public-tools-main">{children}</main>
-    <footer className="public-tools-footer"><span>喜八实用工具箱</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer>
+    <footer className="public-tools-footer"><span>喜八Tools</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer>
   </div>;
 }

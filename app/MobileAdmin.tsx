@@ -4,6 +4,7 @@ import {
   Box,
   Check,
   ChevronRight,
+  ChevronDown,
   CircleCheck,
   Copy,
   Download,
@@ -701,10 +702,14 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
 
     <section className="home-glance" aria-label="今日订单概况">
       <button className="home-attention" type="button" onClick={() => onNavigate("orders")}>
-        <span><RotateCw size={19} />今日重点</span>
-        <strong>{attentionTotal}</strong>
-        <p>{attentionTotal ? "笔订单等待你处理" : "当前没有待处理订单"}</p>
-        <em>打开订单<ChevronRight size={16} /></em>
+        <div className="attention-body">
+          <span><RotateCw size={19} />今日重点</span>
+          <em>打开订单<ChevronRight size={16} /></em>
+        </div>
+        <div className={`attention-number ${attentionTotal ? "" : "zero"}`}>
+          <b>{attentionTotal}</b>
+          <small>{attentionTotal ? "待处理" : "已清空"}</small>
+        </div>
       </button>
       <div className="home-stat-strip">
         <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
@@ -1022,7 +1027,9 @@ type CrudConfig = {
   subtitle?: (row: DataRow) => string;
   searchFields: FieldConfig[];
   fields: FieldConfig[];
-  display: Array<{ key: string; label: string; money?: boolean; options?: Array<{ value: string | number; label: string }>; format?: (row: DataRow) => string }>;
+  display: Array<{ key: string; label: string; money?: boolean; fullWidth?: boolean; options?: Array<{ value: string | number; label: string }>; format?: (row: DataRow) => string }>;
+  expand?: Array<{ key: string; label: string; money?: boolean; options?: Array<{ value: string | number; label: string }>; format?: (row: DataRow) => string }>;
+  summary?: Array<{ key: string; label: string; money?: boolean; tone?: "default" | "success" | "danger"; valueFormat?: (row: DataRow) => string }>;
   note?: (row: DataRow) => string;
   extraAction?: { label: string; path: (row: DataRow) => string; method: string };
   importable?: boolean;
@@ -1035,17 +1042,26 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
     subtitle: (row) => `${row.orderNameDesc || optionLabel(row.orderName, dictionaries.products)} · ${row.orderTypeDesc || optionLabel(row.orderType, dictionaries.sizes)} · ${row.customer || "暂无收件人"}`,
     searchFields: [{ key: "orderCode", label: "订单号" }, { key: "createBy", label: "创建人" }],
     fields: [{ key: "orderCode", label: "订单号", required: true }, { key: "goodsPrice", label: "商品成本", type: "number" }, { key: "packagePrice", label: "包装费", type: "number" }, { key: "expPrice", label: "快递费", type: "number" }, { key: "addPrice", label: "附加费", type: "number" }, { key: "totalPrice", label: "总成本", type: "number", readonly: true }, { key: "salePrice", label: "销售价格", type: "number" }, { key: "gainPrice", label: "盈利", type: "number", readonly: true }, { key: "remark", label: "备注", type: "textarea" }],
-    display: [
-      { key: "orderName", label: "商品名称", options: dictionaries.products }, { key: "orderType", label: "商品规格", options: dictionaries.sizes },
-      { key: "orderNum", label: "数量" }, { key: "orderTime", label: "下单时间", format: (row) => shortDate(row.orderTime) },
-      { key: "customer", label: "收件人" }, { key: "phone", label: "手机号" },
-      { key: "goodsPrice", label: "商品成本", money: true },
-      { key: "packagePrice", label: "包装费", money: true }, { key: "expPrice", label: "快递费", money: true },
-      { key: "addPrice", label: "附加费", money: true }, { key: "totalPrice", label: "总成本", money: true },
-      { key: "salePrice", label: "售价", money: true }, { key: "gainPrice", label: "盈利", money: true },
-      { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime, true) },
+    summary: [
+      { key: "salePrice", label: "售价", money: true, tone: "default" },
+      { key: "totalPrice", label: "总成本", money: true, tone: "default" },
+      { key: "gainPrice", label: "盈利", money: true, tone: "success" },
     ],
-    note: (row) => [row.address ? `收货地址：${row.address}` : "", row.remark ? `备注：${row.remark}` : ""].filter(Boolean).join(" · "),
+    display: [
+      { key: "orderName", label: "商品名称", options: dictionaries.products },
+      { key: "orderTypeNum", label: "规格×数量", format: (row) => `${optionLabel(row.orderType, dictionaries.sizes) || row.orderTypeDesc || "--"} × ${row.orderNum || 1}` },
+      { key: "customer", label: "收件人" }, { key: "phone", label: "手机号" },
+      { key: "address", label: "收货地址", fullWidth: true, format: (row) => row.address || "暂无地址" },
+    ],
+    expand: [
+      { key: "goodsPrice", label: "商品成本", money: true },
+      { key: "packagePrice", label: "包装费", money: true },
+      { key: "expPrice", label: "快递费", money: true },
+      { key: "addPrice", label: "附加费", money: true },
+      { key: "createBy", label: "下单人" },
+      { key: "orderTime", label: "下单时间", format: (row) => shortDate(row.orderTime) },
+    ],
+    note: (row) => row.remark ? `备注：${row.remark}` : "",
     extraAction: { label: "同步价格", path: (row) => `/biz/bill/${row.id}`, method: "PATCH" },
   },
   express: {
@@ -1064,9 +1080,13 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
     fields: [{ key: "orderName", label: "商品名称", type: "select", options: dictionaries.products, required: true }, { key: "orderType", label: "商品规格", type: "select", options: dictionaries.sizes, required: true }, { key: "goodsPrice", label: "商品成本", type: "number" }, { key: "expCom", label: "快递公司", type: "select", options: dictionaries.expressCompanies }, { key: "expArea", label: "快递区域", type: "select", options: dictionaries.provinces }, { key: "expPrice", label: "快递费", type: "number" }, { key: "packagePrice", label: "包装费", type: "number" }, { key: "totalPrice", label: "总成本", type: "number", readonly: true }, { key: "salePrice", label: "销售价格", type: "number" }, { key: "isDefault", label: "是否默认", type: "select", options: dictionaries.yesNo, required: true }, { key: "startDate", label: "开始日期", type: "date", required: true }, { key: "endDate", label: "结束日期", type: "date", required: true }, { key: "remark", label: "备注", type: "textarea" }],
     display: [
       { key: "expCom", label: "快递公司", options: dictionaries.expressCompanies }, { key: "expArea", label: "快递区域", options: dictionaries.provinces },
-      { key: "goodsPrice", label: "商品成本", money: true }, { key: "expPrice", label: "快递费", money: true },
-      { key: "packagePrice", label: "包装费", money: true }, { key: "totalPrice", label: "总成本", money: true },
-      { key: "salePrice", label: "销售价格", money: true }, { key: "validity", label: "有效期", format: (row) => `${shortDate(row.startDate)} 至 ${shortDate(row.endDate)}` },
+      { key: "totalPrice", label: "总成本", money: true }, { key: "salePrice", label: "销售价格", money: true },
+      { key: "validity", label: "有效期", format: (row) => `${shortDate(row.startDate)} 至 ${shortDate(row.endDate)}` },
+    ],
+    expand: [
+      { key: "goodsPrice", label: "商品成本", money: true },
+      { key: "packagePrice", label: "包装费", money: true },
+      { key: "expPrice", label: "快递费", money: true },
     ],
     note: (row) => [row.remark, row.updateBy ? `修改人：${row.updateBy}` : "", row.updateTime ? `修改时间：${shortDate(row.updateTime, true)}` : ""].filter(Boolean).join(" · "),
     importable: true,
@@ -1091,17 +1111,39 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
+  const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => { setLoading(true); try { const result = await apiRequest<DataRow>(`${config.api}/list`, { query }); setRows(Array.isArray(result.rows) ? result.rows : []); setTotal(Number(result.total || 0)); } catch (error) { notify(error instanceof Error ? error.message : `${config.itemName}加载失败`, "error"); } finally { setLoading(false); } }, [config, notify, query]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setExpanded(new Set()); }, [config.key]);
   async function edit(row: DataRow) { try { const result = await apiRequest<DataRow>(`${config.api}/${row.id}`); setEditor(result.data || row); } catch (error) { notify(error instanceof Error ? error.message : "数据加载失败", "error"); } }
   async function extra(row: DataRow) { if (!config.extraAction) return; try { await apiRequest(config.extraAction.path(row), { method: config.extraAction.method }); notify(`${config.extraAction.label}成功`, "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }
+  function toggleExpand(id: string | number) {
+    setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  }
   function displayValue(row: DataRow, item: CrudConfig["display"][number]) {
     if (item.format) return item.format(row);
     const value = row[item.key];
     if (value === null || value === undefined || value === "") return "--";
     if (item.money) return `¥${Number(value).toFixed(2)}`;
     return optionLabel(value, item.options);
+  }
+  function summaryValue(row: DataRow, item: NonNullable<CrudConfig["summary"]>[number]) {
+    if (item.valueFormat) return item.valueFormat(row);
+    const value = row[item.key];
+    if (value === null || value === undefined || value === "") return item.money ? "¥0.00" : "--";
+    if (item.money) {
+      const num = Number(value);
+      const sign = num < 0 ? "-" : "";
+      return `${sign}¥${Math.abs(num).toFixed(2)}`;
+    }
+    return String(value);
+  }
+  function summaryTone(row: DataRow, item: NonNullable<CrudConfig["summary"]>[number]): "default" | "success" | "danger" {
+    if (item.tone !== "success") return item.tone || "default";
+    const num = Number(row[item.key]);
+    if (Number.isFinite(num)) return num < 0 ? "danger" : "success";
+    return "success";
   }
   return (
     <div className="module-page">
@@ -1115,9 +1157,16 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
       <div className="mobile-card-list">
         {!rows.length ? <EmptyState loading={loading} label={config.itemName} /> : rows.map((row) => {
           const note = config.note?.(row) || "";
+          const summary = config.summary;
+          const expand = config.expand;
+          const isOpen = expanded.has(row.id as string | number);
+          const hasExpand = !!expand?.length;
           return <article className={`data-card data-card-${config.key}`} key={String(row.id)}>
             <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
-            <div className="data-metrics">{config.display.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
+            {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
+            <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
+            {hasExpand && isOpen ? <div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div> : null}
+            {hasExpand ? <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpand(row.id as string | number)} aria-expanded={isOpen}><span>{isOpen ? "收起明细" : "查看更多"}</span><ChevronDown size={15} /></button> : null}
             {note ? <p className="data-note">{note}</p> : null}
             <div className="card-actions" style={{ gridTemplateColumns: `repeat(${config.extraAction ? 3 : 2}, 1fr)` }}><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
           </article>;

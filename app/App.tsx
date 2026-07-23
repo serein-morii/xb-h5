@@ -35,13 +35,13 @@ const routes: Record<string, RouteConfig> = {
     content: <ToolsPage />,
   },
   "/tools/order-search": {
-    title: "订单查询｜喜八工具箱",
+    title: "订单查询｜喜八Tools",
     description: "通过手机号和验证码免登录查询订单。",
     tools: true,
     content: <OrderSearch />,
   },
   "/tools/order": {
-    title: "链接订单详情｜喜八工具箱",
+    title: "链接订单详情｜喜八Tools",
     description: "通过加密订单链接查看订单状态与物流进度。",
     tools: true,
     content: <PublicOrder embedded />,
@@ -65,13 +65,13 @@ const routes: Record<string, RouteConfig> = {
     content: <PurchaserManager />,
   },
   "/tools/freight-calculator": {
-    title: "运费计算｜喜八工具箱",
+    title: "运费计算｜喜八Tools",
     description: "批量计算常用快递公司的寄递费用。",
     tools: true,
     content: <FreightCalculator />,
   },
   "/tools/freight-compare": {
-    title: "运费对比｜喜八工具箱",
+    title: "运费对比｜喜八Tools",
     description: "对比不同快递公司的计价结果。",
     tools: true,
     content: <FreightCompare />,
@@ -112,7 +112,7 @@ export default function App() {
     isToolsRoute = !!route.tools;
   } else if (orderShortIdMatch) {
     content = <PurchaserOrderPage />;
-    title = "专属下单｜喜八工具箱";
+    title = "专属下单｜喜八Tools";
     description = "通过下单人专属短链接下单并免登录查询历史订单。";
     isToolsRoute = true;
   } else {

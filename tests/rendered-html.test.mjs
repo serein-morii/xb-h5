@@ -26,13 +26,13 @@ test("keeps every public route in the client-side route table", async () => {
     ["/", "喜八移动订单管理"],
     ["/order", "订单查询｜喜八"],
     ["/tools", "公开工具｜喜八"],
-    ["/tools/order-search", "订单查询｜喜八工具箱"],
-    ["/tools/order", "链接订单详情｜喜八工具箱"],
+    ["/tools/order-search", "订单查询｜喜八Tools"],
+    ["/tools/order", "链接订单详情｜喜八Tools"],
     ["/tools/order-link", "生成链接｜喜八"],
     ["/tools/place-order", "专属下单｜喜八"],
     ["/tools/purchasers", "买家管理｜喜八"],
-    ["/tools/freight-calculator", "运费计算｜喜八工具箱"],
-    ["/tools/freight-compare", "运费对比｜喜八工具箱"],
+    ["/tools/freight-calculator", "运费计算｜喜八Tools"],
+    ["/tools/freight-compare", "运费对比｜喜八Tools"],
   ];
 
   for (const [pathname, title] of routes) {
