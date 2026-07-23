@@ -1,0 +1,21 @@
+app/globals.css
+  s_e4aa181a8c5e50::t_8a9c76c7b06144 1231,1245-1246
+app/tools/batch-order/BatchOrderEntry.tsx
+  s_e4aa181a8c5e50::t_b2527ebe95d22e 94,135,137,139-146,149-151,202-204,210,212-216,218-227,330-339,341-349,371,386,436
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b599f92d0fd6975a91b850faee0e34625e15f8e9",
+  "prompts": {},
+  "sessions": {
+    "s_e4aa181a8c5e50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99a631df-de71-4628-a97b-ab347c3c0f89",
+        "model": "unknown"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
