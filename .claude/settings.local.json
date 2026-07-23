@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(mvn -q compile -DskipTests)",
+      "Bash(git:*)"
+    ]
+  }
+}

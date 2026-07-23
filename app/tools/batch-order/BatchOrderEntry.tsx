@@ -8,7 +8,7 @@ type ItemResult = { rowIndex: number; status: "success" | "duplicate" | "failed"
 type BatchResponse = { totalCount: number; successCount: number; duplicateCount: number; failedCount: number; results: ItemResult[] };
 type PreviewSummary = { total: number; exists: number; newCount: number; invalid: number; duplicate: number };
 type PreviewPurchaser = { id: number; shortId: string; name: string; phone: string; storeName: string };
-type PreviewItem = { rowIndex: number; customerName: string; phone: string; orderItem: string; orderTime: string; quantity: number; buyerStatus: "exists" | "new" | "invalid" | "duplicate"; existingPurchaser?: PreviewPurchaser; message: string };
+type PreviewItem = { rowIndex: number; customerName: string; phone: string; orderItem: string; orderTime: string; quantity: number; payerNickname?: string; buyerStatus: "exists" | "new" | "invalid" | "duplicate"; existingPurchaser?: PreviewPurchaser; message: string };
 type PreviewResponse = { summary: PreviewSummary; items: PreviewItem[] };
 // 用户对每行的决定：create / use / skip
 type Decision = "create" | "use" | "skip";
@@ -75,6 +75,8 @@ export default function BatchOrderEntry() {
   const [purchaserLoading, setPurchaserLoading] = useState(false);
   // 每行的搜索关键词
   const [pickQuery, setPickQuery] = useState<Record<number, string>>({});
+  // 「新建」买家时可编辑的名称（默认 = 付款方昵称）
+  const [purchaserNameEdit, setPurchaserNameEdit] = useState<Record<number, string>>({});
   const [results, setResults] = useState<BatchResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -91,15 +93,15 @@ export default function BatchOrderEntry() {
   }, []);
 
   function parseText(text: string) {
-    setError(""); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({});
+    setError(""); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({});
     const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) { setError("内容为空"); return; }
-    const headerIdx = lines.findIndex((l) => l.includes("收款时间") && l.includes("姓名") && l.includes("电话"));
-    if (headerIdx < 0) { setError("找不到表头行（应包含「收款时间」「姓名」「电话」）"); return; }
+    const headerIdx = lines.findIndex((l) => l.includes("收款时间") && l.includes("付款方昵称") && l.includes("姓名") && l.includes("电话"));
+    if (headerIdx < 0) { setError("找不到表头行（应包含「收款时间」「付款方昵称」「姓名」「电话」）"); return; }
     const headers = parseRow(lines[headerIdx]);
     const colIdx: Record<string, number> = {};
     headers.forEach((h, i) => { const field = HEADER_MAP[h.trim()]; if (field) colIdx[field] = i; });
-    if (colIdx.orderTime === undefined || colIdx.customerName === undefined) { setError("表头缺少必要列（收款时间 / 姓名）"); return; }
+    if (colIdx.orderTime === undefined || colIdx.payerNickname === undefined || colIdx.customerName === undefined) { setError("表头缺少必要列（收款时间 / 付款方昵称 / 姓名）"); return; }
     const parsed: Row[] = [];
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const cells = parseRow(lines[i]);
@@ -112,11 +114,18 @@ export default function BatchOrderEntry() {
         if (field === "quantity") val = Number(val) || 1;
         item[field] = val;
       });
-      if (!item.customerName || !item.phone) continue;
+      // 付款方昵称是买家（=付款人），姓名+电话是收件人，两组都必须有
+      if (!item.payerNickname || !item.customerName || !item.phone) continue;
+      // 把付款方昵称同步成 purchaserName，方便后端按「买家=付款人」匹配/新建买家档案
+      item.purchaserName = item.payerNickname;
       parsed.push(item);
     }
     setItems(parsed);
-    if (parsed.length === 0) { setError("解析后没有有效行（缺姓名/电话）"); return; }
+    // 「新建」时买家名称默认取付款方昵称，用户可在卡片里改成真实姓名后再提交
+    const initNames: Record<number, string> = {};
+    parsed.forEach((it, i) => { initNames[i] = String(it.purchaserName || ""); });
+    setPurchaserNameEdit(initNames);
+    if (parsed.length === 0) { setError("解析后没有有效行（缺付款方昵称/姓名/电话）"); return; }
     // 解析成功后自动调 preview
     runPreview(parsed);
   }
@@ -249,6 +258,9 @@ export default function BatchOrderEntry() {
     // 校验：决定为 use 的行必须已选买家
     const missingBuyer = pending.filter((it) => decisions[it.rowIndex] === "use" && !selectedPurchaser[it.rowIndex]);
     if (missingBuyer.length > 0) return setError(`第 ${missingBuyer[0].rowIndex + 1} 行选了「用已有」但未选择买家`);
+    // 校验：决定为 create 的行必须填写买家名称（默认 = 付款方昵称，可改）
+    const missingName = pending.filter((it) => decisions[it.rowIndex] === "create" && !(purchaserNameEdit[it.rowIndex] || "").trim());
+    if (missingName.length > 0) return setError(`第 ${missingName[0].rowIndex + 1} 行选了「新建」但买家名称为空`);
     setConfirmOpen(true);
   }
 
@@ -256,11 +268,18 @@ export default function BatchOrderEntry() {
     setConfirmOpen(false);
     setBusy(true); setError(""); setResults(null);
     try {
-      // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId）
+      // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId + purchaserName）
       const payloadItems = items.map((it, idx) => {
         const dec = decisions[idx] || "skip";
         const action = dec === "use" ? "use_existing" : dec === "create" ? "create_new" : "skip";
-        return { ...it, buyerAction: action, existingPurchaserId: dec === "use" ? selectedPurchaser[idx] : undefined };
+        // 「新建」时把用户可能改过的 purchaserName 发给后端；其他行保留原 purchaserName 供后端按付款人匹配
+        const edited = dec === "create" ? (purchaserNameEdit[idx] || "").trim() : "";
+        return {
+          ...it,
+          buyerAction: action,
+          existingPurchaserId: dec === "use" ? selectedPurchaser[idx] : undefined,
+          purchaserName: dec === "create" ? edited : it.purchaserName,
+        };
       });
       const result = await apiRequest<{ data?: BatchResponse }>("/biz/batch-order/submit", {
         method: "POST",
@@ -316,7 +335,7 @@ export default function BatchOrderEntry() {
             rows={8}
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
-            placeholder={"示例（粘贴到这里）：\n收款时间\t收款项\t数量\t地址\t姓名\t电话\t付款备注\n2024-01-15 10:30\t苹果\t1\t上海市青浦区\t张三\t13800000000\t送货前联系"}
+            placeholder={"示例（粘贴到这里）：\n收款时间\t收款项\t数量\t地址\t姓名\t电话\t付款方昵称\t付款备注\n2024-01-15 10:30\t苹果\t1\t上海市青浦区\t张三\t13800000000\t王老板_果园\t送货前联系"}
           />
         </section>
 
@@ -360,6 +379,7 @@ export default function BatchOrderEntry() {
                       {Number(it.quantity) > 1 ? <span className="batch-order-card-split">×{it.quantity}</span> : null}
                     </div>
                     <div className="batch-order-card-meta">
+                      <div><span className="batch-order-card-meta-label">买家(付款人)</span><span className="batch-order-card-meta-value">{String(it.payerNickname || "--")}</span></div>
                       <div><span className="batch-order-card-meta-label">收件人</span><span className="batch-order-card-meta-value">{String(it.customerName || "--")}</span></div>
                       <div><span className="batch-order-card-meta-label">电话</span><span className="batch-order-card-meta-value">{String(it.phone || "--")}</span></div>
                     </div>
@@ -390,6 +410,17 @@ export default function BatchOrderEntry() {
                           ))}
                           {filteredPurchasers.length > 30 ? <p className="batch-order-pick-more">还有 {filteredPurchasers.length - 30} 个，请用搜索缩小范围</p> : null}
                         </div>
+                      </div>
+                    ) : null}
+                    {dec === "create" ? (
+                      <div className="batch-order-pick">
+                        <div className="batch-order-pick-selected">将新建买家（付款人 {it.payerNickname}），可改成真实姓名：</div>
+                        <input
+                          className="batch-order-pick-search"
+                          value={purchaserNameEdit[it.rowIndex] || ""}
+                          onChange={(e) => setPurchaserNameEdit((c) => ({ ...c, [it.rowIndex]: e.target.value }))}
+                          placeholder="买家名称（默认付款方昵称）"
+                        />
                       </div>
                     ) : null}
                     {!pickOpen[it.rowIndex] && dec === "use" && selectedP ? (
@@ -433,7 +464,7 @@ export default function BatchOrderEntry() {
         ) : null}
 
         <div className="form-footer">
-          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setError(""); }}><X size={15} />清空</button>
+          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({}); setError(""); }}><X size={15} />清空</button>
           <button type="submit" className="button button-primary" disabled={busy || pendingCount === 0}>{busy ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}{busy ? "录入中" : `开始录入 ${pendingCount ? `(${pendingCount})` : ""}`}</button>
         </div>
       </form>
