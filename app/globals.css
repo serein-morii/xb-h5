@@ -1611,6 +1611,8 @@ select:focus-visible {
 .batch-order-card-product { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #1a2e26; }
 .batch-order-card-emoji { font-size: 18px; line-height: 1; }
 .batch-order-card-label { min-width: 0; flex: 1; word-break: break-word; }
+.batch-order-card-auto { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 6px; }
+.batch-order-auto-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; color: #1a9a68; background: #e8f7ef; font-size: 10px; font-weight: 700; letter-spacing: .1px; }
 .batch-order-card-meta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; font-size: 11px; line-height: 1.55; }
 .batch-order-card-meta > div { display: flex; gap: 4px; align-items: baseline; }
 .batch-order-card-meta-label { color: #8b9891; }
@@ -7850,6 +7852,7 @@ select:focus-visible {
   .batch-order-card-failed { background: rgba(255, 107, 107, .06) !important; }
   .batch-order-card-new { background: rgba(44, 171, 113, .06) !important; }
   .batch-order-card-existing { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+  .batch-order-auto-tag { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
   .batch-order-decision { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
   .batch-order-card-arrow { color: var(--ios-secondary-label) !important; }
   .batch-order-pick { background: var(--ios-secondary-fill) !important; }

@@ -29,6 +29,17 @@ const PRODUCT_EMOJI: Record<string, string> = {
 };
 const emojiFor = (label: string) => PRODUCT_EMOJI[label] || "📦";
 
+// 从「收款项」文本里自动解析商品名（炎陵黄桃 / 炎陵奈李）和规格（五斤/10斤 等）
+function parseProductFromItem(orderItem: unknown): { orderName?: string; orderType?: string } {
+  const str = String(orderItem || "");
+  const result: { orderName?: string; orderType?: string } = {};
+  if (/炎陵黄桃/.test(str)) result.orderName = "炎陵黄桃";
+  else if (/炎陵奈李/.test(str)) result.orderName = "炎陵奈李";
+  const sizeMatch = str.match(/[五5]斤|十斤|10斤/);
+  if (sizeMatch) result.orderType = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
+  return result;
+}
+
 // Excel 列名 -> 后端字段映射
 const HEADER_MAP: Record<string, string> = {
   "收款时间": "orderTime", "收款总金额": "totalAmount", "付款方昵称": "payerNickname",
@@ -120,13 +131,7 @@ export default function BatchOrderEntry() {
       item.purchaserName = item.payerNickname;
 
       // 自动解析商品名和规格：收款项含炎陵黄桃/奈李则商品名取此值，含5斤/10斤等字样则规格取对应值
-      const orderItemStr = String(item.orderItem || "");
-      if (/炎陵黄桃/.test(orderItemStr)) item.orderName = "炎陵黄桃";
-      else if (/炎陵奈李/.test(orderItemStr)) item.orderName = "炎陵奈李";
-      const sizeMatch = orderItemStr.match(/[五5]斤|十斤|10斤/);
-      if (sizeMatch) {
-        item.orderType = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
-      }
+      Object.assign(item, parseProductFromItem(item.orderItem));
 
       parsed.push(item);
     }
@@ -390,6 +395,12 @@ export default function BatchOrderEntry() {
                       <span className="batch-order-card-label">{String(it.orderItem || "--")}</span>
                       {Number(it.quantity) > 1 ? <span className="batch-order-card-split">×{it.quantity}</span> : null}
                     </div>
+                    {(items[it.rowIndex]?.orderName || items[it.rowIndex]?.orderType) ? (
+                      <div className="batch-order-card-auto">
+                        {items[it.rowIndex]?.orderName ? <span className="batch-order-auto-tag">商品 · {String(items[it.rowIndex].orderName)}</span> : null}
+                        {items[it.rowIndex]?.orderType ? <span className="batch-order-auto-tag">规格 · {String(items[it.rowIndex].orderType)}</span> : null}
+                      </div>
+                    ) : null}
                     <div className="batch-order-card-meta">
                       <div><span className="batch-order-card-meta-label">买家(付款人)</span><span className="batch-order-card-meta-value">{String(it.payerNickname || "--")}</span></div>
                       <div><span className="batch-order-card-meta-label">收件人</span><span className="batch-order-card-meta-value">{String(it.customerName || "--")}</span></div>
@@ -426,7 +437,9 @@ export default function BatchOrderEntry() {
                     ) : null}
                     {dec === "create" ? (
                       <div className="batch-order-pick">
-                        <div className="batch-order-pick-selected">将新建买家（付款人 {it.payerNickname}），可改成真实姓名：</div>
+                        <div className="batch-order-pick-selected">
+                          <span>将新建买家（付款人 {it.payerNickname}），并自动绑定到「{stores.find((s) => String(s.code) === storeCode)?.name || storeCode || "未选择店铺"}」，可改成真实姓名：</span>
+                        </div>
                         <input
                           className="batch-order-pick-search"
                           value={purchaserNameEdit[it.rowIndex] || ""}
