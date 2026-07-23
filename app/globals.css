@@ -1228,7 +1228,7 @@ select:focus-visible {
 .batch-order-card-new { border-left: 3px solid #56b586; background: #f4fbf7; }
 .batch-order-card-existing { margin: 6px 0; padding: 8px 10px; border-radius: 8px; color: #14794e; background: #e8f7ef; font-size: 10px; line-height: 1.55; }
 .batch-order-card-decisions { display: flex; gap: 6px; margin-top: 10px; }
-.batch-order-decision { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 32px; padding: 0 8px; border: 1px solid #dce9e2; border-radius: 10px; color: #506c5e; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all .12s; }
+.batch-order-decision { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 36px; padding: 0 8px; border: 1px solid #dce9e2; border-radius: 10px; color: #506c5e; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: all .12s; }
 .batch-order-decision.active { color: #fff; background: linear-gradient(135deg, #14794e, #1da369); border-color: transparent; box-shadow: 0 4px 10px rgba(20,132,84,.18); }
 .batch-order-decision-skip.active { background: linear-gradient(135deg, #8a9891, #6b7d73); box-shadow: 0 4px 10px rgba(107, 125, 115, .22); }
 .batch-order-card-detail-btn { display: grid; place-items: center; width: 24px; height: 24px; margin-left: auto; padding: 0; border: 0; border-radius: 7px; color: #98a59e; background: transparent; cursor: pointer; flex: none; }
@@ -1242,8 +1242,8 @@ select:focus-visible {
 .batch-order-pick-selected button { padding: 3px 9px; border: 0; border-radius: 7px; color: #14794e; background: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
 .batch-order-pick-search { width: 100%; height: 36px; margin-bottom: 8px; padding: 0 12px; border: 1px solid #dce8e1; border-radius: 10px; color: #1a2e26; background: #fff; font-size: 12px; }
 .batch-order-pick-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
-.batch-order-pick-item { display: flex; flex-direction: column; gap: 1px; width: 100%; padding: 8px 10px; border: 1px solid transparent; border-radius: 9px; color: #1a2e26; background: #fff; text-align: left; cursor: pointer; transition: all .12s; }
-.batch-order-pick-item:active { transform: scale(0.99); }
+.batch-order-pick-item { display: flex; flex-direction: column; gap: 1px; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 9px; color: #1a2e26; background: #fff; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background .12s, border-color .12s; }
+.batch-order-pick-item:active { background: #eaf8f1; }
 .batch-order-pick-item.active { border-color: #2cab71; background: #eaf8f1; }
 .batch-order-pick-item-name { font-size: 12px; font-weight: 700; }
 .batch-order-pick-item-meta { font-size: 10px; color: #6b7d73; }

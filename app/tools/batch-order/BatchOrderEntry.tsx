@@ -91,7 +91,7 @@ export default function BatchOrderEntry() {
   }, []);
 
   function parseText(text: string) {
-    setError(""); setResults(null); setPreview(null); setDecisions({});
+    setError(""); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({});
     const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) { setError("内容为空"); return; }
     const headerIdx = lines.findIndex((l) => l.includes("收款时间") && l.includes("姓名") && l.includes("电话"));
@@ -132,13 +132,23 @@ export default function BatchOrderEntry() {
       const data = res.data || { summary: { total: 0, exists: 0, newCount: 0, invalid: 0, duplicate: 0 }, items: [] };
       setPreview(data);
       // 默认决定：exists -> use，new -> create，invalid/duplicate -> skip
+      // exists 行同时预填系统匹配到的买家，避免点提交时报「未选择买家」
       const init: Record<number, Decision> = {};
+      const initBuyer: Record<number, number | undefined> = {};
       data.items.forEach((it) => {
-        if (it.buyerStatus === "exists") init[it.rowIndex] = "use";
-        else if (it.buyerStatus === "new") init[it.rowIndex] = "create";
-        else init[it.rowIndex] = "skip";
+        if (it.buyerStatus === "exists") {
+          init[it.rowIndex] = "use";
+          if (it.existingPurchaser?.id != null) initBuyer[it.rowIndex] = Number(it.existingPurchaser.id);
+        } else if (it.buyerStatus === "new") {
+          init[it.rowIndex] = "create";
+        } else {
+          init[it.rowIndex] = "skip";
+        }
       });
       setDecisions(init);
+      setSelectedPurchaser(initBuyer);
+      setPickOpen({});
+      setPickQuery({});
     } catch (e) {
       setError(e instanceof Error ? e.message : "预览失败");
     } finally {
@@ -189,17 +199,32 @@ export default function BatchOrderEntry() {
       })) : [];
       setPurchasers(list);
       return list;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "买家列表加载失败");
+      return [];
     } finally {
       setPurchaserLoading(false);
     }
   }
 
+  /** 点「用已有」：切到 use、展开选择面板、懒加载买家列表。再点一次收起。 */
   async function togglePick(rowIndex: number, currentDecision: Decision) {
-    // 点"用已有"按钮：展开买家选择面板
-    if (currentDecision === "use") {
-      setPickOpen((c) => ({ ...c, [rowIndex]: !c[rowIndex] }));
-      if (!purchasers) await loadPurchasers();
+    const alreadyUse = currentDecision === "use";
+    const isOpen = !!pickOpen[rowIndex];
+    if (alreadyUse && isOpen) {
+      setPickOpen((c) => ({ ...c, [rowIndex]: false }));
+      return;
     }
+    setDecisions((c) => ({ ...c, [rowIndex]: "use" }));
+    setPickOpen((c) => ({ ...c, [rowIndex]: true }));
+    // 系统已匹配买家时预填，方便直接确认或改选
+    setSelectedPurchaser((c) => {
+      if (c[rowIndex] != null) return c;
+      const matched = preview?.items.find((it) => it.rowIndex === rowIndex)?.existingPurchaser;
+      if (matched?.id == null) return c;
+      return { ...c, [rowIndex]: Number(matched.id) };
+    });
+    if (!purchasers) await loadPurchasers();
   }
 
   function choosePurchaser(rowIndex: number, p: PurchaserOption) {
@@ -302,11 +327,26 @@ export default function BatchOrderEntry() {
               {preview.items.map((it) => {
                 const dec = decisions[it.rowIndex] || "skip";
                 const canUseExisting = it.buyerStatus === "exists" || it.buyerStatus === "new" || it.buyerStatus === "duplicate";
-                const selectedP = purchasers?.find((p) => p.id === selectedPurchaser[it.rowIndex]);
+                const selectedId = selectedPurchaser[it.rowIndex];
+                // 已选买家：优先全量列表，fallback 到系统匹配，避免列表未加载时显示空白
+                const selectedP =
+                  (selectedId != null ? purchasers?.find((p) => p.id === selectedId) : undefined)
+                  || (selectedId != null && it.existingPurchaser && Number(it.existingPurchaser.id) === selectedId
+                    ? { id: Number(it.existingPurchaser.id), name: it.existingPurchaser.name, phone: it.existingPurchaser.phone, shortId: it.existingPurchaser.shortId, storeName: it.existingPurchaser.storeName }
+                    : undefined)
+                  || (dec === "use" && selectedId == null && it.existingPurchaser
+                    ? { id: Number(it.existingPurchaser.id), name: it.existingPurchaser.name, phone: it.existingPurchaser.phone, shortId: it.existingPurchaser.shortId, storeName: it.existingPurchaser.storeName }
+                    : undefined);
                 const query = (pickQuery[it.rowIndex] || "").trim().toLowerCase();
-                const filteredPurchasers = purchasers?.filter((p) =>
-                  !query || p.name.toLowerCase().includes(query) || p.phone.includes(query) || p.shortId.toLowerCase().includes(query)
-                ) ?? [];
+                const filteredPurchasers = (() => {
+                  const base = purchasers?.filter((p) =>
+                    !query || p.name.toLowerCase().includes(query) || p.phone.includes(query) || p.shortId.toLowerCase().includes(query)
+                  ) ?? [];
+                  // 系统匹配到的买家置顶，减少滚动查找
+                  if (!it.existingPurchaser) return base;
+                  const matchedId = Number(it.existingPurchaser.id);
+                  return [...base].sort((a, b) => Number(b.id === matchedId) - Number(a.id === matchedId));
+                })();
                 return (
                   <article key={it.rowIndex} className={`batch-order-card batch-order-card-${STATUS_TONE[it.buyerStatus]}`}>
                     <div className="batch-order-card-top">
@@ -328,7 +368,7 @@ export default function BatchOrderEntry() {
                     ) : null}
                     <div className="batch-order-card-decisions">
                       {canUseExisting ? (
-                        <button type="button" className={`batch-order-decision ${dec === "use" ? "active" : ""}`} onClick={() => togglePick(it.rowIndex, dec)}><UserCheck size={14} />用已有</button>
+                        <button type="button" className={`batch-order-decision ${dec === "use" ? "active" : ""}`} onClick={() => { void togglePick(it.rowIndex, dec); }}><UserCheck size={14} />用已有</button>
                       ) : null}
                       <button type="button" className={`batch-order-decision ${dec === "create" ? "active" : ""}`} onClick={() => setDecision(it.rowIndex, "create")}><UserPlus size={14} />新建</button>
                       <button type="button" className={`batch-order-decision batch-order-decision-skip ${dec === "skip" ? "active" : ""}`} onClick={() => setDecision(it.rowIndex, "skip")}>跳过</button>
@@ -343,7 +383,7 @@ export default function BatchOrderEntry() {
                         {!purchaserLoading && filteredPurchasers.length === 0 ? <p className="batch-order-empty">没有匹配的买家</p> : null}
                         <div className="batch-order-pick-list">
                           {filteredPurchasers.slice(0, 30).map((p) => (
-                            <button type="button" key={p.id} className={`batch-order-pick-item ${selectedPurchaser[it.rowIndex] === p.id ? "active" : ""}`} onClick={() => choosePurchaser(it.rowIndex, p)}>
+                            <button type="button" key={p.id} className={`batch-order-pick-item ${selectedId === p.id ? "active" : ""}`} onClick={() => choosePurchaser(it.rowIndex, p)}>
                               <span className="batch-order-pick-item-name">{p.name}</span>
                               <span className="batch-order-pick-item-meta">{p.phone} · ID {p.shortId}{p.storeName ? ` · ${p.storeName}` : ""}</span>
                             </button>
@@ -393,7 +433,7 @@ export default function BatchOrderEntry() {
         ) : null}
 
         <div className="form-footer">
-          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setError(""); }}><X size={15} />清空</button>
+          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setError(""); }}><X size={15} />清空</button>
           <button type="submit" className="button button-primary" disabled={busy || pendingCount === 0}>{busy ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}{busy ? "录入中" : `开始录入 ${pendingCount ? `(${pendingCount})` : ""}`}</button>
         </div>
       </form>
