@@ -184,6 +184,30 @@ function Toast({ toast }: { toast: ToastState }) {
   );
 }
 
+/* 数字滚动 hook：从 from 平滑过渡到 to，时长 duration ms */
+function useCountUp(to: number, duration = 600): number {
+  const [value, setValue] = useState(to);
+  const previous = useRef(to);
+  useEffect(() => {
+    const from = previous.current;
+    if (from === to) return;
+    const startedAt = performance.now();
+    let frame = 0;
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (now: number) => {
+      const elapsed = now - startedAt;
+      const progress = Math.min(1, elapsed / duration);
+      const current = from + (to - from) * easeOutCubic(progress);
+      setValue(Math.round(current));
+      if (progress < 1) frame = requestAnimationFrame(step);
+      else previous.current = to;
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [to, duration]);
+  return value;
+}
+
 function Sheet({
   open,
   title,
@@ -336,7 +360,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) =
           <label><span>密码</span><div className="input-shell"><LockKeyhole size={18} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label>
           {captchaOn ? <label><span>验证码</span><div className="captcha-login"><div className="input-shell"><ShieldCheck size={18} /><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="请输入" /></div><button type="button" onClick={loadCaptcha} aria-label="刷新验证码">{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button></div></label> : null}
           <label className="remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>记住账号</span></label>
-          {message ? <p className="form-error">{message}</p> : null}
+          {message ? <p className="tool-error login-alert"><ShieldCheck size={14} />{message}</p> : null}
           <button className="login-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={19} /> : <ShieldCheck size={19} />}{loading ? "正在登录" : "安全登录"}</button>
         </form>
         <p className="login-footnote"><span /> 账号密码将通过 RSA 加密传输</p>
@@ -686,6 +710,7 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
   ];
 
   const attentionTotal = data.pending + data.waiting;
+  const animatedAttention = useCountUp(attentionTotal, 700);
 
   return <div className="home-space">
     <header className="home-intro">
@@ -707,7 +732,7 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
           <em>打开订单<ChevronRight size={16} /></em>
         </div>
         <div className={`attention-number ${attentionTotal ? "" : "zero"}`}>
-          <b>{attentionTotal}</b>
+          <b>{animatedAttention}</b>
           <small>{attentionTotal ? "待处理" : "已清空"}</small>
         </div>
       </button>
@@ -1012,9 +1037,60 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
   );
 }
 
+function statusTone(code?: string): "default" | "success" | "info" | "warning" | "danger" {
+  if (code === "YWC") return "success";
+  if (/YFH|YSJ|YSZ|YSD/.test(code || "")) return "info";
+  if (/YC|YQX/.test(code || "")) return "danger";
+  return "warning";
+}
+
 function OrderDetail({ row, onCopy }: { row: DataRow; onCopy: () => void }) {
-  const details = [["订单状态", row.orderStatusDesc || row.orderStatus],["下单人", row.purchaser],["下单时间", row.orderTime],["商品", `${row.orderNameDesc || ""} ${row.orderTypeDesc || ""} × ${row.orderNum || 1}`],["收件人", row.customer],["手机号", row.phone],["收货地址", row.address],["快递公司", row.expComDesc || row.expCom],["快递单号", row.expCode],["备注", row.orderDesc],["店铺", row.store]];
-  return <div className="detail-view"><div className="detail-code"><div><small>订单编号</small><b>{row.orderCode}</b></div><button className="icon-button" onClick={onCopy}><Copy size={18} /></button></div><div className="detail-grid">{details.map(([label,value]) => <div key={String(label)}><span>{label}</span><b>{value || "--"}</b></div>)}</div><div className="timeline-title"><Truck size={18} /><h3>物流轨迹</h3></div><div className="timeline">{Array.isArray(row.expInfoList) && row.expInfoList.length ? row.expInfoList.map((item: DataRow, index: number) => <div className={index === 0 ? "active" : ""} key={`${item.expTime}-${index}`}><span /><section><b>{item.expStatusDesc || "物流更新"}</b><p>{item.expDesc || "--"}</p><small>{item.expTime || ""}</small></section></div>) : <p className="timeline-empty">暂无物流轨迹</p>}</div></div>;
+  const tone = statusTone(row.orderStatus);
+  const tracking = Array.isArray(row.expInfoList) ? row.expInfoList : [];
+  const product = `${row.orderNameDesc || row.orderName || ""} ${row.orderTypeDesc || row.orderType || ""} × ${row.orderNum || 1}`.trim();
+  return <div className="order-detail">
+    <div className="order-detail-head">
+      <div className="order-detail-head-info">
+        <small>订单编号</small>
+        <b>{row.orderCode || "--"}</b>
+        <span className={`pill pill-${tone}`}>{row.orderStatusDesc || row.orderStatus || "未知"}</span>
+      </div>
+      <button className="icon-button" type="button" onClick={onCopy} aria-label="复制订单"><Copy size={18} /></button>
+    </div>
+
+    <section className="order-detail-section">
+      <header className="order-detail-section-head"><ShoppingBag size={15} /><h3>订单信息</h3></header>
+      <div className="order-detail-grid">
+        <div><span>下单人</span><b>{row.purchaser || "--"}</b></div>
+        <div><span>下单时间</span><b>{String(row.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</b></div>
+        <div className="full-width"><span>商品</span><b>{product || "--"}</b></div>
+        {row.store ? <div><span>店铺</span><b>{row.store}</b></div> : null}
+      </div>
+    </section>
+
+    <section className="order-detail-section">
+      <header className="order-detail-section-head"><User size={15} /><h3>收件信息</h3></header>
+      <div className="order-detail-grid">
+        <div><span>收件人</span><b>{row.customer || "--"}</b></div>
+        <div><span>手机号</span><b>{row.phone || "--"}</b></div>
+        {row.address ? <div className="full-width"><span>收货地址</span><b>{row.address}</b></div> : null}
+      </div>
+    </section>
+
+    <section className="order-detail-section">
+      <header className="order-detail-section-head"><Truck size={15} /><h3>物流信息</h3></header>
+      <div className="order-detail-grid">
+        <div><span>快递公司</span><b>{row.expComDesc || row.expCom || "暂无"}</b></div>
+        <div><span>快递单号</span><b>{row.expCode && row.expCode !== "无" ? row.expCode : "暂无"}</b></div>
+      </div>
+      {tracking.length ? <div className="order-detail-timeline">{tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><div><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p><small>{item.expTime || item.createTime || ""}</small></div></div>)}</div> : <p className="order-detail-empty">暂无物流轨迹</p>}
+    </section>
+
+    {row.orderDesc ? <section className="order-detail-section">
+      <header className="order-detail-section-head"><Sparkles size={15} /><h3>备注</h3></header>
+      <p className="order-detail-note">{row.orderDesc}</p>
+    </section> : null}
+  </div>;
 }
 
 type CrudConfig = {
@@ -1165,10 +1241,10 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
             <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
             {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
             <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
-            {hasExpand && isOpen ? <div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div> : null}
+            {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
             {hasExpand ? <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpand(row.id as string | number)} aria-expanded={isOpen}><span>{isOpen ? "收起明细" : "查看更多"}</span><ChevronDown size={15} /></button> : null}
             {note ? <p className="data-note">{note}</p> : null}
-            <div className="card-actions" style={{ gridTemplateColumns: `repeat(${config.extraAction ? 3 : 2}, 1fr)` }}><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
+            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
           </article>;
         })}
       </div>
@@ -1221,8 +1297,8 @@ function TrackingPage() {
   return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.name}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
-function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void }) {
-  const [view, setView] = useState<"menu" | "profile">("menu");
+function MenuSheet({ open, active, username, userInfo, isDark, onClose, onSelect, onLogout, onToggleTheme }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; isDark: boolean; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onToggleTheme: () => void }) {
+  const [view, setView] = useState<"menu" | "profile" | "settings">("menu");
   useEffect(() => { if (!open) setView("menu"); }, [open]);
   const renderItems = (keys: MenuKey[]) => keys.map((key) => {
     const item = NAV_ITEMS.find((entry) => entry.key === key)!;
@@ -1264,10 +1340,10 @@ function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogo
     <section className="menu-group"><div className="menu-group-title"><b>经营管理</b><small>账单、价格及店铺配置</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores"])}</div></section>
     <section className="menu-group"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
     <section className="menu-group"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
-  </div><a className="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>免登录工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
+  </div><a className="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>免登录工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><button className="menu-public-tools menu-theme-toggle" type="button" onClick={onToggleTheme}><Sparkles size={20} /><span><b>外观：{isDark ? "深色" : "浅色"}</b><small>点击切换深色 / 浅色主题</small></span><ChevronRight size={17} /></button><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
 }
 
-function AdminShell({ username, onLogout }: { username: string; onLogout: () => void }) {
+function AdminShell({ username, onLogout, isDark, onToggleTheme }: { username: string; onLogout: () => void; isDark: boolean; onToggleTheme: () => void }) {
   const [active, setActive] = useState<MenuKey>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
@@ -1317,7 +1393,7 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
         <button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
         <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button>
       </nav>
-      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} />
+      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} isDark={isDark} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} onToggleTheme={onToggleTheme} />
       <Toast toast={toast} />
     </div>
   </DictionaryContext.Provider>;
@@ -1329,11 +1405,20 @@ export default function MobileAdmin() {
   const [username, setUsername] = useState("管理员");
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const stored = getStoredToken();
     const savedName = window.localStorage.getItem("xb-mobile-username");
     if (stored) setToken(stored);
     if (savedName) setUsername(savedName);
+    // 主题：localStorage > system preference；light/dark/auto 三档
+    const savedTheme = window.localStorage.getItem("xb-theme");
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("theme-dark");
+      setIsDark(true);
+    } else if (savedTheme === "light") {
+      document.documentElement.classList.add("theme-light");
+    }
     setReady(true);
     const expire = () => setToken("");
     window.addEventListener("xb-session-expired", expire);
@@ -1350,6 +1435,14 @@ export default function MobileAdmin() {
     try { await apiRequest("/logout", { method: "POST" }); } catch { /* local logout still proceeds */ }
     clearStoredToken(); setToken("");
   }
+  function toggleTheme() {
+    const html = document.documentElement;
+    const willBeDark = !html.classList.contains("theme-dark");
+    html.classList.toggle("theme-dark", willBeDark);
+    html.classList.toggle("theme-light", !willBeDark);
+    window.localStorage.setItem("xb-theme", willBeDark ? "dark" : "light");
+    setIsDark(willBeDark);
+  }
   if (showSplash) return <div className={`app-loading${splashFading ? " fading" : ""}`}>
     <div className="brand-mark app-loading-mark"><span /></div>
     <h1>xb</h1>
@@ -1357,5 +1450,5 @@ export default function MobileAdmin() {
     <p>正在启动移动工作台</p>
   </div>;
   if (!token) return <LoginScreen onLogin={(nextToken, nextUsername) => { setStoredToken(nextToken); setToken(nextToken); setUsername(nextUsername); }} />;
-  return <AdminShell username={username} onLogout={logout} />;
+  return <AdminShell username={username} onLogout={logout} isDark={isDark} onToggleTheme={toggleTheme} />;
 }

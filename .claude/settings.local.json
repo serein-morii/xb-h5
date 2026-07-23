@@ -4,7 +4,19 @@
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
       "Bash(mvn -q compile -DskipTests)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(grep -E '\\\\.workspace-dock|position.*fixed' dist/assets/index-*.css)",
+      "Bash(grep -oE '\\\\.workspace-dock\\\\{[^}]+\\\\}' dist/assets/index-*.css)",
+      "Bash(grep -oE 'workspace-dock\\\\{[^}]+\\\\}' dist/assets/index-*.css)",
+      "Bash(curl -s \"http://localhost:5175/\")",
+      "Bash(kill 50240 32377 30206)",
+      "Bash(awk:*)",
+      "Bash(grep -n '^@media\\\\|^}\\\\s*$')",
+      "Bash(git show:*)",
+      "Read(//tmp/**)",
+      "Bash(node --test tests/rendered-html.test.mjs)"
     ]
   }
 }

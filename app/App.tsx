@@ -125,5 +125,5 @@ export default function App() {
     if (meta) meta.content = description;
   }, [title, description]);
 
-  return isToolsRoute ? <ToolsLayout>{content}</ToolsLayout> : content;
+  return isToolsRoute ? <ToolsLayout><div className="page-transition" key={pathname}>{content}</div></ToolsLayout> : <div className="page-transition" key={pathname}>{content}</div>;
 }
