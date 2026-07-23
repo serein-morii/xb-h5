@@ -16,7 +16,13 @@
       "Bash(grep -n '^@media\\\\|^}\\\\s*$')",
       "Bash(git show:*)",
       "Read(//tmp/**)",
-      "Bash(node --test tests/rendered-html.test.mjs)"
+      "Bash(node --test tests/rendered-html.test.mjs)",
+      "Bash(ls /Users/xp/dev/xb/order/xb-h5/app/tools/*/)",
+      "Bash(grep -nB 1 -A 2 \"\\\\.tool-page > \\\\.tool-hero h1\\\\|\\\\.admin-tool-module \\\\.tool-hero h1\" /Users/xp/dev/xb/order/xb-h5/app/globals.css)",
+      "Bash(grep -nE \"@media|^}|^$\")",
+      "Bash(grep -c \"^}$\\\\|^  }$\")",
+      "Bash(grep -nE \"@media|^}\\\\s*$\")",
+      "Bash(curl:*)"
     ]
   }
 }
