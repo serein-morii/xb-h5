@@ -682,37 +682,56 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
     { key: "bills", label: "账单管理", desc: `${data.billTotal} 条账单`, icon: WalletCards, tone: "amber" },
   ];
 
-  return <div className="dashboard-page">
-    <section className="dashboard-welcome">
+  const attentionTotal = data.pending + data.waiting;
+
+  return <div className="home-space">
+    <header className="home-intro">
       <div>
-        <span className="eyebrow">
-          {today}
-          {deptName ? ` · ${deptName}` : ""}
-          {primaryRole ? ` · ${primaryRole}` : ""}
-        </span>
+        <span>{today}{deptName ? ` · ${deptName}` : ""}{primaryRole ? ` · ${primaryRole}` : ""}</span>
         <h1>{greeting}，{displayName}</h1>
         <p>{subtitle}</p>
       </div>
-      <button type="button" onClick={load} aria-label="刷新工作台"><RefreshCw className={loading ? "spin" : ""} size={19} /></button>
-      <span className="dashboard-orb" />
+      <div className="home-intro-actions">
+        <button className="home-create-order" type="button" onClick={() => onNavigate("orderEntry")}><Plus size={18} />快速录单</button>
+        <button className="home-refresh" type="button" onClick={load} aria-label="刷新首页"><RefreshCw className={loading ? "spin" : ""} size={18} /></button>
+      </div>
+    </header>
+
+    <section className="home-glance" aria-label="今日订单概况">
+      <button className="home-attention" type="button" onClick={() => onNavigate("orders")}>
+        <span><RotateCw size={19} />今日重点</span>
+        <strong>{attentionTotal}</strong>
+        <p>{attentionTotal ? "笔订单等待你处理" : "当前没有待处理订单"}</p>
+        <em>打开订单<ChevronRight size={16} /></em>
+      </button>
+      <div className="home-stat-strip">
+        <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
+        <button type="button" onClick={() => onNavigate("orders")}><small>待发货</small><b>{data.waiting}</b><span><PackageCheck size={16} />需跟进</span></button>
+        <button type="button" onClick={() => onNavigate("orders")}><small>已完成</small><b>{data.completed}</b><span><CircleCheck size={16} />已归档</span></button>
+      </div>
     </section>
 
-    <section className="dashboard-metrics" aria-label="订单概况">
-      <button type="button" onClick={() => onNavigate("orders")}><span className="metric-icon peach"><ShoppingBag size={18} /></span><small>全部订单</small><b>{data.orderTotal}</b></button>
-      <button type="button" onClick={() => onNavigate("orders")}><span className="metric-icon amber"><RotateCw size={18} /></span><small>待处理</small><b>{data.pending}</b></button>
-      <button type="button" onClick={() => onNavigate("orders")}><span className="metric-icon blue"><PackageCheck size={18} /></span><small>待发货</small><b>{data.waiting}</b></button>
-      <button type="button" onClick={() => onNavigate("orders")}><span className="metric-icon green"><CircleCheck size={18} /></span><small>已完成</small><b>{data.completed}</b></button>
+    <section className="home-actions">
+      <div className="home-section-heading"><div><h2>常用操作</h2><p>{data.storeTotal} 个店铺正在使用</p></div></div>
+      <div className="home-action-rail">{shortcuts.map((item) => { const Icon = item.icon; return <button type="button" onClick={() => onNavigate(item.key)} key={item.key}><span><Icon size={19} /></span><b>{item.label}</b><small>{item.desc}</small></button>; })}</div>
     </section>
 
-    <div className="dashboard-pulse"><span><Truck size={17} /></span><div><b>{data.sent} 个订单已发货</b><p>最新物流动态已同步到工作台</p></div><button type="button" onClick={() => onNavigate("express")}>查看<ChevronRight size={14} /></button></div>
+    <div className="home-content-grid">
+      <section className="home-feed home-order-feed">
+        <div className="home-section-heading"><div><h2>最近订单</h2><p>最新 {data.recentOrders.length} 笔订单</p></div><button type="button" onClick={() => onNavigate("orders")}>全部订单<ChevronRight size={15} /></button></div>
+        <div className="home-order-list">{loading && !data.recentOrders.length ? <div className="home-empty"><LoaderCircle className="spin" size={22} />正在加载</div> : data.recentOrders.length ? data.recentOrders.map((row) => <button type="button" key={String(row.id)} onClick={() => onNavigate("orders")}><span className="home-order-mark">{String(row.orderNameDesc || "果").slice(-1)}</span><div><b>{row.orderNameDesc || row.orderName || "未命名商品"} · {row.orderTypeDesc || row.orderType || "--"}</b><small>{row.customer || "--"} · {shortDate(row.orderTime)}</small></div><StatusBadge row={row} /></button>) : <div className="home-empty"><ShoppingBag size={22} />暂无订单</div>}</div>
+      </section>
 
-    <section className="dashboard-section"><div className="dashboard-section-title"><div><h2>快捷操作</h2><p>{data.storeTotal} 个店铺正在使用</p></div></div><div className="dashboard-shortcuts">{shortcuts.map((item) => { const Icon = item.icon; return <button type="button" onClick={() => onNavigate(item.key)} key={item.key}><span className={`shortcut-${item.tone}`}><Icon size={19} /></span><div><b>{item.label}</b><small>{item.desc}</small></div><ChevronRight size={15} /></button>; })}</div></section>
+      <section className="home-feed home-buyer-feed">
+        <div className="home-section-heading"><div><h2>最近买家</h2><p>{data.boundPurchaserTotal}/{data.purchaserTotal} 已绑定店铺</p></div><button type="button" onClick={() => onNavigate("purchasers")}>管理买家<ChevronRight size={15} /></button></div>
+        <div className="home-buyer-list">{loading && !data.recentPurchasers.length ? <div className="home-empty"><LoaderCircle className="spin" size={22} />正在加载</div> : data.recentPurchasers.length ? data.recentPurchasers.map((purchaser) => <article key={String(purchaser.id || purchaser.shortId)}><span>{String(purchaser.name || "买").slice(0, 1)}</span><div><b>{purchaser.name || "未命名买家"}</b><p>{purchaser.storeName || "尚未绑定店铺"}</p></div><button className={purchaser.storeId ? "" : "unbound"} type="button" onClick={() => copyPurchaserLink(purchaser)}>{purchaser.storeId ? <Copy size={15} /> : <ChevronRight size={15} />}</button></article>) : <div className="home-empty"><User size={22} />暂无买家</div>}</div>
+      </section>
+    </div>
 
-    <section className="dashboard-section"><div className="dashboard-section-title"><div><h2>最近新增买家</h2><p>{data.purchaserTotal} 位买家 · {data.boundPurchaserTotal} 位已绑定店铺</p></div><button type="button" onClick={() => onNavigate("purchasers")}>买家管理</button></div><div className="dashboard-purchaser-list">{loading && !data.recentPurchasers.length ? <div className="dashboard-empty"><LoaderCircle className="spin" size={22} />正在加载</div> : data.recentPurchasers.length ? data.recentPurchasers.map((purchaser) => <article key={String(purchaser.id || purchaser.shortId)}><span>{String(purchaser.name || "买").slice(0, 1)}</span><div><b>{purchaser.name || "未命名买家"}<em>ID {purchaser.shortId || "--"}</em></b><p>{purchaser.phone || "未填写手机号"} · {purchaser.storeName || "尚未绑定店铺"}</p><small>{purchaser.createTime ? `创建于 ${shortDate(purchaser.createTime, true)}` : "创建时间暂无"}</small></div><button className={purchaser.storeId ? "" : "unbound"} type="button" onClick={() => copyPurchaserLink(purchaser)}>{purchaser.storeId ? <><Copy size={14} />复制链接</> : <>去绑定<ChevronRight size={14} /></>}</button></article>) : <div className="dashboard-empty"><User size={22} />暂无买家，生成链接时可创建</div>}</div></section>
-
-    <section className="dashboard-section"><div className="dashboard-section-title"><div><h2>最近订单</h2><p>最新 {data.recentOrders.length} 笔订单</p></div><button type="button" onClick={() => onNavigate("orders")}>查看全部</button></div><div className="dashboard-order-list">{loading && !data.recentOrders.length ? <div className="dashboard-empty"><LoaderCircle className="spin" size={22} />正在加载</div> : data.recentOrders.length ? data.recentOrders.map((row) => <button type="button" key={String(row.id)} onClick={() => onNavigate("orders")}><span className="dashboard-product">{String(row.orderNameDesc || "果").slice(-1)}</span><div><b>{row.orderNameDesc || row.orderName || "未命名商品"} · {row.orderTypeDesc || row.orderType || "--"}</b><small>{row.customer || "--"} · {shortDate(row.orderTime)}</small></div><StatusBadge row={row} /></button>) : <div className="dashboard-empty"><ShoppingBag size={22} />暂无订单</div>}</div></section>
-
-    <section className="dashboard-section"><div className="dashboard-section-title"><div><h2>最新物流</h2><p>订单状态更新</p></div><button type="button" onClick={() => onNavigate("express")}>快递管理</button></div><div className="dashboard-logistics">{data.recentExpress.length ? data.recentExpress.map((row, index) => <div key={String(row.id)} className={index === 0 ? "latest" : ""}><i /><section><div><b>{row.expStatusDesc || row.expStatus || "物流更新"}</b><time>{shortDate(row.expTime, true)}</time></div><p>{row.expDesc || "暂无物流描述"}</p><small>订单 {row.orderCode || "--"}</small></section></div>) : <div className="dashboard-empty"><Truck size={22} />暂无物流动态</div>}</div></section>
+    <section className="home-logistics">
+      <div className="home-section-heading"><div><h2>物流动态</h2><p>{data.sent} 个订单已发货</p></div><button type="button" onClick={() => onNavigate("express")}>快递管理<ChevronRight size={15} /></button></div>
+      <div className="home-logistics-row">{data.recentExpress.length ? data.recentExpress.map((row, index) => <article key={String(row.id)} className={index === 0 ? "latest" : ""}><i /><div><div><b>{row.expStatusDesc || row.expStatus || "物流更新"}</b><time>{shortDate(row.expTime, true)}</time></div><p>{row.expDesc || "暂无物流描述"}</p><small>订单 {row.orderCode || "--"}</small></div></article>) : <div className="home-empty"><Truck size={22} />暂无物流动态</div>}</div>
+    </section>
   </div>;
 }
 
@@ -1054,7 +1073,40 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
     return () => { mounted = false; };
   }, []);
   const configs = useMemo(() => createCrudConfigs(dictionaries), [dictionaries]);
-  return <DictionaryContext.Provider value={dictionaries}><div className="admin-shell"><aside className="desktop-sidebar"><AppLogo compact /><nav>{NAV_ITEMS.map((item) => { const Icon = item.icon; return <button className={active === item.key ? "active" : ""} key={item.key} onClick={() => setActive(item.key)}><span><Icon size={19} /></span><div><b>{item.label}</b><small>{item.description}</small></div><ChevronRight size={15} /></button>; })}</nav><a className="sidebar-public-tools" href="/tools"><Sparkles size={17} /><span><b>免登录工具箱</b><small>公开查询与运费工具</small></span><ExternalLink size={14} /></a><div className="sidebar-account"><span>{String(userInfo?.avatar || userInfo?.nickName || userInfo?.userName || username).slice(0, 1).toUpperCase()}</span><div><b>{String(userInfo?.nickName || userInfo?.userName || username)}</b><small>已安全登录</small></div><button onClick={onLogout}><LogOut size={17} /></button></div></aside><div className="app-column"><main className="app-main">{active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} /> : active === "orders" ? <OrdersPage notify={notify} /> : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} /> : active === "orderLink" ? <OrderLinkGenerator embedded /> : active === "purchasers" ? <PurchaserManager embedded /> : active === "tracking" ? <TrackingPage /> : <CrudModule config={configs[active as keyof typeof configs]} notify={notify} />}</main></div><nav className="bottom-nav"><button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button><button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button><button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button><button className={!['home','orders','bills'].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button></nav><MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} /><Toast toast={toast} /></div></DictionaryContext.Provider>;
+  const currentItem = NAV_ITEMS.find((item) => item.key === active);
+  const displayName = String(userInfo?.nickName || userInfo?.userName || username);
+  const avatarText = String(userInfo?.avatar || displayName).slice(0, 1).toUpperCase();
+  const renderPage = active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} />
+    : active === "orders" ? <OrdersPage notify={notify} />
+    : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
+    : active === "orderLink" ? <OrderLinkGenerator embedded />
+    : active === "purchasers" ? <PurchaserManager embedded />
+    : active === "tracking" ? <TrackingPage />
+    : <CrudModule config={configs[active as keyof typeof configs]} notify={notify} />;
+
+  return <DictionaryContext.Provider value={dictionaries}>
+    <div className="product-shell">
+      <header className="product-bar">
+        <AppLogo compact />
+        <div className="product-location"><small>当前页面</small><b>{currentItem?.label || "喜八"}</b></div>
+        <div className="product-bar-actions">
+          <a href="/tools" aria-label="打开免登录工具箱"><Sparkles size={17} /><span>公开工具</span></a>
+          <button className="product-account" type="button" onClick={() => setMenuOpen(true)}><span>{avatarText}</span><b>{displayName}</b><Menu size={17} /></button>
+          <button className="product-logout" type="button" onClick={onLogout} aria-label="退出登录"><LogOut size={17} /></button>
+        </div>
+      </header>
+      <main className="product-main">{renderPage}</main>
+      <nav className="workspace-dock" aria-label="主要功能">
+        <button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button>
+        <button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button>
+        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} onClick={() => setActive("orderEntry")}><Plus size={23} /><span>录单</span></button>
+        <button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
+        <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button>
+      </nav>
+      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} />
+      <Toast toast={toast} />
+    </div>
+  </DictionaryContext.Provider>;
 }
 
 export default function MobileAdmin() {

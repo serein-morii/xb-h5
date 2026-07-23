@@ -16,5 +16,17 @@ function ToolCard({ item }: { item: (typeof orderTools)[number] }) {
 }
 
 export default function ToolsPage() {
-  return <div className="tools-menu-page"><section className="tools-menu-hero"><span><Sparkles size={23} /></span><div><small>MOBILE TOOLBOX</small><h1>常用工具，一站直达</h1><p>订单查询与运费工具已经统一适配手机端。</p></div></section><section className="tools-menu-grid">{orderTools.map((item) => <ToolCard item={item} key={item.href} />)}<LinkQueryCard />{freightTools.map((item) => <ToolCard item={item} key={item.href} />)}</section><div className="tools-menu-tip"><ShieldCheck size={18} /><div><b>访问说明</b><p>订单查询、链接查询与运费工具均可免登录使用。</p></div></div></div>;
+  return <div className="tools-home">
+    <header className="tools-home-intro">
+      <span><Sparkles size={16} />无需登录</span>
+      <h1>查订单，算运费。</h1>
+      <p>四个常用工具，手机和电脑都能直接使用。</p>
+    </header>
+    <section className="tools-home-grid">
+      {orderTools.map((item) => <ToolCard item={item} key={item.href} />)}
+      <LinkQueryCard />
+      {freightTools.map((item) => <ToolCard item={item} key={item.href} />)}
+    </section>
+    <footer className="tools-home-note"><ShieldCheck size={18} /><div><b>数据仅用于当前查询</b><p>订单查询、链接查询与运费工具均可免登录使用。</p></div></footer>
+  </div>;
 }
