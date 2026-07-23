@@ -59,12 +59,13 @@ import {
   uploadFile,
 } from "./lib/api";
 import AdminOrderEntry from "./AdminOrderEntry";
+import BatchOrderEntry from "./tools/batch-order/BatchOrderEntry";
 import OrderLinkGenerator from "./tools/order-link/OrderLinkGenerator";
 import PurchaserManager from "./tools/purchasers/PurchaserManager";
 import { buildOrderLink, formatOrderLinkCopy } from "./tools/order-link/format";
 
 type DataRow = Record<string, any>;
-type MenuKey = "home" | "orders" | "orderEntry" | "bills" | "express" | "prices" | "stores" | "orderLink" | "purchasers" | "tracking";
+type MenuKey = "home" | "orders" | "orderEntry" | "batchOrder" | "bills" | "express" | "prices" | "stores" | "orderLink" | "purchasers" | "tracking";
 type ToastState = { message: string; type: "success" | "error" | "info" } | null;
 type DictOption = { value: string; label: string };
 type Dictionaries = {
@@ -158,6 +159,7 @@ const NAV_ITEMS: Array<{
   { key: "prices", label: "价格管理", description: "商品与快递计价", icon: BadgeDollarSign },
   { key: "stores", label: "店铺管理", description: "店铺与通知配置", icon: StoreIcon },
   { key: "orderLink", label: "生成链接", description: "买家专属下单链接", icon: ShoppingBag },
+  { key: "batchOrder", label: "批量录单", description: "Excel 粘贴批量下单", icon: FileSpreadsheet },
   { key: "purchasers", label: "买家管理", description: "买家与店铺绑定", icon: User },
   { key: "tracking", label: "快递查询", description: "快递100、顺丰、EMS", icon: SearchCheck },
 ];
@@ -675,7 +677,7 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
 
   const shortcuts: Array<{ key: MenuKey; label: string; desc: string; icon: typeof ShoppingBag; tone: string }> = [
     { key: "orders", label: "订单管理", desc: "查询与发货", icon: ShoppingBag, tone: "green" },
-    { key: "orderEntry", label: "订单录入", desc: "选买家快速建单", icon: FileSpreadsheet, tone: "blue" },
+    { key: "batchOrder", label: "批量录单", desc: "Excel 粘贴批量下单", icon: FileSpreadsheet, tone: "green" },
     { key: "orderLink", label: "生成链接", desc: "买家专属入口", icon: Send, tone: "peach" },
     { key: "purchasers", label: "买家管理", desc: `${data.purchaserTotal} 位买家`, icon: User, tone: "green" },
     { key: "express", label: "快递管理", desc: "物流轨迹", icon: Truck, tone: "blue" },
@@ -827,10 +829,27 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
         <div><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></div>
         <div><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></div>
       </div>
-      <div className="toolbar-card">
-        <div className="quick-search"><Search size={18} /><input value={filters.orderCode || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value, pageNum: 1 }))} placeholder="搜索订单号" /><button type="button" onClick={load}><ArrowLeft className="search-arrow" size={18} /></button></div>
-        <button className="filter-button" type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={18} /><span>筛选</span></button>
-        <button className="icon-button surface" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={18} /></button>
+      <div className="toolbar-card search-toolbar">
+        <label className="quick-search">
+          <Search size={15} strokeWidth={2.2} />
+          <input
+            value={filters.orderCode || ""}
+            onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value, pageNum: 1 }))}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); load(); } }}
+            placeholder="搜索订单号"
+            enterKeyHint="search"
+          />
+          {filters.orderCode ? <button className="search-clear" type="button" aria-label="清空" onClick={() => setFilters((current: DataRow) => ({ ...current, orderCode: "", pageNum: 1 }))}><X size={14} /></button> : null}
+        </label>
+        <button
+          className={`filter-chip${[filters.orderStatus, filters.orderName, filters.orderType, filters.customer, filters.phone, filters.purchaser, filters.store, filters.expCom, filters.expCode].some((value) => String(value || "").trim()) ? " active" : ""}`}
+          type="button"
+          onClick={() => setFilterOpen(true)}
+        >
+          <SlidersHorizontal size={14} strokeWidth={2.2} />
+          筛选
+        </button>
+        <button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button>
       </div>
       <div className="secondary-actions">
         <button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button>
@@ -861,7 +880,124 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
       </div>
       {rows.length < total ? <button className="load-more" type="button" onClick={() => setFilters((current: DataRow) => ({ ...current, pageSize: Number(current.pageSize || 20) + 20 }))}>{loading ? <LoaderCircle className="spin" size={17} /> : <ChevronRight size={17} />}加载更多</button> : null}
 
-      <Sheet open={filterOpen} title="筛选订单" onClose={() => setFilterOpen(false)}><form className="mobile-form" onSubmit={(e) => { e.preventDefault(); setFilters((current: DataRow) => ({ ...current, pageNum: 1 })); setFilterOpen(false); }}><div className="form-grid"><label><span>订单号</span><input value={filters.orderCode || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value }))} /></label><label><span>订单状态</span><select value={filters.orderStatus || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderStatus: e.target.value }))}><option value="">全部</option>{dictionaries.orderStatuses.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><span>商品名称</span><select value={filters.orderName || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderName: e.target.value }))}><option value="">全部</option>{dictionaries.products.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><span>商品规格</span><select value={filters.orderType || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderType: e.target.value }))}><option value="">全部</option>{dictionaries.sizes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>{[["customer","收件人"],["phone","手机号"],["expCode","快递单号"],["createBy","创建人"],["purchaser","下单人"],["orderDesc","备注"]].map(([key,label]) => <label key={key}><span>{label}</span><input value={filters[key] || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, [key]: e.target.value }))} /></label>)}<label><span>快递公司</span><select value={filters.expCom || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, expCom: e.target.value }))}><option value="">全部</option>{dictionaries.expressCompanies.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><span>下单时间</span><input type="date" value={filters.orderTime || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderTime: e.target.value }))} /></label></div><div className="form-footer"><button type="button" className="button button-ghost" onClick={() => setFilters({ pageNum: 1, pageSize: 20 })}>重置</button><button className="button button-primary" type="submit"><Search size={17} />应用筛选</button></div></form></Sheet>
+      <Sheet open={filterOpen} title="筛选订单" onClose={() => setFilterOpen(false)}>
+        <form
+          className="filter-sheet"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setFilters((current: DataRow) => ({ ...current, pageNum: 1 }));
+            setFilterOpen(false);
+            load();
+          }}
+        >
+          <div className="filter-sheet-body">
+            <section className="filter-section">
+              <header><h3>订单状态</h3></header>
+              <div className="filter-chips" role="listbox" aria-label="订单状态">
+                <button type="button" className={!filters.orderStatus ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, orderStatus: "" }))}>全部</button>
+                {dictionaries.orderStatuses.map((item) => (
+                  <button
+                    type="button"
+                    key={item.value}
+                    className={String(filters.orderStatus || "") === String(item.value) ? "active" : ""}
+                    onClick={() => setFilters((current: DataRow) => ({ ...current, orderStatus: item.value }))}
+                  >{item.label}</button>
+                ))}
+              </div>
+            </section>
+
+            <section className="filter-section">
+              <header><h3>商品与规格</h3></header>
+              <div className="filter-field-grid">
+                <label>
+                  <span>商品</span>
+                  <select value={filters.orderName || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderName: e.target.value }))}>
+                    <option value="">全部商品</option>
+                    {dictionaries.products.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>规格</span>
+                  <select value={filters.orderType || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderType: e.target.value }))}>
+                    <option value="">全部规格</option>
+                    {dictionaries.sizes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section className="filter-section">
+              <header><h3>收件信息</h3></header>
+              <div className="filter-field-stack">
+                <label>
+                  <span>订单号</span>
+                  <input value={filters.orderCode || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value }))} placeholder="输入订单号" />
+                </label>
+                <div className="filter-field-grid">
+                  <label>
+                    <span>收件人</span>
+                    <input value={filters.customer || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, customer: e.target.value }))} placeholder="姓名" />
+                  </label>
+                  <label>
+                    <span>手机号</span>
+                    <input inputMode="tel" value={filters.phone || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, phone: e.target.value }))} placeholder="手机号" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section className="filter-section">
+              <header><h3>物流与人员</h3></header>
+              <div className="filter-field-stack">
+                <div className="filter-field-grid">
+                  <label>
+                    <span>快递公司</span>
+                    <select value={filters.expCom || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, expCom: e.target.value }))}>
+                      <option value="">全部快递</option>
+                      {dictionaries.expressCompanies.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>快递单号</span>
+                    <input value={filters.expCode || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, expCode: e.target.value }))} placeholder="运单号" />
+                  </label>
+                </div>
+                <div className="filter-field-grid">
+                  <label>
+                    <span>下单人</span>
+                    <input value={filters.purchaser || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, purchaser: e.target.value }))} placeholder="买家/下单人" />
+                  </label>
+                  <label>
+                    <span>创建人</span>
+                    <input value={filters.createBy || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, createBy: e.target.value }))} placeholder="创建人" />
+                  </label>
+                </div>
+                <div className="filter-field-grid">
+                  <label>
+                    <span>下单时间</span>
+                    <input type="date" value={filters.orderTime || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderTime: e.target.value }))} />
+                  </label>
+                  <label>
+                    <span>备注</span>
+                    <input value={filters.orderDesc || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderDesc: e.target.value }))} placeholder="备注关键词" />
+                  </label>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="filter-sheet-footer">
+            <button
+              type="button"
+              className="filter-reset"
+              onClick={() => {
+                setFilters({ pageNum: 1, pageSize: 20 });
+              }}
+            >重置</button>
+            <button className="filter-apply" type="submit">查看结果</button>
+          </div>
+        </form>
+      </Sheet>
       <Sheet open={editor !== null} title={editor === "new" ? "新增订单" : "修改订单"} onClose={() => setEditor(null)} wide>{editor !== null ? <OrderEditor initial={editor === "new" ? null : editor} onSaved={load} onClose={() => setEditor(null)} notify={notify} /> : null}</Sheet>
       <Sheet open={shipping !== null} title="填写发货信息" onClose={() => setShipping(null)}>{shipping ? <ShippingEditor initial={shipping} onSaved={() => { setSelected(new Set()); load(); }} onClose={() => setShipping(null)} notify={notify} /> : null}</Sheet>
       <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
@@ -892,7 +1028,7 @@ type CrudConfig = {
   importable?: boolean;
 };
 
-function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "orderLink" | "purchasers" | "tracking">, CrudConfig> {
+function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking">, CrudConfig> {
   return {
   bills: {
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
@@ -970,7 +1106,7 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
   return (
     <div className="module-page">
       <div className="module-hero compact-hero"><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>共 {total} 条数据，支持手机端快速维护</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
-      <div className="toolbar-card"><div className="quick-search"><Search size={18} /><input value={query[config.searchFields[0]?.key] || ""} onChange={(event) => setQuery((current: DataRow) => ({ ...current, [config.searchFields[0]?.key]: event.target.value, pageNum: 1 }))} placeholder={`搜索${config.searchFields[0]?.label || config.itemName}`} /><button type="button" onClick={load}><ArrowLeft className="search-arrow" size={18} /></button></div><button className="filter-button" type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={18} />筛选</button><button className="icon-button surface" type="button" onClick={load}><RefreshCw className={loading ? "spin" : ""} size={18} /></button></div>
+      <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={query[config.searchFields[0]?.key] || ""} onChange={(event) => setQuery((current: DataRow) => ({ ...current, [config.searchFields[0]?.key]: event.target.value, pageNum: 1 }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); load(); } }} placeholder={`搜索${config.searchFields[0]?.label || config.itemName}`} enterKeyHint="search" />{query[config.searchFields[0]?.key] ? <button className="search-clear" type="button" aria-label="清空" onClick={() => setQuery((current: DataRow) => ({ ...current, [config.searchFields[0]?.key]: "", pageNum: 1 }))}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
         {config.importable ? <><button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button><button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/importTemplate`, {}, `${config.key}_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button><input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { await uploadFile(`${config.api}/importData`, file, { updateSupport: false }); notify("导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} /></> : null}
@@ -988,7 +1124,35 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
         })}
       </div>
       {rows.length < total ? <button className="load-more" type="button" onClick={() => setQuery((current: DataRow) => ({ ...current, pageSize: Number(current.pageSize || 15) + 15 }))}><ChevronRight size={17} />加载更多</button> : null}
-      <Sheet open={filterOpen} title={`筛选${config.itemName}`} onClose={() => setFilterOpen(false)}><form className="mobile-form" onSubmit={(event) => { event.preventDefault(); setQuery((current: DataRow) => ({ ...current, pageNum: 1 })); setFilterOpen(false); }}><div className="form-grid">{config.searchFields.map((field) => <label key={field.key}><span>{field.label}</span><FieldInput field={field} value={query[field.key]} onChange={(value) => setQuery((current: DataRow) => ({ ...current, [field.key]: value }))} /></label>)}</div><div className="form-footer"><button type="button" className="button button-ghost" onClick={() => setQuery({ pageNum: 1, pageSize: 15 })}>重置</button><button className="button button-primary" type="submit"><Search size={17} />应用</button></div></form></Sheet>
+      <Sheet open={filterOpen} title={`筛选${config.itemName}`} onClose={() => setFilterOpen(false)}>
+        <form
+          className="filter-sheet"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setQuery((current: DataRow) => ({ ...current, pageNum: 1 }));
+            setFilterOpen(false);
+            load();
+          }}
+        >
+          <div className="filter-sheet-body">
+            <section className="filter-section">
+              <header><h3>筛选条件</h3></header>
+              <div className="filter-field-stack">
+                {config.searchFields.map((field) => (
+                  <label key={field.key}>
+                    <span>{field.label}</span>
+                    <FieldInput field={field} value={query[field.key]} onChange={(value) => setQuery((current: DataRow) => ({ ...current, [field.key]: value }))} />
+                  </label>
+                ))}
+              </div>
+            </section>
+          </div>
+          <div className="filter-sheet-footer">
+            <button type="button" className="filter-reset" onClick={() => setQuery({ pageNum: 1, pageSize: 15 })}>重置</button>
+            <button className="filter-apply" type="submit">查看结果</button>
+          </div>
+        </form>
+      </Sheet>
       <Sheet open={editor !== null} title={`${editor === "new" ? "新增" : "修改"}${config.itemName}`} onClose={() => setEditor(null)} wide>{editor !== null ? <CrudEditor config={config} initial={editor === "new" ? null : editor} onClose={() => setEditor(null)} onSaved={load} notify={notify} /> : null}</Sheet>
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
@@ -1047,7 +1211,7 @@ function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogo
     <button className="logout-row profile-logout" type="button" onClick={onLogout}><LogOut size={18} />退出当前账号</button>
   </div></Sheet>;
   return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}><button className={`menu-public-tools menu-home-entry ${active === "home" ? "active" : ""}`} type="button" onClick={() => { onSelect("home"); onClose(); }}><House size={20} /><span><b>工作台</b><small>订单、买家与物流动态总览</small></span><ChevronRight size={17} /></button><div className="menu-groups">
-    <section className="menu-group"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "express"])}</div></section>
+    <section className="menu-group"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "batchOrder", "express"])}</div></section>
     <section className="menu-group"><div className="menu-group-title"><b>经营管理</b><small>账单、价格及店铺配置</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores"])}</div></section>
     <section className="menu-group"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
     <section className="menu-group"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
@@ -1079,6 +1243,7 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
   const renderPage = active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} />
     : active === "orders" ? <OrdersPage notify={notify} />
     : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
+    : active === "batchOrder" ? <BatchOrderEntry />
     : active === "orderLink" ? <OrderLinkGenerator embedded />
     : active === "purchasers" ? <PurchaserManager embedded />
     : active === "tracking" ? <TrackingPage />
@@ -1099,7 +1264,7 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
       <nav className="workspace-dock" aria-label="主要功能">
         <button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button>
         <button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button>
-        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} onClick={() => setActive("orderEntry")}><Plus size={23} /><span>录单</span></button>
+        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} type="button" onClick={() => setActive("orderEntry")} aria-label="录单"><span className="dock-create-glyph" aria-hidden="true"><Plus size={22} strokeWidth={2.4} /></span><span>录单</span></button>
         <button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
         <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button>
       </nav>
