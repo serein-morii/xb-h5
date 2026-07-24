@@ -27,7 +27,7 @@ test("keeps every public route in the client-side route table", async () => {
     ["/order", "订单查询｜喜八"],
     ["/tools", "公开工具｜喜八"],
     ["/tools/order-search", "订单查询｜喜八Tools"],
-    ["/tools/order", "链接订单详情｜喜八Tools"],
+    ["/tools/order", "订单详情｜喜八Tools"],
     ["/tools/order-link", "生成链接｜喜八"],
     ["/tools/place-order", "专属下单｜喜八"],
     ["/tools/purchasers", "买家管理｜喜八"],
@@ -104,6 +104,22 @@ test("keeps the public order tracking route", async () => {
   assert.match(publicPage, /publicApiRequest/);
   assert.match(publicPage, /\/search\/by/);
   assert.match(admin, /\/tools\/order#\$\{encodeURIComponent/);
+});
+
+test("allows purchasers to edit and delete their own pending orders", async () => {
+  const page = await source("app/tools/place-order/PurchaserOrderPage.tsx");
+  // 后端端点
+  assert.match(page, /\/search\/order\/\$\{editingOrder\.id\}/);
+  assert.match(page, /\/search\/order\/\$\{confirmingDelete\.id\}/);
+  // 前端二次确认
+  assert.match(page, /confirmingEdit/);
+  assert.match(page, /confirmingDelete/);
+  // 状态门 — DSH only
+  assert.match(page, /order\.orderStatus !== "DSH"/);
+  // 权限字段
+  assert.match(page, /purchaserShortId: linkKey\.purchaserId/);
+  // expCom 字段
+  assert.match(page, /expCom/);
 });
 
 test("keeps purchaser naming and the short-link order workflow consistent", async () => {

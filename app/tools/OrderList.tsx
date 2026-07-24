@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, Clock3, Copy, Inbox, MapPin, Search, Store, Truck, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Copy, Edit3, Inbox, MapPin, Search, Store, Trash2, Truck, User } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export type TrackingItem = {
@@ -43,7 +43,7 @@ function statusTone(code?: string) {
   return "warning";
 }
 
-export default function OrderList({ orders, contact }: { orders: PublicOrderRecord[]; contact?: string }) {
+export default function OrderList({ orders, contact, onEdit, onDelete }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void }) {
   const [active, setActive] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -63,8 +63,10 @@ export default function OrderList({ orders, contact }: { orders: PublicOrderReco
 
   async function copyOrder(order: PublicOrderRecord) {
     const detailLink = order.signId ? `${window.location.origin}/tools/order#${encodeURIComponent(order.signId)}` : "";
-    const lines = ["【订单详情】", `订单号: ${order.orderCode || ""}`, `下单时间: ${String(order.orderTime || "").slice(0, 10)}`, `商品: ${order.orderNameDesc || ""} ${order.orderTypeDesc || ""} × ${order.orderNum || 1}`, `收件人: ${order.customer || ""}`, `手机号: ${order.phone || ""}`, `地址: ${order.address || ""}`, `快递: ${order.expComDesc || ""} ${order.expCode && order.expCode !== "无" ? order.expCode : ""}`, order.store ? `店铺: ${order.store}` : "", detailLink ? `查看更多: ${detailLink}` : ""].filter(Boolean);
-    await navigator.clipboard.writeText(lines.join("\n"));
+    const lines = ["【订单信息】", `订单号: ${order.orderCode || ""}`, `下单时间: ${String(order.orderTime || "").slice(0, 10)}`, `商品: ${order.orderNameDesc || ""} ${order.orderTypeDesc || ""} × ${order.orderNum || 1}`, `收件人: ${order.customer || ""}`, `手机号: ${order.phone || ""}`, `快递: ${order.expComDesc || ""} ${order.expCode && order.expCode !== "无" ? order.expCode : ""}`, order.store ? `店铺: ${order.store}` : "", detailLink ? `查看更多: ${detailLink}` : ""].filter(Boolean);
+    const detail = (order.address || "").trim();
+    const final = detail ? [...lines, "", "【订单详情】", detail] : lines;
+    await navigator.clipboard.writeText(final.join("\n"));
     setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   }
 
@@ -75,8 +77,9 @@ export default function OrderList({ orders, contact }: { orders: PublicOrderReco
       const isOpen = expanded.has(order.id);
       const tracking = order.expInfoList || [];
       const tone = statusTone(order.orderStatus);
+      const isPending = order.orderStatus === "DSH";
       return <article key={order.id} className="soft-card">
-        <header><div><small>订单编号</small><b>{order.orderCode || "--"}</b></div><span className={`pill tool-order-status-${tone}`}>{order.orderStatusDesc || order.orderStatus || "未知"}</span></header>
+        <header><div className="tool-order-header-left"><div><small>订单编号</small><span className="tool-order-num-line"><b>{order.orderCode || "--"}</b><button type="button" className="tool-copy-icon" onClick={() => copyOrder(order)} aria-label="复制订单"><Copy size={14} /></button></span></div></div><span className={`pill tool-order-status-${tone}`}>{order.orderStatusDesc || order.orderStatus || "未知"}</span></header>
         <div className="tool-order-product"><b>{order.orderNameDesc || "未命名商品"}</b><span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span><time>{String(order.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</time></div>
         <div className="tool-order-address"><p><User size={14} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={14} />{order.address || "暂无地址"}</p></div>
         <div className="tool-order-exp"><Truck size={14} /><span><b>{order.expComDesc || "暂无快递"}</b><small>{order.expCode && order.expCode !== "无" ? order.expCode : "暂无快递单号"}</small></span></div>
@@ -84,7 +87,7 @@ export default function OrderList({ orders, contact }: { orders: PublicOrderReco
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}
         <button type="button" className={`tool-tracking-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleTracking(order.id)}><Clock3 size={15} /><span><b>物流信息详情</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"} · 共 {tracking.length} 条</small></span><ChevronDown size={17} /></button>
         {isOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
-        <button type="button" className="tool-copy" onClick={() => copyOrder(order)}><Copy size={15} />复制订单</button>
+        {isPending && (onEdit || onDelete) ? <div className="tool-order-actions">{onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div> : null}
       </article>;
     })}</section>
     {!visible.length ? <div className="tool-list-empty"><Inbox size={32} /><h3>没有符合当前筛选条件的订单</h3><p>试着切换状态、清除搜索词，或者刷新一下数据。</p></div> : null}

@@ -1057,6 +1057,20 @@ input, textarea, select { font-size: 16px; }
 .tool-copy { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 7px; border: 0; border-radius: 13px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 6px 16px rgba(20,121,78,.22); font-size: 10.5px; font-weight: 800; cursor: pointer; transition: box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .tool-copy:hover { box-shadow: 0 8px 22px rgba(20,121,78,.28); }
 .tool-copy:active { transform: scale(0.99); }
+.tool-copy-icon { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: .5px solid rgba(20,121,78,.22); border-radius: 8px; color: #14794e; background: #ecf2ee; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.tool-copy-icon:hover { background: #d8e4dd; }
+.tool-copy-icon:active { transform: scale(0.94); }
+.tool-order-header-left { min-width: 0; flex: 1; display: flex; align-items: center; gap: 6px; }
+.tool-order-header-left > div { min-width: 0; flex: 1; }
+.tool-order-num-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tool-order-num-line b { min-width: 0; }
+.tool-edit { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: .5px solid rgba(0,122,255,.28); border-radius: 10px; color: #007aff; background: rgba(0,122,255,.08); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.tool-edit:hover { background: rgba(0,122,255,.14); }
+.tool-edit:active { transform: scale(0.97); }
+.tool-delete { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: .5px solid rgba(255,59,48,.28); border-radius: 10px; color: #ff3b30; background: rgba(255,59,48,.08); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.tool-delete:hover { background: rgba(255,59,48,.14); }
+.tool-delete:active { transform: scale(0.97); }
+.tool-order-actions { display: flex; gap: 6px; margin-top: 7px; justify-content: flex-end; }
 
 /* Freight result */
 .freight-result-card > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px dashed #e7efeb; }
@@ -1194,10 +1208,11 @@ input, textarea, select { font-size: 16px; }
 .purchaser-choice-grid button:active:not(.active) { transform: scale(0.97); }
 .purchaser-choice-grid button .purchaser-choice-emoji { font-size: 16px; line-height: 1; }
 .purchaser-choice-grid button.active { color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 6px 14px rgba(20,121,78,.28); }
-.purchaser-order-form input, .purchaser-order-form textarea { width: 100%; padding: 12px 14px; border: 0; border-radius: 14px; outline: 0; color: var(--ink); background: #ecf2ee; box-shadow: 0 1px 2px rgba(20,62,40,.04); font-size: 12.5px; line-height: 1.55; transition: background .15s, box-shadow .15s; }
+.purchaser-order-form input, .purchaser-order-form textarea, .purchaser-order-form select { width: 100%; padding: 12px 14px; border: 0; border-radius: 14px; outline: 0; color: var(--ink); background: #ecf2ee; box-shadow: 0 1px 2px rgba(20,62,40,.04); font-size: 12.5px; line-height: 1.55; transition: background .15s, box-shadow .15s; }
 .purchaser-order-form input { height: 47px; margin-top: 8px; }
 .purchaser-order-form textarea { resize: vertical; }
-.purchaser-order-form input:focus, .purchaser-order-form textarea:focus { background: #fff; box-shadow: 0 0 0 4px rgba(35,151,94,.12), 0 1px 2px rgba(20,62,40,.04); }
+.purchaser-order-form select { height: 47px; margin-top: 8px; padding-right: 38px; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2314794e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 12px; }
+.purchaser-order-form input:focus, .purchaser-order-form textarea:focus, .purchaser-order-form select:focus { background: #fff; box-shadow: 0 0 0 4px rgba(35,151,94,.12), 0 1px 2px rgba(20,62,40,.04); }
 .purchaser-quantity { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: #ecf2ee; }
 .purchaser-quantity > span { color: var(--muted); font-size: 10.5px; font-weight: 700; }
 .purchaser-quantity > div { display: flex; align-items: center; gap: 14px; }
@@ -1346,6 +1361,28 @@ input, textarea, select { font-size: 16px; }
 .purchaser-captcha-modal h2 { margin: 5px 0; font-size: 20px; }
 .purchaser-captcha-modal > p:not(.tool-error) { margin: 0 0 13px; color: var(--muted); font-size: 9px; }
 .purchaser-captcha-summary { display: grid; gap: 7px; padding: 13px; border-radius: 14px; background: var(--canvas); margin-bottom: 13px; }
+
+/* 编辑订单 modal — 更宽、容纳表单 section，复用 purchaser-order-form 内部样式 */
+.purchaser-edit-modal { width: min(100%, 540px); padding: 22px; }
+.purchaser-edit-modal > small { color: #2b9664; font-size: 7px; font-weight: 850; letter-spacing: .14em; }
+.purchaser-edit-modal h2 { margin: 5px 0 4px; font-size: 20px; }
+.purchaser-edit-modal > p { margin: 0 0 12px; color: var(--muted); font-size: 9px; }
+.purchaser-edit-form { display: grid; gap: 12px; }
+.purchaser-edit-form > section { padding: 16px; border: 0; border-radius: 20px; background: var(--canvas); }
+.purchaser-edit-form section > header { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
+.purchaser-edit-form section > header > span { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); font-size: 11px; font-weight: 850; }
+.purchaser-edit-form section header h3 { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -.005em; }
+.purchaser-edit-form section input, .purchaser-edit-form section textarea, .purchaser-edit-form section select { width: 100%; padding: 12px 14px; border: 0; border-radius: 14px; outline: 0; color: var(--ink); background: #ecf2ee; box-shadow: 0 1px 2px rgba(20,62,40,.04); font-size: 12.5px; line-height: 1.55; transition: background .15s, box-shadow .15s; }
+.purchaser-edit-form section input { height: 47px; margin-top: 8px; }
+.purchaser-edit-form section textarea { resize: vertical; }
+.purchaser-edit-form section select { height: 47px; margin-top: 8px; padding-right: 38px; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2314794e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 12px; }
+.purchaser-edit-form section input:focus, .purchaser-edit-form section textarea:focus, .purchaser-edit-form section select:focus { background: #fff; box-shadow: 0 0 0 4px rgba(35,151,94,.12), 0 1px 2px rgba(20,62,40,.04); }
+.purchaser-edit-form section label { display: grid; gap: 0; margin-top: 10px; }
+.purchaser-edit-form section label > span { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10.5px; font-weight: 700; }
+.purchaser-edit-form section label > input, .purchaser-edit-form section label > textarea, .purchaser-edit-form section label > select { margin-top: 6px; }
+.purchaser-edit-submit { width: 100%; min-height: 49px; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(110deg, var(--app-tint), var(--app-tint)); box-shadow: 0 8px 22px rgba(20,132,84,.25); font-size: 10.5px; font-weight: 850; cursor: pointer; transition: box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.purchaser-edit-submit:hover { box-shadow: 0 10px 28px rgba(20,132,84,.32); }
+.purchaser-edit-submit:active { transform: scale(0.99); }
 .purchaser-captcha-summary > div { display: flex; gap: 8px; font-size: 11px; line-height: 1.4; align-items: flex-start; }
 .purchaser-captcha-summary > div > span:first-child { color: #6b7d73; min-width: 52px; flex: none; }
 .purchaser-captcha-summary > div > b { color: var(--ink); font-weight: 600; word-break: break-word; flex: 1; }
@@ -4431,6 +4468,7 @@ select:focus-visible {
 .mobile-form select,
 .purchaser-order-form input,
 .purchaser-order-form textarea,
+.purchaser-order-form select,
 .purchaser-create-modal input,
 .purchaser-create-modal select,
 .admin-entry-create select,
@@ -4615,6 +4653,7 @@ select:focus-visible {
   .mobile-form select,
   .purchaser-order-form input,
   .purchaser-order-form textarea,
+  .purchaser-order-form select,
   .purchaser-create-modal input,
   .purchaser-create-modal select,
   .admin-entry-create select,
@@ -6765,10 +6804,16 @@ select:focus-visible {
   .public-tools-header, .workspace-dock { border-color: var(--ios-separator); background: rgba(27, 33, 30, .86) !important; box-shadow: 0 14px 44px rgba(0, 0, 0, .28) !important; }
   .home-attention, .detail-code, .profile-card, .tracking-manual, .purchaser-order-hero, .dashboard-welcome { color: var(--primary-action-label); background: var(--primary-action) !important; }
   .home-attention > span, .home-attention p, .detail-code small, .profile-card small, .profile-card p, .tracking-manual p, .purchaser-order-hero small, .purchaser-order-hero p, .dashboard-welcome .eyebrow, .dashboard-welcome p { color: rgba(6, 38, 20, .72) !important; }
-  .home-stat-strip, .home-action-rail, .home-feed, .home-logistics-row article, .module-hero, .admin-tool-module .tool-hero, .tool-page > .tool-hero, .tool-page .tool-form-card, .tool-page .freight-result-card, .tool-page .order-link-login, .tool-page .purchaser-match-panel, .tool-page .generated-link-card, .tool-page .generated-link-history, .order-card, .data-card, .toolbar-card, .sheet, .purchaser-help-modal, .purchaser-missing-modal, .purchaser-success-modal, .purchaser-captcha-modal, .purchaser-create-modal, .purchaser-order-form > section, .tracking-card, .dashboard-order-list, .dashboard-logistics, .dashboard-purchaser-list, .profile-info, .public-order-card, .admin-entry-loading, .admin-entry-buyer-list > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
+  .home-stat-strip, .home-action-rail, .home-feed, .home-logistics-row article, .module-hero, .admin-tool-module .tool-hero, .tool-page > .tool-hero, .tool-page .tool-form-card, .tool-page .freight-result-card, .tool-page .order-link-login, .tool-page .purchaser-match-panel, .tool-page .generated-link-card, .tool-page .generated-link-history, .order-card, .data-card, .toolbar-card, .sheet, .purchaser-help-modal, .purchaser-missing-modal, .purchaser-success-modal, .purchaser-captcha-modal, .purchaser-edit-modal, .purchaser-edit-form > section, .purchaser-create-modal, .purchaser-order-form > section, .tracking-card, .dashboard-order-list, .dashboard-logistics, .dashboard-purchaser-list, .profile-info, .public-order-card, .admin-entry-loading, .admin-entry-buyer-list > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
   .detail-grid > div, .tool-order-address, .tool-tracking-toggle, .tracking-guide, .dashboard-pulse, .admin-entry-buyer-search, .admin-entry-create, .admin-entry-selected-buyer, .profile-back, .purchaser-order-tabs, [class*="address"], [class*="location"] { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; }
+  /* 专属下单"我的订单"tab 容器是深色，需要把里面未激活的按钮文字 + 数量徽章背景调亮才看得见 */
+  .purchaser-order-tabs button { color: var(--ios-secondary-label) !important; }
+  .purchaser-order-tabs button.active { color: #fff !important; }
+  .purchaser-order-tabs button span { color: var(--app-tint) !important; background: rgba(7, 193, 96, .18) !important; box-shadow: inset 0 0 0 .5px rgba(7, 193, 96, .4) !important; }
+  /* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
+  .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
   .detail-grid span, .tool-order-address p, .tool-tracking-toggle small, .profile-info span, .tracking-guide p, .purchaser-order-form header p, .admin-entry-selected-buyer p, .admin-entry-selected-buyer small, [class*="address"] p, [class*="address"] small, [class*="location"] small { color: var(--ios-secondary-label) !important; }
-  .input-shell, .tool-page .tool-input, .tool-page .tool-textarea textarea, .mobile-form input:not([type="checkbox"]), .mobile-form textarea, .mobile-form select, .purchaser-order-form input, .purchaser-order-form textarea, .purchaser-create-modal input, .purchaser-create-modal select, .admin-entry-create select, .admin-order-entry-form select, .quick-search, .captcha-login > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: #272e2a !important; }
+  .input-shell, .tool-page .tool-input, .tool-page .tool-textarea textarea, .mobile-form input:not([type="checkbox"]), .mobile-form textarea, .mobile-form select, .purchaser-order-form input, .purchaser-order-form textarea, .purchaser-order-form select, .purchaser-edit-form section input, .purchaser-edit-form section textarea, .purchaser-edit-form section select, .purchaser-create-modal input, .purchaser-create-modal select, .admin-entry-create select, .admin-order-entry-form select, .quick-search, .captcha-login > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: #272e2a !important; }
   .mobile-form input:disabled, option { color: var(--ios-secondary-label); background: #272e2a; }
   .dashboard-order-list > button, .dashboard-purchaser-list article, .home-order-list > button, .home-buyer-list article, .home-logistics-row article, .profile-info > div { border-color: var(--ios-separator) !important; background: var(--ios-grouped-surface) !important; }
   /* Home uses solid, stepped dark surfaces. Green is a signal, never a large background. */
@@ -6786,6 +6831,24 @@ select:focus-visible {
   .recipient-block a { color: var(--app-tint) !important; }
   .latest-route { color: var(--ios-secondary-label); background: var(--app-tint-soft) !important; }
   .login-submit, .tool-page .tool-primary, .tool-page .tool-primary-blue, .tool-page .tool-primary-amber, .purchaser-submit, .home-create-order, .workspace-dock .dock-create { color: var(--primary-action-label) !important; background: var(--primary-action) !important; }
+  /* Order-link page: green accents (#14794e / #e8f7ef / #ecf2ee / #c5d4cb) need dark-mode tokens */
+  .purchaser-history small { color: var(--ios-secondary-label) !important; }
+  .purchaser-history em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+  .purchaser-create-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 1px var(--app-tint-line) !important; }
+  .generated-link-card p { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
+  .generated-link-card button, .generated-link-card a { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
+  .generated-link-history article > button, .generated-link-history article > a { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+  .generated-link-history article > button:hover, .generated-link-history article > a:hover { background: rgba(7, 193, 96, .26) !important; }
+  .generated-link-history > header em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+  .generated-link-history-empty svg { color: var(--ios-tertiary-label) !important; }
+  .order-link-login a { background: linear-gradient(135deg, #0c6b45, #1f9c63) !important; box-shadow: 0 8px 20px rgba(7, 193, 96, .28) !important; }
+  /* Order card: copy icon in header + compact edit/delete pills */
+  .tool-copy-icon { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+  .tool-copy-icon:hover { background: rgba(7, 193, 96, .26) !important; }
+  .tool-edit { color: var(--system-blue) !important; background: rgba(10, 132, 255, .14) !important; border-color: rgba(10, 132, 255, .32) !important; }
+  .tool-edit:hover { background: rgba(10, 132, 255, .22) !important; }
+  .tool-delete { color: var(--ios-red) !important; background: rgba(255, 69, 58, .14) !important; border-color: rgba(255, 69, 58, .32) !important; }
+  .tool-delete:hover { background: rgba(255, 69, 58, .22) !important; }
 }
 
 /* Shortcut actions are six independent destinations, not a card inside another card. */
@@ -8212,14 +8275,92 @@ select:focus-visible {
   }
 }
 
+/* ===== 暗色补丁 5：专属下单链接生成页（form / 匹配 / 已生成链接） ===== */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    /* form 容器 + 标签 + 输入框 + 主按钮 */
+    .order-link-form { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 10px 28px rgba(0,0,0,.22) !important; }
+    .order-link-form label > span { color: var(--muted) !important; }
+    .order-link-form .tool-input { color: var(--muted) !important; background: var(--dark-canvas) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28) !important; }
+    .order-link-form .tool-input:focus-within { background: var(--dark-surface) !important; box-shadow: 0 0 0 4px rgba(7,193,96,.18), 0 1px 2px rgba(0,0,0,.28) !important; }
+    .order-link-form .tool-input input,
+    .order-link-form .tool-input select { color: var(--ink) !important; background: transparent !important; }
+    .order-link-form .tool-input svg { color: var(--muted) !important; }
+    .order-link-form .tool-error { color: #ff8a8a !important; }
+    .order-link-form .tool-primary { color: var(--primary-action-label) !important; background: var(--app-tint) !important; box-shadow: 0 6px 18px rgba(7,193,96,.28) !important; }
+    .order-link-form .tool-primary:disabled { color: var(--muted) !important; background: var(--dark-canvas) !important; box-shadow: none !important; }
+
+    .purchaser-match-panel { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .purchaser-match-panel > header small { color: var(--app-tint) !important; }
+    .purchaser-match-panel article { background: var(--dark-canvas) !important; }
+    .purchaser-match-person p { color: var(--muted) !important; }
+    .purchaser-match-person > div > em { color: var(--app-tint) !important; }
+    .purchaser-history small { color: var(--muted) !important; }
+    .purchaser-history em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+    .purchaser-create-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 1px var(--app-tint-line) !important; }
+    .generated-link-card { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 6px 22px rgba(0,0,0,.28) !important; }
+    .generated-link-card > span { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+    .generated-link-card small { color: var(--app-tint) !important; }
+    .generated-link-card p { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+    .generated-link-card button, .generated-link-card a { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+    .generated-link-card button:hover, .generated-link-card a:hover { background: var(--app-tint-soft) !important; }
+
+    /* "我的订单"tab：未激活按钮文字 + 数量徽章在深色下需要调亮才看得见 */
+    .purchaser-order-tabs button { color: var(--muted) !important; }
+    .purchaser-order-tabs button.active { color: #fff !important; }
+    .purchaser-order-tabs button span { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 .5px var(--app-tint-line) !important; }
+    /* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
+    .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
+  }
+}
+
+/* 手动 html.theme-dark 时也走同样的补丁（不依赖 prefers-color-scheme） */
+html.theme-dark .order-link-form { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 10px 28px rgba(0,0,0,.22) !important; }
+html.theme-dark .order-link-form label > span { color: var(--muted) !important; }
+html.theme-dark .order-link-form .tool-input { color: var(--muted) !important; background: var(--dark-canvas) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28) !important; }
+html.theme-dark .order-link-form .tool-input:focus-within { background: var(--dark-surface) !important; box-shadow: 0 0 0 4px rgba(7,193,96,.18), 0 1px 2px rgba(0,0,0,.28) !important; }
+html.theme-dark .order-link-form .tool-input input,
+html.theme-dark .order-link-form .tool-input select { color: var(--ink) !important; background: transparent !important; }
+html.theme-dark .order-link-form .tool-input svg { color: var(--muted) !important; }
+html.theme-dark .order-link-form .tool-error { color: #ff8a8a !important; }
+html.theme-dark .order-link-form .tool-primary { color: var(--primary-action-label) !important; background: var(--app-tint) !important; box-shadow: 0 6px 18px rgba(7,193,96,.28) !important; }
+html.theme-dark .order-link-form .tool-primary:disabled { color: var(--muted) !important; background: var(--dark-canvas) !important; box-shadow: none !important; }
+
+html.theme-dark .purchaser-match-panel { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+html.theme-dark .purchaser-match-panel > header small { color: var(--app-tint) !important; }
+html.theme-dark .purchaser-match-panel article { background: var(--dark-canvas) !important; }
+html.theme-dark .purchaser-match-person p { color: var(--muted) !important; }
+html.theme-dark .purchaser-match-person > div > em { color: var(--app-tint) !important; }
+html.theme-dark .purchaser-history small { color: var(--muted) !important; }
+html.theme-dark .purchaser-history em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .purchaser-create-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 1px var(--app-tint-line) !important; }
+html.theme-dark .generated-link-card { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 6px 22px rgba(0,0,0,.28) !important; }
+html.theme-dark .generated-link-card > span { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+html.theme-dark .generated-link-card small { color: var(--app-tint) !important; }
+html.theme-dark .generated-link-card p { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+html.theme-dark .generated-link-card button, html.theme-dark .generated-link-card a { color: var(--app-tint) !important; background: var(--dark-canvas) !important; }
+html.theme-dark .generated-link-card button:hover, html.theme-dark .generated-link-card a:hover { background: var(--app-tint-soft) !important; }
+
+/* "我的订单"tab：未激活按钮文字 + 数量徽章在深色下需要调亮才看得见 */
+html.theme-dark .purchaser-order-tabs button { color: var(--muted) !important; }
+html.theme-dark .purchaser-order-tabs button.active { color: #fff !important; }
+html.theme-dark .purchaser-order-tabs button span { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 .5px var(--app-tint-line) !important; }
+/* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
+html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
+
 /* 专属下单页顶部看板 */
 .purchaser-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
-.purchaser-stat { display: grid; justify-items: center; gap: 2px; padding: 11px 4px; border-radius: 14px; background: var(--surface); box-shadow: 0 6px 16px rgba(20,62,40,.05); }
+.purchaser-stat { display: grid; justify-items: center; gap: 2px; padding: 11px 4px; border: 2px solid transparent; border-radius: 14px; background: var(--surface); box-shadow: 0 6px 16px rgba(20,62,40,.05); font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform .12s, box-shadow .12s, border-color .12s, background .12s; }
+.purchaser-stat:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(20,62,40,.08); }
+.purchaser-stat:active { transform: translateY(0); }
+.purchaser-stat:focus-visible { outline: 2px solid var(--app-tint); outline-offset: 2px; }
 .purchaser-stat b { font-size: 18px; font-weight: 800; color: var(--ink); line-height: 1; }
 .purchaser-stat small { color: var(--muted); font-size: 9px; font-weight: 700; }
 .purchaser-stat:nth-child(2) b { color: #d8a23b; }
 .purchaser-stat:nth-child(3) b { color: #4d8de7; }
 .purchaser-stat:nth-child(4) b { color: var(--app-tint); }
+.purchaser-stat.active { border-color: var(--app-tint); background: var(--app-tint-soft); }
+.purchaser-stat.active b { color: var(--app-tint); }
 
 @media (prefers-color-scheme: dark) {
   html:not(.theme-light) {
@@ -8229,6 +8370,8 @@ select:focus-visible {
     .purchaser-stat:nth-child(2) b { color: #e8b95e !important; }
     .purchaser-stat:nth-child(3) b { color: #6ba0e8 !important; }
     .purchaser-stat:nth-child(4) b { color: var(--app-tint) !important; }
+    .purchaser-stat.active { border-color: var(--app-tint) !important; background: rgba(76,140,108,.18) !important; }
+    .purchaser-stat.active b { color: var(--app-tint) !important; }
   }
 }
 

@@ -41,7 +41,7 @@ const routes: Record<string, RouteConfig> = {
     content: <OrderSearch />,
   },
   "/tools/order": {
-    title: "链接订单详情｜喜八Tools",
+    title: "订单详情｜喜八Tools",
     description: "通过加密订单链接查看订单状态与物流进度。",
     tools: true,
     content: <PublicOrder embedded />,
