@@ -66,7 +66,29 @@ export default function FreightCompare() {
       {message && message !== "对比表已复制" ? <p className="tool-error">{message}</p> : null}
       <button className="tool-primary tool-primary-blue" disabled={loading} type="button" onClick={compare}>{loading ? <LoaderCircle className="spin" size={18} /> : <Scale size={18} />}{loading ? "正在对比" : "生成对比表"}</button>
     </section>
-    {rows.length ? <section className="freight-result-card compare-card"><header><div><small>对比完成</small><h2>{rows.length} 个地址</h2></div><strong><small>京东 / 顺丰价差合计</small>¥{savings}</strong></header><div className="freight-actions freight-export-actions"><button type="button" onClick={copy}><ClipboardCopy size={15} />复制表格</button><button type="button" className="primary blue" onClick={exportExcel}><Download size={15} />导出 Excel</button></div><div className="freight-table-wrap"><table className="freight-table"><thead><tr><th>#</th><th>收件人 / 地址</th><th>省份</th><th>规格</th><th>京东</th><th>顺丰</th><th>邮政</th></tr></thead><tbody>{rows.map((row) => { const prices = [row.京东, row.顺丰].filter((price): price is number => typeof price === "number"); const min = prices.length ? Math.min(...prices) : -1; const max = prices.length ? Math.max(...prices) : -1; return <tr key={row.index}><td>{row.index}</td><td><b>{row.name || "未填写"}</b><small>{row.address}</small></td><td>{row.province}</td><td>{row.spec}</td><td className={row.京东 === min ? "price-low" : row.京东 === max && min !== max ? "price-high" : ""}>{row.京东 == null ? "-" : `¥${row.京东}`}</td><td className={row.顺丰 === min ? "price-low" : row.顺丰 === max && min !== max ? "price-high" : ""}>{row.顺丰 == null ? "-" : `¥${row.顺丰}`}</td><td>{row.邮政 == null ? "-" : `¥${row.邮政}`}</td></tr>; })}</tbody></table></div></section> : null}
+    {rows.length ? <section className="freight-result-card compare-card"><header><div><small>对比完成</small><h2>{rows.length} 个地址</h2></div><strong><small>京东 / 顺丰价差合计</small>¥{savings}</strong></header><div className="freight-actions freight-export-actions"><button type="button" onClick={copy}><ClipboardCopy size={15} />复制表格</button><button type="button" className="primary blue" onClick={exportExcel}><Download size={15} />导出 Excel</button></div><div className="compare-list">{rows.map((row) => {
+      const entries: Array<{ key: string; price?: number }> = [{ key: "京东", price: row.京东 }, { key: "顺丰", price: row.顺丰 }, { key: "邮政", price: row.邮政 }];
+      const valid = entries.filter((e): e is { key: string; price: number } => typeof e.price === "number");
+      const min = valid.length ? Math.min(...valid.map((e) => e.price)) : -1;
+      const max = valid.length ? Math.max(...valid.map((e) => e.price)) : -1;
+      const cheapest = valid.find((e) => e.price === min)?.key;
+      return <article key={row.index} className="compare-card-item">
+        <div className="compare-card-head"><span className="compare-card-num">#{row.index}</span><b>{row.name || "未填写"}</b><span className="compare-card-province">{row.province}</span></div>
+        <p className="compare-card-address">{row.address}</p>
+        <div className="compare-card-prices">
+          {entries.map((e) => {
+            const isMin = typeof e.price === "number" && e.price === min && min !== max;
+            const isMax = typeof e.price === "number" && e.price === max && min !== max;
+            return <div key={e.key} className={`compare-price-cell ${isMin ? "lowest" : ""} ${isMax ? "highest" : ""} ${e.price == null ? "na" : ""}`}>
+              <span>{e.key}</span>
+              <b>{e.price == null ? "-" : `¥${e.price}`}</b>
+              {isMin ? <em>最低</em> : null}
+            </div>;
+          })}
+        </div>
+        {cheapest ? <div className="compare-card-tip">推荐 {cheapest}（省 ¥{max - min}）</div> : null}
+      </article>;
+    })}</div></section> : null}
     {message === "对比表已复制" ? <div className="public-copy-toast"><CheckCircle2 size={16} />对比表已复制</div> : null}
   </div>;
 }

@@ -74,8 +74,33 @@ export default function FreightCalculator() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [sortCompany, setSortCompany] = useState("");
 
   const total = useMemo(() => results.filter((row) => row.ok).reduce((sum, row) => sum + row.price, 0), [results]);
+
+  // 从计算结果里动态提取出现的快递公司（按出现顺序）
+  const availableCompanies = useMemo(() => {
+    const seen: string[] = [];
+    results.forEach((row) => { if (row.ok && row.company && !seen.includes(row.company)) seen.push(row.company); });
+    return seen;
+  }, [results]);
+
+  function sortAndOutput(companies: string[]) {
+    if (companies.length === 0) return;
+    const rows = results.filter((row) => row.ok && companies.includes(row.company))
+      .sort((a, b) => a.price - b.price || a.province.localeCompare(b.province, "zh-CN"));
+    setOutput(rows.length ? summary(rows, `${companies.length > 1 ? "全部" : companies[0]}排序`) : "暂无对应快递公司的有效价格数据。");
+  }
+
+  // 分类排：按快递公司分组，每组内按价格排序
+  function sortGrouped(companies: string[]) {
+    if (companies.length === 0) return;
+    const sections = companies.flatMap((company) => {
+      const rows = results.filter((row) => row.ok && row.company === company).sort((a, b) => a.price - b.price || a.province.localeCompare(b.province, "zh-CN"));
+      return rows.length ? [summary(rows, `${company}排序`)] : [];
+    });
+    setOutput(sections.length ? sections.join("\n\n") : "暂无对应快递公司的有效价格数据。");
+  }
 
   async function calculate() {
     setLoading(true); setMessage("");
@@ -109,7 +134,15 @@ export default function FreightCalculator() {
     </section>
     {results.length ? <section className="freight-result-card">
       <header><div><small>计算完成</small><h2>{results.length} 个订单</h2></div><strong><small>总运费</small>¥{total}</strong></header>
-      <div className="freight-actions"><button type="button" onClick={() => setOutput(sortedSummary(results, ["京东", "顺丰"]))}><ArrowDownAZ size={15} />京东 + 顺丰</button><button type="button" onClick={() => setOutput(sortedSummary(results, ["京东"]))}>京东排序</button><button type="button" onClick={() => setOutput(sortedSummary(results, ["顺丰"]))}>顺丰排序</button><button type="button" className="primary" onClick={copy}><ClipboardCopy size={15} />复制</button></div>
+      <div className="freight-actions">
+        <select className="freight-sort-select" value={sortCompany} onChange={(e) => setSortCompany(e.target.value)}>
+          <option value="">全部（{availableCompanies.length}家）</option>
+          {availableCompanies.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <button type="button" onClick={() => { const list = sortCompany ? [sortCompany] : availableCompanies; sortAndOutput(list); }}>混排</button>
+        <button type="button" onClick={() => { const list = sortCompany ? [sortCompany] : availableCompanies; sortGrouped(list); }}>分类排</button>
+        <button type="button" className="primary" onClick={copy}><ClipboardCopy size={15} />复制</button>
+      </div>
       <pre className="freight-output">{output}</pre>
     </section> : null}
     {message === "计算结果已复制" ? <div className="public-copy-toast"><CheckCircle2 size={16} />计算结果已复制</div> : null}

@@ -5,7 +5,7 @@ import { apiRequest, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "./format";
 
 type StoreRow = { id?: number; name?: string; text?: string; value?: string; code?: string; isDelete?: number };
-type Purchaser = { id?: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; createTime?: string; updateTime?: string };
+type Purchaser = { id?: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; createTime?: string; updateTime?: string; orderCodePwd?: string };
 type OrderSummary = { id?: number; orderCode?: string; orderNameDesc?: string; orderTypeDesc?: string; orderNum?: number; customer?: string; phone?: string; store?: string; orderStatusDesc?: string; orderTime?: string };
 type Candidate = { purchaser?: Purchaser; orders?: OrderSummary[] };
 
@@ -21,6 +21,7 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [link, setLink] = useState("");
+  const [lastPwd, setLastPwd] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [historyCopied, setHistoryCopied] = useState("");
 
@@ -47,6 +48,7 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
   function buildLink(purchaser: Purchaser) {
     if (!purchaser.shortId) return setError("下单人短ID缺失，请先更新后端再重试");
     setLink(orderLink(purchaser));
+    setLastPwd(purchaser.orderCodePwd || null);
     setCandidates([]); setSearched(false); setError("");
   }
 
@@ -83,13 +85,13 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
   }
 
   async function copyLink() {
-    const text = formatOrderLinkCopy(name, link);
+    const text = formatOrderLinkCopy(name, link, lastPwd);
     await navigator.clipboard.writeText(text); setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   }
 
   async function copyHistoryLink(purchaser: Purchaser) {
     const value = orderLink(purchaser);
-    const text = formatOrderLinkCopy(purchaser.name, value);
+    const text = formatOrderLinkCopy(purchaser.name, value, purchaser.orderCodePwd);
     await navigator.clipboard.writeText(text); setHistoryCopied(String(purchaser.shortId)); window.setTimeout(() => setHistoryCopied(""), 1600);
   }
 

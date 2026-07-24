@@ -339,7 +339,7 @@ input, textarea, select { font-size: 16px; }
 .card-actions {
   display: flex;
   gap: 6px;
-  padding: 10px 0 0;
+  padding: 10px 14px 12px;
   border-top: 1px solid var(--line);
 }
 .card-actions > button {
@@ -906,7 +906,7 @@ input, textarea, select { font-size: 16px; }
 .tools-menu-hero > span, .tool-hero > span { position: relative; z-index: 1; display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(255,255,255,.14); }
 .tools-menu-hero > div, .tool-hero > div { position: relative; z-index: 1; min-width: 0; }
 .tools-menu-hero small, .tool-hero small { opacity: .68; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
-.tools-menu-hero h1, .tool-hero h1 { margin: 3px 0; font-size: 17px; letter-spacing: -.025em; }
+.tools-menu-hero h1, .tool-hero h1 { margin: 3px 0; font-size: 17px; letter-spacing: -.025em; color: #fff; text-shadow: 0 1px 2px rgba(20, 60, 40, .35); }
 .tools-menu-hero p, .tool-hero p { margin: 0; color: rgba(255,255,255,.78); font-size: 9.5px; line-height: 1.55; }
 .tools-menu-grid { display: grid; gap: 11px; margin-top: 14px; }
 .tools-menu-card { min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 108px; padding: 16px; border: 0; border-radius: 22px; color: var(--ink); text-decoration: none; background: var(--surface); box-shadow: 0 1px 2px rgba(20,62,40,.04), 0 12px 32px rgba(20,62,40,.06); transition: box-shadow .2s, transform .15s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -1350,6 +1350,8 @@ input, textarea, select { font-size: 16px; }
 .purchaser-captcha-summary > div > span:first-child { color: #6b7d73; min-width: 52px; flex: none; }
 .purchaser-captcha-summary > div > b { color: var(--ink); font-weight: 600; word-break: break-word; flex: 1; }
 .purchaser-captcha-row { display: grid; grid-template-columns: 122px minmax(0, 1fr); gap: 8px; }
+.purchaser-captcha-pwd-row { grid-template-columns: 1fr; }
+.purchaser-captcha-pwd { width: 100%; height: 56px; padding: 0 16px; border: 1px solid #d8e6de; border-radius: 13px; color: #08351e; background: #f3f8f5; font-size: 28px; font-weight: 800; letter-spacing: .4em; text-align: center; }
 .purchaser-captcha-image { overflow: hidden; width: 122px; height: 49px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 12px; color: var(--green); background: #f2f8f5; cursor: pointer; }
 .purchaser-captcha-image img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .purchaser-captcha-row > input { min-width: 0; width: 100%; height: 49px; padding: 0 12px; border: 1px solid var(--line); border-radius: 13px; outline: 0; font-size: 14px; }
@@ -1392,6 +1394,24 @@ input, textarea, select { font-size: 16px; }
 .purchaser-bind-row button { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 14px; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 4px 10px rgba(20,121,78,.22); font-size: 10px; font-weight: 800; cursor: pointer; transition: box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .purchaser-bind-row button:hover:not(:disabled) { box-shadow: 0 6px 14px rgba(20,121,78,.28); }
 .purchaser-bind-row button:active:not(:disabled) { transform: scale(0.97); }
+
+/* 买家下单码配置 */
+.purchaser-order-code-row { display: flex; align-items: center; gap: 10px; margin: 0 14px 12px; padding: 11px 13px; border: 0; border-radius: 14px; background: #f3f8f5; }
+.purchaser-order-code-row > svg { color: #14794e; flex: none; }
+.purchaser-order-code-info { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.purchaser-order-code-info small { color: #6b7d73; font-size: 8.5px; font-weight: 700; }
+.purchaser-order-code-info b { color: #1a2e26; font-size: 11px; font-weight: 700; }
+.purchaser-order-code-info em { color: #14794e; font-size: 9px; font-style: normal; padding: 1px 6px; border-radius: 6px; background: #e8f7ef; }
+.purchaser-order-code-btn { flex: none; min-height: 32px; padding: 0 13px; border: 0; border-radius: 10px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); font-size: 11px; font-weight: 800; cursor: pointer; box-shadow: 0 3px 8px rgba(20,121,78,.2); }
+.purchaser-code-modal .purchaser-code-switch-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0 12px; }
+.purchaser-code-switch-group label { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 38px; padding: 0 6px; border: 1px solid #dce9e2; border-radius: 10px; color: #506c5e; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; transition: background .12s, transform .1s; -webkit-tap-highlight-color: transparent; }
+.purchaser-code-switch-group label:active { transform: scale(0.97); }
+.purchaser-code-switch-group label.active { color: #fff; background: linear-gradient(135deg, #14794e, #1da369); border-color: transparent; box-shadow: 0 3px 8px rgba(20,121,78,.22); }
+.purchaser-code-switch-group input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.purchaser-create-modal .purchaser-code-pwd-toggle { display: flex !important; flex-direction: row !important; align-items: center; gap: 5px; margin: 4px 0 0 !important; padding: 0; cursor: pointer; }
+.purchaser-create-modal .purchaser-code-pwd-toggle input { width: 13px; height: 13px; accent-color: var(--green); flex: none; margin: 0; }
+.purchaser-create-modal .purchaser-code-pwd-toggle em { font-size: 10px !important; font-weight: 600 !important; color: var(--muted) !important; }
+.purchaser-code-hint { display: flex; align-items: center; gap: 4px; margin: 4px 0 0; padding: 6px 9px; border-radius: 8px; color: #14794e; background: #e8f7ef; font-size: 9.5px; line-height: 1.4; }
 .purchaser-create-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: end center; padding: 14px 12px calc(14px + env(safe-area-inset-bottom)); background: rgba(16,42,29,.48); backdrop-filter: blur(8px); }
 .purchaser-create-modal { position: relative; width: min(100%, 440px); padding: 22px; border-radius: 26px; background: var(--surface); box-shadow: 0 30px 90px rgba(20,62,40,.28); }
 .purchaser-create-modal > button:first-child { position: absolute; top: 13px; right: 13px; display: grid; place-items: center; width: 35px; height: 35px; padding: 0; border: 0; border-radius: 11px; color: #7c8d84; background: #f1f5f3; }
@@ -1630,7 +1650,7 @@ select:focus-visible {
 .batch-order-card-failed { border-left: 3px solid #d44747; background: #fff5f5; }
 .batch-order-card-new { border-left: 3px solid #56b586; background: #f4fbf7; }
 .batch-order-card-existing { margin: 6px 0; padding: 8px 10px; border-radius: 8px; color: #14794e; background: #e8f7ef; font-size: 10px; line-height: 1.55; }
-.batch-order-card-decisions { display: flex; gap: 6px; margin-top: 10px; }
+.batch-order-card-decisions { display: flex; gap: 8px; margin: 12px -4px -4px; padding: 4px; }
 .batch-order-decision { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 36px; padding: 0 8px; border: 1px solid #dce9e2; border-radius: 10px; color: #506c5e; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: all .12s; }
 .batch-order-decision.active { color: #fff; background: linear-gradient(135deg, #14794e, #1da369); border-color: transparent; box-shadow: 0 4px 10px rgba(20,132,84,.18); }
 .batch-order-decision-skip.active { background: linear-gradient(135deg, #8a9891, #6b7d73); box-shadow: 0 4px 10px rgba(107, 125, 115, .22); }
@@ -1856,16 +1876,19 @@ select:focus-visible {
 .dashboard-welcome h1,
 .module-hero h1,
 .tools-menu-hero h1,
-.tool-hero h1,
 .admin-tool-module .tool-hero h1 {
   color: var(--ink);
+  font-weight: 760;
+}
+/* 公共工具页的 hero 是绿渐变底，标题/副标保持白色 */
+.tool-hero h1 {
+  color: #fff;
   font-weight: 760;
 }
 
 .dashboard-welcome p,
 .module-hero p,
 .tools-menu-hero p,
-.tool-hero p,
 .admin-tool-module .tool-hero p {
   color: #737985;
 }
@@ -5933,7 +5956,7 @@ select:focus-visible {
 
 .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) h2 {
   margin: 0 0 3px;
-  color: var(--ios-label);
+  color: #18352a !important;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -.01em;
@@ -7992,3 +8015,261 @@ select:focus-visible {
     background: rgba(118, 118, 128, .18) !important;
   }
 }
+
+/* ===== 暗色模式补丁：覆盖硬编码浅色（工具箱/专属下单/弹窗/表单） ===== */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    /* 工具箱卡片 */
+    .tools-menu-card p { color: var(--muted) !important; }
+    .tools-menu-card > svg { color: var(--muted) !important; }
+
+    /* 工具页输入框/文本域（硬编码 #ecf2ee 背景） */
+    .tool-input { color: var(--muted) !important; background: var(--dark-canvas) !important; }
+    .tool-input:focus-within { background: var(--dark-surface) !important; }
+    .tool-textarea > span { color: var(--muted) !important; }
+    .tool-form-card label > span:first-child { color: var(--muted) !important; }
+    .tool-error { color: #ff6b6b !important; }
+    .tool-success { color: var(--app-tint) !important; }
+    .tool-divider span { background: var(--dark-surface) !important; color: var(--muted) !important; }
+    .tool-list-empty { color: var(--muted) !important; background: rgba(255,255,255,.03) !important; border-color: var(--line) !important; }
+    .tool-no-tracking { color: var(--muted) !important; }
+
+    /* 专属下单页：商品/规格选择按钮（硬编码 #ecf2ee） */
+    .purchaser-choice-grid button { color: var(--muted) !important; background: var(--dark-canvas) !important; }
+    .purchaser-choice-grid button:hover:not(.active) { color: var(--ink) !important; }
+
+    /* 专属下单页：验证码弹窗内的订单摘要 / 密码输入 */
+    .purchaser-captcha-summary { background: var(--dark-canvas) !important; }
+    .purchaser-captcha-summary > div > span:first-child { color: var(--muted) !important; }
+    .purchaser-captcha-summary > div > b { color: var(--ink) !important; }
+    .purchaser-captcha-pwd { color: var(--ink) !important; background: var(--dark-canvas) !important; border-color: var(--line) !important; }
+    .purchaser-captcha-image { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--app-tint) !important; }
+    .purchaser-captcha-row > input { color: var(--ink) !important; background: var(--dark-surface) !important; border-color: var(--line) !important; }
+
+    /* 专属下单页：帮助弹窗内容（硬编码 #4d6557 / #5a7867 / var(--canvas) 已自动） */
+    .purchaser-help-content p { color: var(--muted) !important; }
+    .purchaser-help-contact { border-color: var(--line) !important; }
+    .purchaser-help-contact > span { color: var(--muted) !important; }
+    .purchaser-help-contact > p { color: var(--muted) !important; }
+
+    /* 专属下单页：下单成功弹窗 */
+    .purchaser-success-thanks { color: var(--ink) !important; }
+    .purchaser-success-thanks .purchaser-success-product { color: var(--app-tint) !important; }
+    .purchaser-success-info { background: var(--dark-canvas) !important; }
+    .purchaser-success-info > div > span:first-child { color: var(--muted) !important; }
+    .purchaser-success-info > div > b { color: var(--ink) !important; }
+    .purchaser-success-secondary { color: var(--muted) !important; background: var(--dark-canvas) !important; }
+
+    /* 专属下单页：补全提示弹窗 */
+    .purchaser-missing-list > button { color: var(--ink) !important; background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .purchaser-missing-num { color: #ff6b6b !important; background: rgba(255,107,107,.15) !important; }
+    .purchaser-missing-close { color: var(--muted) !important; background: var(--dark-canvas) !important; }
+
+    /* 专属下单页：下单码配置 */
+    .purchaser-order-code-row { background: var(--dark-canvas) !important; }
+    .purchaser-order-code-info small { color: var(--muted) !important; }
+    .purchaser-order-code-info b { color: var(--ink) !important; }
+    .purchaser-order-code-info em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+    .purchaser-order-code-btn { color: #fff !important; background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important; box-shadow: 0 3px 8px rgba(0,0,0,.25) !important; }
+    .purchaser-code-switch-group label { color: var(--muted) !important; background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .purchaser-code-hint { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+    /* 批量录单：确认弹窗 / 状态徽章 */
+    .batch-order-confirm-stats { background: var(--dark-canvas) !important; }
+    .batch-order-confirm-stats > div > span:first-child { color: var(--muted) !important; }
+    .batch-order-confirm-tip { color: #d6b97a !important; background: rgba(214,185,122,.12) !important; }
+    .batch-order-confirm-cancel { color: var(--muted) !important; background: var(--dark-canvas) !important; }
+    .batch-order-status-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+    /* 工作台：dashboard-pulse 硬编码 #fff 渐变 */
+    .dashboard-pulse { background: linear-gradient(120deg, var(--app-tint-soft), var(--dark-surface)) !important; }
+    .dashboard-pulse > span { background: rgba(77,141,231,.15) !important; }
+    .dashboard-pulse p { color: var(--muted) !important; }
+
+    /* 公共订单查询页：硬编码浅色 */
+    .public-safe { background: rgba(255,255,255,.06) !important; border-color: var(--line) !important; color: var(--app-tint) !important; }
+    .public-status-tabs button { background: rgba(255,255,255,.06) !important; border-color: var(--line) !important; color: var(--muted) !important; }
+    .public-order-card { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .public-order-card-head { border-color: var(--line) !important; }
+    .public-recipient { background: var(--dark-canvas) !important; }
+    .public-order-meta > span { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+    .public-order-note { background: rgba(214,185,122,.1) !important; color: #d6b97a !important; }
+    .public-timeline > div::before { background: var(--line) !important; }
+    .public-timeline > div > i { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+
+    /* 用户信息页 profile-info 分隔线 */
+    .profile-info > div { border-color: var(--line) !important; }
+    .profile-back { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--app-tint) !important; }
+
+    /* 确认弹窗 confirm-card 用 var(--surface) 已自动，但 danger 图标底色硬编码 */
+    .confirm-icon.danger { background: rgba(255,107,107,.15) !important; }
+
+    /* sheet 分隔线硬编码 #edf2ef */
+    .sheet-header { border-color: var(--line) !important; }
+  }
+}
+
+/* ===== 暗色模式补丁 2：状态条/分隔区/表格 硬编码浅色 ===== */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    /* 订单卡片内的浅底信息条 */
+    .recipient-block { background: var(--dark-canvas) !important; }
+    .latest-route { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+    .data-note { background: rgba(214,185,122,.1) !important; color: #d6b97a !important; }
+    .order-purchaser-create { background: var(--dark-canvas) !important; border-color: var(--line) !important; }
+    .order-purchaser-current { background: var(--dark-canvas) !important; }
+
+    /* 用户信息页 */
+    .logout-row { background: rgba(255,107,107,.1) !important; border-color: rgba(255,107,107,.25) !important; }
+
+    /* 工作台买家列表未绑定按钮 */
+    .dashboard-purchaser-list article > button.unbound { background: rgba(214,185,122,.12) !important; border-color: rgba(214,185,122,.3) !important; color: #d6b97a !important; }
+
+    /* 公共订单查询：商品图标底 / 时间线 */
+    .public-product-row > span { background: rgba(202,110,62,.15) !important; }
+
+    /* 链接查询示例条 */
+    .link-query-example { background: rgba(253,238,222,.08) !important; color: #d6b97a !important; }
+
+    /* 上传按钮蓝色变体 */
+    .tool-upload-blue { background: rgba(77,141,231,.12) !important; border-color: rgba(77,141,231,.3) !important; color: #6ba0e8 !important; }
+
+    /* 运费表格 */
+    .freight-table th { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+    .freight-table td { color: var(--ink) !important; }
+    .freight-table .price-high { background: rgba(255,107,107,.12) !important; color: #ff8a8a !important; }
+    .freight-table .price-low { background: var(--app-tint-soft) !important; color: var(--app-tint) !important; }
+    .freight-output { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+
+    /* 订单/快递查询结果的状态条（浅黄/浅红底） */
+    .tool-order-status-warning { background: rgba(214,185,122,.15) !important; color: #d6b97a !important; }
+    .tool-order-status-danger { background: rgba(255,107,107,.15) !important; color: #ff8a8a !important; }
+    .tool-order-note { background: rgba(214,185,122,.1) !important; color: #d6b97a !important; }
+
+    /* 专属下单页店铺公告（浅黄底） */
+    .purchaser-store-notice { background: rgba(214,185,122,.1) !important; border-color: rgba(214,185,122,.3) !important; color: #d6b97a !important; }
+    .purchaser-store-notice p { color: #d6b97a !important; }
+
+    /* 买家管理列表的"已绑定/未绑定"徽章（浅黄） */
+    .purchaser-manager-list header > i { background: rgba(214,185,122,.15) !important; color: #d6b97a !important; }
+    .purchaser-manager-list header > i.bound { background: var(--app-tint-soft) !important; color: var(--app-tint) !important; }
+
+    /* 批量录单文件按钮（硬编码 #f6fbf8 / #fff） */
+    .batch-order-file-btn { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--app-tint) !important; }
+    .batch-order-textarea { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+
+    /* 桌面侧边栏图标底 */
+    .desktop-sidebar nav button > span { background: var(--dark-canvas) !important; }
+
+    /* pill 紫色变体 */
+    .pill.is-purple { background: rgba(107,95,199,.15) !important; color: #9d92e0 !important; }
+  }
+}
+
+/* ===== 暗色模式补丁 3：剩余硬编码浅色 ===== */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    /* 登录页验证码按钮底 */
+    .captcha-login > button { background: var(--dark-canvas) !important; }
+
+    /* pill / segmented 控件（硬编码 #ecf2ee） */
+    .pill.is-muted { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+    .segmented { background: var(--dark-canvas) !important; }
+    .segmented button { color: var(--muted) !important; }
+    .segmented button.active { background: var(--dark-surface) !important; color: var(--ink) !important; box-shadow: 0 2px 8px rgba(0,0,0,.2) !important; }
+
+    /* 发货编辑器图标底 / 快递单号按钮 */
+    .shipping-editor > section > span { background: rgba(77,141,231,.15) !important; }
+    .shipping-code-input button { background: var(--dark-canvas) !important; border-color: var(--line) !important; }
+
+    /* 底部导航激活态（浅绿底） */
+    .bottom-nav button.active { background: var(--app-tint-soft) !important; }
+
+    /* 桌面侧边栏激活态 */
+    .desktop-sidebar nav button.active { background: var(--app-tint-soft) !important; }
+
+    /* 订单查询结果：快递信息条 / meta 行 */
+    .tool-order-exp { background: rgba(77,141,231,.1) !important; color: #6ba0e8 !important; }
+    .tool-order-meta-row span { background: var(--dark-canvas) !important; color: var(--muted) !important; }
+
+    /* 订单详情/发货 时间线分隔线 */
+    .timeline > div::before { background: var(--line) !important; }
+    .timeline > div > span { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .timeline section p { color: var(--muted) !important; }
+    .timeline section small { color: var(--muted) !important; }
+  }
+}
+
+/* ===== 暗色补丁 4：专属下单页购买数量/粘贴区 ===== */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    .purchaser-quantity { background: var(--dark-canvas) !important; }
+    .purchaser-quantity button { background: var(--dark-surface) !important; color: var(--app-tint) !important; box-shadow: 0 1px 2px rgba(0,0,0,.2) !important; }
+    .purchaser-quantity button:hover { color: var(--app-tint) !important; }
+    .purchaser-quantity b { color: var(--ink) !important; }
+    .purchaser-paste textarea { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+    .purchaser-paste button { background: var(--app-tint-soft) !important; color: var(--app-tint) !important; }
+  }
+}
+
+/* 专属下单页顶部看板 */
+.purchaser-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+.purchaser-stat { display: grid; justify-items: center; gap: 2px; padding: 11px 4px; border-radius: 14px; background: var(--surface); box-shadow: 0 6px 16px rgba(20,62,40,.05); }
+.purchaser-stat b { font-size: 18px; font-weight: 800; color: var(--ink); line-height: 1; }
+.purchaser-stat small { color: var(--muted); font-size: 9px; font-weight: 700; }
+.purchaser-stat:nth-child(2) b { color: #d8a23b; }
+.purchaser-stat:nth-child(3) b { color: #4d8de7; }
+.purchaser-stat:nth-child(4) b { color: var(--app-tint); }
+
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    .purchaser-stat { background: var(--dark-surface) !important; box-shadow: 0 6px 16px rgba(0,0,0,.2) !important; }
+    .purchaser-stat b { color: var(--ink) !important; }
+    .purchaser-stat small { color: var(--muted) !important; }
+    .purchaser-stat:nth-child(2) b { color: #e8b95e !important; }
+    .purchaser-stat:nth-child(3) b { color: #6ba0e8 !important; }
+    .purchaser-stat:nth-child(4) b { color: var(--app-tint) !important; }
+  }
+}
+
+/* 专属下单页 hero 副标（订单在路上提示） */
+.purchaser-order-hero-sub { display: inline-flex; align-items: center; gap: 3px; margin: 6px 0 0 !important; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.16); color: rgba(255,255,255,.92) !important; font-size: 10px; font-weight: 700; }
+.purchaser-order-hero-sub b { font-size: 12px; font-weight: 800; }
+
+/* 运费对比：移动端卡片列表 */
+.compare-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.compare-card-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.compare-card-head { display: flex; align-items: center; gap: 8px; }
+.compare-card-num { color: var(--muted); font-size: 10px; font-weight: 800; flex: none; }
+.compare-card-head b { font-size: 13px; font-weight: 700; color: var(--ink); }
+.compare-card-province { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--canvas); color: var(--muted); font-size: 10px; font-weight: 700; flex: none; }
+.compare-card-address { margin: 6px 0 8px; color: var(--muted); font-size: 10px; line-height: 1.5; word-break: break-all; }
+.compare-card-prices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.compare-price-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 11px; background: var(--canvas); position: relative; }
+.compare-price-cell > span { color: var(--muted); font-size: 9px; font-weight: 700; }
+.compare-price-cell > b { color: var(--ink); font-size: 16px; font-weight: 800; }
+.compare-price-cell.lowest { background: rgba(22,135,90,.1); }
+.compare-price-cell.lowest > b { color: var(--app-tint); }
+.compare-price-cell.lowest > em { position: absolute; top: -7px; right: 6px; padding: 1px 6px; border-radius: 999px; background: var(--app-tint); color: #fff; font-size: 8px; font-style: normal; font-weight: 800; }
+.compare-price-cell.highest > b { color: var(--danger); }
+.compare-price-cell.na > b { color: var(--muted); }
+.compare-card-tip { margin-top: 8px; padding: 6px 10px; border-radius: 9px; background: var(--app-tint-soft); color: var(--app-tint); font-size: 10px; font-weight: 700; text-align: center; }
+
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) {
+    .compare-card-item { background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    .compare-card-province { background: var(--dark-canvas) !important; }
+    .compare-price-cell { background: var(--dark-canvas) !important; }
+    .compare-price-cell.lowest { background: var(--app-tint-soft) !important; }
+  }
+}
+
+/* 工具箱列表标题：日间强制深色（不依赖变量链） */
+@media (prefers-color-scheme: dark) {
+  html:not(.theme-light) .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) h2 {
+    color: #edf4ef !important;
+  }
+}
+
+/* 运费计算排序下拉 */
+.freight-sort-select { flex: 1; min-width: 0; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2374877d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }

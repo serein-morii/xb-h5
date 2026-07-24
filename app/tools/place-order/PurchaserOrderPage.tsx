@@ -6,7 +6,7 @@ import OrderList, { PublicOrderRecord } from "../OrderList";
 
 type Row = Record<string, unknown>;
 type Option = { value: string; label: string };
-type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string };
+type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number };
 type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; orderNum: number; customer: string; phone: string; address: string; orderDesc: string };
 const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", orderNum: 1, customer: "", phone: "", address: "", orderDesc: "" };
 
@@ -60,6 +60,7 @@ export default function PurchaserOrderPage() {
   const [captcha, setCaptcha] = useState("");
   const [uuid, setUuid] = useState("");
   const [code, setCode] = useState("");
+  const [pwd, setPwd] = useState("");
 
   const loadOrders = useCallback(async (purchaserId: string) => {
     const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId } });
@@ -90,6 +91,22 @@ export default function PurchaserOrderPage() {
 
   const selectedProduct = useMemo(() => products.find((item) => item.value === form.orderName), [products, form.orderName]);
   const selectedSize = useMemo(() => sizes.find((item) => item.value === form.orderType), [sizes, form.orderType]);
+
+  // 顶部看板：用已加载的历史订单算统计
+  const stats = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    let pending = 0, shipped = 0, done = 0, monthCount = 0;
+    for (const o of orders) {
+      const s = String(o.orderStatus || "");
+      if (s === "DSH" || s === "DFH") pending++;
+      else if (s === "YFH" || s === "YSJ" || s === "YSZ" || s === "YSD") shipped++;
+      else if (s === "YWC") done++;
+      const t = o.orderTime ? new Date(String(o.orderTime).replace(/-/g, "/")) : null;
+      if (t && t >= monthStart) monthCount++;
+    }
+    return { total: orders.length, pending, shipped, done, monthCount };
+  }, [orders]);
 
   function setField<K extends keyof OrderForm>(key: K, value: OrderForm[K]) { setForm((current) => ({ ...current, [key]: value })); }
 
@@ -201,18 +218,32 @@ export default function PurchaserOrderPage() {
       setMissingFields(missing);  // 弹窗显示更醒目
       return;
     }
-    loadCaptcha();
+    // 按店铺/买家开关决定走密码还是验证码
+    if (Number(linkContext?.requirePwd) === 1) {
+      setCode(""); setUuid(""); setPwd(""); setCaptcha(""); setError("");
+      setCaptchaOpen(true);
+    } else {
+      loadCaptcha();
+    }
   }
 
   async function submitOrder() {
-    if (!code.trim()) return setError("请输入验证码");
+    const requirePwd = Number(linkContext?.requirePwd) === 1;
+    if (requirePwd) {
+      if (!/^\d{4,6}$/.test(pwd.trim())) return setError("请输入 4-6 位下单码");
+    } else {
+      if (!code.trim()) return setError("请输入验证码");
+    }
     setSubmitting(true); setError("");
     try {
-      const body = { ...form, orderNameDesc: form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label, orderTypeDesc: form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label, purchaserShortId: linkKey.purchaserId, code: code.trim(), uuid };
+      const body = { ...form, orderNameDesc: form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label, orderTypeDesc: form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label, purchaserShortId: linkKey.purchaserId, code: code.trim(), uuid, pwd: requirePwd ? pwd.trim() : undefined };
       const result = await apiRequest<{ data?: Row }>("/search/order", { auth: false, method: "POST", body });
-      setSuccess(result.data || {}); setCaptchaOpen(false); setForm((current) => ({ ...EMPTY_FORM, orderName: current.orderName, orderType: current.orderType })); setPasteText("");
+      setSuccess(result.data || {}); setCaptchaOpen(false); setForm((current) => ({ ...EMPTY_FORM, orderName: current.orderName, orderType: current.orderType })); setPasteText(""); setPwd("");
       await loadOrders(linkKey.purchaserId);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "下单失败，请重试"); await loadCaptcha(); }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "下单失败，请重试");
+      if (!requirePwd) await loadCaptcha();  // 验证码失败刷新，密码失败不刷新
+    }
     finally { setSubmitting(false); }
   }
 
@@ -221,6 +252,7 @@ export default function PurchaserOrderPage() {
     setError("");
     setPasteText("");
     setCode("");
+    setPwd("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -234,8 +266,15 @@ export default function PurchaserOrderPage() {
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
 
   return <div className="tool-page purchaser-order-page">
-    <section className="purchaser-order-hero"><div><small>XB EXPRESS ORDER</small><h1>你好，{linkContext.purchaserName}</h1><p><Store size={14} />{linkContext.storeName}<span>·</span>专属下单人 ID {linkContext.purchaserShortId}</p></div><span><ShoppingBag size={26} /></span></section>
+    <section className="purchaser-order-hero"><div><small>XB EXPRESS ORDER</small><h1>你好，{linkContext.purchaserName}</h1><p><Store size={14} />{linkContext.storeName}<span>·</span>专属下单人 ID {linkContext.purchaserShortId}</p>{stats.pending + stats.shipped > 0 ? <p className="purchaser-order-hero-sub">📦 您有 <b>{stats.pending + stats.shipped}</b> 笔订单正在路上</p> : null}</div><span><ShoppingBag size={26} /></span></section>
     {linkContext.storeNotice ? <div className="purchaser-store-notice"><ShieldCheck size={16} /><p>{linkContext.storeNotice}</p></div> : null}
+    <section className="purchaser-stats" aria-label="订单概览">
+      <div className="purchaser-stat"><b>{stats.total}</b><small>全部订单</small></div>
+      <div className="purchaser-stat"><b>{stats.pending}</b><small>待发货</small></div>
+      <div className="purchaser-stat"><b>{stats.shipped}</b><small>运输中</small></div>
+      <div className="purchaser-stat"><b>{stats.done}</b><small>已完成</small></div>
+      <div className="purchaser-stat"><b>{stats.monthCount}</b><small>本月</small></div>
+    </section>
     <nav className="purchaser-order-tabs"><button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><ShoppingBag size={17} />我要下单</button><button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}><History size={17} />我的订单<span>{orders.length}</span></button></nav>
 
     {tab === "create" ? <>
@@ -249,7 +288,7 @@ export default function PurchaserOrderPage() {
       </form>
     </> : <section className="purchaser-history-section">{orders.length ? <OrderList orders={orders} contact={linkContext.purchaserPhone} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}</section>}
 
-    {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>FINAL VERIFICATION</small><h2>请确认订单信息并完成验证</h2><p>提交后无法修改，请仔细核对下方信息。</p><div className="purchaser-captcha-summary">
+    {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "ORDER CODE" : "FINAL VERIFICATION"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "请确认订单信息并完成验证"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取" : "提交后无法修改，请仔细核对下方信息。"}</p><div className="purchaser-captcha-summary">
         <div><span>商品</span><b>{emojiFor((form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label) || "")} {form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
         <div><span>规格</span><b>{form.orderType === "other" ? form.orderTypeDesc : selectedSize?.label || "--"}</b></div>
         <div><span>数量</span><b>{form.orderNum} 件</b></div>
@@ -257,7 +296,7 @@ export default function PurchaserOrderPage() {
         <div><span>手机号</span><b>{form.phone || "--"}</b></div>
         <div><span>收货地址</span><b>{form.address || "--"}</b></div>
         {form.orderDesc ? <div><span>备注</span><b>{form.orderDesc}</b></div> : null}
-      </div><div className="purchaser-captcha-row"><button className="purchaser-captcha-image" type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button><input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="输入图中验证码" /></div>{error ? <p className="tool-error">{error}</p> : null}<button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>{submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}{submitting ? "正在创建订单" : "验证并提交订单"}</button></section></div> : null}
+      </div>{Number(linkContext?.requirePwd) === 1 ? <div className="purchaser-captcha-row purchaser-captcha-pwd-row"><input className="purchaser-captcha-pwd" autoFocus inputMode="numeric" maxLength={6} value={pwd} onChange={(event) => setPwd(event.target.value.replace(/\D/g, ""))} placeholder="输入 4-6 位下单码" /></div> : <div className="purchaser-captcha-row"><button className="purchaser-captcha-image" type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button><input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="输入图中验证码" /></div>}{error ? <p className="tool-error">{error}</p> : null}<button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>{submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}{submitting ? "正在创建订单" : (Number(linkContext?.requirePwd) === 1 ? "输入下单码并提交" : "验证并提交订单")}</button></section></div> : null}
     {success ? <div className="purchaser-success-backdrop" onMouseDown={(event) => event.target === event.currentTarget && continueOrdering()}><section className="purchaser-success-modal" role="alertdialog" aria-modal="true">
       <button className="purchaser-success-close" type="button" onClick={continueOrdering} aria-label="关闭"><X size={18} /></button>
       <div className="purchaser-success-icon"><CheckCircle2 size={36} /></div>
