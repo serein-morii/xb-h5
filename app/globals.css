@@ -1203,6 +1203,9 @@ input, textarea, select { font-size: 16px; }
 .purchaser-order-form header p { margin: 3px 0 0; color: var(--muted); font-size: 10.5px; line-height: 1.5; }
 .purchaser-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .purchaser-choice-grid.compact { margin-top: 11px; }
+.purchaser-choice-grid.four-cols { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 8px; }
+.purchaser-choice-grid.four-cols button { min-height: 30px; padding: 3px 5px; border-radius: 10px; font-size: 10px; gap: 3px; }
+.purchaser-choice-grid.four-cols button img { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; }
 .purchaser-choice-grid button { min-height: 44px; padding: 6px 8px; border: 0; border-radius: 14px; color: #5e7267; background: #ecf2ee; box-shadow: 0 1px 2px rgba(20,62,40,.04); font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: color .15s, background .15s, box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .purchaser-choice-grid button:hover:not(.active) { color: var(--ink); }
 .purchaser-choice-grid button:active:not(.active) { transform: scale(0.97); }
@@ -1220,6 +1223,9 @@ input, textarea, select { font-size: 16px; }
 .purchaser-quantity button:hover { color: #0c5a3a; }
 .purchaser-quantity button:active { transform: scale(0.93); }
 .purchaser-quantity b { min-width: 22px; text-align: center; font-size: 14px; font-weight: 800; color: var(--ink); }
+.purchaser-quantity-locked > div { gap: 6px; }
+.purchaser-quantity-locked b { min-width: auto; }
+.purchaser-quantity-locked small { color: var(--muted); font-size: 9.5px; font-weight: 600; }
 .purchaser-paste { position: relative; margin-bottom: 12px; }
 .purchaser-paste textarea { padding-bottom: 46px; background: #ecf2ee; }
 .purchaser-paste button { position: absolute; right: 8px; bottom: 8px; min-height: 33px; display: flex; align-items: center; gap: 5px; padding: 0 11px; border: 0; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 4px 10px rgba(20,121,78,.22); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -8272,6 +8278,7 @@ select:focus-visible {
     .purchaser-quantity button { background: var(--dark-surface) !important; color: var(--app-tint) !important; box-shadow: 0 1px 2px rgba(0,0,0,.2) !important; }
     .purchaser-quantity button:hover { color: var(--app-tint) !important; }
     .purchaser-quantity b { color: var(--ink) !important; }
+    .purchaser-quantity-locked small { color: var(--muted) !important; }
     .purchaser-paste textarea { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--ink) !important; }
     .purchaser-paste button { background: var(--app-tint-soft) !important; color: var(--app-tint) !important; }
   }

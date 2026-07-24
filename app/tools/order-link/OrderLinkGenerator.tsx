@@ -1,7 +1,7 @@
 
 import { CheckCircle2, Copy, ExternalLink, Link2, LoaderCircle, Phone, Search, Store, User, UserPlus } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { apiRequest, getStoredToken } from "../../lib/api";
+import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "./format";
 
 type StoreRow = { id?: number; name?: string; text?: string; value?: string; code?: string; isDelete?: number };
@@ -86,13 +86,17 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
 
   async function copyLink() {
     const text = formatOrderLinkCopy(name, link, lastPwd);
-    await navigator.clipboard.writeText(text); setCopied(true); window.setTimeout(() => setCopied(false), 1600);
+    const ok = await copyToClipboard(text);
+    if (!ok) return alert("复制失败，请手动选择链接复制");
+    setCopied(true); window.setTimeout(() => setCopied(false), 1600);
   }
 
   async function copyHistoryLink(purchaser: Purchaser) {
     const value = orderLink(purchaser);
     const text = formatOrderLinkCopy(purchaser.name, value, purchaser.orderCodePwd);
-    await navigator.clipboard.writeText(text); setHistoryCopied(String(purchaser.shortId)); window.setTimeout(() => setHistoryCopied(""), 1600);
+    const ok = await copyToClipboard(text);
+    if (!ok) return alert("复制失败，请手动选择链接复制");
+    setHistoryCopied(String(purchaser.shortId)); window.setTimeout(() => setHistoryCopied(""), 1600);
   }
 
   if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Link2 size={25} /></span><div><small>PRIVATE LINK CREATOR</small><h1>生成链接</h1><p>该功能会检索买家档案，需要先登录管理后台。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>登录后才能匹配买家、查看历史订单并生成专属链接。</p><a href="/">前往管理登录</a></section></div>;

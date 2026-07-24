@@ -18,7 +18,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { apiRequest } from "./lib/api";
+import { apiRequest, readFromClipboard } from "./lib/api";
 
 type Option = { value: string; label: string };
 type StoreRow = { id?: number; code?: string; name?: string; text?: string; value?: string; isDelete?: number };
@@ -129,7 +129,7 @@ export default function AdminOrderEntry({ username, notify }: { username: string
   }
 
   async function pasteAndParse() {
-    try { const text = await navigator.clipboard.readText(); if (!text.trim()) throw new Error("剪贴板为空"); await parseAddress(text); }
+    try { const text = await readFromClipboard(); if (!text.trim()) throw new Error("剪贴板为空"); await parseAddress(text); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "无法读取剪贴板，请手动粘贴"); }
   }
 

@@ -1,5 +1,6 @@
 import { ArrowDownAZ, Calculator, CheckCircle2, ClipboardCopy, FileSpreadsheet, LoaderCircle, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
+import { copyToClipboard } from "../../lib/api";
 import { extractProvince, FreightCompany, FreightRow, parsePastedRows, priceFor } from "../freight-data";
 
 type CalcResult = FreightRow & { index: number; province: string; ok: boolean; price: number; text: string };
@@ -119,7 +120,8 @@ export default function FreightCalculator() {
 
   async function copy() {
     if (!output) return setMessage("请先计算运费");
-    await navigator.clipboard.writeText(output); setMessage("计算结果已复制");
+    const ok = await copyToClipboard(output);
+    setMessage(ok ? "计算结果已复制" : "复制失败，请手动选择文本复制");
   }
 
   return <div className="tool-page freight-tool">

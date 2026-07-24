@@ -147,3 +147,62 @@ export async function uploadFile(
     body: form,
   });
 }
+
+/**
+ * 跨环境复制文本到剪贴板。
+ * 优先用 navigator.clipboard（需要 secure context：HTTPS / localhost / 127.0.0.1），
+ * 失败时回退到 document.execCommand('copy') + 隐藏 textarea，覆盖内网 HTTP / 部分 WebView。
+ * 返回 true 表示复制成功，false 表示两条路都不通（调用方一般可以弹个 toast）。
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof window === "undefined" || typeof document === "undefined") return false;
+  // 1) 现代 API（仅 secure context 可用）
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // 某些 WebView 写权限被拒，下面的 execCommand 兜底
+    }
+  }
+  // 2) 兜底：textarea + execCommand
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "0";
+    textarea.style.left = "0";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 跨环境读取剪贴板文本。
+ * 优先用 navigator.clipboard.readText（需要 secure context：HTTPS / localhost / 127.0.0.1），
+ * 失败或不可用时回退到 window.prompt 让用户手动 Cmd+V。返回用户粘贴的文本；
+ * 用户取消时抛 ApiError("已取消粘贴")，调用方一般 catch 一下不要吓到用户。
+ */
+export async function readFromClipboard(): Promise<string> {
+  if (typeof window === "undefined") throw new ApiError("当前环境无法读取剪贴板");
+  if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) return text;
+    } catch {
+      // 权限被拒或非 secure context，下面的 prompt 兜底
+    }
+  }
+  const value = window.prompt("请粘贴文本（Cmd / Ctrl + V），确认后会识别内容：");
+  if (value === null) throw new ApiError("已取消粘贴");
+  return value;
+}

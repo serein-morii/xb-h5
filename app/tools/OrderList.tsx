@@ -1,5 +1,6 @@
 import { CheckCircle2, ChevronDown, Clock3, Copy, Edit3, Inbox, MapPin, Search, Store, Trash2, Truck, User } from "lucide-react";
 import { useMemo, useState } from "react";
+import { copyToClipboard } from "../lib/api";
 
 export type TrackingItem = {
   id?: number;
@@ -66,7 +67,8 @@ export default function OrderList({ orders, contact, onEdit, onDelete }: { order
     const lines = ["【订单信息】", `订单号: ${order.orderCode || ""}`, `下单时间: ${String(order.orderTime || "").slice(0, 10)}`, `商品: ${order.orderNameDesc || ""} ${order.orderTypeDesc || ""} × ${order.orderNum || 1}`, `收件人: ${order.customer || ""}`, `手机号: ${order.phone || ""}`, `快递: ${order.expComDesc || ""} ${order.expCode && order.expCode !== "无" ? order.expCode : ""}`, order.store ? `店铺: ${order.store}` : "", detailLink ? `查看更多: ${detailLink}` : ""].filter(Boolean);
     const detail = (order.address || "").trim();
     const final = detail ? [...lines, "", "【订单详情】", detail] : lines;
-    await navigator.clipboard.writeText(final.join("\n"));
+    const ok = await copyToClipboard(final.join("\n"));
+    if (!ok) return; // 复制失败时不点亮"已复制"按钮，避免误导
     setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   }
 

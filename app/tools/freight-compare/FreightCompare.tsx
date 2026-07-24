@@ -1,5 +1,6 @@
 import { CheckCircle2, ClipboardCopy, Download, FileSpreadsheet, LoaderCircle, Scale, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
+import { copyToClipboard } from "../../lib/api";
 import { extractProvince, FreightRow, parsePastedRows, priceFor } from "../freight-data";
 
 type CompareRow = FreightRow & { index: number; province: string; 京东?: number; 顺丰?: number; 邮政?: number };
@@ -45,7 +46,11 @@ export default function FreightCompare() {
   }
 
   function chooseFile(event: ChangeEvent<HTMLInputElement>) { setFile(event.target.files?.[0] || null); setMessage(""); }
-  async function copy() { if (!rows.length) return; await navigator.clipboard.writeText(clipboardText(rows)); setMessage("对比表已复制"); }
+  async function copy() {
+    if (!rows.length) return;
+    const ok = await copyToClipboard(clipboardText(rows));
+    setMessage(ok ? "对比表已复制" : "复制失败，请手动选择文本复制");
+  }
   async function exportExcel() {
     if (!rows.length) return;
     const XLSX = await import("xlsx");

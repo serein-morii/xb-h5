@@ -1,7 +1,7 @@
 
 import { CheckCircle2, Copy, KeyRound, Link2, LoaderCircle, Phone, Plus, RefreshCw, Search, ShieldCheck, Store, Unlink, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiRequest, getStoredToken } from "../../lib/api";
+import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
 type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; createTime?: string; updateTime?: string };
@@ -69,7 +69,8 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
   async function copyOrderLink(item: Purchaser) {
     if (!item.shortId || !item.storeId) return setError("该买家尚未绑定有效店铺，暂不能复制下单链接");
     const text = formatOrderLinkCopy(item.name, buildOrderLink(item.shortId), item.orderCodePwd);
-    await navigator.clipboard.writeText(text);
+    const ok = await copyToClipboard(text);
+    if (!ok) return setError("复制失败，请手动选择链接复制");
     setNotice(`已复制${item.name || "买家"}的下单链接`); window.setTimeout(() => setNotice(""), 1800);
   }
 

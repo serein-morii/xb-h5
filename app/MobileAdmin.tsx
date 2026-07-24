@@ -54,6 +54,7 @@ import {
 import {
   apiRequest,
   clearStoredToken,
+  copyToClipboard,
   downloadFile,
   getStoredToken,
   setStoredToken,
@@ -697,7 +698,8 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
     }
     try {
       const text = formatOrderLinkCopy(purchaser.name, buildOrderLink(purchaser.shortId));
-      await navigator.clipboard.writeText(text);
+      const ok = await copyToClipboard(text);
+      if (!ok) throw new Error("复制失败");
       notify(`${purchaser.name || "买家"}的下单链接已复制`, "success");
     } catch {
       notify("复制失败，请在买家管理中重试", "error");
@@ -850,7 +852,9 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
     catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
   }
   async function copy(text: string, message: string) {
-    await navigator.clipboard.writeText(text); notify(message, "success");
+    const ok = await copyToClipboard(text);
+    if (ok) notify(message, "success");
+    else notify("复制失败，请手动选择文本复制", "error");
   }
 
   return (
