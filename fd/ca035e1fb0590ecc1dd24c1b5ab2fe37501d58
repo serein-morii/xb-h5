@@ -1,0 +1,72 @@
+app/globals.css
+  s_e4aa181a8c5e50::t_1203aac15279b9 1407-1410
+  s_e4aa181a8c5e50::t_1b5798695be1ba 8238-8265
+  s_e4aa181a8c5e50::t_df87101d3f1d0e 342,8018-8072,8074-8237
+  s_e4aa181a8c5e50::t_7fe39cd0c5786e 1353-1354
+  s_e4aa181a8c5e50::t_b49e50bdef4a5b 1414
+  s_e4aa181a8c5e50::t_304fb123aa9cf9 8273-8275
+  s_e4aa181a8c5e50::t_7595d869425d26 8266-8272
+  s_e4aa181a8c5e50::t_fe393be50bdd9d 909
+  s_e4aa181a8c5e50::t_791d3c1a496faf 1883-1887
+  s_e4aa181a8c5e50::t_3df7134ce64d94 1399,1402,1405
+  s_e4aa181a8c5e50::t_9f39dad7c52729 1411-1413
+  s_e4aa181a8c5e50::t_60485ecf0de7d3 5959
+  s_e4aa181a8c5e50::t_e9f4a42d7beb54 1397-1398,1400-1401,1403-1404,1406
+  s_e4aa181a8c5e50::t_c2e76613b0394f 1653
+  s_e4aa181a8c5e50::t_0f539e9fa8e029 8073
+app/tools/freight-compare/FreightCompare.tsx
+  s_e4aa181a8c5e50::t_f38c8a24edde41 69-91
+app/tools/order-link/format.ts
+  s_e4aa181a8c5e50::t_2a5965c906d1a2 9,11-14
+app/tools/freight-calculator/FreightCalculator.tsx
+  s_e4aa181a8c5e50::t_dad76350d0f7ce 138-139,142-143
+  s_e4aa181a8c5e50::t_596f4ad671fbfc 77
+  s_e4aa181a8c5e50::t_298785d819bf00 137,141,144-145
+  s_e4aa181a8c5e50::t_d813056f881e18 140
+  s_e4aa181a8c5e50::t_b999275f72525e 81-89,93-94
+  s_e4aa181a8c5e50::t_fa6876f21188a0 90-92
+  s_e4aa181a8c5e50::t_b0b471c1e991cc 95-104
+app/tools/purchasers/PurchaserManager.tsx
+  s_e4aa181a8c5e50::t_ed4553145e1471 2,7-8
+  s_e4aa181a8c5e50::t_babd18231ea8e9 22-25
+  s_e4aa181a8c5e50::t_6902bda363136d 112-113
+  s_e4aa181a8c5e50::t_8b26600722158c 131
+  s_e4aa181a8c5e50::t_42f1205e8cc882 134-147
+  s_e4aa181a8c5e50::t_944ffe191ab6bd 97,99-101,106
+  s_e4aa181a8c5e50::t_9cf40735ed3e98 71,76-96,98,102-105,107-111
+app/tools/freight-data.ts
+  s_e4aa181a8c5e50::t_583036b4376117 14-23,25-27,30-63,100-103,105-111,113
+app/tools/order-link/OrderLinkGenerator.tsx
+  s_e4aa181a8c5e50::t_de36eb0d0c761f 88,94
+  s_e4aa181a8c5e50::t_2fdc379c59f0cb 8
+  s_e4aa181a8c5e50::t_e22db4627f09ee 24
+  s_e4aa181a8c5e50::t_6d8d0983c5bf28 51
+app/MobileAdmin.tsx
+  s_e4aa181a8c5e50::t_4b4f18b6708747 1179
+  s_e4aa181a8c5e50::t_6f5298ef2a68c8 893
+  s_e4aa181a8c5e50::t_8a6016c8658ee8 1180
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_e4aa181a8c5e50::t_452520797ede00 63
+  s_e4aa181a8c5e50::t_c32b6a0de63252 221-227,231-236,239,241,243-246,255
+  s_e4aa181a8c5e50::t_a5ea0f7e6f0891 9
+  s_e4aa181a8c5e50::t_328044b1928b93 271-277
+  s_e4aa181a8c5e50::t_3b0b02442b8a2c 95-110
+  s_e4aa181a8c5e50::t_b11f64435d3444 291,299
+  s_e4aa181a8c5e50::t_b59abd02e22d7a 269
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fdca035e1fb0590ecc1dd24c1b5ab2fe37501d58",
+  "prompts": {},
+  "sessions": {
+    "s_e4aa181a8c5e50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99a631df-de71-4628-a97b-ab347c3c0f89",
+        "model": "glm-5.2"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
