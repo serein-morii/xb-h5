@@ -25,7 +25,26 @@
       "Bash(curl:*)",
       "Bash(mvn compile:*)",
       "Bash(grep -rn \"mysql\\\\|jdbc\\\\|datasource\" /Users/xp/dev/xb/xb/src/main/resources/application*.yml)",
-      "Bash(grep -n \"sys_order\" /Users/xp/dev/xb/xb/sql/*.sql)"
+      "Bash(grep -n \"sys_order\" /Users/xp/dev/xb/xb/sql/*.sql)",
+      "Bash(mvn -pl . -q -DskipTests compile)",
+      "Bash(find:*)",
+      "Bash(grep -rn \"export.*apiRequest\\\\|function apiRequest\" /Users/xp/dev/xb/order/xb-h5/app/lib /Users/xp/dev/xb/order/xb-h5/app/api*)",
+      "Bash(python3 -c \"import json,sys; r=json.load\\(sys.stdin\\); print\\('msg:', r.get\\('msg'\\)\\); print\\('code:', r.get\\('code'\\)\\); print\\('captchaOnOff:', r.get\\('captchaOnOff'\\)\\); print\\('has img:', bool\\(r.get\\('img'\\)\\)\\)\")",
+      "Bash(python3 -c ':*)",
+      "Bash(mvn -q -DskipTests compile)",
+      "Bash(mvn -pl xb compile -DskipTests -q)",
+      "Bash(unzip -p target/xb.jar BOOT-INF/classes/com/xb/project/biz/controller/PurchaserInfoController.class)",
+      "Bash(javap -p /tmp/pic.class)",
+      "Bash(javap -p target/classes/com/xb/project/biz/controller/PurchaserInfoController.class)",
+      "Bash(javap -p /dev/stdin)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)",
+      "Bash(ls -la target/classes/com/xb/project/biz/controller/*.class)",
+      "Bash(mvn clean:*)",
+      "Bash(javap -version)",
+      "Bash(javap:*)",
+      "Bash(mvn dependency:build-classpath -o -q)",
+      "Bash(unzip -l /Users/xp/dev/maven/maven/repository/com/github/pagehelper/pagehelper-spring-boot-starter/1.4.1/pagehelper-spring-boot-starter-1.4.1.jar)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

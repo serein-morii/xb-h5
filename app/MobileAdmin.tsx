@@ -663,22 +663,23 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [orders, pending, waiting, sent, completed, express, bills, stores, purchasers] = await Promise.all([
-        apiRequest<DataRow>("/biz/order/list", { query: { pageNum: 1, pageSize: 10 } }),
-        apiRequest<DataRow>("/biz/order/list", { query: { pageNum: 1, pageSize: 1, orderStatus: "DSH" } }),
-        apiRequest<DataRow>("/biz/order/list", { query: { pageNum: 1, pageSize: 1, orderStatus: "DFH" } }),
-        apiRequest<DataRow>("/biz/order/list", { query: { pageNum: 1, pageSize: 1, orderStatus: "YFH" } }),
-        apiRequest<DataRow>("/biz/order/list", { query: { pageNum: 1, pageSize: 1, orderStatus: "YWC" } }),
-        apiRequest<DataRow>("/biz/exp/list", { query: { pageNum: 1, pageSize: 8 } }),
-        apiRequest<DataRow>("/biz/bill/list", { query: { pageNum: 1, pageSize: 1 } }),
-        apiRequest<DataRow>("/biz/store/list", { query: { pageNum: 1, pageSize: 1, isDelete: 1 } }),
-        apiRequest<{ data?: DataRow[] }>("/biz/purchaser/list"),
-      ]);
-      const purchaserRows = Array.isArray(purchasers.data) ? purchasers.data : [];
+      // 后端聚合接口：一次返回订单按状态分组计数、账单/店铺/买家总数、最近 10/8/8 列表
+      // 替代原先的 8 个并发分页请求（其中 4 个 pageSize=1 只为拿 total）
+      const stats = await apiRequest<{ data?: DataRow }>("/biz/order/stats");
+      const payload = (stats.data && typeof stats.data === "object" ? stats.data : {}) as DataRow;
       setData({
-        orderTotal: Number(orders.total || 0), pending: Number(pending.total || 0), waiting: Number(waiting.total || 0), sent: Number(sent.total || 0), completed: Number(completed.total || 0),
-        billTotal: Number(bills.total || 0), storeTotal: Number(stores.total || 0), purchaserTotal: purchaserRows.length, boundPurchaserTotal: purchaserRows.filter((item) => item.shortId && item.storeId).length,
-        recentOrders: Array.isArray(orders.rows) ? orders.rows : [], recentExpress: Array.isArray(express.rows) ? express.rows : [], recentPurchasers: purchaserRows.slice(0, 8),
+        orderTotal: Number(payload.orderTotal || 0),
+        pending: Number(payload.pending || 0),
+        waiting: Number(payload.waiting || 0),
+        sent: Number(payload.sent || 0),
+        completed: Number(payload.completed || 0),
+        billTotal: Number(payload.billTotal || 0),
+        storeTotal: Number(payload.storeTotal || 0),
+        purchaserTotal: Number(payload.purchaserTotal || 0),
+        boundPurchaserTotal: Number(payload.boundPurchaserTotal || 0),
+        recentOrders: Array.isArray(payload.recentOrders) ? payload.recentOrders : [],
+        recentExpress: Array.isArray(payload.recentExpress) ? payload.recentExpress : [],
+        recentPurchasers: Array.isArray(payload.recentPurchasers) ? payload.recentPurchasers : [],
       });
     } catch (error) {
       notify(error instanceof Error ? error.message : "工作台数据加载失败", "error");

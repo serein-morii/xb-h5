@@ -8135,6 +8135,8 @@ select:focus-visible {
     .purchaser-order-code-info em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
     .purchaser-order-code-btn { color: #fff !important; background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important; box-shadow: 0 3px 8px rgba(0,0,0,.25) !important; }
     .purchaser-code-switch-group label { color: var(--muted) !important; background: var(--dark-surface) !important; border-color: var(--line) !important; }
+    /* 暗色下 .active 也必须用 !important，否则被上面那行盖掉、看不出选中态 */
+    .purchaser-code-switch-group label.active { color: #fff !important; background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important; border-color: transparent !important; box-shadow: 0 3px 8px rgba(0,0,0,.25) !important; }
     .purchaser-code-hint { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
 
     /* 批量录单：确认弹窗 / 状态徽章 */
