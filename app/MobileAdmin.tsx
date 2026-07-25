@@ -780,6 +780,7 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
   const [filters, setFilters] = useState<DataRow>({ pageNum: 1, pageSize: 20 });
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
@@ -856,6 +857,37 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
     if (ok) notify(message, "success");
     else notify("复制失败，请手动选择文本复制", "error");
   }
+  async function loadAllOrders() {
+    if (loadAllState.loading) return;
+    const pageSize = Number(filters.pageSize || 20) || 20;
+    setLoadAllState({ loading: true, current: 0, total: 0 });
+    const accumulated: DataRow[] = [];
+    let serverTotal = 0;
+    let pageNum = 1;
+    const maxPages = 200;
+    try {
+      while (pageNum <= maxPages) {
+        const result = await apiRequest<DataRow>("/biz/order/list", { query: { ...filters, pageNum, pageSize } });
+        const pageRows = Array.isArray(result.rows) ? result.rows : [];
+        serverTotal = Number(result.total || 0);
+        accumulated.push(...pageRows);
+        setLoadAllState({ loading: true, current: accumulated.length, total: serverTotal });
+        if (!pageRows.length || accumulated.length >= serverTotal) break;
+        pageNum += 1;
+      }
+      setRows(accumulated);
+      setTotal(serverTotal);
+      notify(`已加载全部 ${accumulated.length} 条订单`, "success");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "加载所有订单失败", "error");
+      if (accumulated.length) {
+        setRows(accumulated);
+        setTotal(serverTotal);
+      }
+    } finally {
+      setLoadAllState({ loading: false, current: 0, total: 0 });
+    }
+  }
 
   return (
     <div className="module-page order-page">
@@ -895,6 +927,10 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
         <button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button>
         <button type="button" onClick={() => downloadFile("biz/order/export", filters, `order_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
         <button type="button" onClick={() => downloadFile("biz/order/importTemplate", {}, `order_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button>
+        <button type="button" onClick={loadAllOrders} disabled={loadAllState.loading} className={loadAllState.loading ? "is-loading" : ""}>
+          {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
+          {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
+        </button>
         <input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { const query: Record<string, unknown> = { updateSupport: false, updateBill: false, updateExp: false }; if (filters.store) query.storeCode = filters.store; await uploadFile("/biz/order/importData", file, query); notify("订单导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} />
       </div>
 
@@ -1193,6 +1229,8 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
+  const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [query, setQuery] = useState<DataRow>({ pageNum: 1, pageSize: 15 });
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
@@ -1204,6 +1242,81 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
   useEffect(() => { setExpanded(new Set()); }, [config.key]);
   async function edit(row: DataRow) { try { const result = await apiRequest<DataRow>(`${config.api}/${row.id}`); setEditor(result.data || row); } catch (error) { notify(error instanceof Error ? error.message : "数据加载失败", "error"); } }
   async function extra(row: DataRow) { if (!config.extraAction) return; try { await apiRequest(config.extraAction.path(row), { method: config.extraAction.method }); notify(`${config.extraAction.label}成功`, "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }
+  async function loadAllRows() {
+    if (loadAllState.loading) return;
+    const pageSize = Number(query.pageSize || 15) || 15;
+    setLoadAllState({ loading: true, current: 0, total: 0 });
+    const accumulated: DataRow[] = [];
+    let serverTotal = 0;
+    let pageNum = 1;
+    const maxPages = 200;
+    try {
+      while (pageNum <= maxPages) {
+        const result = await apiRequest<DataRow>(`${config.api}/list`, { query: { ...query, pageNum, pageSize } });
+        const pageRows = Array.isArray(result.rows) ? result.rows : [];
+        serverTotal = Number(result.total || 0);
+        accumulated.push(...pageRows);
+        setLoadAllState({ loading: true, current: accumulated.length, total: serverTotal });
+        if (!pageRows.length || accumulated.length >= serverTotal) break;
+        pageNum += 1;
+      }
+      setRows(accumulated);
+      setTotal(serverTotal);
+      notify(`已加载全部 ${accumulated.length} 条${config.itemName}`, "success");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : `加载所有${config.itemName}失败`, "error");
+      if (accumulated.length) {
+        setRows(accumulated);
+        setTotal(serverTotal);
+      }
+    } finally {
+      setLoadAllState({ loading: false, current: 0, total: 0 });
+    }
+  }
+  async function syncAllRows() {
+    if (!config.extraAction || syncAllState.loading) return;
+    const pageSize = Number(query.pageSize || 15) || 15;
+    const maxPages = 200;
+    let totalKnown = 0;
+    let processed = 0;
+    let success = 0;
+    let failed = 0;
+    let pageNum = 1;
+    setSyncAllState({ loading: true, current: 0, total: 0, success: 0, failed: 0 });
+    try {
+      while (pageNum <= maxPages) {
+        const result = await apiRequest<DataRow>(`${config.api}/list`, { query: { ...query, pageNum, pageSize } });
+        const pageRows = Array.isArray(result.rows) ? result.rows : [];
+        const serverTotal = Number(result.total || 0);
+        if (pageNum === 1) {
+          totalKnown = serverTotal;
+          if (!totalKnown) {
+            notify("没有可同步的记录", "info");
+            return;
+          }
+          setSyncAllState({ loading: true, current: 0, total: totalKnown, success: 0, failed: 0 });
+        }
+        for (const row of pageRows) {
+          try {
+            await apiRequest(config.extraAction.path(row), { method: config.extraAction.method });
+            success += 1;
+          } catch {
+            failed += 1;
+          }
+          processed += 1;
+          setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed });
+        }
+        if (!pageRows.length || processed >= totalKnown) break;
+        pageNum += 1;
+      }
+      notify(`同步完成：成功 ${success} 条，失败 ${failed} 条`, failed ? "info" : "success");
+      load();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
+    } finally {
+      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
+    }
+  }
   function toggleExpand(id: string | number) {
     setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
@@ -1238,6 +1351,14 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
         {config.importable ? <><button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button><button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/importTemplate`, {}, `${config.key}_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button><input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { await uploadFile(`${config.api}/importData`, file, { updateSupport: false }); notify("导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} /></> : null}
+        <button type="button" onClick={loadAllRows} disabled={loadAllState.loading || (total > 0 && rows.length >= total)} className={loadAllState.loading ? "is-loading" : ""}>
+          {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
+          {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
+        </button>
+        {config.key === "bills" && config.extraAction ? <button type="button" onClick={syncAllRows} disabled={syncAllState.loading} className={syncAllState.loading ? "is-loading" : ""}>
+          {syncAllState.loading ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
+          {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total}` : "同步中…") : "同步所有"}
+        </button> : null}
       </div>
       <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条</span></div></div>
       <div className="mobile-card-list">

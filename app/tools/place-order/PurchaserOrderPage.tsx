@@ -1,5 +1,5 @@
 
-import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, CircleHelp, Edit3, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, X } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, CircleHelp, Edit3, Eye, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
@@ -77,6 +77,8 @@ export default function PurchaserOrderPage() {
   const [confirmingEdit, setConfirmingEdit] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<PublicOrderRecord | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  // 详情查看
+  const [viewingOrder, setViewingOrder] = useState<PublicOrderRecord | null>(null);
 
   const loadOrders = useCallback(async (purchaserId: string) => {
     const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId } });
@@ -379,7 +381,7 @@ export default function PurchaserOrderPage() {
         {error && !captchaOpen ? <p className="tool-error purchaser-order-error">{error}</p> : null}<button className="purchaser-submit" type="submit"><PackageCheck size={19} />确认商品并提交订单</button><p className="purchaser-submit-tip"><ShieldCheck size={13} />点击提交后才会弹出验证码，验证成功即创建订单</p>
         <button type="button" className="purchaser-help-button" onClick={() => setHelpOpen(true)}><CircleHelp size={15} />下单说明 · 常见问题</button>
       </form>
-    </> : <section id="purchaser-history-section" className="purchaser-history-section">{orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}</section>}
+    </> : <section id="purchaser-history-section" className="purchaser-history-section">{orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}</section>}
 
     {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "ORDER CODE" : "FINAL VERIFICATION"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "请确认订单信息并完成验证"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取" : "提交后无法修改，请仔细核对下方信息。"}</p><div className="purchaser-captcha-summary">
         <div><span>商品</span><b>{emojiFor((form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label) || "")} {form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
@@ -470,6 +472,44 @@ export default function PurchaserOrderPage() {
         {error ? <p className="tool-error">{error}</p> : null}
         <button className="purchaser-captcha-submit" type="submit" disabled={editSubmitting}><Edit3 size={18} />保存修改</button>
       </form>
+    </section></div> : null}
+    {viewingOrder ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setViewingOrder(null)}><section className="purchaser-captcha-modal purchaser-detail-modal">
+      <button className="purchaser-captcha-close" type="button" onClick={() => setViewingOrder(null)} aria-label="关闭"><X size={19} /></button>
+      <small>ORDER DETAILS</small>
+      <h2>订单详情</h2>
+      <p>订单号 <b>{viewingOrder.orderCode || "--"}</b> · {viewingOrder.orderStatusDesc || viewingOrder.orderStatus || "未知"} · {String(viewingOrder.orderTime || "").replace("T", " ").slice(0, 16) || "暂无时间"}</p>
+      <div className="purchaser-detail-section">
+        <h3>商品</h3>
+        <div className="purchaser-captcha-summary">
+          <div><span>商品名称</span><b>{viewingOrder.orderNameDesc || "--"}</b></div>
+          <div><span>规格</span><b>{viewingOrder.orderTypeDesc || "--"}</b></div>
+          <div><span>数量</span><b>{viewingOrder.orderNum || 1} 件</b></div>
+          {viewingOrder.orderDesc ? <div className="full"><span>订单备注</span><b>{viewingOrder.orderDesc}</b></div> : null}
+        </div>
+      </div>
+      <div className="purchaser-detail-section">
+        <h3>收件信息</h3>
+        <div className="purchaser-captcha-summary">
+          <div><span>收件人</span><b>{viewingOrder.customer || "--"}</b></div>
+          <div><span>手机号</span><b>{viewingOrder.phone || "--"}</b></div>
+          <div className="full"><span>详细地址</span><b>{viewingOrder.address || "暂无地址"}</b></div>
+        </div>
+      </div>
+      <div className="purchaser-detail-section">
+        <h3>快递</h3>
+        <div className="purchaser-captcha-summary">
+          <div><span>快递公司</span><b>{viewingOrder.expComDesc || "暂无"}</b></div>
+          <div><span>快递单号</span><b>{viewingOrder.expCode && viewingOrder.expCode !== "无" ? viewingOrder.expCode : "暂无"}</b></div>
+        </div>
+        {(viewingOrder.expInfoList || []).length ? <div className="tool-mini-timeline tool-full-timeline" style={{ marginTop: 11 }}>{(viewingOrder.expInfoList || []).map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>)}</div> : <p style={{ margin: "7px 0 0", color: "var(--muted)", fontSize: 9 }}>暂无物流轨迹</p>}
+      </div>
+      {(viewingOrder.store || viewingOrder.purchaser || viewingOrder.createBy) ? <div className="purchaser-detail-section">
+        <h3>其他</h3>
+        <div className="purchaser-captcha-summary">
+          {viewingOrder.store ? <div><span>店铺</span><b>{viewingOrder.store}</b></div> : null}
+          {viewingOrder.purchaser || viewingOrder.createBy ? <div><span>下单人</span><b>{viewingOrder.purchaser || viewingOrder.createBy}</b></div> : null}
+        </div>
+      </div> : null}
     </section></div> : null}
     {confirmingEdit ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !editSubmitting && setConfirmingEdit(false)}><section className="purchaser-captcha-modal">
       <button className="purchaser-captcha-close" type="button" onClick={() => setConfirmingEdit(false)} disabled={editSubmitting} aria-label="关闭"><X size={19} /></button>

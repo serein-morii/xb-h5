@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, Clock3, Copy, Edit3, Inbox, MapPin, Search, Store, Trash2, Truck, User } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Copy, Edit3, Eye, Inbox, MapPin, Search, Store, Trash2, Truck, User } from "lucide-react";
 import { useMemo, useState } from "react";
 import { copyToClipboard } from "../lib/api";
 
@@ -44,7 +44,7 @@ function statusTone(code?: string) {
   return "warning";
 }
 
-export default function OrderList({ orders, contact, onEdit, onDelete }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void }) {
+export default function OrderList({ orders, contact, onEdit, onDelete, onView }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void }) {
   const [active, setActive] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -89,7 +89,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete }: { order
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}
         <button type="button" className={`tool-tracking-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleTracking(order.id)}><Clock3 size={15} /><span><b>物流信息详情</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"} · 共 {tracking.length} 条</small></span><ChevronDown size={17} /></button>
         {isOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
-        {isPending && (onEdit || onDelete) ? <div className="tool-order-actions">{onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div> : null}
+        {(isPending && (onEdit || onDelete)) || onView ? <div className="tool-order-actions">{onView ? <button type="button" className="tool-view" onClick={() => onView(order)}><Eye size={12} /><span>详情</span></button> : null}{isPending && onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{isPending && onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div> : null}
       </article>;
     })}</section>
     {!visible.length ? <div className="tool-list-empty"><Inbox size={32} /><h3>没有符合当前筛选条件的订单</h3><p>试着切换状态、清除搜索词，或者刷新一下数据。</p></div> : null}

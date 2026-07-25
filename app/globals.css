@@ -299,6 +299,8 @@ input, textarea, select { font-size: 16px; }
 .secondary-actions { display: flex; gap: 8px; overflow-x: auto; padding: 1px 0 8px; scrollbar-width: none; }
 .secondary-actions::-webkit-scrollbar { display: none; }
 .secondary-actions button { flex: none; display: flex; align-items: center; gap: 5px; min-height: 35px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; color: #51675c; background: var(--canvas); font-size: 11px; cursor: pointer; }
+.secondary-actions button:disabled,
+.secondary-actions button.is-loading { cursor: progress; opacity: .8; color: #14794e; }
 .list-heading { display: flex; align-items: center; justify-content: space-between; margin: 11px 3px 8px; }
 .list-heading > div { display: flex; align-items: baseline; gap: 8px; }
 .list-heading h2 { margin: 0; font-size: 17px; }
@@ -1070,6 +1072,9 @@ input, textarea, select { font-size: 16px; }
 .tool-delete { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: .5px solid rgba(255,59,48,.28); border-radius: 10px; color: #ff3b30; background: rgba(255,59,48,.08); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .tool-delete:hover { background: rgba(255,59,48,.14); }
 .tool-delete:active { transform: scale(0.97); }
+.tool-view { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: .5px solid rgba(20,121,78,.28); border-radius: 10px; color: #14794e; background: rgba(20,121,78,.08); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.tool-view:hover { background: rgba(20,121,78,.14); }
+.tool-view:active { transform: scale(0.97); }
 .tool-order-actions { display: flex; gap: 6px; margin-top: 7px; justify-content: flex-end; }
 
 /* Freight result */
@@ -1195,6 +1200,7 @@ input, textarea, select { font-size: 16px; }
 .purchaser-order-tabs button { min-height: 43px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #70837a; background: transparent; font-size: 10px; font-weight: 800; cursor: pointer; }
 .purchaser-order-tabs button.active { color: #fff; background: linear-gradient(135deg, #14794e, #1da369); box-shadow: 0 9px 20px rgba(28,132,84,.16); }
 .purchaser-order-tabs button span { min-width: 18px; height: 18px; display: grid; place-items: center; border-radius: 999px; color: #287b58; background: #e7f6ee; font-size: 7px; }
+.purchaser-order-tabs button.active span { color: #14794e; background: #fff; box-shadow: none; }
 .purchaser-order-form { display: grid; gap: 12px; }
 .purchaser-order-form > section { padding: 18px; border: 0; border-radius: 22px; background: var(--surface); box-shadow: 0 1px 2px rgba(20,62,40,.04), 0 12px 32px rgba(20,62,40,.06); }
 .purchaser-order-form section > header { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
@@ -1373,6 +1379,13 @@ input, textarea, select { font-size: 16px; }
 .purchaser-edit-modal > small { color: #2b9664; font-size: 7px; font-weight: 850; letter-spacing: .14em; }
 .purchaser-edit-modal h2 { margin: 5px 0 4px; font-size: 20px; }
 .purchaser-edit-modal > p { margin: 0 0 12px; color: var(--muted); font-size: 9px; }
+.purchaser-detail-modal { width: min(100%, 480px); }
+.purchaser-detail-modal > p { margin: 0 0 12px; color: var(--muted); font-size: 9px; }
+.purchaser-detail-section { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); }
+.purchaser-detail-section:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.purchaser-detail-section h3 { margin: 0 0 7px; color: #2b9664; font-size: 8px; font-weight: 850; letter-spacing: .14em; }
+.purchaser-detail-section .purchaser-captcha-summary { gap: 9px 11px; padding: 0; border: 0; border-radius: 0; background: transparent; margin: 0; }
+.purchaser-detail-section .purchaser-captcha-summary > div.full { grid-column: 1 / -1; }
 .purchaser-edit-form { display: grid; gap: 12px; }
 .purchaser-edit-form > section { padding: 16px; border: 0; border-radius: 20px; background: var(--canvas); }
 .purchaser-edit-form section > header { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
@@ -2369,6 +2382,7 @@ select:focus-visible {
   color: var(--app-tint);
   background: var(--app-tint-soft);
 }
+.purchaser-order-tabs button.active span { color: var(--app-tint); background: #fff; box-shadow: none; }
 
 .purchaser-quantity button {
   border-color: #dce1ea;
