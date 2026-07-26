@@ -91,7 +91,9 @@ export default function PurchaserOrderPage() {
 
   const loadOrders = useCallback(async (purchaserId: string, password?: string) => {
     const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId, ...(password ? { costPricePwd: password } : {}) } });
-    setOrders(Array.isArray(result.data) ? result.data : []);
+    const data = Array.isArray(result.data) ? result.data : [];
+    setOrders(data);
+    return data;
   }, []);
 
   const initialize = useCallback(async () => {
@@ -405,9 +407,9 @@ export default function PurchaserOrderPage() {
     if (!/^\d{4,6}$/.test(costPwd.trim())) { setCostPwdError("密码为 4-6 位数字"); return; }
     setCostPwdBusy(true); setCostPwdError("");
     try {
-      await loadOrders(linkKey.purchaserId, costPwd.trim());
-      // 只有第一行订单里有成本价才视为解锁成功（说明后端接受了这把密码）
-      const unlocked = orders.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
+      // 用 loadOrders 的返回值判断（setOrders 是异步的，直接读 orders 拿到的是旧值，会误判）
+      const fresh = await loadOrders(linkKey.purchaserId, costPwd.trim());
+      const unlocked = fresh.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
       if (unlocked) {
         setCostPriceUnlocked(true); setCostPwd(""); setCostPwdError("");
       } else {

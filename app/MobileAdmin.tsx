@@ -2653,7 +2653,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
-  const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number; skipped: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
+  const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [query, setQuery] = useState<DataRow>({ pageNum: 1, pageSize: 15 });
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
@@ -2702,103 +2702,27 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
       setLoadAllState({ loading: false, current: 0, total: 0 });
     }
   }
-  async function syncAllRows(force = false) {
-    if (!config.extraAction || syncAllState.loading) return;
-    const pageSize = Number(query.pageSize || 15) || 15;
-    const maxPages = 200;
-    let totalKnown = 0;
-    let processed = 0;
-    let success = 0;
-    let failed = 0;
-    let skipped = 0;
-    let pageNum = 1;
-    setSyncAllState({ loading: true, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
-    try {
-      while (pageNum <= maxPages) {
-        const result = await apiRequest<DataRow>(`${config.api}/list`, { query: { ...query, pageNum, pageSize } });
-        const pageRows = Array.isArray(result.rows) ? result.rows : [];
-        const serverTotal = Number(result.total || 0);
-        if (pageNum === 1) {
-          totalKnown = serverTotal;
-          if (!totalKnown) {
-            notify("没有可同步的记录", "info");
-            return;
-          }
-          setSyncAllState({ loading: true, current: 0, total: totalKnown, success: 0, failed: 0, skipped: 0 });
-        }
-        for (const row of pageRows) {
-          // 账单"同步所有"：非强制模式下跳过非 DSH/DFH 的账单
-          if (config.key === "bills" && !force) {
-            const status = String(row.orderStatus || "");
-            if (status !== "DSH" && status !== "DFH") {
-              skipped += 1;
-              processed += 1;
-              setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped });
-              continue;
-            }
-          }
-          // 强制模式：直接走 /biz/bill/forceSync/{id}；非强制/非账单：走常规 resolveExtra
-          let path: string;
-          let method: string;
-          if (config.key === "bills" && force) {
-            path = `/biz/bill/forceSync/${row.id}`;
-            method = "PATCH";
-          } else {
-            const action = resolveExtra(row);
-            if (!action) { failed += 1; processed += 1; setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped }); continue; }
-            path = action.path(row);
-            method = action.method;
-          }
-          try {
-            await apiRequest(path, { method });
-            success += 1;
-          } catch (error) {
-            failed += 1;
-            const message = error instanceof Error ? error.message : "未知错误";
-            console.warn(`[syncAll] failed → id=${row.id} orderCode=${row.orderCode} status=${row.orderStatus || "(空)"} path=${path}`, message);
-          }
-          processed += 1;
-          setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped });
-        }
-        if (!pageRows.length || processed >= totalKnown) break;
-        pageNum += 1;
-      }
-      const summary = force
-        ? `强制刷新完成：成功 ${success} 条，失败 ${failed} 条`
-        : `同步完成：成功 ${success} 条，失败 ${failed} 条${skipped ? `，跳过 ${skipped} 条（需强制刷新）` : ""}`;
-      notify(summary, failed || (skipped && !force) ? "info" : "success");
-      load();
-    } catch (error) {
-      notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
-    } finally {
-      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
-    }
-  }
 
   /**
    * 账单"同步所有"专用：对传入的账单列表逐条同步
-   * - force=false：非 DSH/DFH 状态直接跳过（只同步白名单状态）
-   * - force=true：忽略状态，全部走 forceSync
-   * 不做分页：调用方（BillsSyncModeSheet）已经一次性拉完所有账单
+   * - allRows 已经是调用方（BillsSyncModeSheet）按 DSH/DFH 过滤后的结果（仅同步价格模式）；
+   *   强制刷新模式则保持原样（全部）
+   * - force=true：走 /biz/bill/forceSync/{id}（无视订单状态）
+   * - force=false：走 /biz/bill/{id}（后端仍兜底校验状态）
+   * 不做分页：调用方已经一次性拉完所有账单
    * 进度会写到 syncAllState，"同步所有"按钮在同步期间显示 "同步中 X/Y"
    */
   async function syncBillRows(allRows: DataRow[], force: boolean) {
     if (!allRows.length) { notify("没有可同步的账单", "info"); return; }
+    // allRows 已经是调用方按 DSH/DFH 过滤后的结果（仅同步价格模式）；强制刷新模式则保持原样
     const total = allRows.length;
-    let processed = 0, success = 0, failed = 0, skipped = 0;
+    let processed = 0, success = 0, failed = 0;
     const failedDetails: { id: unknown; orderCode: string; status: string; message: string }[] = [];
-    setSyncAllState({ loading: true, current: 0, total, success: 0, failed: 0, skipped: 0 });
-    notify(force ? `开始强制刷新 ${total} 条账单…` : `开始同步价格…`, "info");
+    setSyncAllState({ loading: true, current: 0, total, success: 0, failed: 0 });
+    notify(force ? `开始强制刷新 ${total} 条账单…` : `开始同步价格 ${total} 条账单…`, "info");
     try {
       for (const row of allRows) {
         const status = String(row.orderStatus || "");
-        // 仅同步价格：严格只处理 DSH/DFH；空 status（订单被软删/不存在的孤儿账单）也一并跳过，避免误刷
-        if (!force && status !== "DSH" && status !== "DFH") {
-          skipped += 1;
-          processed += 1;
-          setSyncAllState({ loading: true, current: processed, total, success, failed, skipped });
-          continue;
-        }
         const path = force ? `/biz/bill/forceSync/${row.id}` : `/biz/bill/${row.id}`;
         try {
           await apiRequest(path, { method: "PATCH" });
@@ -2812,14 +2736,11 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
           console.warn(`[syncBill] failed → id=${detail.id} orderCode=${detail.orderCode} status=${detail.status || "(空)"} path=${path}`, detail.message);
         }
         processed += 1;
-        setSyncAllState({ loading: true, current: processed, total, success, failed, skipped });
+        setSyncAllState({ loading: true, current: processed, total, success, failed });
       }
-      let summary: string;
-      if (force) {
-        summary = `强制刷新完成：成功 ${success} 条，失败 ${failed} 条`;
-      } else {
-        summary = `同步完成：成功 ${success} 条，失败 ${failed} 条${skipped ? `，跳过 ${skipped} 条（需强制刷新）` : ""}`;
-      }
+      let summary: string = force
+        ? `强制刷新完成：成功 ${success} 条，失败 ${failed} 条`
+        : `同步完成：成功 ${success} 条，失败 ${failed} 条`;
       if (failedDetails.length) {
         const preview = failedDetails.slice(0, 3).map((d) => `${d.orderCode || d.id}: ${d.message}`).join("；");
         summary += `。失败明细：${preview}${failedDetails.length > 3 ? `…（共 ${failedDetails.length} 条，全部明细见 Console）` : ""}`;
@@ -2829,7 +2750,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
     } catch (error) {
       notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
     } finally {
-      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
+      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
     }
   }
   function toggleExpand(id: string | number) {
@@ -2896,7 +2817,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
         </button>
         {config.key === "bills" && config.extraAction ? <button type="button" onClick={() => setSyncModeOpen(true)} disabled={syncAllState.loading || !rows.length} className={syncAllState.loading ? "is-loading" : ""}>
           {syncAllState.loading ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
-          {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total} · 成功${syncAllState.success}/失败${syncAllState.failed}${syncAllState.skipped ? `/跳过${syncAllState.skipped}` : ""}` : "同步中…") : "同步所有"}
+          {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total} · 成功${syncAllState.success}/失败${syncAllState.failed}` : "同步中…") : "同步所有"}
         </button> : null}
         {config.batchAction ? <button type="button" className="primary-action" onClick={() => setBatchOpen(true)} disabled={!rows.length}>
           <Sparkles size={16} />{config.batchAction.label}
@@ -3021,7 +2942,7 @@ function BillsSyncModeSheet({ api, query, onClose, onSync }: { api: string; quer
         </div>
       </>}
       <div className="sync-mode-list">
-        <button type="button" className="sync-mode-card" onClick={() => onSync(allRows, false)} disabled={loading || !normalCount}>
+        <button type="button" className="sync-mode-card" onClick={() => onSync(allRows.filter((row) => { const s = String(row.orderStatus || ""); return s === "DSH" || s === "DFH"; }), false)} disabled={loading || !normalCount}>
           <span className="sync-mode-card-icon"><RefreshCw size={17} /></span>
           <div className="sync-mode-card-body">
             <div className="sync-mode-card-title">仅同步价格</div>
