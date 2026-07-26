@@ -1,5 +1,5 @@
 
-import { AlertCircle, ArrowRight, Ban, CheckCircle2, ChevronRight, CircleHelp, Edit3, Eye, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, X } from "lucide-react";
+import { AlertCircle, ArrowRight, Ban, CheckCircle2, ChevronRight, CircleHelp, CreditCard, Edit3, Eye, History, KeyRound, LoaderCircle, Lock, LockKeyhole, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
@@ -8,7 +8,7 @@ import PeachTip from "../../components/PeachTip";
 
 type Row = Record<string, unknown>;
 type Option = { value: string; label: string; icon?: string };
-type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string };
+type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwdExpire?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
 type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
 const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
@@ -83,9 +83,14 @@ export default function PurchaserOrderPage() {
   const [viewingOrder, setViewingOrder] = useState<PublicOrderRecord | null>(null);
   // confirm 模式：进入或切到被拦 tab 时弹窗提醒（每个 tab 切回去都会再弹一次）
   const [blockConfirm, setBlockConfirm] = useState<{ orders: boolean; query: boolean } | null>(null);
+  // 成本价查看：当前是否解锁（验证过密码）；解锁后下次进页面靠 expireTime 重新走
+  const [costPwd, setCostPwd] = useState("");
+  const [costPwdBusy, setCostPwdBusy] = useState(false);
+  const [costPwdError, setCostPwdError] = useState("");
+  const [costPriceUnlocked, setCostPriceUnlocked] = useState(false);
 
-  const loadOrders = useCallback(async (purchaserId: string) => {
-    const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId } });
+  const loadOrders = useCallback(async (purchaserId: string, password?: string) => {
+    const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId, ...(password ? { costPricePwd: password } : {}) } });
     setOrders(Array.isArray(result.data) ? result.data : []);
   }, []);
 
@@ -396,6 +401,30 @@ export default function PurchaserOrderPage() {
     finally { setDeleteSubmitting(false); }
   }
 
+  async function submitCostPwd() {
+    if (!/^\d{4,6}$/.test(costPwd.trim())) { setCostPwdError("密码为 4-6 位数字"); return; }
+    setCostPwdBusy(true); setCostPwdError("");
+    try {
+      await loadOrders(linkKey.purchaserId, costPwd.trim());
+      // 只有第一行订单里有成本价才视为解锁成功（说明后端接受了这把密码）
+      const unlocked = orders.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
+      if (unlocked) {
+        setCostPriceUnlocked(true); setCostPwd(""); setCostPwdError("");
+      } else {
+        setCostPwdError("密码错误或已过期，请向店铺重新索取");
+      }
+    } catch (cause) {
+      setCostPwdError(cause instanceof Error ? cause.message : "验证失败，请重试");
+    }
+    finally { setCostPwdBusy(false); }
+  }
+
+  function lockCostPrice() {
+    setCostPriceUnlocked(false);
+    // 重新拉一次不带密码的订单，把成本价字段从内存里去掉
+    void loadOrders(linkKey.purchaserId);
+  }
+
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
 
@@ -478,7 +507,23 @@ export default function PurchaserOrderPage() {
           <button type="button" className="purchaser-help-button" onClick={() => setHelpOpen(true)}><CircleHelp size={15} />下单说明 · 常见问题</button>
         </form>
       </>
-    ) : (blockDisplay === "confirm" && blockQueryOn) ? null : (orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>)}
+    ) : (blockDisplay === "confirm" && blockQueryOn) ? null : <>
+      {/* 成本价密码：店铺开启"允许查看成本价"才显示；解锁后变成"重新上锁"小按钮 */}
+      {Number(linkContext.viewCostPrice) === 1 && !costPriceUnlocked ? <section className="purchaser-cost-pwd">
+        <div><LockKeyhole size={15} /><div><small>查看成本价</small><b>输入店铺提供的密码，可看到每笔订单的商品/包装/快递/总成本</b></div></div>
+        <div className="purchaser-cost-pwd-row">
+          <input inputMode="numeric" maxLength={6} value={costPwd} onChange={(event) => { setCostPwd(event.target.value.replace(/\D/g, "")); setCostPwdError(""); }} placeholder="4-6 位数字密码" />
+          <button type="button" disabled={costPwdBusy} onClick={submitCostPwd}>{costPwdBusy ? <LoaderCircle className="spin" size={15} /> : <KeyRound size={15} />}解锁</button>
+        </div>
+        {costPwdError ? <p className="tool-error"><AlertCircle size={13} />{costPwdError}</p> : null}
+        {linkContext.costPricePwdExpire ? <small className="purchaser-cost-pwd-hint"><ShieldCheck size={11} />密码有效至 {String(linkContext.costPricePwdExpire).slice(0, 16)}</small> : null}
+      </section> : null}
+      {Number(linkContext.viewCostPrice) === 1 && costPriceUnlocked ? <section className="purchaser-cost-unlocked">
+        <div><Wallet size={14} /><b>已解锁成本价</b><em>每笔订单会显示总成本与销售价</em></div>
+        <button type="button" onClick={lockCostPrice}><Lock size={13} />重新上锁</button>
+      </section> : null}
+      {orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}
+    </>}
 
     {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "ORDER CODE" : "FINAL VERIFICATION"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "请确认订单信息并完成验证"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取" : "提交后无法修改，请仔细核对下方信息。"}</p><div className="purchaser-captcha-summary">
         <div><span>商品</span><b>{emojiFor((form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label) || "")} {form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
@@ -607,6 +652,16 @@ export default function PurchaserOrderPage() {
               直接用 linkContext.storeName 展示更友好；没拿到 linkContext 时 fallback 显示原文 */}
           {viewingOrder.store ? <div><span>店铺</span><b>{linkContext.storeName || viewingOrder.store}</b></div> : null}
           {viewingOrder.purchaser || viewingOrder.createBy ? <div><span>下单人</span><b>{viewingOrder.purchaser || viewingOrder.createBy}</b></div> : null}
+        </div>
+      </div> : null}
+      {viewingOrder.totalPrice !== undefined && viewingOrder.totalPrice !== null ? <div className="purchaser-detail-section purchaser-detail-cost">
+        <h3><Wallet size={14} />成本明细</h3>
+        <div className="purchaser-captcha-summary">
+          {viewingOrder.goodsPrice !== undefined && viewingOrder.goodsPrice !== null ? <div><span>商品成本</span><b>¥{Number(viewingOrder.goodsPrice).toFixed(2)}</b></div> : null}
+          {viewingOrder.packagePrice !== undefined && viewingOrder.packagePrice !== null ? <div><span>包装费</span><b>¥{Number(viewingOrder.packagePrice).toFixed(2)}</b></div> : null}
+          {viewingOrder.expPrice !== undefined && viewingOrder.expPrice !== null ? <div><span>快递费</span><b>¥{Number(viewingOrder.expPrice).toFixed(2)}</b></div> : null}
+          <div className="full"><span>总成本</span><b>¥{Number(viewingOrder.totalPrice).toFixed(2)}</b></div>
+          {viewingOrder.salePrice !== undefined && viewingOrder.salePrice !== null ? <div className="full"><span>销售价</span><b>¥{Number(viewingOrder.salePrice).toFixed(2)}</b></div> : null}
         </div>
       </div> : null}
     </section></div> : null}

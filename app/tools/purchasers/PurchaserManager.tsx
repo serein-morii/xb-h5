@@ -1,10 +1,10 @@
 
-import { Ban, CheckCircle2, Copy, KeyRound, Link2, LoaderCircle, Monitor, Pencil, Phone, Plus, RefreshCw, Search, ShieldCheck, Store, Trash2, Unlink, User, UserPlus, Users, X } from "lucide-react";
+import { Ban, CheckCircle2, Copy, CreditCard, KeyRound, Link2, LoaderCircle, Monitor, Pencil, Phone, Plus, RefreshCw, Search, ShieldCheck, Store, Trash2, Unlink, User, UserPlus, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
-type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; createTime?: string; updateTime?: string };
+type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
 const BLOCK_DISPLAY_OPTIONS: { value: BlockDisplay; label: string; hint: string }[] = [
   { value: "banner", label: "顶部 tab", hint: "禁用哪个，整个页面不展示，tab 没有选项，只显示一个占满整行" },
@@ -31,6 +31,9 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
   const [codeTarget, setCodeTarget] = useState<Purchaser | null>(null);
   const [codeForm, setCodeForm] = useState({ requirePwd: 0, pwd: "", expireDays: "7", useCustom: false });
   const [codeBusy, setCodeBusy] = useState(false);
+  const [costPriceTarget, setCostPriceTarget] = useState<Purchaser | null>(null);
+  const [costPriceForm, setCostPriceForm] = useState({ enabled: false, pwd: "", expireHours: "24" });
+  const [costPriceBusy, setCostPriceBusy] = useState(false);
   // 编辑买家弹窗
   const [editTarget, setEditTarget] = useState<Purchaser | null>(null);
   const [editForm, setEditForm] = useState<EditForm>(EMPTY_EDIT);
@@ -103,6 +106,37 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
       expireDays: "7",
       useCustom: Boolean(item.orderCodePwd),
     });
+  }
+
+  function openCostPriceConfig(item: Purchaser) {
+    setCostPriceTarget(item);
+    setCostPriceForm({
+      enabled: item.viewCostPrice === 1,
+      pwd: "",
+      expireHours: "24",
+    });
+  }
+
+  async function saveCostPriceConfig() {
+    if (!costPriceTarget) return;
+    if (costPriceForm.enabled) {
+      if (!/^\d{4,6}$/.test(costPriceForm.pwd.trim())) { setError("成本价密码必须是 4-6 位数字"); return; }
+    }
+    setCostPriceBusy(true); setError("");
+    try {
+      await apiRequest(`/biz/purchaser/${costPriceTarget.id}/cost-price`, {
+        method: "PUT",
+        body: {
+          viewCostPrice: costPriceForm.enabled ? 1 : 0,
+          password: costPriceForm.enabled ? costPriceForm.pwd.trim() : "",
+          expireHours: costPriceForm.enabled ? Number(costPriceForm.expireHours) || 24 : 0,
+        },
+      });
+      setCostPriceTarget(null);
+      setNotice(costPriceForm.enabled ? "已开启" + (costPriceTarget.name || "买家") + "的成本价权限" : "已关闭" + (costPriceTarget.name || "买家") + "的成本价权限");
+      await load(); window.setTimeout(() => setNotice(""), 1800);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "保存失败"); }
+    finally { setCostPriceBusy(false); }
   }
 
   async function saveCodeConfig() {
@@ -265,6 +299,16 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
             {BLOCK_DISPLAY_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
         </div>
+        <div className="purchaser-block-row">
+          <CreditCard size={15} />
+          <div className="purchaser-block-info">
+            <small>允许查看成本价</small>
+            <b>{item.viewCostPrice === 1 ? `已开启 · 密码已设${item.costPricePwdExpire ? ` · 至 ${String(item.costPricePwdExpire).slice(0, 10)}` : ""}` : "未开启"}</b>
+          </div>
+          <div className="purchaser-block-toggle">
+            <button type="button" className="purchaser-order-code-btn" onClick={() => openCostPriceConfig(item)}>配置</button>
+          </div>
+        </div>
       </div>
       <div className="card-actions"><button type="button" onClick={() => openEdit(item)}><Pencil size={16} />修改</button><button type="button" className="danger-text" disabled={busyId === item.id} onClick={() => requestDelete(item)}><Trash2 size={16} />删除</button></div></article>)}</section>}
     {!loading && !visible.length ? <div className="tool-list-empty">没有符合条件的下单人</div> : null}
@@ -324,6 +368,24 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
       </> : null}
       {error ? <p className="tool-error">{error}</p> : null}
       <button className="purchaser-create-submit" type="button" disabled={codeBusy} onClick={saveCodeConfig}>{codeBusy ? <LoaderCircle className="spin" size={17} /> : <KeyRound size={17} />}保存配置</button>
+    </section></div> : null}
+    {costPriceTarget ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !costPriceBusy && setCostPriceTarget(null)}><section className="purchaser-create-modal purchaser-code-modal">
+      <button type="button" disabled={costPriceBusy} onClick={() => setCostPriceTarget(null)}><X size={18} /></button>
+      <span><CreditCard size={22} /></span>
+      <small>COST PRICE ACCESS</small>
+      <h2>查看成本价 · {costPriceTarget.name}</h2>
+      <p>默认关闭。开启后买家在其专属下单页输入密码即可看到订单关联的成本/包装/快递/总成本；不开启则与其他买家一样只能看公开信息。</p>
+      <div className="purchaser-code-switch-group">
+        <label className={!costPriceForm.enabled ? "active" : ""}><input type="radio" name="costPriceSwitch" checked={!costPriceForm.enabled} onChange={() => setCostPriceForm((c) => ({ ...c, enabled: false }))} />关闭</label>
+        <label className={costPriceForm.enabled ? "active" : ""}><input type="radio" name="costPriceSwitch" checked={costPriceForm.enabled} onChange={() => setCostPriceForm((c) => ({ ...c, enabled: true }))} />开启（需设密码）</label>
+      </div>
+      {costPriceForm.enabled ? <>
+        <label><em>查看密码（4-6 位数字）</em><input inputMode="numeric" maxLength={6} value={costPriceForm.pwd} onChange={(event) => setCostPriceForm((c) => ({ ...c, pwd: event.target.value.replace(/\D/g, "") }))} placeholder="如 1234（仅你与买家知晓）" /></label>
+        <label><em>有效小时数</em><input inputMode="numeric" value={costPriceForm.expireHours} onChange={(event) => setCostPriceForm((c) => ({ ...c, expireHours: event.target.value.replace(/\D/g, "") }))} placeholder="默认 24 小时" /></label>
+        <p className="purchaser-code-hint"><ShieldCheck size={13} />密码过期后买家需重新输入；关闭开关会清空密码与过期时间。</p>
+      </> : <p className="purchaser-code-hint"><CreditCard size={13} />关闭后此买家看不到任何成本相关字段。</p>}
+      {error ? <p className="tool-error">{error}</p> : null}
+      <button className="purchaser-create-submit" type="button" disabled={costPriceBusy} onClick={saveCostPriceConfig}>{costPriceBusy ? <LoaderCircle className="spin" size={17} /> : <CreditCard size={17} />}保存配置</button>
     </section></div> : null}
   </div>;
 }

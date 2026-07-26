@@ -100,7 +100,12 @@
       "Bash(ls /Users/xp/dev/xb/order/xb-h5/README*)",
       "Bash(ls /Users/xp/dev/xb/order/xb-h5/*.md)",
       "Bash(grep -o 'token[^\"]*' /tmp/*)",
-      "Bash(mvn dependency:resolve -DincludeArtifactIds=mybatis-plus-annotation -q)"
+      "Bash(mvn dependency:resolve -DincludeArtifactIds=mybatis-plus-annotation -q)",
+      "Bash(mvn -pl . compile -DskipTests -q -o)",
+      "Bash(mvn -pl . compile -DskipTests -q)",
+      "Bash(xargs cat:*)",
+      "Bash(grep -rn \"theme-dark\\\\|setTheme\\\\|dark-mode\\\\|moon\\\\|Sun\\\\|Moon\" /Users/xp/dev/xb/order/xb-h5/app/*.tsx /Users/xp/dev/xb/order/xb-h5/app/components)",
+      "Bash(grep -rn \"theme-dark\\\\|color-scheme\" /Users/xp/dev/xb/order/xb-h5/app/*.tsx /Users/xp/dev/xb/order/xb-h5/index.html)"
     ]
   }
 }

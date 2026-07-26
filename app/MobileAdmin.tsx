@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowLeft,
   BadgeDollarSign,
   Bell,
@@ -45,6 +46,7 @@ import {
   User,
   UserPlus,
   WalletCards,
+  CreditCard,
   X,
 } from "lucide-react";
 import {
@@ -98,6 +100,28 @@ type MenuKey = "home" | "orders" | "orderEntry" | "batchOrder" | "bills" | "expr
 const ALL_MENU_KEYS: MenuKey[] = ["home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks"];
 // 当前访问页面：用 localStorage 缓存（URL 保持干净，不带查询参数）
 const ACTIVE_PAGE_CACHE_KEY = "xb-h5-active-page";
+// 夜间模式：localStorage 记录用户的偏好；null=跟随系统，'light'/'dark'=手动
+const THEME_CACHE_KEY = "xb-h5-theme";
+type ThemePref = "light" | "dark" | "system";
+function readCachedTheme(): ThemePref {
+  if (typeof window === "undefined") return "system";
+  try {
+    const raw = window.localStorage.getItem(THEME_CACHE_KEY) as ThemePref | null;
+    if (raw === "light" || raw === "dark" || raw === "system") return raw;
+  } catch { /* ignore */ }
+  return "system";
+}
+function applyTheme(pref: ThemePref) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const wantDark = pref === "dark" || (pref === "system" && typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("theme-dark", wantDark);
+  root.classList.toggle("theme-light", !wantDark);
+}
+function persistTheme(pref: ThemePref) {
+  try { window.localStorage.setItem(THEME_CACHE_KEY, pref); } catch { /* ignore */ }
+  applyTheme(pref);
+}
 function readCachedActivePage(): MenuKey {
   if (typeof window === "undefined") return "home";
   try {
@@ -1389,7 +1413,7 @@ function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; notify:
                 <tr key={row.id}>
                   <td>{row.createTime ? shortDate(row.createTime, true) : "--"}</td>
                   <td>{row.storeName || row.storeCode || "--"}</td>
-                  <td>{row.nickName || row.userName || `#${row.userId}`}</td>
+                  <td>{row.userId === -1 ? "系统" : row.nickName || row.userName || `#${row.userId}`}</td>
                   <td>{switchLabel(row.switchType)}</td>
                   <td>{sourceLabel(row.source)}</td>
                   <td className="td-code">{row.orderCode || "--"}</td>
@@ -2163,6 +2187,21 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
     if (!target) return notify("请先选择订单", "info");
     setConfirm({ title: "删除订单", message: `删除后无法恢复，确认删除 ${row ? 1 : selected.size} 个订单？`, danger: true, action: async () => { await apiRequest(`/biz/order/${target}`, { method: "DELETE" }); notify("删除成功", "success"); setSelected(new Set()); await load(); } });
   }
+  // 标记付款 / 取消付款（批量条用）
+  async function markPay(kind: "paid" | "unpaid") {
+    if (!ids) return notify("请先选择订单", "info");
+    const path = kind === "paid" ? "markPaid" : "markUnpaid";
+    const label = kind === "paid" ? "已标记已付款" : "已取消付款标记";
+    try {
+      const idList = ids.split(",").filter(Boolean);
+      await apiRequest(`/biz/order/${path}`, { method: "PATCH", body: { ids: idList } });
+      notify(label, "success");
+      setSelected(new Set());
+      await load();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "操作失败", "error");
+    }
+  }
   // 单条刷新（卡片/批量条都用）
   async function refreshLogistics(row?: DataRow) {
     const target = row ? String(row.orderCode) : codes;
@@ -2282,13 +2321,13 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         </button>
       </div>
 
-      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")}><RotateCw size={15} />待发</button><button onClick={() => requestBatch("send", "一键发货")}><Send size={15} />一键发货</button><button onClick={() => requestBatch("finish", "一键完成")}><CircleCheck size={15} />完成</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
+      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")}><RotateCw size={15} />待发</button><button onClick={() => requestBatch("send", "一键发货")}><Send size={15} />一键发货</button><button onClick={() => requestBatch("finish", "一键完成")}><CircleCheck size={15} />完成</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button onClick={() => markPay("paid")}><CreditCard size={15} />标已付</button><button onClick={() => markPay("unpaid")}><X size={15} />取消付款</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
 
       <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条{statusFilter ? ` · 筛选后 ${visibleRows.length} 条` : ""}</span></div>{visibleRows.length ? <button type="button" onClick={() => setSelected(visibleRows.every((row) => selected.has(String(row.id))) ? new Set() : new Set(visibleRows.map((row) => String(row.id))))}>{visibleRows.every((row) => selected.has(String(row.id))) ? "取消全选" : "全选本页"}</button> : null}</div>
       <div className="mobile-card-list">
         {!visibleRows.length ? <EmptyState loading={loading} label={statusFilter ? "筛选结果" : "订单"} /> : visibleRows.map((row) => (
           <article className={`order-card ${selected.has(String(row.id)) ? "selected" : ""}`} key={String(row.id)}>
-            <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><StatusBadge row={row} /></div>
+            <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><div className="card-topline-badges"><span className={`order-pay-badge pay-${Number(row.payStatus) === 1 ? "paid" : "unpaid"}`}><CreditCard size={11} />{Number(row.payStatus) === 1 ? "已付款" : "未付款"}</span><StatusBadge row={row} /></div></div>
             <button className="card-main" type="button" onClick={() => getDetail(row)}>
               <span className="product-avatar">{String(row.orderNameDesc || "果").slice(-1)}</span>
               <span className="product-copy"><b>{row.orderNameDesc || optionLabel(row.orderName, dictionaries.products) || "未命名商品"}</b><small>{row.orderTypeDesc || optionLabel(row.orderType, dictionaries.sizes)} · 数量 {row.orderNum || 1}</small></span>
@@ -2298,7 +2337,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
             <div className="shipping-line"><span><Truck size={15} />{row.expComDesc || (row.expCom ? optionLabel(row.expCom, dictionaries.expressCompanies) : "尚未选择快递")}</span><span>{row.expCode || row.orderTime?.slice(0, 10) || ""}</span></div>
             {row.expNewDesc ? <p className="latest-route"><span />{row.expNewDesc}</p> : null}
             <div className="card-actions"><button onClick={() => getDetail(row)}><Eye size={16} />详情</button><button onClick={() => getEditor(row)}><Pencil size={16} />修改</button><button onClick={() => setCopyTarget(row)}><Copy size={16} />复制</button><button className="primary-action" onClick={() => openShipping(row)}><Send size={16} />发货</button></div>
-            <div className="card-more"><button onClick={() => requestBatch("tosend", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button><button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
+            <div className="card-more"><button onClick={() => requestBatch("tosend", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button>{Number(row.payStatus) === 1 ? <button onClick={async () => { try { await apiRequest("/biz/order/markUnpaid", { method: "PATCH", body: { ids: [row.id] } }); notify("已取消付款标记", "success"); await load(); } catch (e) { notify(e instanceof Error ? e.message : "操作失败", "error"); } }}>取消付款</button> : <button onClick={async () => { try { await apiRequest("/biz/order/markPaid", { method: "PATCH", body: { ids: [row.id] } }); notify("已标记已付款", "success"); await load(); } catch (e) { notify(e instanceof Error ? e.message : "操作失败", "error"); } }}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
           </article>
         ))}
       </div>
@@ -2504,7 +2543,8 @@ type CrudConfig = {
   expand?: Array<{ key: string; label: string; money?: boolean; options?: Array<{ value: string | number; label: string }>; format?: (row: DataRow) => string }>;
   summary?: Array<{ key: string; label: string; money?: boolean; tone?: "default" | "success" | "danger"; valueFormat?: (row: DataRow) => string }>;
   note?: (row: DataRow) => string;
-  extraAction?: { label: string; path: (row: DataRow) => string; method: string };
+  extraAction?: { label: string; path: (row: DataRow) => string; method: string } | ((row: DataRow) => { label: string; path: (row: DataRow) => string; method: string; danger?: boolean; confirm?: string });
+  batchAction?: { label: string; title: string; fields: FieldConfig[]; submit: (values: DataRow, ids: Array<string | number>) => Promise<unknown>; successMessage?: (payload: unknown) => string };
   importable?: boolean;
 };
 
@@ -2535,7 +2575,20 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
       { key: "orderTime", label: "下单时间", format: (row) => shortDate(row.orderTime) },
     ],
     note: (row) => row.remark ? `备注：${row.remark}` : "",
-    extraAction: { label: "同步价格", path: (row) => `/biz/bill/${row.id}`, method: "PATCH" },
+    extraAction: (row) => {
+      const status = String(row.orderStatus || "");
+      const isRestricted = status && status !== "DSH" && status !== "DFH";
+      if (isRestricted) {
+        return {
+          label: "强制刷新",
+          path: () => `/biz/bill/forceSync/${row.id}`,
+          method: "PATCH",
+          danger: true,
+          confirm: `该账单关联订单状态为「${row.orderStatusDesc || status}」，已发货/已产生物流的价格通常不应再被覆盖。\n\n确认要强制刷新吗？（会重算总成本/盈利）`,
+        };
+      }
+      return { label: "同步价格", path: () => `/biz/bill/${row.id}`, method: "PATCH" };
+    },
   },
   express: {
     key: "express", title: "快递管理", itemName: "快递信息", api: "/biz/exp", icon: Truck, titleKey: "expCode",
@@ -2563,6 +2616,21 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
     ],
     note: (row) => [row.remark, row.updateBy ? `修改人：${row.updateBy}` : "", row.updateTime ? `修改时间：${shortDate(row.updateTime, true)}` : ""].filter(Boolean).join(" · "),
     importable: true,
+    batchAction: {
+      label: "批量改价",
+      title: "批量改价（仅更新已填写字段）",
+      fields: [
+        { key: "goodsPrice", label: "商品成本", type: "number", placeholder: "留空则不改" },
+        { key: "expPrice", label: "快递费", type: "number", placeholder: "留空则不改" },
+        { key: "packagePrice", label: "包装费", type: "number", placeholder: "留空则不改" },
+        { key: "salePrice", label: "销售价格", type: "number", placeholder: "留空则不改" },
+      ],
+      submit: async (values, ids) => {
+        if (!ids.length) throw new Error("当前列表为空，请先加载要修改的价格方案");
+        return apiRequest("/biz/price/batch", { method: "PUT", body: { ids, ...values } });
+      },
+      successMessage: () => "批量改价成功（已自动重算总成本）",
+    },
   },
   stores: {
     key: "stores", title: "店铺管理", itemName: "店铺", api: "/biz/store", icon: StoreIcon, titleKey: "name",
@@ -2585,10 +2653,12 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
-  const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
+  const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number; skipped: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
   const [query, setQuery] = useState<DataRow>({ pageNum: 1, pageSize: 15 });
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [syncModeOpen, setSyncModeOpen] = useState(false);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
   const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
@@ -2596,7 +2666,11 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setExpanded(new Set()); }, [config.key]);
   async function edit(row: DataRow) { try { const result = await apiRequest<DataRow>(`${config.api}/${row.id}`); setEditor(result.data || row); } catch (error) { notify(error instanceof Error ? error.message : "数据加载失败", "error"); } }
-  async function extra(row: DataRow) { if (!config.extraAction) return; try { await apiRequest(config.extraAction.path(row), { method: config.extraAction.method }); notify(`${config.extraAction.label}成功`, "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }
+  function resolveExtra(row: DataRow): { label: string; path: (row: DataRow) => string; method: string; danger?: boolean; confirm?: string } | null {
+    if (!config.extraAction) return null;
+    return typeof config.extraAction === "function" ? config.extraAction(row) : config.extraAction;
+  }
+  async function extra(row: DataRow) { const action = resolveExtra(row); if (!action) return; const doCall = async () => { try { await apiRequest(action.path(row), { method: action.method }); notify(`${action.label}成功`, "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }; if (action.confirm) { setConfirm({ title: action.label, message: action.confirm, danger: action.danger, action: async () => { await doCall(); setConfirm(null); } }); } else { await doCall(); } }
   async function loadAllRows() {
     if (loadAllState.loading) return;
     const pageSize = Number(query.pageSize || 15) || 15;
@@ -2628,7 +2702,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
       setLoadAllState({ loading: false, current: 0, total: 0 });
     }
   }
-  async function syncAllRows() {
+  async function syncAllRows(force = false) {
     if (!config.extraAction || syncAllState.loading) return;
     const pageSize = Number(query.pageSize || 15) || 15;
     const maxPages = 200;
@@ -2636,8 +2710,9 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
     let processed = 0;
     let success = 0;
     let failed = 0;
+    let skipped = 0;
     let pageNum = 1;
-    setSyncAllState({ loading: true, current: 0, total: 0, success: 0, failed: 0 });
+    setSyncAllState({ loading: true, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
     try {
       while (pageNum <= maxPages) {
         const result = await apiRequest<DataRow>(`${config.api}/list`, { query: { ...query, pageNum, pageSize } });
@@ -2649,27 +2724,112 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
             notify("没有可同步的记录", "info");
             return;
           }
-          setSyncAllState({ loading: true, current: 0, total: totalKnown, success: 0, failed: 0 });
+          setSyncAllState({ loading: true, current: 0, total: totalKnown, success: 0, failed: 0, skipped: 0 });
         }
         for (const row of pageRows) {
+          // 账单"同步所有"：非强制模式下跳过非 DSH/DFH 的账单
+          if (config.key === "bills" && !force) {
+            const status = String(row.orderStatus || "");
+            if (status !== "DSH" && status !== "DFH") {
+              skipped += 1;
+              processed += 1;
+              setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped });
+              continue;
+            }
+          }
+          // 强制模式：直接走 /biz/bill/forceSync/{id}；非强制/非账单：走常规 resolveExtra
+          let path: string;
+          let method: string;
+          if (config.key === "bills" && force) {
+            path = `/biz/bill/forceSync/${row.id}`;
+            method = "PATCH";
+          } else {
+            const action = resolveExtra(row);
+            if (!action) { failed += 1; processed += 1; setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped }); continue; }
+            path = action.path(row);
+            method = action.method;
+          }
           try {
-            await apiRequest(config.extraAction.path(row), { method: config.extraAction.method });
+            await apiRequest(path, { method });
             success += 1;
-          } catch {
+          } catch (error) {
             failed += 1;
+            const message = error instanceof Error ? error.message : "未知错误";
+            console.warn(`[syncAll] failed → id=${row.id} orderCode=${row.orderCode} status=${row.orderStatus || "(空)"} path=${path}`, message);
           }
           processed += 1;
-          setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed });
+          setSyncAllState({ loading: true, current: processed, total: totalKnown, success, failed, skipped });
         }
         if (!pageRows.length || processed >= totalKnown) break;
         pageNum += 1;
       }
-      notify(`同步完成：成功 ${success} 条，失败 ${failed} 条`, failed ? "info" : "success");
+      const summary = force
+        ? `强制刷新完成：成功 ${success} 条，失败 ${failed} 条`
+        : `同步完成：成功 ${success} 条，失败 ${failed} 条${skipped ? `，跳过 ${skipped} 条（需强制刷新）` : ""}`;
+      notify(summary, failed || (skipped && !force) ? "info" : "success");
       load();
     } catch (error) {
       notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
     } finally {
-      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
+      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
+    }
+  }
+
+  /**
+   * 账单"同步所有"专用：对传入的账单列表逐条同步
+   * - force=false：非 DSH/DFH 状态直接跳过（只同步白名单状态）
+   * - force=true：忽略状态，全部走 forceSync
+   * 不做分页：调用方（BillsSyncModeSheet）已经一次性拉完所有账单
+   * 进度会写到 syncAllState，"同步所有"按钮在同步期间显示 "同步中 X/Y"
+   */
+  async function syncBillRows(allRows: DataRow[], force: boolean) {
+    if (!allRows.length) { notify("没有可同步的账单", "info"); return; }
+    const total = allRows.length;
+    let processed = 0, success = 0, failed = 0, skipped = 0;
+    const failedDetails: { id: unknown; orderCode: string; status: string; message: string }[] = [];
+    setSyncAllState({ loading: true, current: 0, total, success: 0, failed: 0, skipped: 0 });
+    notify(force ? `开始强制刷新 ${total} 条账单…` : `开始同步价格…`, "info");
+    try {
+      for (const row of allRows) {
+        const status = String(row.orderStatus || "");
+        // 仅同步价格：严格只处理 DSH/DFH；空 status（订单被软删/不存在的孤儿账单）也一并跳过，避免误刷
+        if (!force && status !== "DSH" && status !== "DFH") {
+          skipped += 1;
+          processed += 1;
+          setSyncAllState({ loading: true, current: processed, total, success, failed, skipped });
+          continue;
+        }
+        const path = force ? `/biz/bill/forceSync/${row.id}` : `/biz/bill/${row.id}`;
+        try {
+          await apiRequest(path, { method: "PATCH" });
+          success += 1;
+        } catch (error) {
+          failed += 1;
+          const message = error instanceof Error ? error.message : "未知错误";
+          const detail = { id: row.id, orderCode: String(row.orderCode || ""), status, message };
+          failedDetails.push(detail);
+          // 失败明细写 console，方便用户排查
+          console.warn(`[syncBill] failed → id=${detail.id} orderCode=${detail.orderCode} status=${detail.status || "(空)"} path=${path}`, detail.message);
+        }
+        processed += 1;
+        setSyncAllState({ loading: true, current: processed, total, success, failed, skipped });
+      }
+      let summary: string;
+      if (force) {
+        summary = `强制刷新完成：成功 ${success} 条，失败 ${failed} 条`;
+      } else {
+        summary = `同步完成：成功 ${success} 条，失败 ${failed} 条${skipped ? `，跳过 ${skipped} 条（需强制刷新）` : ""}`;
+      }
+      if (failedDetails.length) {
+        const preview = failedDetails.slice(0, 3).map((d) => `${d.orderCode || d.id}: ${d.message}`).join("；");
+        summary += `。失败明细：${preview}${failedDetails.length > 3 ? `…（共 ${failedDetails.length} 条，全部明细见 Console）` : ""}`;
+      }
+      notify(summary, failed ? "info" : "success");
+      load();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
+    } finally {
+      setSyncAllState({ loading: false, current: 0, total: 0, success: 0, failed: 0, skipped: 0 });
     }
   }
   function toggleExpand(id: string | number) {
@@ -2734,9 +2894,13 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
           {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
           {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
         </button>
-        {config.key === "bills" && config.extraAction ? <button type="button" onClick={syncAllRows} disabled={syncAllState.loading} className={syncAllState.loading ? "is-loading" : ""}>
+        {config.key === "bills" && config.extraAction ? <button type="button" onClick={() => setSyncModeOpen(true)} disabled={syncAllState.loading || !rows.length} className={syncAllState.loading ? "is-loading" : ""}>
           {syncAllState.loading ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
-          {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total}` : "同步中…") : "同步所有"}
+          {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total} · 成功${syncAllState.success}/失败${syncAllState.failed}${syncAllState.skipped ? `/跳过${syncAllState.skipped}` : ""}` : "同步中…") : "同步所有"}
+        </button> : null}
+        {config.batchAction ? <button type="button" className="primary-action" onClick={() => setBatchOpen(true)} disabled={!rows.length}>
+          <Sparkles size={16} />{config.batchAction.label}
+          <small>· 当前 {rows.length} 条</small>
         </button> : null}
       </div>
       <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条</span></div></div>
@@ -2748,7 +2912,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
           const isOpen = expanded.has(row.id as string | number);
           const hasExpand = !!expand?.length;
           return <article className={`data-card data-card-${config.key}`} key={String(row.id)}>
-            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
+            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = row.orderStatusDesc || status; return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
             {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
             <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
             {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
@@ -2759,7 +2923,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
               {row.noticeUrl ? <div className="store-extra-line"><span><ExternalLink size={13} />通知地址</span><b className="store-notice-url">{row.noticeUrl}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.noticeUrl), "通知地址已复制")}><Copy size={12} />复制</button></div> : null}
               {row.orderCodeRequirePwd && row.orderCodePwd ? <div className="store-extra-line"><span><LockKeyhole size={13} />店铺下单码</span><b>{row.orderCodePwd}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.orderCodePwd), "下单码已复制")}><Copy size={12} />复制</button></div> : null}
             </div> : null}
-            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <button type="button" className="primary-action" onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button> : null}{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
+            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <button type="button" className="primary-action" onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button> : null}{(() => { const action = resolveExtra(row); if (!action) return null; return <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => extra(row)}><RefreshCw size={16} />{action.label}</button>; })()}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
           </article>;
         })}
       </div>
@@ -2794,9 +2958,127 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
         </form>
       </Sheet>
       <Sheet open={editor !== null} title={`${editor === "new" ? "新增" : "修改"}${config.itemName}`} onClose={() => setEditor(null)} wide>{editor !== null ? <CrudEditor config={config} initial={editor === "new" ? null : editor} onClose={() => setEditor(null)} onSaved={load} notify={notify} /> : null}</Sheet>
+      {config.batchAction ? <Sheet open={batchOpen} title={config.batchAction.title} onClose={() => setBatchOpen(false)} wide>
+        <BatchEditor config={config} rows={rows} onClose={() => setBatchOpen(false)} onSaved={() => { setBatchOpen(false); load(); }} notify={notify} />
+      </Sheet> : null}
+      {config.key === "bills" ? <Sheet open={syncModeOpen} title="选择同步方式" onClose={() => setSyncModeOpen(false)}>
+        <BillsSyncModeSheet api={config.api} query={query} onClose={() => setSyncModeOpen(false)} onSync={(allRows, force) => { setSyncModeOpen(false); void syncBillRows(allRows, force); }} />
+      </Sheet> : null}
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
+}
+
+function BillsSyncModeSheet({ api, query, onClose, onSync }: { api: string; query: Record<string, unknown>; onClose: () => void; onSync: (allRows: DataRow[], force: boolean) => void }) {
+  // 打开时按当前筛选（query）拉全部分页的账单，保证"将同步"的数量就是用户筛选条件下的全部
+  // 跟列表里的搜索状态联动：选了状态过滤就只对那部分生效
+  const [allRows, setAllRows] = useState<DataRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [confirmingForce, setConfirmingForce] = useState(false);
+  // 把 query 转成稳定字符串，避免父组件重渲导致 useEffect 死循环
+  const queryKey = useMemo(() => JSON.stringify(query), [query]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true); setLoadError("");
+      const pageSize = 500;
+      const maxPages = 200;
+      const collected: DataRow[] = [];
+      const baseQuery = JSON.parse(queryKey) as Record<string, unknown>;
+      let pageNum = 1;
+      try {
+        while (pageNum <= maxPages) {
+          const result = await apiRequest<DataRow>(`${api}/list`, { query: { ...baseQuery, pageNum, pageSize } });
+          const pageRows = Array.isArray(result.rows) ? result.rows : [];
+          const serverTotal = Number(result.total || 0);
+          collected.push(...pageRows);
+          if (!pageRows.length || collected.length >= serverTotal) break;
+          pageNum += 1;
+        }
+        if (cancelled) return;
+        setAllRows(collected);
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "加载账单失败");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [api, queryKey]);
+  // 按订单状态分桶：DSH/DFH = 可同步；其他 = 仅"强制刷新"才动
+  const normalCount = allRows.filter((row) => { const s = String(row.orderStatus || ""); return s === "DSH" || s === "DFH"; }).length;
+  const restrictedCount = allRows.length - normalCount;
+  // 描述一下当前是不是带筛选（query 里去掉分页参数还有别的就是带筛选）
+  const hasFilter = Object.keys(JSON.parse(queryKey) as Record<string, unknown>).filter((key) => key !== "pageNum" && key !== "pageSize").length > 0;
+  return <>
+    <div className="sync-mode-sheet">
+      {loading ? <div className="batch-hint"><LoaderCircle className="spin" size={14} /> 正在加载当前筛选下的账单…</div> : loadError ? <div className="sync-mode-warning"><AlertTriangle size={14} />{loadError}</div> : <>
+        <div className="batch-hint">{hasFilter ? "当前筛选" : "全量"} <b>{allRows.length}</b> 条账单，两种模式覆盖范围不同，请按需选择。</div>
+        <div className="sync-mode-stat" aria-label="状态分桶">
+          <span><b>{normalCount}</b> 条 待处理/待发货</span>
+          <span className={restrictedCount > 0 ? "is-danger" : ""}><b>{restrictedCount}</b> 条 其他状态</span>
+        </div>
+      </>}
+      <div className="sync-mode-list">
+        <button type="button" className="sync-mode-card" onClick={() => onSync(allRows, false)} disabled={loading || !normalCount}>
+          <span className="sync-mode-card-icon"><RefreshCw size={17} /></span>
+          <div className="sync-mode-card-body">
+            <div className="sync-mode-card-title">仅同步价格</div>
+            <div className="sync-mode-card-desc">只处理「待处理 / 待发货」状态（<b>{normalCount}</b> 条）。<br/>其他状态（<b>{restrictedCount}</b> 条）会被自动跳过，避免覆盖已发货后的成本。</div>
+          </div>
+          <ChevronRight size={15} className="sync-mode-card-chevron" />
+        </button>
+        <button type="button" className="sync-mode-card sync-mode-card-danger" onClick={() => setConfirmingForce(true)} disabled={loading || !allRows.length}>
+          <span className="sync-mode-card-icon sync-mode-card-icon-danger"><AlertTriangle size={17} /></span>
+          <div className="sync-mode-card-body">
+            <div className="sync-mode-card-title">强制刷新{hasFilter ? "筛选结果" : "全部"}</div>
+            <div className="sync-mode-card-desc">无视订单状态，覆盖{hasFilter ? "当前筛选" : "全量"} <b>{allRows.length}</b> 条账单的价格。<br/>已发货/已完成订单的成本也会被改写，请确认价格方案已稳定后再使用。</div>
+          </div>
+          <ChevronRight size={15} className="sync-mode-card-chevron" />
+        </button>
+      </div>
+      <button className="button button-ghost button-block" type="button" onClick={onClose}>取消</button>
+    </div>
+    {confirmingForce ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setConfirmingForce(false)}><section className="purchaser-create-modal purchaser-confirm-modal sync-mode-confirm">
+      <button type="button" onClick={() => setConfirmingForce(false)}><X size={18} /></button>
+      <span className="danger"><AlertTriangle size={22} /></span>
+      <small>FORCE REFRESH</small>
+      <h2>确认强制刷新{hasFilter ? "筛选结果" : "全部账单"}？</h2>
+      <p>此操作会覆盖{hasFilter ? "当前筛选的" : "全部"} <b>{allRows.length}</b> 条账单的价格（包含已发货/已完成的），操作不可撤销。</p>
+      <div className="sync-mode-warning"><AlertTriangle size={14} />已发货后覆盖成本会与买家已付款金额不一致，请先与财务核对</div>
+      <div className="purchaser-create-actions">
+        <button type="button" className="purchaser-create-action secondary" onClick={() => setConfirmingForce(false)}>再考虑一下</button>
+        <button type="button" className="purchaser-create-action danger" onClick={() => { setConfirmingForce(false); onSync(allRows, true); }}><AlertTriangle size={15} />确认强制刷新</button>
+      </div>
+    </section></div> : null}
+  </>;
+}
+
+function BatchEditor({ config, rows, onClose, onSaved, notify }: { config: CrudConfig; rows: DataRow[]; onClose: () => void; onSaved: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+  const action = config.batchAction!;
+  const [values, setValues] = useState<DataRow>({});
+  const [saving, setSaving] = useState(false);
+  const ids = rows.map((r) => r.id).filter((id): id is string | number => id !== undefined && id !== null);
+  function update(key: string, value: unknown) { setValues((current) => ({ ...current, [key]: value })); }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const payload = await action.submit(values, ids);
+      notify(action.successMessage ? action.successMessage(payload) : "操作成功", "success");
+      onSaved();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "操作失败", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return <form className="mobile-form" onSubmit={submit}>
+    <p className="batch-hint">将作用于当前已加载的 <b>{ids.length}</b> 条数据。仅修改下方已填写的字段；总成本（商品+快递+包装）会在改完后自动重算。</p>
+    <div className="form-grid">{action.fields.map((field) => <label key={field.key}><span>{field.label}</span><FieldInput field={field} value={values[field.key]} onChange={(value) => update(field.key, value)} /></label>)}</div>
+    <button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Check size={18} />}批量更新</button>
+  </form>;
 }
 
 function CrudEditor({ config, initial, onClose, onSaved, notify }: { config: CrudConfig; initial: DataRow | null; onClose: () => void; onSaved: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
@@ -3076,6 +3358,13 @@ export default function MobileAdmin() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   useEffect(() => {
+    // 应用主题偏好：localStorage 优先；并订阅系统 dark mode 变化用于 "system" 模式
+    applyTheme(readCachedTheme());
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const mql = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => { if (readCachedTheme() === "system") applyTheme("system"); };
+      try { mql.addEventListener("change", onChange); } catch { mql.addListener(onChange); }
+    }
     const stored = getStoredToken();
     const savedName = window.localStorage.getItem("xb-mobile-username");
     if (stored) setToken(stored);
