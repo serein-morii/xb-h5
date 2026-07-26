@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { resolveShortLink } from "./lib/api";
 import MobileAdmin from "./MobileAdmin";
 import PublicOrder from "./order/PublicOrder";
 import FreightCalculator from "./tools/freight-calculator/FreightCalculator";
@@ -9,6 +10,8 @@ import OrderSearch from "./tools/order-search/OrderSearch";
 import ToolsPage from "./tools/page";
 import PurchaserOrderPage from "./tools/place-order/PurchaserOrderPage";
 import PurchaserManager from "./tools/purchasers/PurchaserManager";
+import StoreQuery from "./tools/store-query/StoreQuery";
+import StoreQueryList from "./tools/store-query/StoreQueryList";
 
 type RouteConfig = {
   title: string;
@@ -64,6 +67,12 @@ const routes: Record<string, RouteConfig> = {
     tools: true,
     content: <PurchaserManager />,
   },
+  "/tools/store-query": {
+    title: "专属查询｜喜八",
+    description: "选择店铺后只查询该店铺的订单，避免串单。",
+    tools: true,
+    content: <StoreQueryList />,
+  },
   "/tools/freight-calculator": {
     title: "运费计算｜喜八Tools",
     description: "批量计算常用快递公司的寄递费用。",
@@ -95,12 +104,70 @@ function NotFound() {
   );
 }
 
+function ShortLinkLoading() {
+  return (
+    <main className="spa-short-link-loading">
+      <div className="app-loading-mark"><span /></div>
+    </main>
+  );
+}
+
+type ShortLinkResolveState =
+  | { status: "loading" }
+  | { status: "not-found" };
+
 export default function App() {
-  const pathname = normalizePath(window.location.pathname);
+  const [pathname, setPathname] = useState(() => normalizePath(window.location.pathname));
+  const [shortLinkState, setShortLinkState] = useState<ShortLinkResolveState | null>(null);
+  // 专属查单页用：店铺名异步加载好之后回传上来，标题/描述才有真名而不是 URL 里的 code
+  const [storeQueryResolvedName, setStoreQueryResolvedName] = useState<string>("");
+
   const route = routes[pathname];
   // 动态路由：/tools/order/:shortId（6 位短码）→ 买家专属下单页
   const orderShortIdMatch = pathname.match(/^\/tools\/order\/([2-9a-hj-km-np-z]{6})$/);
+  // 动态路由：/tools/store-query/:storeCode（任意非空字符串，URL 解码后传给 StoreQuery）
+  const storeQueryMatch = pathname.match(/^\/tools\/store-query\/([^/]+)$/);
 
+  // catch-all：未知路径 → 解析短链 → window.location.replace 整页跳到目标
+  // 不走 history.replaceState + setState 那条路：React 19 跟 effect 同步有 race，
+  // 第一次进站时 `setPathname` 会丢，导致 URL 改了但页面不重渲（要刷新才有）。
+  // 改用 window.location.replace：浏览器负责完整跳页，新页面会重新走 SPA 路由表。
+  useEffect(() => {
+    if (route || orderShortIdMatch || storeQueryMatch || pathname === "/") {
+      setShortLinkState(null);
+      return;
+    }
+    let cancelled = false;
+    setShortLinkState({ status: "loading" });
+    const lookup = pathname.replace(/^\/+/, "");
+    resolveShortLink(lookup)
+      .then((r) => {
+        if (cancelled) return;
+        const data = r.data;
+        if (!data) {
+          setShortLinkState({ status: "not-found" });
+          return;
+        }
+        // 短链命中：直接 replace；window.location.replace 在用户手势之后异步
+        // 触发的跳转是允许的（不会弹拦截），但用 try/catch 兜底兜任何异常。
+        try {
+          window.location.replace(data.target);
+        } catch {
+          setShortLinkState({ status: "not-found" });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setShortLinkState({ status: "not-found" });
+      });
+    return () => { cancelled = true; };
+  }, [pathname, route, orderShortIdMatch, storeQueryMatch]);
+
+  // 切路由时清空上一个专属查单页回填的店铺名，避免切到非 store-query 页时还残留旧名
+  useEffect(() => {
+    if (!storeQueryMatch) setStoreQueryResolvedName("");
+  }, [pathname, storeQueryMatch]);
+
+  // 已知路由：正常渲染
   let content: ReactNode;
   let title: string;
   let description: string;
@@ -115,8 +182,27 @@ export default function App() {
     title = "专属下单｜喜八Tools";
     description = "通过下单人专属短链接下单并免登录查询历史订单。";
     isToolsRoute = true;
-  } else {
+  } else if (storeQueryMatch) {
+    const rawCode = storeQueryMatch[1] || "";
+    let storeCode = rawCode;
+    try { storeCode = decodeURIComponent(rawCode); } catch { /* keep raw */ }
+    // 优先用异步回填的真名（没有就用 code 占位）
+    const displayName = storeQueryResolvedName || storeCode;
+    content = (
+      <StoreQuery
+        storeCode={storeCode}
+        onResolvedName={setStoreQueryResolvedName}
+      />
+    );
+    title = `${displayName}｜专属查询`;
+    description = `查询 ${displayName} 店铺下的订单与物流进度。`;
+    isToolsRoute = true;
+  } else if (shortLinkState?.status === "not-found") {
     return <NotFound />;
+  } else {
+    // loading / redirecting：都显示"正在解析短链…"
+    // window.location.replace 已经触发，整页马上会被替换掉
+    return <ShortLinkLoading />;
   }
 
   useEffect(() => {

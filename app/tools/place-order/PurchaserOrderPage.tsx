@@ -1,13 +1,15 @@
 
-import { AlertCircle, ArrowRight, CheckCircle2, ChevronRight, CircleHelp, Edit3, Eye, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, X } from "lucide-react";
+import { AlertCircle, ArrowRight, Ban, CheckCircle2, ChevronRight, CircleHelp, Edit3, Eye, History, LoaderCircle, MapPin, Minus, PackageCheck, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Store, Trash2, Truck, User, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { OrderStatsCards, StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
+import PeachTip from "../../components/PeachTip";
 
 type Row = Record<string, unknown>;
 type Option = { value: string; label: string; icon?: string };
-type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number };
+type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string };
+type BlockDisplay = "banner" | "fullscreen" | "confirm";
 type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
 const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
 // 指定快递：买家仅可从这三家中选（值与 sys_exp_com 字典一致）
@@ -79,6 +81,8 @@ export default function PurchaserOrderPage() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   // 详情查看
   const [viewingOrder, setViewingOrder] = useState<PublicOrderRecord | null>(null);
+  // confirm 模式：进入或切到被拦 tab 时弹窗提醒（每个 tab 切回去都会再弹一次）
+  const [blockConfirm, setBlockConfirm] = useState<{ orders: boolean; query: boolean } | null>(null);
 
   const loadOrders = useCallback(async (purchaserId: string) => {
     const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId } });
@@ -99,13 +103,37 @@ export default function PurchaserOrderPage() {
       setLinkContext(contextResult.data);
       const productRows = optionsResult.data?.products || []; const sizeRows = optionsResult.data?.sizes || [];
       setProducts(productRows); setSizes(sizeRows);
-      // 默认不选中任何商品/规格，由用户主动选择
-      await loadOrders(parsed.purchaserId);
+      // 顶部 banner / 全屏模式：禁用其中一个 tab 时，开页直接落到另一个 tab（避免闪一下被拦的 tab）
+      const display = contextResult.data.blockDisplayType || "banner";
+      if (display !== "confirm") {
+        const orderBlocked = contextResult.data.blockOrder === 1;
+        const queryBlocked = contextResult.data.blockQuery === 1;
+        if (orderBlocked && !queryBlocked) setTab("orders");
+        else if (queryBlocked && !orderBlocked) setTab("create");
+      }
+      // 订单查询被拦时不开单（不论哪种展示模式都不需要加载订单列表），避免错误冒到下单页面顶部
+      if (contextResult.data.blockQuery !== 1) await loadOrders(parsed.purchaserId);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "下单链接无效"); }
     finally { setLoading(false); }
   }, [loadOrders]);
 
   useEffect(() => { initialize(); }, [initialize]);
+
+  // confirm 模式：进入 / 切到被拦 tab 时弹窗（每次切换都会再弹一次）
+  useEffect(() => {
+    if (!linkContext) return;
+    if ((linkContext.blockDisplayType || "banner") !== "confirm") return;
+    if (tab === "create" && linkContext.blockOrder === 1) setBlockConfirm({ orders: true, query: false });
+    else if (tab === "orders" && linkContext.blockQuery === 1) setBlockConfirm({ orders: false, query: true });
+  }, [linkContext, tab]);
+
+  // 被拦的 tab 自动隐藏 → 当前 tab 不可见时切换到可见的那个（confirm 模式 tab 仍可见，不切换）
+  useEffect(() => {
+    if (!linkContext) return;
+    if ((linkContext.blockDisplayType || "banner") === "confirm") return;
+    if (tab === "create" && linkContext.blockOrder === 1 && linkContext.blockQuery !== 1) setTab("orders");
+    else if (tab === "orders" && linkContext.blockQuery === 1 && linkContext.blockOrder !== 1) setTab("create");
+  }, [linkContext, tab]);
 
   const selectedProduct = useMemo(() => products.find((item) => item.value === form.orderName), [products, form.orderName]);
   const selectedSize = useMemo(() => sizes.find((item) => item.value === form.orderType), [sizes, form.orderType]);
@@ -222,6 +250,11 @@ export default function PurchaserOrderPage() {
 
   function requestSubmit(event: FormEvent) {
     event.preventDefault(); setError(""); setErrorFieldId(null); setSuccess(null);
+    // 拦截：被 blockOrder 禁止下单时，提交按钮不可用（兜底，正常情况下按钮 disabled 已经阻止了 form 提交）
+    if (linkContext?.blockOrder === 1) {
+      setError("亲～当前链接已暂停下单服务\n请联系店铺或客服，我们会尽快帮您恢复");
+      return;
+    }
     const missing: string[] = [];
     if (!form.orderName) missing.push("商品");
     if (!form.orderType) missing.push("规格");
@@ -366,22 +399,86 @@ export default function PurchaserOrderPage() {
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
 
+  const blockOrderOn = linkContext.blockOrder === 1;
+  const blockQueryOn = linkContext.blockQuery === 1;
+  const blockDisplay = (linkContext.blockDisplayType || "banner") as BlockDisplay;
+  const anyBlocked = blockOrderOn || blockQueryOn;
+  const bothBlocked = blockOrderOn && blockQueryOn;
+  // 被拦的按钮 / 入口：始终禁用（display=confirm 也只是叠加弹窗）
+  const submitDisabled = blockOrderOn;
+  // fullscreen 模式 + 两边都拦：整页只显示占位卡
+  if (bothBlocked && blockDisplay === "fullscreen") {
+    return <div className="tool-page purchaser-order-page">
+      <section className="purchaser-fullscreen-block">
+        <Ban size={42} />
+        <h1>亲～专属链接已暂停服务 🙏</h1>
+        <p>下单和订单查询功能均已暂时关闭，给您带来不便请见谅～请联系店铺或客服</p>
+        <small>店铺：{linkContext.storeName} · 专属 ID {linkContext.purchaserShortId}</small>
+      </section>
+    </div>;
+  }
+  // banner 模式：禁用哪个，tab 区换成整行占满的禁用提示；下面仍渲染内容（auto-switch 后落到未禁用的 tab）
+  const showBannerTab = blockDisplay === "banner" && anyBlocked;
+  // 当前 tab 是不是被拦 + fullscreen 模式：渲染占位卡
+  const currentTabFullscreenBlocked = blockDisplay === "fullscreen" && ((tab === "create" && blockOrderOn) || (tab === "orders" && blockQueryOn));
+  // banner 模式的单行 tab 提示文案
+  const bannerTabText = (() => {
+    if (blockOrderOn && blockQueryOn) return { title: "下单和订单查询已暂停", sub: "请联系店铺或客服，了解恢复时间" };
+    if (blockOrderOn) return { title: "下单功能已暂停", sub: "订单查询不受影响" };
+    return { title: "订单查询已暂停", sub: "下单功能不受影响" };
+  })();
+
   return <div className="tool-page purchaser-order-page">
     <section className="purchaser-order-hero"><div><small>XB EXPRESS ORDER</small><h1>你好，{linkContext.purchaserName}</h1><p><Store size={14} />{linkContext.storeName}<span>·</span>专属下单人 ID {linkContext.purchaserShortId}</p>{stats.pending + stats.shipped > 0 ? <p className="purchaser-order-hero-sub">📦 您有 <b>{stats.pending + stats.shipped}</b> 笔订单正在路上</p> : null}</div><span><ShoppingBag size={26} /></span></section>
     {linkContext.storeNotice ? <div className="purchaser-store-notice"><ShieldCheck size={16} /><p>{linkContext.storeNotice}</p></div> : null}
-    <OrderStatsCards stats={stats} filter={statusFilter} onSelect={applyFilter} />
-    <nav className="purchaser-order-tabs"><button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><ShoppingBag size={17} />我要下单</button><button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}><History size={17} />我的订单<span>{orders.length}</span></button></nav>
+    <PeachTip />
+    {anyBlocked ? null : <OrderStatsCards stats={stats} filter={statusFilter} onSelect={applyFilter} />}
 
-    {tab === "create" ? <>
-      {success ? null : null}
-      <form className="purchaser-order-form" onSubmit={requestSubmit}>
-        <section id="purchaser-section-product"><header><span>1</span><div><h2>选择商品</h2><p>商品与规格来自后台实时字典（默认未选，请主动选择）</p></div></header><div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={form.orderName === item.value ? "active" : ""} key={item.value} onClick={() => setField("orderName", item.value)}><span className="purchaser-choice-emoji">{emojiFor(item.label)}</span>{item.label}</button>)}</div>{form.orderName === "other" ? <input id="purchaser-custom-name" value={form.orderNameDesc} onChange={(event) => setField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}<div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={form.orderType === item.value ? "active" : ""} key={item.value} onClick={() => setField("orderType", item.value)}>{item.label}</button>)}</div>{form.orderType === "other" ? <input id="purchaser-custom-spec" value={form.orderTypeDesc} onChange={(event) => setField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}<div className="purchaser-quantity"><span>购买数量</span><div><button type="button" onClick={() => setField("orderNum", Math.max(1, form.orderNum - 1))}><Minus size={16} /></button><b>{form.orderNum}</b><button type="button" onClick={() => setField("orderNum", Math.min(99, form.orderNum + 1))}><Plus size={16} /></button></div></div></section>
-        <section id="purchaser-section-address"><header><span>2</span><div><h2>收货信息</h2><p>可粘贴整段信息后智能识别</p></div></header><div className="purchaser-paste"><textarea rows={3} value={pasteText} onChange={(event) => setPasteText(event.target.value)} placeholder="例如：张三 13800138000 上海市青浦区……" /><button type="button" disabled={parsing} onClick={parseAddress}>{parsing ? <LoaderCircle className="spin" size={16} /> : <ScanText size={16} />}智能识别</button></div><label><span><User size={15} />收件人</span><input id="purchaser-customer" value={form.customer} onChange={(event) => setField("customer", event.target.value)} placeholder="请输入收件人姓名" /></label><label><span><Truck size={15} />手机号</span><input id="purchaser-phone" inputMode="tel" maxLength={11} value={form.phone} onChange={(event) => setField("phone", event.target.value.replace(/\D/g, ""))} placeholder="请输入11位手机号" /></label><label><span><MapPin size={15} />详细地址</span><textarea id="purchaser-address" rows={3} value={form.address} onChange={(event) => setField("address", event.target.value)} placeholder="省市区 + 街道门牌号" /></label><label><span><Truck size={15} />指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={form.expCom === "" ? "active" : ""} onClick={() => setField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={form.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label></section>
-        <section><header><span>3</span><div><h2>订单备注</h2><p>选填，告诉店铺需要特别注意的内容</p></div></header><textarea rows={3} value={form.orderDesc} onChange={(event) => setField("orderDesc", event.target.value)} placeholder="如：送货前电话联系" /></section>
-        {error && !captchaOpen ? <p className="tool-error purchaser-order-error">{error}</p> : null}<button className="purchaser-submit" type="submit"><PackageCheck size={19} />确认商品并提交订单</button><p className="purchaser-submit-tip"><ShieldCheck size={13} />点击提交后才会弹出验证码，验证成功即创建订单</p>
-        <button type="button" className="purchaser-help-button" onClick={() => setHelpOpen(true)}><CircleHelp size={15} />下单说明 · 常见问题</button>
-      </form>
-    </> : <section id="purchaser-history-section" className="purchaser-history-section">{orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}</section>}
+    {showBannerTab ? (
+      <div className="purchaser-block-tab" role="status" aria-live="polite">
+        <div><Ban size={15} /><b>{bannerTabText.title}</b><span>·</span><em>{bannerTabText.sub}</em></div>
+      </div>
+    ) : blockDisplay === "confirm" ? (
+      // confirm 模式：所有 tab 都展示，让用户能切到被拦的 tab 触发弹窗
+      <nav className="purchaser-order-tabs">
+        <button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><ShoppingBag size={17} />我要下单</button>
+        <button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}><History size={17} />我的订单<span>{orders.length}</span></button>
+      </nav>
+    ) : (
+      // fullscreen 模式：只展示未被拦的 tab
+      <nav className="purchaser-order-tabs">
+        {!blockOrderOn ? <button className={tab === "create" ? "active" : ""} onClick={() => setTab("create")}><ShoppingBag size={17} />我要下单</button> : null}
+        {!blockQueryOn ? <button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}><History size={17} />我的订单<span>{orders.length}</span></button> : null}
+      </nav>
+    )}
+
+    {(showBannerTab && bothBlocked) ? <section className="purchaser-fullscreen-block">
+      <Ban size={42} />
+      <h1>亲～专属链接已暂停服务 🙏</h1>
+      <p>下单和订单查询功能均已暂时关闭，给您带来不便请见谅～请联系店铺或客服</p>
+      <small>店铺：{linkContext.storeName} · 专属 ID {linkContext.purchaserShortId}</small>
+    </section> : currentTabFullscreenBlocked ? (
+      tab === "create" ? <section className="purchaser-fullscreen-block">
+        <Ban size={42} />
+        <h1>亲～下单通道已暂时关闭 🙏</h1>
+        <p>下单功能已暂时关闭，给您带来不便请见谅～请联系店铺或客服，我们会尽快为您处理</p>
+      </section> : <section className="purchaser-fullscreen-block">
+        <Ban size={42} />
+        <h1>亲～订单查询已暂时关闭 🙏</h1>
+        <p>历史订单暂时无法查看（不影响下单）～如需了解订单详情请联系店铺或客服</p>
+      </section>
+    ) : tab === "create" ? (
+      <>
+        {success ? null : null}
+        <form className="purchaser-order-form" onSubmit={requestSubmit}>
+          <section id="purchaser-section-product"><header><span>1</span><div><h2>选择商品</h2><p>商品与规格来自后台实时字典（默认未选，请主动选择）</p></div></header><div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={form.orderName === item.value ? "active" : ""} key={item.value} onClick={() => setField("orderName", item.value)}><span className="purchaser-choice-emoji">{emojiFor(item.label)}</span>{item.label}</button>)}</div>{form.orderName === "other" ? <input id="purchaser-custom-name" value={form.orderNameDesc} onChange={(event) => setField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}<div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={form.orderType === item.value ? "active" : ""} key={item.value} onClick={() => setField("orderType", item.value)}>{item.label}</button>)}</div>{form.orderType === "other" ? <input id="purchaser-custom-spec" value={form.orderTypeDesc} onChange={(event) => setField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}<div className="purchaser-quantity"><span>购买数量</span><div><button type="button" onClick={() => setField("orderNum", Math.max(1, form.orderNum - 1))}><Minus size={16} /></button><b>{form.orderNum}</b><button type="button" onClick={() => setField("orderNum", Math.min(99, form.orderNum + 1))}><Plus size={16} /></button></div></div></section>
+          <section id="purchaser-section-address"><header><span>2</span><div><h2>收货信息</h2><p>可粘贴整段信息后智能识别</p></div></header><div className="purchaser-paste"><textarea rows={3} value={pasteText} onChange={(event) => setPasteText(event.target.value)} placeholder="例如：张三 13800138000 上海市青浦区……" /><button type="button" disabled={parsing} onClick={parseAddress}>{parsing ? <LoaderCircle className="spin" size={16} /> : <ScanText size={16} />}智能识别</button></div><label><span><User size={15} />收件人</span><input id="purchaser-customer" value={form.customer} onChange={(event) => setField("customer", event.target.value)} placeholder="请输入收件人姓名" /></label><label><span><Truck size={15} />手机号</span><input id="purchaser-phone" inputMode="tel" maxLength={11} value={form.phone} onChange={(event) => setField("phone", event.target.value.replace(/\D/g, ""))} placeholder="请输入11位手机号" /></label><label><span><MapPin size={15} />详细地址</span><textarea id="purchaser-address" rows={3} value={form.address} onChange={(event) => setField("address", event.target.value)} placeholder="省市区 + 街道门牌号" /></label><label><span><Truck size={15} />指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={form.expCom === "" ? "active" : ""} onClick={() => setField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={form.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label></section>
+          <section><header><span>3</span><div><h2>订单备注</h2><p>选填，告诉店铺需要特别注意的内容</p></div></header><textarea rows={3} value={form.orderDesc} onChange={(event) => setField("orderDesc", event.target.value)} placeholder="如：送货前电话联系" /></section>
+          {error && !captchaOpen ? <p className="tool-error purchaser-order-error">{error}</p> : null}<button className="purchaser-submit" type="submit" disabled={submitDisabled}><PackageCheck size={19} />{blockOrderOn ? "已暂停下单" : "确认商品并提交订单"}</button><p className="purchaser-submit-tip"><ShieldCheck size={13} />点击提交后才会弹出验证码，验证成功即创建订单</p>
+          <button type="button" className="purchaser-help-button" onClick={() => setHelpOpen(true)}><CircleHelp size={15} />下单说明 · 常见问题</button>
+        </form>
+      </>
+    ) : (blockDisplay === "confirm" && blockQueryOn) ? null : (orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>)}
 
     {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "ORDER CODE" : "FINAL VERIFICATION"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "请确认订单信息并完成验证"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取" : "提交后无法修改，请仔细核对下方信息。"}</p><div className="purchaser-captcha-summary">
         <div><span>商品</span><b>{emojiFor((form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label) || "")} {form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
@@ -506,7 +603,9 @@ export default function PurchaserOrderPage() {
       {(viewingOrder.store || viewingOrder.purchaser || viewingOrder.createBy) ? <div className="purchaser-detail-section">
         <h3>其他</h3>
         <div className="purchaser-captcha-summary">
-          {viewingOrder.store ? <div><span>店铺</span><b>{viewingOrder.store}</b></div> : null}
+          {/* viewingOrder.store 现在存的是 storeCode（统一语义），对买家来说只会看到自己那家店，
+              直接用 linkContext.storeName 展示更友好；没拿到 linkContext 时 fallback 显示原文 */}
+          {viewingOrder.store ? <div><span>店铺</span><b>{linkContext.storeName || viewingOrder.store}</b></div> : null}
           {viewingOrder.purchaser || viewingOrder.createBy ? <div><span>下单人</span><b>{viewingOrder.purchaser || viewingOrder.createBy}</b></div> : null}
         </div>
       </div> : null}
@@ -532,6 +631,14 @@ export default function PurchaserOrderPage() {
         <button type="button" className="purchaser-success-secondary" onClick={() => setConfirmingDelete(null)} disabled={deleteSubmitting}>取消</button>
         <button type="button" className="purchaser-missing-close" onClick={submitDelete} disabled={deleteSubmitting}>{deleteSubmitting ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />}{deleteSubmitting ? "正在删除" : "确认删除"}</button>
       </div>
+    </section></div> : null}
+    {blockConfirm ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setBlockConfirm(null)}><section className="purchaser-create-modal purchaser-confirm-modal">
+      <span className="danger"><AlertCircle size={22} /></span>
+      <small>LINK NOTICE</small>
+      <h2>专属链接已设置访问限制</h2>
+      {blockConfirm.orders ? <p>亲～当前链接的下单功能已暂停。</p> : null}
+      {blockConfirm.query ? <p>亲～当前链接的订单查询已暂停。</p> : null}
+      <button type="button" className="purchaser-create-action primary" onClick={() => setBlockConfirm(null)}>我知道了</button>
     </section></div> : null}
   </div>;
 }

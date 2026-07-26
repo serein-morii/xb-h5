@@ -1,7 +1,22 @@
 
-import { AlertCircle, CheckCircle2, ChevronRight, ClipboardPaste, FileSpreadsheet, LoaderCircle, MapPin, Store, Upload, UserCheck, UserPlus, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, ClipboardPaste, Download, FileSpreadsheet, ListChecks, LoaderCircle, Pencil, Plus, Settings2, Store, Trash2, Upload, UserCheck, UserPlus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../lib/api";
+import {
+  downloadTemplateXlsx,
+  FIELD_OPTIONS,
+  FormatTemplate,
+  loadActiveTemplateId,
+  loadTemplates,
+  newTemplateId,
+  parseGridWithTemplate,
+  ParseResult,
+  parseTextWithTemplate,
+  saveActiveTemplateId,
+  saveUserTemplates,
+  SeparatorType,
+  TemplateField,
+} from "./formatTemplates";
 
 type DictOption = { value: string; label: string };
 type Row = Record<string, any>;
@@ -11,12 +26,9 @@ type PreviewSummary = { total: number; exists: number; newCount: number; invalid
 type PreviewPurchaser = { id: number; shortId: string; name: string; phone: string; storeName: string };
 type PreviewItem = { rowIndex: number; customerName: string; phone: string; orderItem: string; orderTime: string; quantity: number; payerNickname?: string; buyerStatus: "exists" | "new" | "invalid" | "duplicate"; existingPurchaser?: PreviewPurchaser; message: string };
 type PreviewResponse = { summary: PreviewSummary; items: PreviewItem[] };
-// 用户对每行的决定：create / use / skip
 type Decision = "create" | "use" | "skip";
-// 买家列表条目
 type PurchaserOption = { id: number; name: string; phone: string; shortId: string; storeName?: string };
 
-// 简易 emoji 映射（防商品名没匹配上 PRODUCT_EMOJI 时显示 📦）
 const PRODUCT_EMOJI: Record<string, string> = {
   "苹果": "🍎", "梨": "🍐", "橘子": "🍊", "橙子": "🍊", "葡萄": "🍇",
   "草莓": "🍓", "樱桃": "🍒", "车厘子": "🍒", "桃": "🍑", "水蜜桃": "🍑",
@@ -30,131 +42,104 @@ const PRODUCT_EMOJI: Record<string, string> = {
 };
 const emojiFor = (label: string) => PRODUCT_EMOJI[label] || "📦";
 
-// 从「收款项」文本里自动解析商品名（炎陵黄桃 / 炎陵奈李）和规格（五斤/10斤 等）
-// 返回的 orderName / orderType 是字典 label（人类可读），由前端在提交时再按字典查 value
-function parseProductFromItem(orderItem: unknown): { orderNameDesc?: string; orderTypeDesc?: string } {
-  const str = String(orderItem || "");
-  const result: { orderNameDesc?: string; orderTypeDesc?: string } = {};
-  if (/炎陵黄桃/.test(str)) result.orderNameDesc = "炎陵黄桃";
-  else if (/炎陵奈李/.test(str)) result.orderNameDesc = "炎陵奈李";
-  const sizeMatch = str.match(/[五5]斤|十斤|10斤/);
-  if (sizeMatch) result.orderTypeDesc = /[五5]/.test(sizeMatch[0]) ? "5斤" : "10斤";
-  return result;
-}
-
-// Excel 列名 -> 后端字段映射
-const HEADER_MAP: Record<string, string> = {
-  "收款时间": "orderTime", "收款总金额": "totalAmount", "付款方昵称": "payerNickname",
-  "收款项": "orderItem", "收款项金额": "itemAmount", "数量": "quantity",
-  "地址": "address", "姓名": "customerName", "电话": "phone",
-  "付款备注": "paymentRemark", "商家备注": "merchantRemark", "是否已标记": "isMarked",
-  "顾客优惠": "customerDiscount", "是否退款": "isRefunded", "收款说明": "paymentNote", "收款链接": "paymentLink",
+const SEPARATOR_LABELS: Record<SeparatorType, string> = {
+  auto: "自动（Tab / 多空格）",
+  tab: "Tab 键",
+  "multi-space": "多个空格",
+  comma: "英文逗号",
 };
-
-function parseRow(line: string): string[] {
-  if (line.includes("\t")) return line.split("\t").map((s) => s.trim());
-  return line.split(/\s{2,}/).map((s) => s.trim());
-}
-
-function normalizeDate(value: string): string {
-  if (!value) return "";
-  const cleaned = value.replace(/\//g, "-").trim();
-  const m = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
-  if (m) {
-    const [, y, mo, d, h = "00", mi = "00", s = "00"] = m;
-    return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")} ${h.padStart(2, "0")}:${mi.padStart(2, "0")}:${s.padStart(2, "0")}`;
-  }
-  return cleaned;
-}
 
 export default function BatchOrderEntry() {
   const [storeCode, setStoreCode] = useState("");
   const [stores, setStores] = useState<Row[]>([]);
   const [rawText, setRawText] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [detail, setDetail] = useState<{ type: "preview" | "result"; data: any } | null>(null);
+  const [detail, setDetail] = useState<{ type: "preview" | "result"; data: any; rowIndex?: number } | null>(null);
   const [items, setItems] = useState<Row[]>([]);
-  // 预览结果（每行买家状态）
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [previewing, setPreviewing] = useState(false);
-  // 用户对每行的决定（rowIndex -> decision）
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
-  // 每行选中的买家 ID（rowIndex -> purchaserId），决定为 use 时用
   const [selectedPurchaser, setSelectedPurchaser] = useState<Record<number, number | undefined>>({});
-  // 每行"用已有"展开状态（rowIndex -> 是否展开买家选择面板）
   const [pickOpen, setPickOpen] = useState<Record<number, boolean>>({});
-  // 买家全量列表（懒加载，首次点"用已有"时拉）
   const [purchasers, setPurchasers] = useState<PurchaserOption[] | null>(null);
   const [purchaserLoading, setPurchaserLoading] = useState(false);
-  // 每行的搜索关键词
   const [pickQuery, setPickQuery] = useState<Record<number, string>>({});
-  // 「新建」买家时可编辑的名称（默认 = 付款方昵称）
   const [purchaserNameEdit, setPurchaserNameEdit] = useState<Record<number, string>>({});
   const [results, setResults] = useState<BatchResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // 商品/规格字典（来自 /search/order-options），用来把解析出的 label 映射成 dictValue
   const [productOptions, setProductOptions] = useState<DictOption[]>([]);
   const [sizeOptions, setSizeOptions] = useState<DictOption[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // 格式模板状态
+  const [templates, setTemplates] = useState<FormatTemplate[]>([]);
+  const [activeTemplateId, setActiveTemplateIdState] = useState<string>("");
+  const [templateSheetOpen, setTemplateSheetOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<FormatTemplate | null>(null);
+  const [lastParse, setLastParse] = useState<ParseResult | null>(null);
+
   useEffect(() => {
-    apiRequest<{ data?: Row[] }>("/search/store", { auth: false, query: { createBy: "", name: "" } })
+    apiRequest<{ data?: Row[] }>("/biz/store/options", { query: { createBy: "", name: "" } })
       .then((r) => {
         const rows = Array.isArray(r.data) ? r.data.filter((s) => Number(s.isDelete ?? 1) === 1) : [];
         setStores(rows);
         if (rows[0]?.code) setStoreCode(String(rows[0].code));
       })
       .catch(() => setError("店铺列表加载失败"));
-    // 加载商品/规格字典（与下单页面同源），用来把自动解析出的 label 映射成 dictValue
     apiRequest<{ data?: { products?: DictOption[]; sizes?: DictOption[] } }>("/search/order-options", { auth: false })
       .then((r) => {
         setProductOptions(Array.isArray(r.data?.products) ? r.data!.products! : []);
         setSizeOptions(Array.isArray(r.data?.sizes) ? r.data!.sizes! : []);
       })
-      .catch(() => { /* 字典拉取失败不影响主流程，后端会回退查字典 */ });
+      .catch(() => { /* 字典拉取失败不影响主流程 */ });
+    const loaded = loadTemplates();
+    setTemplates(loaded);
+    const activeId = loadActiveTemplateId();
+    setActiveTemplateIdState(loaded.some((t) => t.id === activeId) ? activeId : loaded[0]?.id || "");
   }, []);
 
-  function parseText(text: string) {
-    setError(""); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({});
-    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    if (lines.length === 0) { setError("内容为空"); return; }
-    const headerIdx = lines.findIndex((l) => l.includes("收款时间") && l.includes("付款方昵称") && l.includes("姓名") && l.includes("电话"));
-    if (headerIdx < 0) { setError("找不到表头行（应包含「收款时间」「付款方昵称」「姓名」「电话」）"); return; }
-    const headers = parseRow(lines[headerIdx]);
-    const colIdx: Record<string, number> = {};
-    headers.forEach((h, i) => { const field = HEADER_MAP[h.trim()]; if (field) colIdx[field] = i; });
-    if (colIdx.orderTime === undefined || colIdx.payerNickname === undefined || colIdx.customerName === undefined) { setError("表头缺少必要列（收款时间 / 付款方昵称 / 姓名）"); return; }
-    const parsed: Row[] = [];
-    for (let i = headerIdx + 1; i < lines.length; i++) {
-      const cells = parseRow(lines[i]);
-      if (cells.every((c) => !c)) continue;
-      const item: Row = {};
-      Object.keys(colIdx).forEach((field) => {
-        const idx = colIdx[field];
-        let val: any = cells[idx] || "";
-        if (field === "orderTime") val = normalizeDate(val);
-        if (field === "quantity") val = Number(val) || 1;
-        item[field] = val;
-      });
-      // 付款方昵称是买家（=付款人），姓名+电话是收件人，两组都必须有
-      if (!item.payerNickname || !item.customerName || !item.phone) continue;
-      // 把付款方昵称同步成 purchaserName，方便后端按「买家=付款人」匹配/新建买家档案
-      item.purchaserName = item.payerNickname;
+  const activeTemplate = useMemo(
+    () => templates.find((t) => t.id === activeTemplateId) || templates[0] || null,
+    [templates, activeTemplateId],
+  );
 
-      // 自动解析商品名和规格：收款项含炎陵黄桃/奈李则商品名取此值，含5斤/10斤等字样则规格取对应值
-      Object.assign(item, parseProductFromItem(item.orderItem));
+  function setActiveTemplate(id: string) {
+    setActiveTemplateIdState(id);
+    saveActiveTemplateId(id);
+  }
 
-      parsed.push(item);
+  // 下载当前模板的样例 xlsx
+  async function handleDownloadTemplate() {
+    if (!activeTemplate) return;
+    try {
+      await downloadTemplateXlsx(activeTemplate);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "模板下载失败");
     }
-    setItems(parsed);
-    // 「新建」时买家名称默认取付款方昵称，用户可在卡片里改成真实姓名后再提交
+  }
+
+  // 解析：使用当前激活的模板
+  function parseAndPreview(text: string) {
+    if (!activeTemplate) { setError("无可用格式模板"); return; }
+    setError(""); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({});
+    const result = parseTextWithTemplate(text, activeTemplate);
+    setLastParse(result);
+    if (result.items.length === 0) {
+      if (result.headerFound === false && activeTemplate.headerRow === 1) {
+        setError("找不到表头行。请检查首行是否包含模板配置的「表头识别词」");
+      } else if (result.totalLines === 0) {
+        setError("内容为空");
+      } else {
+        setError("解析后没有有效行（缺姓名/电话/数量 等必填字段）");
+      }
+      return;
+    }
+    setItems(result.items);
     const initNames: Record<number, string> = {};
-    parsed.forEach((it, i) => { initNames[i] = String(it.purchaserName || ""); });
+    result.items.forEach((it, i) => { initNames[i] = String(it.purchaserName || ""); });
     setPurchaserNameEdit(initNames);
-    if (parsed.length === 0) { setError("解析后没有有效行（缺付款方昵称/姓名/电话）"); return; }
-    // 解析成功后自动调 preview
-    runPreview(parsed);
+    runPreview(result.items);
   }
 
   async function runPreview(parsed: Row[]) {
@@ -167,8 +152,6 @@ export default function BatchOrderEntry() {
       });
       const data = res.data || { summary: { total: 0, exists: 0, newCount: 0, invalid: 0, duplicate: 0 }, items: [] };
       setPreview(data);
-      // 默认决定：exists -> use，new -> create，invalid/duplicate -> skip
-      // exists 行同时预填系统匹配到的买家，避免点提交时报「未选择买家」
       const init: Record<number, Decision> = {};
       const initBuyer: Record<number, number | undefined> = {};
       data.items.forEach((it) => {
@@ -194,7 +177,7 @@ export default function BatchOrderEntry() {
 
   function handlePaste() {
     if (!rawText.trim()) { setError("请先粘贴内容"); return; }
-    parseText(rawText);
+    parseAndPreview(rawText);
   }
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -204,15 +187,32 @@ export default function BatchOrderEntry() {
     const name = file.name.toLowerCase();
     if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
       try {
+        if (!activeTemplate) { setError("无可用格式模板"); event.target.value = ""; return; }
         const XLSX = await import("xlsx");
         const arrayBuffer = await file.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
         if (!firstSheetName) { setError("Excel 文件没有可读工作表"); event.target.value = ""; return; }
         const sheet = workbook.Sheets[firstSheetName];
-        const text = XLSX.utils.sheet_to_csv(sheet, { FS: "\t" });
+        const grid = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: "", blankrows: false });
+        const result = parseGridWithTemplate(grid as string[][], activeTemplate);
+        setLastParse(result);
+        if (result.items.length === 0) {
+          if (result.headerFound === false && activeTemplate.headerRow === 1) {
+            setError("找不到表头行。请检查首行是否包含模板配置的「表头识别词」");
+          } else {
+            setError("解析后没有有效行（缺姓名/电话/数量 等必填字段）");
+          }
+          event.target.value = "";
+          return;
+        }
+        const text = (grid as any[][]).map((row) => row.map((c) => String(c ?? "")).join("\t")).join("\n");
         setRawText(text);
-        parseText(text);
+        setItems(result.items);
+        const initNames: Record<number, string> = {};
+        result.items.forEach((it, i) => { initNames[i] = String(it.purchaserName || ""); });
+        setPurchaserNameEdit(initNames);
+        runPreview(result.items);
       } catch (e) {
         setError(e instanceof Error ? `Excel 解析失败：${e.message}` : "Excel 解析失败");
       }
@@ -220,15 +220,109 @@ export default function BatchOrderEntry() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = (e) => { const text = String(e.target?.result || ""); setRawText(text); parseText(text); };
+    reader.onload = (e) => { const text = String(e.target?.result || ""); setRawText(text); parseAndPreview(text); };
     reader.readAsText(file, "utf-8");
   }
 
+  // 模板管理
+  function startNewTemplate() {
+    setEditingTemplate({
+      id: newTemplateId(),
+      name: "",
+      description: "",
+      separator: "auto",
+      headerRow: 1,
+      fields: [
+        { key: "orderTime", aliases: ["收款时间"], required: false },
+        { key: "payerNickname", aliases: ["付款方昵称"], required: false },
+        { key: "orderItem", aliases: ["收款项"], required: false },
+        { key: "quantity", aliases: ["数量"], required: true },
+        { key: "address", aliases: ["地址"], required: false },
+        { key: "customerName", aliases: ["姓名"], required: true },
+        { key: "phone", aliases: ["电话"], required: true },
+      ],
+    });
+  }
+
+  function startEditTemplate(t: FormatTemplate) {
+    setEditingTemplate(JSON.parse(JSON.stringify(t)) as FormatTemplate);
+  }
+
+  function saveEditingTemplate() {
+    if (!editingTemplate) return;
+    const t = editingTemplate;
+    if (!t.name.trim()) { setError("请填写模板名称"); return; }
+    const keys = new Set(t.fields.map((f) => f.key));
+    if (!keys.has("customerName") || !keys.has("phone") || !keys.has("quantity")) {
+      setError("字段映射至少要包含：姓名、电话、数量（后端预览接口必需）");
+      return;
+    }
+    const emptyAlias = t.fields.find((f) => !f.aliases.some((a) => a.trim()));
+    if (emptyAlias) {
+      const label = FIELD_OPTIONS.find((o) => o.key === emptyAlias.key)?.label || emptyAlias.key;
+      setError(`字段「${label}」至少要填一个表头识别词`);
+      return;
+    }
+    const others = templates.filter((x) => x.id !== t.id);
+    const next = [...others, t];
+    setTemplates(next);
+    saveUserTemplates(next);
+    if (!templates.some((x) => x.id === t.id)) setActiveTemplate(t.id);
+    setEditingTemplate(null);
+    setError("");
+  }
+
+  function deleteTemplate(t: FormatTemplate) {
+    if (t.builtin) return;
+    if (!window.confirm(`删除模板「${t.name}」？已用此模板录入的历史订单不受影响`)) return;
+    const next = templates.filter((x) => x.id !== t.id);
+    setTemplates(next);
+    saveUserTemplates(next);
+    if (activeTemplateId === t.id) {
+      const fallback = next[0];
+      if (fallback) setActiveTemplate(fallback.id);
+    }
+  }
+
+  function updateEditingField<K extends keyof TemplateField>(idx: number, key: K, value: TemplateField[K]) {
+    if (!editingTemplate) return;
+    const next = { ...editingTemplate, fields: editingTemplate.fields.slice() };
+    next.fields[idx] = { ...next.fields[idx], [key]: value };
+    setEditingTemplate(next);
+  }
+
+  function addEditingField() {
+    if (!editingTemplate) return;
+    const used = new Set(editingTemplate.fields.map((f) => f.key));
+    const candidate = FIELD_OPTIONS.find((o) => !used.has(o.key));
+    if (!candidate) return;
+    setEditingTemplate({
+      ...editingTemplate,
+      fields: [...editingTemplate.fields, { key: candidate.key, aliases: [candidate.label], required: false }],
+    });
+  }
+
+  function removeEditingField(idx: number) {
+    if (!editingTemplate) return;
+    setEditingTemplate({ ...editingTemplate, fields: editingTemplate.fields.filter((_, i) => i !== idx) });
+  }
+
+  function moveEditingField(idx: number, dir: -1 | 1) {
+    if (!editingTemplate) return;
+    const next = editingTemplate.fields.slice();
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setEditingTemplate({ ...editingTemplate, fields: next });
+  }
+
+  // 买家选择 / 提交
   async function loadPurchasers(): Promise<PurchaserOption[]> {
+    if (!storeCode) return [];
     if (purchasers) return purchasers;
     setPurchaserLoading(true);
     try {
-      const res = await apiRequest<{ data?: any[] }>("/biz/purchaser/list");
+      const res = await apiRequest<{ data?: any[] }>("/biz/purchaser/list", { query: { storeCode } });
       const list = Array.isArray(res.data) ? res.data.map((p) => ({
         id: Number(p.id), name: String(p.name || ""), phone: String(p.phone || ""),
         shortId: String(p.shortId || ""), storeName: p.storeName ? String(p.storeName) : undefined,
@@ -243,7 +337,11 @@ export default function BatchOrderEntry() {
     }
   }
 
-  /** 点「用已有」：切到 use、展开选择面板、懒加载买家列表。再点一次收起。 */
+  // 切换店铺时清空买家缓存（不同店铺的买家列表不一样）
+  useEffect(() => {
+    setPurchasers(null);
+  }, [storeCode]);
+
   async function togglePick(rowIndex: number, currentDecision: Decision) {
     const alreadyUse = currentDecision === "use";
     const isOpen = !!pickOpen[rowIndex];
@@ -253,7 +351,6 @@ export default function BatchOrderEntry() {
     }
     setDecisions((c) => ({ ...c, [rowIndex]: "use" }));
     setPickOpen((c) => ({ ...c, [rowIndex]: true }));
-    // 系统已匹配买家时预填，方便直接确认或改选
     setSelectedPurchaser((c) => {
       if (c[rowIndex] != null) return c;
       const matched = preview?.items.find((it) => it.rowIndex === rowIndex)?.existingPurchaser;
@@ -282,10 +379,8 @@ export default function BatchOrderEntry() {
     if (items.length === 0) return setError("没有可录入的订单，请先粘贴并解析");
     const pending = preview?.items.filter((it) => decisions[it.rowIndex] !== "skip") ?? [];
     if (pending.length === 0) return setError("所有行都被跳过，没有可录入的订单");
-    // 校验：决定为 use 的行必须已选买家
     const missingBuyer = pending.filter((it) => decisions[it.rowIndex] === "use" && !selectedPurchaser[it.rowIndex]);
     if (missingBuyer.length > 0) return setError(`第 ${missingBuyer[0].rowIndex + 1} 行选了「用已有」但未选择买家`);
-    // 校验：决定为 create 的行必须填写买家名称（默认 = 付款方昵称，可改）
     const missingName = pending.filter((it) => decisions[it.rowIndex] === "create" && !(purchaserNameEdit[it.rowIndex] || "").trim());
     if (missingName.length > 0) return setError(`第 ${missingName[0].rowIndex + 1} 行选了「新建」但买家名称为空`);
     setConfirmOpen(true);
@@ -295,14 +390,10 @@ export default function BatchOrderEntry() {
     setConfirmOpen(false);
     setBusy(true); setError(""); setResults(null);
     try {
-      // 把决定写回 items（映射成后端 buyerAction + existingPurchaserId + purchaserName + 商品/规格字典 value）
       const payloadItems = items.map((it, idx) => {
         const dec = decisions[idx] || "skip";
         const action = dec === "use" ? "use_existing" : dec === "create" ? "create_new" : "skip";
-        // 「新建」时把用户可能改过的 purchaserName 发给后端；其他行保留原 purchaserName 供后端按付款人匹配
         const edited = dec === "create" ? (purchaserNameEdit[idx] || "").trim() : "";
-        // 商品/规格字典映射：把解析出的 label（如"炎陵黄桃"）查成 dictValue 再传给后端，
-        // 找不到 value 时不传这俩字段，交给后端按 orderItem 兜底 + insertOrder 内字典查询回填 desc
         const nameValue = it.orderNameDesc ? productValueByLabel.get(String(it.orderNameDesc)) : undefined;
         const typeValue = it.orderTypeDesc ? sizeValueByLabel.get(String(it.orderTypeDesc)) : undefined;
         return {
@@ -339,7 +430,6 @@ export default function BatchOrderEntry() {
     return preview.items.filter((it) => decisions[it.rowIndex] !== "skip").length;
   }, [preview, decisions]);
 
-  // 把字典 label 映射成 dictValue（找不到时 value 为 undefined，提交时就不传，交给后端兜底查字典）
   const productValueByLabel = useMemo(() => {
     const m = new Map<string, string>();
     productOptions.forEach((opt) => { if (opt.label && opt.value) m.set(opt.label, opt.value); });
@@ -371,8 +461,43 @@ export default function BatchOrderEntry() {
         </section>
 
         <section className="batch-order-section">
-          <header><span>2</span><div><h2>粘贴内容</h2><p>自动定位表头行，之后是数据</p></div></header>
+          <header><span>2</span><div><h2>粘贴内容</h2><p>按当前格式模板识别表头与字段</p></div></header>
+
+          <div className="batch-order-template-bar">
+            <div className="batch-order-template-current">
+              <ListChecks size={14} />
+              <span className="batch-order-template-label">当前格式：</span>
+              <select
+                className="batch-order-template-select"
+                value={activeTemplateId}
+                onChange={(e) => setActiveTemplate(e.target.value)}
+                title="切换格式模板"
+              >
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.builtin ? "★ " : ""}{t.name}{t.headerRow === 0 ? "（无表头）" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="batch-order-template-download"
+                onClick={handleDownloadTemplate}
+                disabled={!activeTemplate}
+                title="下载当前模板的样例 xlsx（表头 + 示例行）"
+              >
+                <Download size={14} />下载模板
+              </button>
+            </div>
+          </div>
+          {activeTemplate?.description ? (
+            <p className="batch-order-template-hint">{activeTemplate.description}</p>
+          ) : null}
+
           <div className="batch-order-toolbar">
+            <button type="button" className="batch-order-template-mgmt" onClick={() => setTemplateSheetOpen(true)}>
+              <Settings2 size={15} />管理模板
+            </button>
             <button type="button" className="batch-order-file-btn" onClick={() => fileRef.current?.click()}><Upload size={15} />选择文件</button>
             <input ref={fileRef} hidden type="file" accept=".txt,.csv,.xlsx,.xls" onChange={handleFile} />
             <button type="button" className="batch-order-parse-btn" onClick={handlePaste}><ClipboardPaste size={15} />解析内容</button>
@@ -382,8 +507,17 @@ export default function BatchOrderEntry() {
             rows={8}
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
-            placeholder={"示例（粘贴到这里）：\n收款时间\t收款项\t数量\t地址\t姓名\t电话\t付款方昵称\t付款备注\n2024-01-15 10:30\t苹果\t1\t上海市青浦区\t张三\t13800000000\t王老板_果园\t送货前联系"}
+            placeholder={
+              activeTemplate?.headerRow === 1
+                ? `示例（粘贴到这里）：\n${activeTemplate.fields.slice(0, 6).map((f) => f.aliases[0] || "").join("\t")}\n${activeTemplate.fields.slice(0, 6).map(() => "...").join("\t")}`
+                : `无表头模板：按字段顺序粘贴，每行一个订单\n共 ${activeTemplate?.fields.length || 0} 列（${activeTemplate?.fields.map((f) => f.aliases[0] || "").join(" | ")}）`
+            }
           />
+          {lastParse && lastParse.items.length > 0 ? (
+            <p className="batch-order-template-stats">
+              ✓ 解析 {lastParse.items.length} 行{lastParse.headerFound ? `（命中表头 ${lastParse.matchedFields} 个字段）` : "（按位置映射）"}
+            </p>
+          ) : null}
         </section>
 
         {preview ? (
@@ -394,7 +528,6 @@ export default function BatchOrderEntry() {
                 const dec = decisions[it.rowIndex] || "skip";
                 const canUseExisting = it.buyerStatus === "exists" || it.buyerStatus === "new" || it.buyerStatus === "duplicate";
                 const selectedId = selectedPurchaser[it.rowIndex];
-                // 已选买家：优先全量列表，fallback 到系统匹配，避免列表未加载时显示空白
                 const selectedP =
                   (selectedId != null ? purchasers?.find((p) => p.id === selectedId) : undefined)
                   || (selectedId != null && it.existingPurchaser && Number(it.existingPurchaser.id) === selectedId
@@ -408,37 +541,43 @@ export default function BatchOrderEntry() {
                   const base = purchasers?.filter((p) =>
                     !query || p.name.toLowerCase().includes(query) || p.phone.includes(query) || p.shortId.toLowerCase().includes(query)
                   ) ?? [];
-                  // 系统匹配到的买家置顶，减少滚动查找
                   if (!it.existingPurchaser) return base;
                   const matchedId = Number(it.existingPurchaser.id);
                   return [...base].sort((a, b) => Number(b.id === matchedId) - Number(a.id === matchedId));
                 })();
                 return (
-                  <article key={it.rowIndex} className={`batch-order-card batch-order-card-${STATUS_TONE[it.buyerStatus]}`}>
+                  <article
+                    key={it.rowIndex}
+                    className={`batch-order-card batch-order-card-${STATUS_TONE[it.buyerStatus]}`}
+                    onClick={(e) => {
+                      // 点击卡片非交互区 = 打开预览；点内部按钮/输入框则不触发
+                      const target = e.target as HTMLElement;
+                      if (target.closest("button, input, select, textarea, a, [role='button']")) return;
+                      setDetail({ type: "preview", data: items[it.rowIndex], rowIndex: it.rowIndex });
+                    }}
+                  >
                     <div className="batch-order-card-top">
                       <span className="batch-order-card-num">#{it.rowIndex + 1}</span>
                       <span className={`batch-order-status batch-order-status-${STATUS_TONE[it.buyerStatus]}`}>{STATUS_LABEL[it.buyerStatus]}</span>
-                      <button type="button" className="batch-order-card-detail-btn" onClick={() => setDetail({ type: "preview", data: items[it.rowIndex] })}><ChevronRight size={14} /></button>
+                      <span className="batch-order-card-detail-btn" aria-hidden="true"><ChevronRight size={14} /></span>
                     </div>
                     <div className="batch-order-card-product">
                       <span className="batch-order-card-emoji">{emojiFor(String(it.orderItem || ""))}</span>
-                      <span className="batch-order-card-label">{String(it.orderItem || "--")}</span>
+                      {items[it.rowIndex]?.orderNameDesc ? (() => {
+                        const label = String(items[it.rowIndex].orderNameDesc);
+                        const mapped = productValueByLabel.has(label);
+                        return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>商品 · {label}{mapped ? "" : " · 待映射"}</span>;
+                      })() : null}
+                      {items[it.rowIndex]?.orderTypeDesc ? (() => {
+                        const label = String(items[it.rowIndex].orderTypeDesc);
+                        const mapped = sizeValueByLabel.has(label);
+                        return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>规格 · {label}{mapped ? "" : " · 待映射"}</span>;
+                      })() : null}
+                      {(!items[it.rowIndex]?.orderNameDesc && !items[it.rowIndex]?.orderTypeDesc) ? (
+                        <span className="batch-order-card-label">{String(it.orderItem || "--")}</span>
+                      ) : null}
                       {Number(it.quantity) > 1 ? <span className="batch-order-card-split">×{it.quantity}</span> : null}
                     </div>
-                    {(items[it.rowIndex]?.orderNameDesc || items[it.rowIndex]?.orderTypeDesc) ? (
-                      <div className="batch-order-card-auto">
-                        {items[it.rowIndex]?.orderNameDesc ? (() => {
-                          const label = String(items[it.rowIndex].orderNameDesc);
-                          const mapped = productValueByLabel.has(label);
-                          return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>商品 · {label}{mapped ? "" : " · 待映射"}</span>;
-                        })() : null}
-                        {items[it.rowIndex]?.orderTypeDesc ? (() => {
-                          const label = String(items[it.rowIndex].orderTypeDesc);
-                          const mapped = sizeValueByLabel.has(label);
-                          return <span className={`batch-order-auto-tag ${mapped ? "is-mapped" : "is-unmapped"}`} title={mapped ? "已映射字典" : "未在字典中找到，提交时后端兜底"}>规格 · {label}{mapped ? "" : " · 待映射"}</span>;
-                        })() : null}
-                      </div>
-                    ) : null}
                     <div className="batch-order-card-meta">
                       <div><span className="batch-order-card-meta-label">买家(付款人)</span><span className="batch-order-card-meta-value">{String(it.payerNickname || "--")}</span></div>
                       <div><span className="batch-order-card-meta-label">收件人</span><span className="batch-order-card-meta-value">{String(it.customerName || "--")}</span></div>
@@ -527,7 +666,7 @@ export default function BatchOrderEntry() {
         ) : null}
 
         <div className="form-footer">
-          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({}); setError(""); }}><X size={15} />清空</button>
+          <button type="button" className="button button-ghost" onClick={() => { setRawText(""); setItems([]); setResults(null); setPreview(null); setDecisions({}); setSelectedPurchaser({}); setPickOpen({}); setPickQuery({}); setPurchaserNameEdit({}); setError(""); setLastParse(null); }}><X size={15} />清空</button>
           <button type="submit" className="button button-primary" disabled={busy || pendingCount === 0}>{busy ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}{busy ? "录入中" : `开始录入 ${pendingCount ? `(${pendingCount})` : ""}`}</button>
         </div>
       </form>
@@ -556,14 +695,18 @@ export default function BatchOrderEntry() {
           <header>
             <small>{detail.type === "preview" ? "PREVIEW DETAIL" : "RESULT DETAIL"}</small>
             <h2>{detail.type === "preview" ? "订单预览详情" : "录入结果详情"}</h2>
-            <p>行 #{detail.data.rowIndex !== undefined ? Number(detail.data.rowIndex) + 1 : "?"}</p>
+            <p>行 #{detail.rowIndex !== undefined ? Number(detail.rowIndex) + 1 : "?"}</p>
           </header>
           {detail.type === "preview" ? (
             <div className="batch-order-detail-list">
               {[
                 ["收款时间", detail.data.orderTime],
                 ["商品", detail.data.orderItem],
+                ["商品名", detail.data.orderNameDesc || detail.data.orderName],
+                ["规格", detail.data.orderTypeDesc || detail.data.orderType],
                 ["数量", detail.data.quantity],
+                ["快递公司", detail.data.expCom],
+                ["快递单号", detail.data.expCode],
                 ["收件人", detail.data.customerName],
                 ["电话", detail.data.phone],
                 ["地址", detail.data.address],
@@ -592,6 +735,271 @@ export default function BatchOrderEntry() {
           )}
         </section>
       </div> : null}
+
+      {templateSheetOpen ? <TemplateSheet
+        templates={templates}
+        activeTemplateId={activeTemplateId}
+        onActivate={setActiveTemplate}
+        onClose={() => { setTemplateSheetOpen(false); setEditingTemplate(null); }}
+        onNew={startNewTemplate}
+        onEdit={startEditTemplate}
+        onDelete={deleteTemplate}
+        editing={editingTemplate}
+        onCancelEdit={() => setEditingTemplate(null)}
+        onSaveEdit={saveEditingTemplate}
+        onChangeEditField={updateEditingField}
+        onAddField={addEditingField}
+        onRemoveField={removeEditingField}
+        onMoveField={moveEditingField}
+        onChangeEditMeta={(patch) => setEditingTemplate((cur) => cur ? { ...cur, ...patch } : cur)}
+        error={error}
+      /> : null}
+    </div>
+  );
+}
+
+function TemplateSheet(props: {
+  templates: FormatTemplate[];
+  activeTemplateId: string;
+  onActivate: (id: string) => void;
+  onClose: () => void;
+  onNew: () => void;
+  onEdit: (t: FormatTemplate) => void;
+  onDelete: (t: FormatTemplate) => void;
+  editing: FormatTemplate | null;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  onChangeEditField: (idx: number, key: keyof TemplateField, value: any) => void;
+  onAddField: () => void;
+  onRemoveField: (idx: number) => void;
+  onMoveField: (idx: number, dir: -1 | 1) => void;
+  onChangeEditMeta: (patch: Partial<FormatTemplate>) => void;
+  error: string;
+}) {
+  if (props.editing) {
+    return <TemplateEditor
+      template={props.editing}
+      onCancel={props.onCancelEdit}
+      onSave={props.onSaveEdit}
+      onChangeField={props.onChangeEditField}
+      onAddField={props.onAddField}
+      onRemoveField={props.onRemoveField}
+      onMoveField={props.onMoveField}
+      onChangeMeta={props.onChangeEditMeta}
+      error={props.error}
+    />;
+  }
+  return <TemplateList
+    templates={props.templates}
+    activeTemplateId={props.activeTemplateId}
+    onActivate={props.onActivate}
+    onClose={props.onClose}
+    onNew={props.onNew}
+    onEdit={props.onEdit}
+    onDelete={props.onDelete}
+  />;
+}
+
+function TemplateList(props: {
+  templates: FormatTemplate[];
+  activeTemplateId: string;
+  onActivate: (id: string) => void;
+  onClose: () => void;
+  onNew: () => void;
+  onEdit: (t: FormatTemplate) => void;
+  onDelete: (t: FormatTemplate) => void;
+}) {
+  return (
+    <div className="batch-order-detail-backdrop" onMouseDown={(e) => e.target === e.currentTarget && props.onClose()}>
+      <section className="batch-order-detail-modal batch-order-template-modal" role="dialog" aria-modal="true">
+        <button className="batch-order-detail-close" type="button" onClick={props.onClose} aria-label="关闭"><X size={18} /></button>
+        <header>
+          <small>FORMAT TEMPLATES</small>
+          <h2>格式模板</h2>
+          <p>选择 / 新建 / 编辑批量录单使用的字段映射规则</p>
+        </header>
+        <div className="batch-order-template-list">
+          {props.templates.map((t) => {
+            const active = t.id === props.activeTemplateId;
+            return (
+              <article key={t.id} className={`batch-order-template-item ${active ? "is-active" : ""}`}>
+                <div className="batch-order-template-item-info">
+                  <div className="batch-order-template-item-name">
+                    {t.builtin ? <span className="batch-order-template-badge">内置</span> : null}
+                    {t.name}
+                    {active ? <span className="batch-order-template-active-tag">使用中</span> : null}
+                  </div>
+                  <div className="batch-order-template-item-meta">
+                    {t.fields.length} 个字段 · 分隔符：{SEPARATOR_LABELS[t.separator]} · {t.headerRow === 1 ? "第 1 行为表头" : "无表头（按位置）"}
+                  </div>
+                  {t.description ? <div className="batch-order-template-item-desc">{t.description}</div> : null}
+                </div>
+                <div className="batch-order-template-item-actions">
+                  {!active ? (
+                    <button type="button" className="batch-order-tpl-btn" onClick={() => props.onActivate(t.id)}>使用</button>
+                  ) : null}
+                  <button type="button" className="batch-order-tpl-btn" onClick={() => props.onEdit(t)}><Pencil size={12} />编辑</button>
+                  {!t.builtin ? (
+                    <button type="button" className="batch-order-tpl-btn batch-order-tpl-btn-danger" onClick={() => props.onDelete(t)}><Trash2 size={12} />删除</button>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <div className="batch-order-template-footer">
+          <button type="button" className="button button-primary batch-order-template-new" onClick={props.onNew}><Plus size={15} />新建模板</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TemplateEditor(props: {
+  template: FormatTemplate;
+  onCancel: () => void;
+  onSave: () => void;
+  onChangeField: (idx: number, key: keyof TemplateField, value: any) => void;
+  onAddField: () => void;
+  onRemoveField: (idx: number) => void;
+  onMoveField: (idx: number, dir: -1 | 1) => void;
+  onChangeMeta: (patch: Partial<FormatTemplate>) => void;
+  error: string;
+}) {
+  const t = props.template;
+  const fieldKeyUsed = new Set(t.fields.map((f) => f.key));
+  const canAdd = FIELD_OPTIONS.some((o) => !fieldKeyUsed.has(o.key));
+  return (
+    <div className="batch-order-detail-backdrop" onMouseDown={(e) => e.target === e.currentTarget && props.onCancel()}>
+      <section className="batch-order-detail-modal batch-order-template-modal" role="dialog" aria-modal="true">
+        <button className="batch-order-detail-close" type="button" onClick={props.onCancel} aria-label="关闭"><X size={18} /></button>
+        <header>
+          <small>{t.builtin ? "VIEW BUILT-IN" : "EDIT TEMPLATE"}</small>
+          <h2>{t.builtin ? "查看模板（内置只读）" : "编辑模板"}</h2>
+          <p>配置字段映射 + 分隔符 + 表头行；保存后立即生效</p>
+        </header>
+
+        <div className="batch-order-template-form">
+          <label className="batch-order-tpl-field">
+            <span>模板名称 *</span>
+            <input
+              value={t.name}
+              onChange={(e) => props.onChangeMeta({ name: e.target.value })}
+              placeholder="例如：我的微信账单 / 拼多多导单"
+              disabled={!!t.builtin}
+            />
+          </label>
+          <label className="batch-order-tpl-field">
+            <span>说明（选填）</span>
+            <input
+              value={t.description || ""}
+              onChange={(e) => props.onChangeMeta({ description: e.target.value })}
+              placeholder="这个模板适用的来源 / 备注"
+              disabled={!!t.builtin}
+            />
+          </label>
+          <div className="batch-order-tpl-row">
+            <label className="batch-order-tpl-field">
+              <span>分隔符</span>
+              <select
+                value={t.separator}
+                onChange={(e) => props.onChangeMeta({ separator: e.target.value as SeparatorType })}
+                disabled={!!t.builtin}
+              >
+                {(Object.keys(SEPARATOR_LABELS) as SeparatorType[]).map((k) => (
+                  <option key={k} value={k}>{SEPARATOR_LABELS[k]}</option>
+                ))}
+              </select>
+            </label>
+            <label className="batch-order-tpl-field">
+              <span>表头行</span>
+              <select
+                value={String(t.headerRow)}
+                onChange={(e) => props.onChangeMeta({ headerRow: Number(e.target.value) as 0 | 1 })}
+                disabled={!!t.builtin}
+              >
+                <option value="1">第 1 行是表头（按识别词匹配）</option>
+                <option value="0">无表头（按字段顺序映射）</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="batch-order-template-fields">
+          <div className="batch-order-template-fields-title">
+            <span>字段映射</span>
+            <span className="batch-order-template-fields-hint">
+              {t.headerRow === 1
+                ? "表头识别词任一命中即视为该列；识别不到则该列被忽略"
+                : "按字段在下方列表的顺序映射到第 1 / 2 / 3… 列"}
+            </span>
+          </div>
+          {t.fields.map((f, i) => {
+            const label = FIELD_OPTIONS.find((o) => o.key === f.key)?.label || f.key;
+            return (
+              <div key={`${f.key}-${i}`} className="batch-order-tpl-row-item">
+                <div className="batch-order-tpl-row-num">{i + 1}</div>
+                <select
+                  className="batch-order-tpl-row-key"
+                  value={f.key}
+                  onChange={(e) => props.onChangeField(i, "key", e.target.value)}
+                  disabled={!!t.builtin}
+                >
+                  {FIELD_OPTIONS.map((o) => (
+                    <option key={o.key} value={o.key} disabled={o.key !== f.key && fieldKeyUsed.has(o.key)}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="batch-order-tpl-row-aliases"
+                  value={f.aliases.join(" / ")}
+                  placeholder="识别词（/ 分隔，如 收款时间 / 支付时间）"
+                  onChange={(e) => props.onChangeField(i, "aliases", e.target.value.split(/[\/,,]/).map((s) => s.trim()).filter(Boolean))}
+                  disabled={!!t.builtin}
+                />
+                <input
+                  className="batch-order-tpl-row-dropdown"
+                  value={(f.dropdown || []).join(" / ")}
+                  placeholder="下拉（/ 分隔，留空 = 自由文本）"
+                  onChange={(e) => props.onChangeField(i, "dropdown", e.target.value.split(/[\/,,]/).map((s) => s.trim()).filter(Boolean))}
+                  disabled={!!t.builtin}
+                />
+                <label className="batch-order-tpl-row-required">
+                  <input
+                    type="checkbox"
+                    checked={f.required}
+                    onChange={(e) => props.onChangeField(i, "required", e.target.checked)}
+                    disabled={!!t.builtin}
+                  />
+                  <span>必填</span>
+                </label>
+                <div className="batch-order-tpl-row-move">
+                  <button type="button" onClick={() => props.onMoveField(i, -1)} disabled={i === 0 || !!t.builtin}>↑</button>
+                  <button type="button" onClick={() => props.onMoveField(i, 1)} disabled={i === t.fields.length - 1 || !!t.builtin}>↓</button>
+                </div>
+                <button type="button" className="batch-order-tpl-row-del" onClick={() => props.onRemoveField(i)} disabled={!!t.builtin}>×</button>
+              </div>
+            );
+          })}
+          {!t.builtin ? (
+            <button type="button" className="batch-order-tpl-add" onClick={props.onAddField} disabled={!canAdd}>
+              <Plus size={13} />{canAdd ? "添加字段" : "已添加所有可选字段"}
+            </button>
+          ) : null}
+        </div>
+
+        {props.error ? <p className="tool-error batch-order-error">{props.error}</p> : null}
+
+        <div className="batch-order-template-footer">
+          <button type="button" className="batch-order-confirm-cancel" onClick={props.onCancel}>取消</button>
+          {!t.builtin ? (
+            <button type="button" className="batch-order-confirm-ok" onClick={props.onSave}>保存模板</button>
+          ) : (
+            <button type="button" className="batch-order-confirm-ok" onClick={props.onCancel}>关闭</button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

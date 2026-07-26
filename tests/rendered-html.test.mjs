@@ -87,7 +87,7 @@ test("keeps the migrated authenticated quick order entry workflow", async () => 
     source("app/AdminOrderEntry.tsx"),
   ]);
   assert.match(admin, /active === "orderEntry"/);
-  for (const endpoint of ["/biz/purchaser/list", "/biz/purchaser", "/search/store", "/search/order-options", "/search/addr", "/biz/exp/getAllCom", "/biz/exp/getCom", "/biz/order"]) {
+  for (const endpoint of ["/biz/purchaser/list", "/biz/purchaser", "/biz/store/options", "/search/order-options", "/search/addr", "/biz/exp/getAllCom", "/biz/exp/getCom", "/biz/order"]) {
     assert.match(entry, new RegExp(endpoint.replaceAll("/", "\\/")));
   }
   assert.match(entry, /purchaserShortId/);

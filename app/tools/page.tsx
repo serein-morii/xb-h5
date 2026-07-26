@@ -1,9 +1,10 @@
-import { ArrowRight, Calculator, PackageSearch, Scale } from "lucide-react";
+import { ArrowRight, Calculator, PackageSearch, Scale, Store as StoreIcon } from "lucide-react";
 import LinkQueryCard from "./LinkQueryCard";
 import PrivacyPolicySheet from "./PrivacyPolicySheet";
 
 const orderTools = [
-  { href: "/tools/order-search", title: "订单查询", desc: "手机号验证后查看订单物流", icon: PackageSearch },
+  { href: "/tools/order-search", title: "订单查询", desc: "手机号验证后查看全部订单", icon: PackageSearch },
+  { href: "/tools/store-query", title: "专属查询", desc: "按店铺查询，避免串单", icon: StoreIcon },
 ];
 
 const freightTools = [

@@ -1,7 +1,10 @@
 import {
   ArrowLeft,
   BadgeDollarSign,
+  Bell,
   Box,
+  Briefcase,
+  Building2,
   Check,
   ChevronRight,
   ChevronDown,
@@ -11,7 +14,9 @@ import {
   ExternalLink,
   Eye,
   FileSpreadsheet,
+  Gauge,
   House,
+  Link2,
   LoaderCircle,
   LockKeyhole,
   LogOut,
@@ -21,9 +26,11 @@ import {
   Pencil,
   Phone,
   Plus,
+  Power,
   ReceiptText,
   RefreshCw,
   RotateCw,
+  ScanText,
   Search,
   SearchCheck,
   Send,
@@ -52,22 +59,56 @@ import {
   useState,
 } from "react";
 import {
+  adminUpdateLogisticsGlobalQuota,
+  adminUpdateLogisticsQuota,
   apiRequest,
+  bindEmail,
+  changePwdByEmail,
   clearStoredToken,
   copyToClipboard,
   downloadFile,
+  getLogisticsGlobalQuota,
   getStoredToken,
+  listAllLogisticsQuota,
+  listLogisticsUsage,
+  listMyLogisticsQuota,
+  loginByEmail,
+  LogisticsGlobalQuotaStatus,
+  LogisticsQuotaStatus,
+  LogisticsSwitchType,
+  LogisticsUsageRow,
+  readFromClipboard,
+  resetPasswordByEmail,
+  sendEmailCode,
   setStoredToken,
+  updateMyLogisticsSwitch,
+  updateProfile,
   uploadFile,
 } from "./lib/api";
 import AdminOrderEntry from "./AdminOrderEntry";
 import BatchOrderEntry from "./tools/batch-order/BatchOrderEntry";
 import OrderLinkGenerator from "./tools/order-link/OrderLinkGenerator";
 import PurchaserManager from "./tools/purchasers/PurchaserManager";
+import ShortLinkManager from "./tools/short-links/ShortLinkManager";
 import { buildOrderLink, formatOrderLinkCopy } from "./tools/order-link/format";
+import { OnboardingOverlay, OnboardingProvider, getPageIntroSteps, getSystemTourSteps, registerOnboardingCommands, unregisterOnboardingCommands, useOnboarding, useOnboardingTriggers } from "./components/onboarding";
 
 type DataRow = Record<string, any>;
-type MenuKey = "home" | "orders" | "orderEntry" | "batchOrder" | "bills" | "express" | "prices" | "stores" | "orderLink" | "purchasers" | "tracking";
+type MenuKey = "home" | "orders" | "orderEntry" | "batchOrder" | "bills" | "express" | "prices" | "stores" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks";
+const ALL_MENU_KEYS: MenuKey[] = ["home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks"];
+// 当前访问页面：用 localStorage 缓存（URL 保持干净，不带查询参数）
+const ACTIVE_PAGE_CACHE_KEY = "xb-h5-active-page";
+function readCachedActivePage(): MenuKey {
+  if (typeof window === "undefined") return "home";
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_PAGE_CACHE_KEY);
+    if (raw && (ALL_MENU_KEYS as string[]).includes(raw)) return raw as MenuKey;
+  } catch { /* 读不到就当首次访问 */ }
+  return "home";
+}
+function writeCachedActivePage(key: MenuKey) {
+  try { window.localStorage.setItem(ACTIVE_PAGE_CACHE_KEY, key); } catch { /* 写失败忽略 */ }
+}
 type ToastState = { message: string; type: "success" | "error" | "info" } | null;
 type DictOption = { value: string; label: string };
 type Dictionaries = {
@@ -164,6 +205,8 @@ const NAV_ITEMS: Array<{
   { key: "batchOrder", label: "批量录单", description: "Excel 粘贴批量下单", icon: FileSpreadsheet },
   { key: "purchasers", label: "买家管理", description: "买家与店铺绑定", icon: User },
   { key: "tracking", label: "快递查询", description: "快递100、顺丰、EMS", icon: SearchCheck },
+  { key: "logistics", label: "物流用量", description: "额度、开关与用量记录", icon: Gauge },
+  { key: "shortLinks", label: "短链管理", description: "自定义域名短链接跳转", icon: Link2 },
 ];
 
 function AppLogo({ compact = false }: { compact?: boolean }) {
@@ -294,6 +337,16 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) =
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [emailLoginOpen, setEmailLoginOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  // 读取因登录过期跳转带来的 flash 提示（由 apiRequest 在 401 时写入 sessionStorage）
+  useEffect(() => {
+    const flash = window.sessionStorage.getItem("xb-mobile-flash");
+    if (flash) {
+      setMessage(flash);
+      window.sessionStorage.removeItem("xb-mobile-flash");
+    }
+  }, []);
 
   const loadCaptcha = useCallback(async () => {
     try {
@@ -365,10 +418,703 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) =
           <button className="login-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={19} /> : <ShieldCheck size={19} />}{loading ? "正在登录" : "安全登录"}</button>
         </form>
         <p className="login-footnote"><span /> 账号密码将通过 RSA 加密传输</p>
+        <div className="login-secondary-links">
+          <button type="button" className="login-link-button" onClick={() => setEmailLoginOpen(true)}>
+            <Send size={14} />使用邮箱登录
+          </button>
+          <span className="login-link-divider" />
+          <button type="button" className="login-link-button" onClick={() => setForgotOpen(true)}>
+            <LockKeyhole size={14} />忘记密码
+          </button>
+        </div>
         <a className="public-tools-entry" href="/tools"><Sparkles size={16} /><span><b>进入免登录工具箱</b><small>订单查询 · 运费计算 · 运费对比</small></span><ChevronRight size={16} /></a>
         <a className="icp-link login-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
       </section>
+      <EmailLoginSheet
+        open={emailLoginOpen}
+        onClose={() => setEmailLoginOpen(false)}
+        onLogin={(token, email) => {
+          setEmailLoginOpen(false);
+          onLogin(token, email);
+        }}
+      />
+      <ForgotPasswordSheet open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </main>
+  );
+}
+
+/**
+ * 邮箱登录 Sheet：邮箱 + 验证码（无密码），用于辅助登录入口
+ */
+function EmailLoginSheet({
+  open,
+  onClose,
+  onLogin,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onLogin: (token: string, username: string) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+      setCode("");
+      setMessage(null);
+      setCountdown(0);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = window.setTimeout(() => setCountdown((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown]);
+  async function requestCode() {
+    if (!email.trim()) return setMessage({ type: "error", text: "请输入邮箱" });
+    if (countdown > 0) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await sendEmailCode(email, "login");
+      setMessage({ type: "info", text: "验证码已发送，请到邮箱查收" });
+      setCountdown(60);
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "发送失败" });
+    } finally {
+      setSending(false);
+    }
+  }
+  async function submit() {
+    if (!email.trim() || !code.trim()) return setMessage({ type: "error", text: "请输入邮箱和验证码" });
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const result = await loginByEmail(email, code);
+      const token = String(result.token || "");
+      if (!token) throw new Error("登录成功但未返回凭证");
+      onLogin(token, email.trim());
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "登录失败" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  return (
+    <Sheet open={open} title="邮箱登录" onClose={onClose}>
+      <form
+        className="mobile-form email-auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <label>
+          <span>邮箱</span>
+          <div className="input-shell">
+            <Send size={18} />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              placeholder="请输入注册时使用的邮箱"
+            />
+          </div>
+        </label>
+        <label>
+          <span>验证码</span>
+          <div className="input-shell email-code-shell">
+            <ShieldCheck size={18} />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6 位数字"
+            />
+            <button
+              type="button"
+              className="email-code-button"
+              onClick={requestCode}
+              disabled={sending || countdown > 0}
+            >
+              {sending ? <LoaderCircle className="spin" size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+            </button>
+          </div>
+        </label>
+        {message ? (
+          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
+            <ShieldCheck size={14} />
+            {message.text}
+          </p>
+        ) : null}
+        <button className="button button-primary button-block" type="submit" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}邮箱登录
+        </button>
+        <p className="email-auth-tip">未注册邮箱无法登录，请联系管理员开通账号</p>
+      </form>
+    </Sheet>
+  );
+}
+
+/**
+ * 忘记密码 Sheet：邮箱 + 验证码 + 新密码
+ */
+function ForgotPasswordSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+      setCode("");
+      setNewPwd("");
+      setConfirmPwd("");
+      setMessage(null);
+      setCountdown(0);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = window.setTimeout(() => setCountdown((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown]);
+  async function requestCode() {
+    if (!email.trim()) return setMessage({ type: "error", text: "请输入邮箱" });
+    if (countdown > 0) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await sendEmailCode(email, "reset");
+      setMessage({ type: "info", text: "验证码已发送，请到邮箱查收" });
+      setCountdown(60);
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "发送失败" });
+    } finally {
+      setSending(false);
+    }
+  }
+  async function submit() {
+    if (!email.trim() || !code.trim()) return setMessage({ type: "error", text: "请输入邮箱和验证码" });
+    if (!newPwd || newPwd.length < 5) return setMessage({ type: "error", text: "新密码至少 5 位" });
+    if (newPwd !== confirmPwd) return setMessage({ type: "error", text: "两次输入的密码不一致" });
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      await resetPasswordByEmail(email, code, newPwd);
+      setMessage({ type: "info", text: "密码已重置，请使用新密码登录" });
+      window.setTimeout(() => onClose(), 1200);
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "重置失败" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  return (
+    <Sheet open={open} title="忘记密码" onClose={onClose}>
+      <form
+        className="mobile-form email-auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <label>
+          <span>注册邮箱</span>
+          <div className="input-shell">
+            <Send size={18} />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              placeholder="请输入注册时使用的邮箱"
+            />
+          </div>
+        </label>
+        <label>
+          <span>验证码</span>
+          <div className="input-shell email-code-shell">
+            <ShieldCheck size={18} />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6 位数字"
+            />
+            <button
+              type="button"
+              className="email-code-button"
+              onClick={requestCode}
+              disabled={sending || countdown > 0}
+            >
+              {sending ? <LoaderCircle className="spin" size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+            </button>
+          </div>
+        </label>
+        <label>
+          <span>新密码</span>
+          <div className="input-shell">
+            <LockKeyhole size={18} />
+            <input
+              type="password"
+              value={newPwd}
+              onChange={(event) => setNewPwd(event.target.value)}
+              autoComplete="new-password"
+              placeholder="至少 5 位"
+            />
+          </div>
+        </label>
+        <label>
+          <span>确认新密码</span>
+          <div className="input-shell">
+            <LockKeyhole size={18} />
+            <input
+              type="password"
+              value={confirmPwd}
+              onChange={(event) => setConfirmPwd(event.target.value)}
+              autoComplete="new-password"
+              placeholder="再输一次"
+            />
+          </div>
+        </label>
+        {message ? (
+          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
+            <ShieldCheck size={14} />
+            {message.text}
+          </p>
+        ) : null}
+        <button className="button button-primary button-block" type="submit" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />}重置密码
+        </button>
+      </form>
+    </Sheet>
+  );
+}
+
+/**
+ * 改密 Sheet：已登录用户用「邮箱验证码」修改自己的密码
+ * 前置：必须已绑定邮箱（由调用方在打开前判断）
+ */
+function ChangePwdByEmailSheet({
+  open,
+  boundEmail,
+  onClose,
+  notify,
+}: {
+  open: boolean;
+  boundEmail: string;
+  onClose: () => void;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+      setCode("");
+      setNewPwd("");
+      setConfirmPwd("");
+      setMessage(null);
+      setCountdown(0);
+    } else if (boundEmail) {
+      // 预填当前账号邮箱，用户无需再输入（仍允许手动改）
+      setEmail(boundEmail);
+    }
+  }, [open, boundEmail]);
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = window.setTimeout(() => setCountdown((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown]);
+  async function requestCode() {
+    if (!email.trim()) return setMessage({ type: "error", text: "请输入邮箱" });
+    if (countdown > 0) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await sendEmailCode(email, "change");
+      setMessage({ type: "info", text: "验证码已发送，请到邮箱查收" });
+      setCountdown(60);
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "发送失败" });
+    } finally {
+      setSending(false);
+    }
+  }
+  async function submit() {
+    if (!email.trim() || !code.trim()) return setMessage({ type: "error", text: "请输入邮箱和验证码" });
+    if (!newPwd || newPwd.length < 5) return setMessage({ type: "error", text: "新密码至少 5 位" });
+    if (newPwd !== confirmPwd) return setMessage({ type: "error", text: "两次输入的密码不一致" });
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      await changePwdByEmail(email, code, newPwd);
+      notify("密码已修改，请使用新密码重新登录", "success");
+      onClose();
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "修改失败" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  return (
+    <Sheet open={open} title="修改密码" onClose={onClose}>
+      <form
+        className="mobile-form email-auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <p className="email-auth-tip top">已绑定邮箱才能通过验证码修改密码，验证码会发到下面的邮箱</p>
+        <label>
+          <span>邮箱</span>
+          <div className="input-shell">
+            <Send size={18} />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              placeholder="请输入当前账号的邮箱"
+            />
+          </div>
+        </label>
+        <label>
+          <span>验证码</span>
+          <div className="input-shell email-code-shell">
+            <ShieldCheck size={18} />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6 位数字"
+            />
+            <button
+              type="button"
+              className="email-code-button"
+              onClick={requestCode}
+              disabled={sending || countdown > 0}
+            >
+              {sending ? <LoaderCircle className="spin" size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+            </button>
+          </div>
+        </label>
+        <label>
+          <span>新密码</span>
+          <div className="input-shell">
+            <LockKeyhole size={18} />
+            <input
+              type="password"
+              value={newPwd}
+              onChange={(event) => setNewPwd(event.target.value)}
+              autoComplete="new-password"
+              placeholder="至少 5 位"
+            />
+          </div>
+        </label>
+        <label>
+          <span>确认新密码</span>
+          <div className="input-shell">
+            <LockKeyhole size={18} />
+            <input
+              type="password"
+              value={confirmPwd}
+              onChange={(event) => setConfirmPwd(event.target.value)}
+              autoComplete="new-password"
+              placeholder="再输一次"
+            />
+          </div>
+        </label>
+        {message ? (
+          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
+            <ShieldCheck size={14} />
+            {message.text}
+          </p>
+        ) : null}
+        <button className="button button-primary button-block" type="submit" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />}确认修改
+        </button>
+      </form>
+    </Sheet>
+  );
+}
+
+/**
+ * 编辑个人信息 Sheet：
+ * - 可编辑：昵称、手机号、性别
+ * - 不可编辑（只读）：登录账号、所属部门、岗位（这些由管理员维护）
+ * - 邮箱：单独走 BindEmailSheet 流程（要验证码），不在这里编辑
+ * - 调 PUT /system/user/profile 写入；保存成功后通过 onSaved 回调让父组件刷新 userInfo
+ */
+function EditProfileSheet({
+  open,
+  userInfo,
+  username,
+  onClose,
+  onSaved,
+  onBindEmail,
+  notify,
+}: {
+  open: boolean;
+  userInfo: DataRow | null;
+  username: string;
+  onClose: () => void;
+  onSaved: () => void;
+  onBindEmail: () => void;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+}) {
+  const [nickName, setNickName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sex, setSex] = useState("0");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
+  useEffect(() => {
+    if (open) {
+      setNickName(String(userInfo?.nickName || ""));
+      setPhone(String(userInfo?.phonenumber || ""));
+      setSex(String(userInfo?.sex || "0"));
+      setMessage(null);
+    }
+  }, [open, userInfo]);
+  const dept = userInfo?.dept;
+  const deptName = String(dept?.deptName || "--");
+  const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
+  const postNames = roles.map((role) => String(role.roleName || role.roleKey || "")).filter(Boolean);
+  const lockName = String(userInfo?.userName || username);
+  const currentEmail = String(userInfo?.email || "");
+  async function submit() {
+    if (!nickName.trim()) return setMessage({ type: "error", text: "请输入昵称" });
+    if (phone && !/^1[3-9]\d{9}$/.test(phone.trim())) return setMessage({ type: "error", text: "手机号格式不正确" });
+    setSaving(true);
+    setMessage(null);
+    try {
+      await updateProfile({ nickName, phonenumber: phone, sex });
+      notify("个人信息已更新", "success");
+      onSaved();
+      onClose();
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "保存失败" });
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <Sheet open={open} title="编辑个人信息" onClose={onClose}>
+      <form
+        className="mobile-form edit-profile-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <p className="email-auth-tip top">
+          登录账号、所属部门和岗位由系统管理员维护，个人只能修改昵称、手机号、性别。邮箱通过验证码单独绑定/更换。
+        </p>
+
+        <label>
+          <span>登录账号（不可改）</span>
+          <div className="field-readonly"><LockKeyhole size={15} />{lockName}</div>
+        </label>
+        <label>
+          <span>所属部门（不可改）</span>
+          <div className="field-readonly"><Building2 size={15} />{deptName}</div>
+        </label>
+        <label>
+          <span>岗位（不可改）</span>
+          <div className="field-readonly"><Briefcase size={15} />{postNames.length ? postNames.join(" / ") : "--"}</div>
+        </label>
+
+        <label>
+          <span>昵称</span>
+          <div className="input-shell"><User size={18} /><input value={nickName} onChange={(event) => setNickName(event.target.value)} placeholder="请输入昵称" maxLength={30} /></div>
+        </label>
+        <label>
+          <span>手机号</span>
+          <div className="input-shell"><Phone size={18} /><input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" maxLength={11} placeholder="11 位手机号" /></div>
+        </label>
+        <label>
+          <span>邮箱</span>
+          <div className="field-readonly"><Send size={15} />{currentEmail || "未绑定"}</div>
+          <button type="button" className="field-action" onClick={() => { onBindEmail(); onClose(); }}>
+            {currentEmail ? "更换邮箱" : "立即绑定邮箱"}
+          </button>
+          <p className="field-readonly-hint">绑定后可使用「邮箱登录 / 忘记密码 / 邮箱改密」</p>
+        </label>
+        <label>
+          <span>性别</span>
+          <select value={sex} onChange={(event) => setSex(event.target.value)}>
+            <option value="0">男</option>
+            <option value="1">女</option>
+            <option value="2">未填写</option>
+          </select>
+        </label>
+
+        {message ? (
+          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
+            <ShieldCheck size={14} />
+            {message.text}
+          </p>
+        ) : null}
+        <div className="edit-profile-actions">
+          <button type="button" className="button button-ghost" onClick={onClose}>取消</button>
+          <button className="button button-primary" type="submit" disabled={saving}>
+            {saving ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}保存
+          </button>
+        </div>
+      </form>
+    </Sheet>
+  );
+}
+
+/**
+ * 绑定/更换邮箱 Sheet：邮箱 + 验证码（type=bind）
+ * 成功后通过 onSaved 回调让父组件刷新 userInfo
+ */
+function BindEmailSheet({
+  open,
+  currentEmail,
+  onClose,
+  onSaved,
+  notify,
+}: {
+  open: boolean;
+  currentEmail: string;
+  onClose: () => void;
+  onSaved: () => void;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
+  useEffect(() => {
+    if (open) {
+      setEmail(currentEmail || "");
+      setCode("");
+      setMessage(null);
+      setCountdown(0);
+    }
+  }, [open, currentEmail]);
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = window.setTimeout(() => setCountdown((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown]);
+  async function requestCode() {
+    const trimmed = email.trim();
+    if (!trimmed) return setMessage({ type: "error", text: "请输入邮箱" });
+    if (!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(trimmed)) return setMessage({ type: "error", text: "邮箱格式不正确" });
+    if (countdown > 0) return;
+    setSending(true);
+    setMessage(null);
+    try {
+      await sendEmailCode(trimmed, "bind");
+      setMessage({ type: "info", text: "验证码已发送，请到新邮箱查收" });
+      setCountdown(60);
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "发送失败" });
+    } finally {
+      setSending(false);
+    }
+  }
+  async function submit() {
+    const trimmed = email.trim();
+    if (!trimmed || !code.trim()) return setMessage({ type: "error", text: "请输入邮箱和验证码" });
+    if (currentEmail && trimmed.toLowerCase() === currentEmail.toLowerCase()) {
+      return setMessage({ type: "error", text: "该邮箱已是当前账号的邮箱" });
+    }
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      await bindEmail(trimmed, code);
+      notify("邮箱已绑定", "success");
+      onSaved();
+      onClose();
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "绑定失败" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  return (
+    <Sheet open={open} title={currentEmail ? "更换邮箱" : "绑定邮箱"} onClose={onClose}>
+      <form
+        className="mobile-form email-auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <p className="email-auth-tip top">
+          验证码会发到下面填写的邮箱，填写后请到对应邮箱查收。{currentEmail ? `当前已绑定：${currentEmail}` : "当前未绑定邮箱，绑定后即可使用邮箱登录 / 找回密码 / 邮箱改密。"}
+        </p>
+        <label>
+          <span>新邮箱</span>
+          <div className="input-shell">
+            <Send size={18} />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              placeholder="请输入新邮箱"
+            />
+          </div>
+        </label>
+        <label>
+          <span>验证码</span>
+          <div className="input-shell email-code-shell">
+            <ShieldCheck size={18} />
+            <input
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6 位数字"
+            />
+            <button
+              type="button"
+              className="email-code-button"
+              onClick={requestCode}
+              disabled={sending || countdown > 0}
+            >
+              {sending ? <LoaderCircle className="spin" size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
+            </button>
+          </div>
+        </label>
+        {message ? (
+          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
+            <ShieldCheck size={14} />
+            {message.text}
+          </p>
+        ) : null}
+        <button className="button button-primary button-block" type="submit" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}{currentEmail ? "确认更换" : "确认绑定"}
+        </button>
+      </form>
+    </Sheet>
   );
 }
 
@@ -377,6 +1123,480 @@ function StatusBadge({ row }: { row: DataRow }) {
   const value = `${row.orderStatus || row.expStatus || ""} ${text}`;
   const tone = /YWC|完成|送达/.test(value) ? "success" : /YFH|YSJ|YSZ|发货|运输|收寄/.test(value) ? "info" : /DTF|DFH|待发/.test(value) ? "warning" : "neutral";
   return <span className={`status status-${tone}`}><span />{text}</span>;
+}
+
+/**
+ * 物流用量页（per-store）：
+ * - 非 admin：列出可见店铺的额度卡（额度 + 3 类分开关 + 今日用量 + 用量记录）
+ * - admin：列出所有店铺，可编辑总额度 / 总开关 / 备注
+ */
+function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+  const isAdmin = Number(userInfo?.userId) === 1;
+  // 「全局额度」模块只对 admin / pengchenghui 这两个账户开放；
+  // 其他个人维度账户直接隐藏整个模块（连数据都不拉）。
+  const canViewGlobalQuota = useMemo(() => {
+    const u = String(userInfo?.userName || "");
+    return u === "admin" || u === "pengchenghui";
+  }, [userInfo?.userName]);
+  const [stores, setStores] = useState<LogisticsQuotaStatus[]>([]);
+  const [global, setGlobal] = useState<LogisticsGlobalQuotaStatus | null>(null);
+  const [usage, setUsage] = useState<{ rows: LogisticsUsageRow[]; total: number }>({ rows: [], total: 0 });
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editTotal, setEditTotal] = useState<string>("");
+  const [editEnabled, setEditEnabled] = useState<number>(1);
+  const [editRemark, setEditRemark] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [pageNum, setPageNum] = useState(1);
+  const [filterStore, setFilterStore] = useState<string>("");
+  const [globalEditing, setGlobalEditing] = useState(false);
+  const [globalTotal, setGlobalTotal] = useState<string>("");
+  const [globalEnabled, setGlobalEnabled] = useState<number>(1);
+  const [globalRemark, setGlobalRemark] = useState<string>("");
+  const [globalSaving, setGlobalSaving] = useState(false);
+  const pageSize = 20;
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      const tasks: Array<Promise<unknown>> = [
+        (isAdmin ? listAllLogisticsQuota() : listMyLogisticsQuota()).then((d: any) => setStores((d.data ?? d) as LogisticsQuotaStatus[])),
+        ...(canViewGlobalQuota
+          ? [getLogisticsGlobalQuota().then((d: any) => setGlobal((d.data ?? d) as LogisticsGlobalQuotaStatus))]
+          : [Promise.resolve().then(() => setGlobal(null))]),
+        listLogisticsUsage({ pageNum, pageSize, storeCode: filterStore || undefined }).then((d: any) => setUsage({ rows: d.rows || [], total: d.total || 0 })),
+      ];
+      await Promise.all(tasks);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "物流用量加载失败", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, canViewGlobalQuota, pageNum, filterStore, notify]);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  async function toggleSwitch(storeCode: string, type: LogisticsSwitchType, currentEnabled: number) {
+    const next = currentEnabled === 1 ? 0 : 1;
+    try {
+      await updateMyLogisticsSwitch(storeCode, type, next === 1);
+      notify(next === 1 ? "已开启" : "已关闭", "success");
+      reload();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "更新失败", "error");
+    }
+  }
+
+  function openEdit(row: LogisticsQuotaStatus) {
+    setEditing(row.storeCode);
+    setEditTotal(String(row.totalQuota ?? 0));
+    setEditEnabled(row.enabled ?? 0);
+    setEditRemark(row.remark ?? "");
+  }
+  async function saveEdit() {
+    if (!editing) return;
+    const total = Number(editTotal);
+    if (!Number.isFinite(total) || total < 0) {
+      notify("总额度必须为非负整数", "error");
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminUpdateLogisticsQuota({
+        storeCode: editing,
+        totalQuota: total,
+        enabled: (editEnabled === 1 ? 1 : 0) as 0 | 1,
+        remark: editRemark.trim() || undefined,
+      });
+      notify("已保存", "success");
+      setEditing(null);
+      reload();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "保存失败", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openGlobalEdit() {
+    if (!global) return;
+    setGlobalTotal(String(global.totalQuota ?? 0));
+    setGlobalEnabled(global.enabled ?? 0);
+    setGlobalRemark(global.remark ?? "");
+    setGlobalEditing(true);
+  }
+  async function saveGlobalEdit() {
+    const total = Number(globalTotal);
+    if (!Number.isFinite(total) || total < 0) {
+      notify("全局总额度必须为非负整数", "error");
+      return;
+    }
+    setGlobalSaving(true);
+    try {
+      await adminUpdateLogisticsGlobalQuota({
+        totalQuota: total,
+        enabled: (globalEnabled === 1 ? 1 : 0) as 0 | 1,
+        remark: globalRemark.trim() || undefined,
+      });
+      notify("全局额度已保存", "success");
+      setGlobalEditing(false);
+      reload();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "保存失败", "error");
+    } finally {
+      setGlobalSaving(false);
+    }
+  }
+
+  const totalPages = Math.max(1, Math.ceil(usage.total / pageSize));
+  const globalTotal2 = global?.totalQuota ?? 0;
+  const globalUsed2 = global?.usedQuota ?? 0;
+  const globalRemaining2 = Math.max(0, globalTotal2 - globalUsed2);
+  const globalPercent = globalTotal2 > 0 ? Math.min(100, Math.round((globalUsed2 / globalTotal2) * 100)) : 0;
+  const globalIsOn = global?.enabled === 1;
+
+  return (
+    <div className="module-page logistics-page">
+      <div className="module-hero compact-hero">
+        <div><small>LOGISTICS USAGE</small><h1>物流用量</h1><p>按店铺维度管理 alicloud 物流接口调用额度和分类型开关</p></div>
+        <span className="hero-tool-icon"><Gauge size={27} /></span>
+      </div>
+
+      {canViewGlobalQuota && global ? (
+        <section className="card logistics-store-card logistics-global-card">
+          <header className="quota-header">
+            <div>
+              <h3>全局额度</h3>
+              <p className="card-sub">
+                所有店铺共享{isAdmin ? " · 单店额度不得超过此值" : ""}
+                {global.remark ? ` · ${global.remark}` : ""}
+              </p>
+            </div>
+            <span className="quota-badge">
+              <b>{globalRemaining2}</b>
+              <small>/ {globalTotal2} 剩余</small>
+            </span>
+          </header>
+          <div className="quota-bar">
+            <span style={{ width: `${globalPercent}%` }} />
+          </div>
+          <p className="quota-stats">
+            已用 {globalUsed2}
+            {isAdmin ? ` · 可分配余额 ${global.distributable ?? globalRemaining2}` : ""}
+          </p>
+          <div className="quota-switches">
+            <label className="quota-switch">
+              <div>
+                <b>全局总开关</b>
+                <small>关闭后所有店铺都不能调用物流刷新</small>
+              </div>
+              {isAdmin ? (
+                <div className="quota-switch-control">
+                  <span className={`toggle-status ${globalIsOn ? "on" : "off"}`}>{globalIsOn ? "已开启" : "已关闭"}</span>
+                  <button
+                    type="button"
+                    className={`toggle ${globalIsOn ? "on" : "off"}`}
+                    onClick={async () => {
+                      setGlobalSaving(true);
+                      try {
+                        await adminUpdateLogisticsGlobalQuota({ enabled: globalIsOn ? 0 : 1 });
+                        notify(globalIsOn ? "已关闭" : "已开启", "success");
+                        reload();
+                      } catch (err) {
+                        notify(err instanceof Error ? err.message : "更新失败", "error");
+                      } finally {
+                        setGlobalSaving(false);
+                      }
+                    }}
+                    aria-pressed={globalIsOn}
+                    disabled={globalSaving}
+                  >
+                    <span />
+                  </button>
+                </div>
+              ) : (
+                <span className={`toggle-status ${globalIsOn ? "on" : "off"}`}>{globalIsOn ? "已开启" : "已关闭"}</span>
+              )}
+            </label>
+          </div>
+          {isAdmin ? (
+            <div className="logistics-store-actions">
+              <button className="button button-soft button-small" type="button" onClick={openGlobalEdit}>
+                <Pencil size={14} />编辑全局
+              </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {loading && stores.length === 0 ? (
+        <div className="page-loading"><LoaderCircle className="spin" size={22} /> 加载中…</div>
+      ) : null}
+
+      <div className="list-heading">
+        <div>
+          <h2>店铺额度</h2>
+          <span>共 {stores.length} 个{isAdmin ? "店铺" : "可见店铺"}</span>
+        </div>
+      </div>
+
+      <div className="logistics-store-list">
+        {stores.map((row) => (
+          <StoreQuotaCard
+            key={row.storeCode}
+            row={row}
+            isAdmin={isAdmin}
+            onToggle={(type, current) => toggleSwitch(row.storeCode, type, current)}
+            onEdit={() => openEdit(row)}
+          />
+        ))}
+        {stores.length === 0 && !loading ? (
+          <EmptyState loading={false} label="店铺额度" />
+        ) : null}
+      </div>
+
+      <section className="card logistics-usage-card">
+        <div className="list-heading">
+          <div>
+            <h2>用量记录</h2>
+            <span>共 {usage.total} 条 · 每次 alicloud HTTP 200 成功调用记一条</span>
+          </div>
+          <div className="logistics-usage-filter">
+            <select value={filterStore} onChange={(e) => { setFilterStore(e.target.value); setPageNum(1); }}>
+              <option value="">全部店铺</option>
+              {stores.map((s) => (
+                <option key={s.storeCode} value={s.storeCode}>{s.storeName || s.storeCode}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>店铺</th>
+                <th>用户</th>
+                <th>类型</th>
+                <th>来源</th>
+                <th>订单号</th>
+                <th>扣费</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usage.rows.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.createTime ? shortDate(row.createTime, true) : "--"}</td>
+                  <td>{row.storeName || row.storeCode || "--"}</td>
+                  <td>{row.nickName || row.userName || `#${row.userId}`}</td>
+                  <td>{switchLabel(row.switchType)}</td>
+                  <td>{sourceLabel(row.source)}</td>
+                  <td className="td-code">{row.orderCode || "--"}</td>
+                  <td>{row.cost}</td>
+                  <td>
+                    <span className={`status status-${row.success === 1 ? "success" : "warning"}`}><span />{row.success === 1 ? "成功" : "未成功"}</span>
+                  </td>
+                </tr>
+              ))}
+              {usage.rows.length === 0 ? (
+                <tr><td colSpan={8} className="td-empty">暂无用量记录</td></tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+        {totalPages > 1 ? (
+          <div className="pager">
+            <button className="button button-ghost button-small" type="button" disabled={pageNum <= 1} onClick={() => setPageNum((n) => n - 1)}>上一页</button>
+            <span>{pageNum} / {totalPages}</span>
+            <button className="button button-ghost button-small" type="button" disabled={pageNum >= totalPages} onClick={() => setPageNum((n) => n + 1)}>下一页</button>
+          </div>
+        ) : null}
+      </section>
+
+      {/* admin 编辑弹窗 */}
+      {editing != null ? (
+        <div className="sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !saving && setEditing(null)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="编辑店铺额度">
+            <header className="sheet-header">
+              <h2>编辑店铺额度</h2>
+              <button className="sheet-close" type="button" onClick={() => setEditing(null)} aria-label="关闭"><X size={18} /></button>
+            </header>
+            <form
+              className="mobile-form"
+              onSubmit={(event) => { event.preventDefault(); saveEdit(); }}
+            >
+              <label>
+                <span>店铺</span>
+                <div className="input-shell">
+                  <input value={stores.find((s) => s.storeCode === editing)?.storeName || editing} readOnly />
+                </div>
+              </label>
+              <label>
+                <span>总额度</span>
+                <div className="input-shell">
+                  <input type="number" min={0} value={editTotal} onChange={(e) => setEditTotal(e.target.value)} />
+                </div>
+              </label>
+              <label>
+                <span>总开关</span>
+                <select value={editEnabled} onChange={(e) => setEditEnabled(Number(e.target.value))}>
+                  <option value={1}>开启</option>
+                  <option value={0}>关闭</option>
+                </select>
+              </label>
+              <label>
+                <span>备注</span>
+                <div className="input-shell">
+                  <input value={editRemark} onChange={(e) => setEditRemark(e.target.value)} maxLength={120} placeholder="可选" />
+                </div>
+              </label>
+              <div className="form-actions">
+                <button className="button button-ghost" type="button" onClick={() => setEditing(null)} disabled={saving}>取消</button>
+                <button className="button button-primary" type="submit" disabled={saving}>
+                  {saving ? <LoaderCircle className="spin" size={16} /> : <ShieldCheck size={16} />}保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* admin 编辑全局弹窗 */}
+      {globalEditing ? (
+        <div className="sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !globalSaving && setGlobalEditing(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="编辑全局额度">
+            <header className="sheet-header">
+              <h2>编辑全局额度</h2>
+              <button className="sheet-close" type="button" onClick={() => setGlobalEditing(false)} aria-label="关闭"><X size={18} /></button>
+            </header>
+            <form
+              className="mobile-form"
+              onSubmit={(event) => { event.preventDefault(); saveGlobalEdit(); }}
+            >
+              <p className="card-sub" style={{ margin: "0 0 4px" }}>
+                所有店铺的用量汇总后不能超过全局总额度；
+                单店总额度调高时不能超过「全局总额度 - 其他店铺已用」。
+                当前全局已用 <b>{global?.usedQuota ?? 0}</b>。
+              </p>
+              <label>
+                <span>全局总额度</span>
+                <div className="input-shell">
+                  <input type="number" min={0} value={globalTotal} onChange={(e) => setGlobalTotal(e.target.value)} />
+                </div>
+              </label>
+              <label>
+                <span>全局总开关</span>
+                <select value={globalEnabled} onChange={(e) => setGlobalEnabled(Number(e.target.value))}>
+                  <option value={1}>开启</option>
+                  <option value={0}>关闭</option>
+                </select>
+              </label>
+              <label>
+                <span>备注</span>
+                <div className="input-shell">
+                  <input value={globalRemark} onChange={(e) => setGlobalRemark(e.target.value)} maxLength={120} placeholder="可选" />
+                </div>
+              </label>
+              <div className="form-actions">
+                <button className="button button-ghost" type="button" onClick={() => setGlobalEditing(false)} disabled={globalSaving}>取消</button>
+                <button className="button button-primary" type="submit" disabled={globalSaving}>
+                  {globalSaving ? <LoaderCircle className="spin" size={16} /> : <ShieldCheck size={16} />}保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function switchLabel(type: string) {
+  if (type === "manual") return "手动";
+  if (type === "scheduled") return "定时";
+  if (type === "query") return "查询";
+  return type || "--";
+}
+function sourceLabel(source?: string) {
+  if (!source) return "--";
+  if (source === "user_button") return "按钮";
+  if (source === "user_batch") return "批量";
+  if (source === "scheduled_task") return "定时任务";
+  if (source === "search_query") return "查询";
+  if (source === "import") return "导入";
+  return source;
+}
+
+function StoreQuotaCard({
+  row,
+  isAdmin,
+  onToggle,
+  onEdit,
+}: {
+  row: LogisticsQuotaStatus;
+  isAdmin: boolean;
+  onToggle: (type: LogisticsSwitchType, currentEnabled: number) => void;
+  onEdit: () => void;
+}) {
+  const remaining = row.remainingQuota ?? 0;
+  const total = row.totalQuota ?? 0;
+  const used = row.usedQuota ?? 0;
+  const usagePercent = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+  return (
+    <section className="card logistics-store-card">
+      <header className="quota-header">
+        <div>
+          <h3>{row.storeName || row.storeCode}</h3>
+          <p className="card-sub">
+            {row.storeCode}
+            {" · "}
+            总开关：{row.enabled === 1 ? "已开启" : "已关闭"}
+            {row.remark ? ` · ${row.remark}` : ""}
+          </p>
+        </div>
+        <span className="quota-badge">
+          <b>{remaining}</b>
+          <small>/ {total} 剩余</small>
+        </span>
+      </header>
+      <div className="quota-bar">
+        <span style={{ width: `${usagePercent}%` }} />
+      </div>
+      <p className="quota-stats">已用 {used} · 今日成功 {row.todayUsage ?? 0} 次</p>
+      <div className="quota-switches">
+        {row.switches.map((sw) => {
+          const isOn = sw.enabled === 1;
+          return (
+            <label className="quota-switch" key={sw.type}>
+              <div>
+                <b>{sw.label}</b>
+                <small>{sw.type === "manual" ? "前端手动刷新按钮" : sw.type === "scheduled" ? "定时任务自动跑" : "查询订单时隐式刷"}</small>
+              </div>
+              <div className="quota-switch-control">
+                <span className={`toggle-status ${isOn ? "on" : "off"}`}>{isOn ? "已开启" : "已关闭"}</span>
+                <button
+                  type="button"
+                  className={`toggle ${isOn ? "on" : "off"}`}
+                  onClick={() => onToggle(sw.type, sw.enabled)}
+                  aria-pressed={isOn}
+                >
+                  <span />
+                </button>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+      {isAdmin ? (
+        <div className="logistics-store-actions">
+          <button className="button button-soft button-small" type="button" onClick={onEdit}>
+            <Pencil size={14} />编辑额度
+          </button>
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 function StoreStatusBadge({ row }: { row: DataRow }) {
@@ -439,7 +1659,7 @@ function OrderEditor({
     let mounted = true;
     Promise.all([
       apiRequest<{ data?: DataRow[] }>("/biz/purchaser/list"),
-      apiRequest<{ data?: DataRow[] }>("/search/store", { auth: false, query: { createBy: "", name: "" } }),
+      apiRequest<{ data?: DataRow[] }>("/biz/store/options", { query: { createBy: "", name: "" } }),
     ]).then(([purchaserResult, storeResult]) => {
       if (!mounted) return;
       const purchaserRows = Array.isArray(purchaserResult.data) ? purchaserResult.data : [];
@@ -524,17 +1744,80 @@ function ShippingEditor({ initial, onSaved, onClose, notify }: { initial: DataRo
   const [expCom, setExpCom] = useState(String(initial.expCom || ""));
   const [expCode, setExpCode] = useState(String(initial.expCode || ""));
   const [detecting, setDetecting] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
-  async function detectExpress() {
-    if (!expCode.trim()) return notify("请先输入快递单号", "info");
+  async function detectExpress(codeToCheck?: string) {
+    const code = (codeToCheck || expCode).trim();
+    if (!code) return notify("请先输入快递单号", "info");
     setDetecting(true);
     try {
-      const result = await apiRequest<{ data?: DataRow }>("/biz/exp/getCom", { query: { expCode: expCode.trim() } });
+      const result = await apiRequest<{ data?: DataRow }>("/biz/exp/getCom", { query: { expCode: code } });
       const detected = String(result.data?.expCom || "");
       if (detected) { setExpCom(detected); notify(`已识别为${result.data?.expComDesc || optionLabel(detected, dictionaries.expressCompanies)}`, "success"); }
       else notify("暂未识别快递公司，请手动选择", "info");
     } catch (error) { notify(error instanceof Error ? error.message : "快递识别失败", "error"); }
     finally { setDetecting(false); }
+  }
+  // 从一段杂文本里挑出最像快递单号的那一截：优先 10+ 位纯数字，其次 10+ 位字母数字混合
+  function extractTrackingNumber(text: string): string {
+    const digitRuns = text.match(/\d{10,20}/g);
+    if (digitRuns && digitRuns.length) {
+      digitRuns.sort((a, b) => b.length - a.length);
+      return digitRuns[0] || text.trim();
+    }
+    const alnum = text.match(/[A-Za-z0-9]{10,20}/g);
+    if (alnum && alnum.length) {
+      alnum.sort((a, b) => b.length - a.length);
+      return alnum[0] || text.trim();
+    }
+    return text.trim();
+  }
+  async function scanExpress() {
+    if (scanning) return;
+    setScanning(true);
+    try {
+      // 优先尝试用 BarcodeDetector + 摄像头真扫码；不支持的浏览器/设备走剪贴板兜底（与录单页的「智能识别」一致）
+      if (typeof window !== "undefined" && "BarcodeDetector" in window && navigator.mediaDevices?.getUserMedia) {
+        const Detector = (window as unknown as { BarcodeDetector: new (init?: { formats?: string[] }) => { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector;
+        const detector = new Detector({ formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8", "itf", "pdf417"] });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
+        const track = stream.getVideoTracks()[0];
+        const capture = new ImageCapture(track);
+        // grabFrame 已在 Chromium 实现但 lib.dom.d.ts 未声明，绕过类型检查
+        const grabFrame = (capture as unknown as { grabFrame: () => Promise<ImageBitmap> }).grabFrame.bind(capture);
+        try {
+          for (let attempt = 0; attempt < 30; attempt += 1) {
+            const bitmap = await grabFrame();
+            const codes = await detector.detect(bitmap);
+            if (codes.length) {
+              const number = extractTrackingNumber(codes[0].rawValue || "");
+              if (number) {
+                setExpCode(number);
+                notify("扫码成功，正在识别快递公司", "success");
+                detectExpress(number);
+                return;
+              }
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 250));
+          }
+          notify("未识别到快递单号，请手动输入或粘贴", "info");
+        } finally {
+          track.stop();
+          stream.getTracks().forEach((t) => t.stop());
+        }
+        return;
+      }
+      // 兜底：从剪贴板读取（手机端扫完码通常会复制，或用户手动复制）
+      const text = await readFromClipboard();
+      const trimmed = (text || "").trim();
+      if (!trimmed) return notify("剪贴板为空，请先扫描或复制快递单号", "info");
+      const number = extractTrackingNumber(trimmed);
+      if (!number) return notify("未识别到快递单号", "info");
+      setExpCode(number);
+      notify("已读取剪贴板单号，正在识别快递公司", "success");
+      detectExpress(number);
+    } catch (error) { notify(error instanceof Error ? error.message : "扫码失败", "error"); }
+    finally { setScanning(false); }
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -546,7 +1829,7 @@ function ShippingEditor({ initial, onSaved, onClose, notify }: { initial: DataRo
     } catch (error) { notify(error instanceof Error ? error.message : "发货失败", "error"); }
     finally { setSaving(false); }
   }
-  return <form className="shipping-editor" onSubmit={submit}><section><span><Truck size={22} /></span><div><small>待发货订单</small><h3>{initial.orderCode || "--"}</h3><p>{initial.customer || "--"} · {initial.orderNameDesc || initial.orderName || "--"} {initial.orderTypeDesc || initial.orderType || ""}</p></div></section><label><span>快递公司 *</span><select required value={expCom} onChange={(event) => setExpCom(event.target.value)}><option value="">请选择快递公司</option>{dictionaries.expressCompanies.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><span>快递单号 *</span><div className="shipping-code-input"><input required value={expCode} onChange={(event) => setExpCode(event.target.value.trim())} placeholder="请输入或扫描快递单号" /><button type="button" disabled={detecting} onClick={detectExpress}>{detecting ? <LoaderCircle className="spin" size={15} /> : <SearchCheck size={15} />}识别</button></div></label><p><ShieldCheck size={14} />提交后订单将变为已发货，并记录物流节点。</p><button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}{saving ? "正在提交" : "确认发货"}</button></form>;
+  return <form className="shipping-editor" onSubmit={submit}><section><span><Truck size={22} /></span><div><small>待发货订单</small><h3>{initial.orderCode || "--"}</h3><p>{initial.customer || "--"} · {initial.orderNameDesc || initial.orderName || "--"} {initial.orderTypeDesc || initial.orderType || ""}</p></div></section><label><span>快递公司 *</span><select required value={expCom} onChange={(event) => setExpCom(event.target.value)}><option value="">请选择快递公司</option>{dictionaries.expressCompanies.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><span>快递单号 *</span><div className="shipping-code-input"><input required value={expCode} onChange={(event) => setExpCode(event.target.value.trim())} placeholder="请输入或扫描快递单号" /><button type="button" disabled={scanning} onClick={scanExpress} aria-label="扫描快递单号">{scanning ? <LoaderCircle className="spin" size={15} /> : <ScanText size={15} />}扫码</button><button type="button" disabled={detecting} onClick={() => detectExpress()}>{detecting ? <LoaderCircle className="spin" size={15} /> : <SearchCheck size={15} />}识别</button></div></label><p><ShieldCheck size={14} />提交后订单将变为已发货，并记录物流节点。</p><button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}{saving ? "正在提交" : "确认发货"}</button></form>;
 }
 
 function OrderCopyMenu({ row, onCopy }: { row: DataRow; onCopy: (text: string, message: string) => void }) {
@@ -775,7 +2058,7 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
   </div>;
 }
 
-function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "error" | "info") => void }) {
+function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "success" | "error" | "info") => void; onNavigate?: (key: MenuKey) => void }) {
   const dictionaries = useContext(DictionaryContext);
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -788,8 +2071,11 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
   const [shipping, setShipping] = useState<DataRow | null>(null);
   const [copyTarget, setCopyTarget] = useState<DataRow | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // 顶部状态卡片过滤：null = 不过滤（全部）
+  const [statusFilter, setStatusFilter] = useState<"pending" | "shipping" | "transit" | null>(null);
+  // 串行刷新物流进度（与同步所有同款结构）
+  const [refreshState, setRefreshState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -800,15 +2086,46 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
     finally { setLoading(false); }
   }, [filters, notify]);
   useEffect(() => { load(); }, [load]);
+  // order_info.store 现在统一存的是 storeCode。订单详情展示时拿 code 反查店名，
+  // 让运营看到的还是「小曾桃铺」而不是「xiaozeng_001」。
+  const [storeList, setStoreList] = useState<DataRow[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    apiRequest<{ data?: DataRow[] }>("/biz/store/options", { query: { createBy: "", name: "" } })
+      .then((result) => {
+        if (!mounted) return;
+        const list = Array.isArray(result.data) ? result.data : [];
+        setStoreList(list.filter((item) => Number(item.isDelete ?? 1) === 1));
+      })
+      .catch(() => { /* 加载失败不影响主功能 */ });
+    return () => { mounted = false; };
+  }, []);
+  const storeNameByCode = useMemo(() => {
+    const map: Record<string, string> = {};
+    storeList.forEach((row) => {
+      const code = String(row.code || "").trim();
+      const name = String(row.name || row.value || "").trim();
+      if (code && name) map[code] = name;
+    });
+    return map;
+  }, [storeList]);
 
   const selectedRows = rows.filter((row) => selected.has(String(row.id)));
   const ids = selectedRows.map((row) => row.id).join(",");
   const codes = selectedRows.map((row) => row.orderCode).join(",");
+  // 顶部 4 个状态卡片：基于全量 rows 客户端聚合（不受 statusFilter 影响）
   const counts = useMemo(() => ({
     pending: rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
     shipping: rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
     transit: rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
   }), [rows]);
+  // 按顶部状态卡片过滤后的可见订单（用于列表渲染 + 全选本页）
+  const visibleRows = useMemo(() => {
+    if (!statusFilter) return rows;
+    if (statusFilter === "pending") return rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+    if (statusFilter === "shipping") return rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+    return rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+  }, [rows, statusFilter]);
 
   function toggle(id: unknown) {
     const value = String(id);
@@ -846,11 +2163,44 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
     if (!target) return notify("请先选择订单", "info");
     setConfirm({ title: "删除订单", message: `删除后无法恢复，确认删除 ${row ? 1 : selected.size} 个订单？`, danger: true, action: async () => { await apiRequest(`/biz/order/${target}`, { method: "DELETE" }); notify("删除成功", "success"); setSelected(new Set()); await load(); } });
   }
+  // 单条刷新（卡片/批量条都用）
   async function refreshLogistics(row?: DataRow) {
     const target = row ? String(row.orderCode) : codes;
     if (!target) return notify("请先选择订单", "info");
     try { await apiRequest(`/biz/exp/refresh/${target}`, { method: "PATCH" }); notify("物流轨迹已更新", "success"); await load(); }
     catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
+  }
+  // 串行刷新：按列表顺序，只刷「已发货 YFH」状态；与价格页「同步所有」同款实现
+  async function refreshLogisticsAll() {
+    if (refreshState.loading) return;
+    // 选中有 → 只刷选中的已发货；未选 → 刷当前可见的已发货（顶部过滤后剩余）
+    const pool = selected.size ? selectedRows : visibleRows;
+    const targets = pool.filter((row) => /YFH|已发货/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+    if (!targets.length) {
+      notify("没有可刷新的已发货订单", "info");
+      return;
+    }
+    const total = targets.length;
+    let processed = 0;
+    let success = 0;
+    let failed = 0;
+    let firstErrorMsg = "";
+    setRefreshState({ loading: true, current: 0, total, success: 0, failed: 0 });
+    for (const row of targets) {
+      try {
+        await apiRequest(`/biz/exp/refresh/${row.orderCode}`, { method: "PATCH" });
+        success += 1;
+      } catch (error) {
+        failed += 1;
+        if (!firstErrorMsg) firstErrorMsg = error instanceof Error ? error.message : "刷新失败";
+      }
+      processed += 1;
+      setRefreshState({ loading: true, current: processed, total, success, failed });
+    }
+    setRefreshState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
+    const summary = `刷新完成：成功 ${success} 条，失败 ${failed} 条${firstErrorMsg ? `（${firstErrorMsg}）` : ""}`;
+    notify(summary, failed ? "error" : "success");
+    await load();
   }
   async function copy(text: string, message: string) {
     const ok = await copyToClipboard(text);
@@ -896,10 +2246,10 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
         <button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button>
       </div>
       <div className="metric-grid">
-        <div><span className="metric-icon peach"><ShoppingBag size={19} /></span><p>本页订单</p><b>{rows.length}</b></div>
-        <div><span className="metric-icon amber"><RotateCw size={19} /></span><p>待处理</p><b>{counts.pending}</b></div>
-        <div><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></div>
-        <div><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></div>
+        <button type="button" className={statusFilter === null ? "active" : ""} onClick={() => setStatusFilter(null)} aria-pressed={statusFilter === null}><span className="metric-icon peach"><ShoppingBag size={19} /></span><p>本页订单</p><b>{rows.length}</b></button>
+        <button type="button" className={statusFilter === "pending" ? "active" : ""} onClick={() => setStatusFilter("pending")} aria-pressed={statusFilter === "pending"}><span className="metric-icon amber"><RotateCw size={19} /></span><p>待处理</p><b>{counts.pending}</b></button>
+        <button type="button" className={statusFilter === "shipping" ? "active" : ""} onClick={() => setStatusFilter("shipping")} aria-pressed={statusFilter === "shipping"}><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></button>
+        <button type="button" className={statusFilter === "transit" ? "active" : ""} onClick={() => setStatusFilter("transit")} aria-pressed={statusFilter === "transit"}><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></button>
       </div>
       <div className="toolbar-card search-toolbar">
         <label className="quick-search">
@@ -924,21 +2274,19 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
         <button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button>
       </div>
       <div className="secondary-actions">
-        <button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button>
+        <button type="button" onClick={() => onNavigate?.("batchOrder")}><FileSpreadsheet size={16} />批量录入</button>
         <button type="button" onClick={() => downloadFile("biz/order/export", filters, `order_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
-        <button type="button" onClick={() => downloadFile("biz/order/importTemplate", {}, `order_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button>
         <button type="button" onClick={loadAllOrders} disabled={loadAllState.loading} className={loadAllState.loading ? "is-loading" : ""}>
           {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
           {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
         </button>
-        <input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { const query: Record<string, unknown> = { updateSupport: false, updateBill: false, updateExp: false }; if (filters.store) query.storeCode = filters.store; await uploadFile("/biz/order/importData", file, query); notify("订单导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} />
       </div>
 
-      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")}><RotateCw size={15} />待发</button><button onClick={() => requestBatch("send", "一键发货")}><Send size={15} />一键发货</button><button onClick={() => requestBatch("finish", "一键完成")}><CircleCheck size={15} />完成</button><button onClick={() => refreshLogistics()}><RefreshCw size={15} />物流</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
+      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")}><RotateCw size={15} />待发</button><button onClick={() => requestBatch("send", "一键发货")}><Send size={15} />一键发货</button><button onClick={() => requestBatch("finish", "一键完成")}><CircleCheck size={15} />完成</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
 
-      <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条</span></div>{rows.length ? <button type="button" onClick={() => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map((row) => String(row.id))))}>{selected.size === rows.length ? "取消全选" : "全选本页"}</button> : null}</div>
+      <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条{statusFilter ? ` · 筛选后 ${visibleRows.length} 条` : ""}</span></div>{visibleRows.length ? <button type="button" onClick={() => setSelected(visibleRows.every((row) => selected.has(String(row.id))) ? new Set() : new Set(visibleRows.map((row) => String(row.id))))}>{visibleRows.every((row) => selected.has(String(row.id))) ? "取消全选" : "全选本页"}</button> : null}</div>
       <div className="mobile-card-list">
-        {!rows.length ? <EmptyState loading={loading} label="订单" /> : rows.map((row) => (
+        {!visibleRows.length ? <EmptyState loading={loading} label={statusFilter ? "筛选结果" : "订单"} /> : visibleRows.map((row) => (
           <article className={`order-card ${selected.has(String(row.id)) ? "selected" : ""}`} key={String(row.id)}>
             <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><StatusBadge row={row} /></div>
             <button className="card-main" type="button" onClick={() => getDetail(row)}>
@@ -1077,7 +2425,7 @@ function OrdersPage({ notify }: { notify: (message: string, type?: "success" | "
       <Sheet open={editor !== null} title={editor === "new" ? "新增订单" : "修改订单"} onClose={() => setEditor(null)} wide>{editor !== null ? <OrderEditor initial={editor === "new" ? null : editor} onSaved={load} onClose={() => setEditor(null)} notify={notify} /> : null}</Sheet>
       <Sheet open={shipping !== null} title="填写发货信息" onClose={() => setShipping(null)}>{shipping ? <ShippingEditor initial={shipping} onSaved={() => { setSelected(new Set()); load(); }} onClose={() => setShipping(null)} notify={notify} /> : null}</Sheet>
       <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
-      <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} /> : null}</Sheet>
+      <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} storeNameByCode={storeNameByCode} /> : null}</Sheet>
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
@@ -1090,10 +2438,13 @@ function statusTone(code?: string): "default" | "success" | "info" | "warning" |
   return "warning";
 }
 
-function OrderDetail({ row, onCopy }: { row: DataRow; onCopy: () => void }) {
+function OrderDetail({ row, onCopy, storeNameByCode }: { row: DataRow; onCopy: () => void; storeNameByCode: Record<string, string> }) {
   const tone = statusTone(row.orderStatus);
   const tracking = Array.isArray(row.expInfoList) ? row.expInfoList : [];
   const product = `${row.orderNameDesc || row.orderName || ""} ${row.orderTypeDesc || row.orderType || ""} × ${row.orderNum || 1}`.trim();
+  // order_info.store 是 storeCode，展示时用 code→name 反查；如果没匹配上再 fallback 显示原文
+  const storeCode = String(row.store || "").trim();
+  const storeName = storeCode ? storeNameByCode[storeCode] || storeCode : "";
   return <div className="order-detail">
     <div className="order-detail-head">
       <div className="order-detail-head-info">
@@ -1110,7 +2461,7 @@ function OrderDetail({ row, onCopy }: { row: DataRow; onCopy: () => void }) {
         <div><span>下单人</span><b>{row.purchaser || "--"}</b></div>
         <div><span>下单时间</span><b>{String(row.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</b></div>
         <div className="full-width"><span>商品</span><b>{product || "--"}</b></div>
-        {row.store ? <div><span>店铺</span><b>{row.store}</b></div> : null}
+        {storeName ? <div><span>店铺</span><b>{storeName}</b></div> : null}
       </div>
     </section>
 
@@ -1157,7 +2508,7 @@ type CrudConfig = {
   importable?: boolean;
 };
 
-function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking">, CrudConfig> {
+function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks">, CrudConfig> {
   return {
   bills: {
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
@@ -1216,6 +2567,10 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
   stores: {
     key: "stores", title: "店铺管理", itemName: "店铺", api: "/biz/store", icon: StoreIcon, titleKey: "name",
     subtitle: (row) => String(row.code || "暂无店铺编码"),
+    summary: [
+      { key: "isDelete", label: "营业状态", tone: "default", valueFormat: (row) => Number(row.isDelete) === 1 ? "营业中" : Number(row.isDelete) === 2 ? "已暂停" : "未知" },
+      { key: "orderCodeRequirePwd", label: "下单码", tone: "default", valueFormat: (row) => Number(row.orderCodeRequirePwd) === 1 ? (row.orderCodePwd ? "需要 · 密码已设" : "需要 · 密码未设") : "免下单码" },
+    ],
     searchFields: [{ key: "code", label: "店铺编码" }, { key: "name", label: "店铺名称" }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", type: "date" }],
     fields: [{ key: "code", label: "店铺编码", required: true }, { key: "name", label: "店铺名称", required: true }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS, required: true }, { key: "notice", label: "店铺通知", type: "textarea" }, { key: "orderCodeRequirePwd", label: "需要下单码", type: "select", options: [{ value: "0", label: "否" }, { value: "1", label: "是" }] }, { key: "orderCodePwd", label: "店铺下单码", placeholder: "4-6 位数字，留空则买家单独配置" }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", type: "select", options: dictionaries.platforms }, { key: "noticeUrl", label: "通知地址", type: "textarea" }],
     display: [{ key: "isDelete", label: "营业状态", options: STORE_STATUS_OPTIONS }, { key: "code", label: "店铺编码" }, { key: "orderCodeRequirePwd", label: "下单码", format: (row) => Number(row.orderCodeRequirePwd) === 1 ? "需要" : "不需要" }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", options: dictionaries.platforms }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime) }, { key: "updateTime", label: "更新时间", format: (row) => shortDate(row.updateTime) }],
@@ -1224,7 +2579,7 @@ function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, 
   };
 }
 
-function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dictionaries: Dictionaries; notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const Icon = config.icon;
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -1320,6 +2675,30 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
   function toggleExpand(id: string | number) {
     setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
+  async function copyText(text: string, message: string) {
+    const ok = await copyToClipboard(text);
+    notify(ok ? message : "复制失败，请手动选择文本复制", ok ? "success" : "error");
+  }
+  // 店铺专用：快速切换营业/暂停（PUT 全量对象，仅翻 isDelete 一个字段）
+  async function toggleStoreStatus(row: DataRow) {
+    const isOpen = Number(row.isDelete) === 1;
+    const nextValue = isOpen ? 2 : 1;
+    setConfirm({
+      title: isOpen ? "暂停营业" : "恢复营业",
+      message: isOpen ? `暂停后「${row.name || row.code || "该店铺"}」将从列表隐藏（仍可在筛选里选「已关闭」查回），确认？` : `恢复后「${row.name || row.code || "该店铺"}」将重新出现在列表里，确认？`,
+      action: async () => {
+        try {
+          await apiRequest(config.api, { method: "PUT", body: { ...row, isDelete: nextValue } });
+          notify(isOpen ? "已暂停营业" : "已恢复营业", "success");
+          setConfirm(null);
+          load();
+        } catch (error) {
+          notify(error instanceof Error ? error.message : "切换营业状态失败", "error");
+          setConfirm(null);
+        }
+      },
+    });
+  }
   function displayValue(row: DataRow, item: CrudConfig["display"][number]) {
     if (item.format) return item.format(row);
     const value = row[item.key];
@@ -1375,7 +2754,12 @@ function CrudModule({ config, notify }: { config: CrudConfig; notify: (message: 
             {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
             {hasExpand ? <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpand(row.id as string | number)} aria-expanded={isOpen}><span>{isOpen ? "收起明细" : "查看更多"}</span><ChevronDown size={15} /></button> : null}
             {note ? <p className="data-note">{note}</p> : null}
-            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
+            {config.key === "stores" ? <div className="store-extras">
+              {row.notice ? <div className="store-extra-line"><span><Bell size={13} />{row.noticeType ? optionLabel(row.noticeType, dictionaries.platforms) : "店铺通知"}</span><b>{row.notice}</b></div> : null}
+              {row.noticeUrl ? <div className="store-extra-line"><span><ExternalLink size={13} />通知地址</span><b className="store-notice-url">{row.noticeUrl}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.noticeUrl), "通知地址已复制")}><Copy size={12} />复制</button></div> : null}
+              {row.orderCodeRequirePwd && row.orderCodePwd ? <div className="store-extra-line"><span><LockKeyhole size={13} />店铺下单码</span><b>{row.orderCodePwd}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.orderCodePwd), "下单码已复制")}><Copy size={12} />复制</button></div> : null}
+            </div> : null}
+            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <button type="button" className="primary-action" onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button> : null}{config.extraAction ? <button type="button" className="primary-action" onClick={() => extra(row)}><RefreshCw size={16} />{config.extraAction.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
           </article>;
         })}
       </div>
@@ -1428,9 +2812,14 @@ function TrackingPage() {
   return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.name}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
-function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void }) {
+function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout, onUserInfoChanged, onReplayTour, notify }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const [view, setView] = useState<"menu" | "profile" | "settings">("menu");
-  useEffect(() => { if (!open) setView("menu"); }, [open]);
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [bindEmailOpen, setBindEmailOpen] = useState(false);
+  // 标记修改密码流程是否需要"先绑定邮箱再改密"
+  const [pendingChangePwd, setPendingChangePwd] = useState(false);
+  useEffect(() => { if (!open) { setView("menu"); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPendingChangePwd(false); } }, [open]);
   const renderItems = (keys: MenuKey[]) => keys.map((key) => {
     const item = NAV_ITEMS.find((entry) => entry.key === key)!;
     const Icon = item.icon;
@@ -1440,47 +2829,140 @@ function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogo
   const avatarChar = String(userInfo?.avatar || displayName).slice(0, 1).toUpperCase();
   const dept = userInfo?.dept;
   const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
-  const userButton = <button className="menu-user-button" type="button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button>;
-  if (view === "profile") return <Sheet open={open} title="用户信息" onClose={onClose}><div className="profile-page">
-    <section className="profile-card">
-      <span className="profile-avatar">{avatarChar}</span>
-      <div>
-        <small>{dept?.deptName || "喜八移动工作台"}</small>
-        <h3>{displayName}</h3>
-        <p><span />{userInfo?.loginDate ? `上次登录 ${shortDate(userInfo.loginDate, true)}${userInfo?.loginIp ? ` · ${userInfo.loginIp}` : ""}` : "账号在线，登录状态正常"}</p>
-      </div>
-    </section>
-    {roles.length ? <section className="profile-roles">{roles.map((role) => <span key={String(role.roleId || role.roleKey)} className="profile-role-chip">{String(role.roleName || role.roleKey || "角色")}</span>)}</section> : null}
-    <section className="profile-info">
-      <div><span>登录账号</span><b>{userInfo?.userName || username}</b></div>
-      <div><span>昵称</span><b>{userInfo?.nickName || "--"}</b></div>
-      <div><span>所属部门</span><b>{dept?.deptName || "--"}</b></div>
-      <div><span>部门负责人</span><b>{dept?.leader || "--"}</b></div>
-      <div><span>手机号</span><b>{maskPhone(String(userInfo?.phonenumber || ""))}</b></div>
-      <div><span>邮箱</span><b>{maskEmail(String(userInfo?.email || ""))}</b></div>
-      <div><span>性别</span><b>{sexLabel(userInfo?.sex)}</b></div>
-      <div><span>最近登录 IP</span><b>{userInfo?.loginIp || "--"}</b></div>
-      <div><span>最近登录时间</span><b>{userInfo?.loginDate ? shortDate(userInfo.loginDate, true) : "--"}</b></div>
-      <div><span>账号状态</span><b className="profile-status">正常</b></div>
-    </section>
-    <button className="profile-back" type="button" onClick={() => setView("menu")}><ArrowLeft size={18} />返回全部功能</button>
-    <button className="logout-row profile-logout" type="button" onClick={onLogout}><LogOut size={18} />退出当前账号</button>
-  </div></Sheet>;
+  const userEmail = String(userInfo?.email || "");
+  const userButton = <button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button>;
+  // 点"修改密码"：未绑定邮箱先弹 BindEmailSheet，绑定成功后再弹改密弹窗
+  function handleChangePwdClick() {
+    if (!userEmail) {
+      setPendingChangePwd(true);
+      setBindEmailOpen(true);
+    } else {
+      setChangePwdOpen(true);
+    }
+  }
+  function handleEmailBound() {
+    // 通知 AdminShell 重新拉取 /getInfo（让 userInfo.email 反映最新值）
+    onUserInfoChanged();
+    // 如果是从"修改密码"流程进来的，绑完邮箱直接接着弹改密
+    if (pendingChangePwd) {
+      setPendingChangePwd(false);
+      // 短暂延迟，让 userInfo 异步刷新到位（虽然 onUserInfoChanged 已触发，但 state 是异步的）
+      window.setTimeout(() => setChangePwdOpen(true), 50);
+    }
+  }
+  if (view === "profile") return <>
+    <Sheet open={open} title="用户信息" onClose={onClose}><div className="profile-page">
+      <section className="profile-card">
+        <span className="profile-avatar">{avatarChar}</span>
+        <div>
+          <small>{dept?.deptName || "喜八移动工作台"}</small>
+          <h3>{displayName}</h3>
+          <p><span />{userInfo?.loginDate ? `上次登录 ${shortDate(userInfo.loginDate, true)}${userInfo?.loginIp ? ` · ${userInfo.loginIp}` : ""}` : "账号在线，登录状态正常"}</p>
+        </div>
+      </section>
+      {roles.length ? <section className="profile-roles">{roles.map((role) => <span key={String(role.roleId || role.roleKey)} className="profile-role-chip">{String(role.roleName || role.roleKey || "角色")}</span>)}</section> : null}
+      <section className="profile-info">
+        <div><span>登录账号</span><b>{userInfo?.userName || username}</b></div>
+        <div><span>昵称</span><b>{userInfo?.nickName || "--"}</b></div>
+        <div><span>所属部门</span><b>{dept?.deptName || "--"}</b></div>
+        <div><span>部门负责人</span><b>{dept?.leader || "--"}</b></div>
+        <div><span>手机号</span><b>{maskPhone(String(userInfo?.phonenumber || ""))}</b></div>
+        <div><span>邮箱</span><b className={userEmail ? "" : "profile-info-warn"}>{userEmail ? maskEmail(userEmail) : "未绑定（点下方按钮完善）"}</b></div>
+        <div><span>性别</span><b>{sexLabel(userInfo?.sex)}</b></div>
+        <div><span>最近登录 IP</span><b>{userInfo?.loginIp || "--"}</b></div>
+        <div><span>最近登录时间</span><b>{userInfo?.loginDate ? shortDate(userInfo.loginDate, true) : "--"}</b></div>
+        <div><span>账号状态</span><b className="profile-status">正常</b></div>
+      </section>
+      <button className="profile-back" type="button" onClick={() => setView("menu")}><ArrowLeft size={18} />返回全部功能</button>
+      <button className="profile-action" type="button" onClick={() => setEditProfileOpen(true)}>
+        <Pencil size={18} />编辑信息
+      </button>
+      <button className="profile-action" type="button" onClick={handleChangePwdClick} title="通过邮箱验证码修改密码">
+        <LockKeyhole size={18} />修改密码
+      </button>
+      <button className="profile-action" type="button" onClick={() => setBindEmailOpen(true)}>
+        <Send size={18} />{userEmail ? "更换邮箱" : "绑定邮箱"}
+      </button>
+      <button className="profile-action" type="button" onClick={onReplayTour} title="再看一遍新手引导">
+        <Sparkles size={18} />重看引导
+      </button>
+      <button className="logout-row profile-logout" type="button" onClick={onLogout}><LogOut size={18} />退出当前账号</button>
+    </div></Sheet>
+    <EditProfileSheet
+      open={editProfileOpen}
+      userInfo={userInfo}
+      username={username}
+      onClose={() => setEditProfileOpen(false)}
+      onSaved={onUserInfoChanged}
+      onBindEmail={() => { setEditProfileOpen(false); window.setTimeout(() => setBindEmailOpen(true), 200); }}
+      notify={notify}
+    />
+    <BindEmailSheet
+      open={bindEmailOpen}
+      currentEmail={userEmail}
+      onClose={() => { setBindEmailOpen(false); setPendingChangePwd(false); }}
+      onSaved={handleEmailBound}
+      notify={notify}
+    />
+    <ChangePwdByEmailSheet
+      open={changePwdOpen}
+      boundEmail={userEmail}
+      onClose={() => setChangePwdOpen(false)}
+      notify={notify}
+    />
+  </>;
   return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}><button className={`menu-public-tools menu-home-entry ${active === "home" ? "active" : ""}`} type="button" onClick={() => { onSelect("home"); onClose(); }}><House size={20} /><span><b>工作台</b><small>订单、买家与物流动态总览</small></span><ChevronRight size={17} /></button><div className="menu-groups">
-    <section className="menu-group"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "batchOrder", "express"])}</div></section>
-    <section className="menu-group"><div className="menu-group-title"><b>经营管理</b><small>账单、价格及店铺配置</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores"])}</div></section>
-    <section className="menu-group"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
-    <section className="menu-group"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
-  </div><a className="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>免登录工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
+    <section className="menu-group" data-onboard="menu-group-orders"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "batchOrder", "express"])}</div></section>
+    <section className="menu-group" data-onboard="menu-group-manage"><div className="menu-group-title"><b>经营管理</b><small>账单、价格、店铺、物流额度及短链</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores", "logistics", "shortLinks"])}</div></section>
+    <section className="menu-group" data-onboard="menu-group-buyer"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
+    <section className="menu-group" data-onboard="menu-group-tracking"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
+  </div><a className="menu-public-tools" data-onboard="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>免登录工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
 }
 
 function AdminShell({ username, onLogout }: { username: string; onLogout: () => void }) {
-  const [active, setActive] = useState<MenuKey>("home");
+  // 当前访问页：先从 localStorage 缓存里取，刷新/下拉刷新后自动停留在上次的页面
+  const [active, setActive] = useState<MenuKey>(readCachedActivePage);
+  useEffect(() => { writeCachedActivePage(active); }, [active]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const [dictionaries, setDictionaries] = useState<Dictionaries>(EMPTY_DICTIONARIES);
   const [userInfo, setUserInfo] = useState<DataRow | null>(null);
+  // 登录后若邮箱为空，自动弹"绑定邮箱"页（不再用 Toast 提示）。
+  // 用户可关闭；下次登录仍会再弹，直到真正去绑定邮箱。
+  const [bindEmailOpen, setBindEmailOpen] = useState(false);
+  // 邮箱与系统引导互斥：首次登录且没绑邮箱时，先弹邮箱；引导等邮箱弹窗关闭后再触发。
+  // 邮箱关掉/绑好 → 解除门控 → 引导才出来。
+  const [tourGatedByEmail, setTourGatedByEmail] = useState(false);
   const notify = useCallback((message: string, type: "success" | "error" | "info" = "info") => { setToast({ message, type }); window.setTimeout(() => setToast(null), 2600); }, []);
+  const refreshUserInfo = useCallback(() => {
+    // 静默重新拉取 /getInfo，用于"绑定邮箱 / 编辑信息"后让 userInfo 同步最新值
+    apiRequest<DataRow>("/getInfo").then((result) => {
+      const info = (result.user as DataRow) || result;
+      setUserInfo(info);
+    }).catch(() => { /* 静默失败，不打扰用户 */ });
+  }, []);
+  // 引导：注册打开/关闭菜单命令；首次进入触发系统引导；切换 active 触发单步介绍
+  const onboardingFull = useOnboarding();
+  const onboardingTriggers = useOnboardingTriggers();
+  const replaySystemTour = useCallback(() => {
+    onboardingTriggers.replaySystemTour(getSystemTourSteps());
+    setMenuOpen(false);
+    setActive("home");
+  }, [onboardingTriggers]);
+  // 「全部」按钮的点击：触发菜单打开 + 若当前在 awaitClick 步骤则推进引导
+  const handleDockMenuClick = useCallback(() => {
+    setMenuOpen(true);
+    if (onboardingFull.current?.id === "dock-menu" && onboardingFull.current.awaitClick) {
+      void onboardingFull.next();
+    }
+  }, [onboardingFull]);
+  useEffect(() => {
+    registerOnboardingCommands({
+      openMenu: () => setMenuOpen(true),
+      closeMenu: () => setMenuOpen(false),
+    });
+    return () => unregisterOnboardingCommands();
+  }, []);
   useEffect(() => {
     let mounted = true;
     fetchDictionaries().then((result) => { if (mounted) setDictionaries(result); }).catch(() => notify("系统字典加载失败，列表将显示原始编码", "error"));
@@ -1489,30 +2971,99 @@ function AdminShell({ username, onLogout }: { username: string; onLogout: () => 
   useEffect(() => {
     let mounted = true;
     // 拉一次 /getInfo，失败时静默降级到 username；仅在已登录后由 AdminShell 持有 token 时调用
-    apiRequest<DataRow>("/getInfo").then((result) => { if (mounted) setUserInfo((result.user as DataRow) || result); }).catch(() => { /* 接口失败时保留 username 兜底，不打扰用户 */ });
+    apiRequest<DataRow>("/getInfo").then((result) => {
+      if (!mounted) return;
+      const info = (result.user as DataRow) || result;
+      setUserInfo(info);
+      // 登录后邮箱完整性检查：未绑邮箱时弹绑定页。
+      // 邮箱与系统引导互斥：首次登录（systemDone=false）时，引导等邮箱弹窗关闭后再触发；
+      // 老用户（systemDone=true）只弹邮箱，不触发引导。
+      if (!info?.email) {
+        let systemDone = false;
+        try {
+          const raw = window.localStorage.getItem("xb-h5-onboarding");
+          if (raw) systemDone = (JSON.parse(raw) as { systemDone?: boolean }).systemDone === true;
+        } catch { /* */ }
+        if (!systemDone) {
+          // 首次登录：把引导门控住，先让邮箱弹窗走完
+          setTourGatedByEmail(true);
+        }
+        window.setTimeout(() => {
+          if (mounted) setBindEmailOpen(true);
+        }, 600);
+      }
+    }).catch(() => { /* 接口失败时保留 username 兜底，不打扰用户 */ });
     return () => { mounted = false; };
-  }, []);
+  }, [notify]);
+  // 引导结束（steps 变 null）后，如果还欠着邮箱绑定弹窗就补上
+  useEffect(() => {
+    if (tourGatedByEmail) return; // 引导被邮箱挡住，不放行
+    const raw = window.localStorage.getItem("xb-h5-onboarding");
+    let systemDone = false;
+    if (raw) {
+      try { systemDone = (JSON.parse(raw) as { systemDone?: boolean }).systemDone === true; } catch { /* */ }
+    }
+    if (!systemDone) {
+      // 延迟到首屏 splash 结束、用户进入主界面之后再触发
+      const t = window.setTimeout(() => {
+        onboardingTriggers.startSystemTour(getSystemTourSteps());
+      }, 1500);
+      return () => window.clearTimeout(t);
+    }
+    return undefined;
+  }, [onboardingTriggers, tourGatedByEmail]);
+  // 切换模块：触发单步介绍（如果没看过）。仅在系统引导完成后才触发，避免与首次引导叠加。
+  useEffect(() => {
+    const steps = getPageIntroSteps(active);
+    if (steps.length === 0) return;
+    const t = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem("xb-h5-onboarding");
+        const systemDone = raw ? (JSON.parse(raw) as { systemDone?: boolean }).systemDone === true : false;
+        if (!systemDone) return;
+      } catch { /* */ }
+      onboardingTriggers.startPageIntro(steps);
+    }, 320);
+    return () => window.clearTimeout(t);
+  }, [active, onboardingTriggers]);
   const configs = useMemo(() => createCrudConfigs(dictionaries), [dictionaries]);
   const renderPage = active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} />
-    : active === "orders" ? <OrdersPage notify={notify} />
+    : active === "orders" ? <OrdersPage notify={notify} onNavigate={setActive} />
     : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
     : active === "batchOrder" ? <BatchOrderEntry />
     : active === "orderLink" ? <OrderLinkGenerator embedded />
     : active === "purchasers" ? <PurchaserManager embedded />
     : active === "tracking" ? <TrackingPage />
-    : <CrudModule config={configs[active as keyof typeof configs]} notify={notify} />;
+    : active === "logistics" ? <LogisticsPage userInfo={userInfo} notify={notify} />
+    : active === "shortLinks" ? <ShortLinkManager embedded />
+    : <CrudModule config={configs[active as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
   return <DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
-      <main className="product-main">{renderPage}</main>
+      <main className="product-main" data-onboard={`page-${active}`}>{renderPage}</main>
       <nav className="workspace-dock" aria-label="主要功能">
-        <button className={active === "home" ? "active" : ""} onClick={() => setActive("home")}><House size={21} /><span>首页</span></button>
-        <button className={active === "orders" ? "active" : ""} onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button>
-        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} type="button" onClick={() => setActive("orderEntry")} aria-label="录单"><span className="dock-create-glyph" aria-hidden="true"><Plus size={22} strokeWidth={2.4} /></span><span>录单</span></button>
-        <button className={active === "bills" ? "active" : ""} onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
-        <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>全部</span></button>
+        <button className={active === "home" ? "active" : ""} data-onboard="dock-home" onClick={() => setActive("home")}><House size={21} /><span>首页</span></button>
+        <button className={active === "orders" ? "active" : ""} data-onboard="dock-orders" onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button>
+        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} data-onboard="dock-create" type="button" onClick={() => setActive("orderEntry")} aria-label="录单"><span className="dock-create-glyph" aria-hidden="true"><Plus size={22} strokeWidth={2.4} /></span><span>录单</span></button>
+        <button className={active === "bills" ? "active" : ""} data-onboard="dock-bills" onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
+        <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} data-onboard="dock-menu" onClick={handleDockMenuClick}><Menu size={21} /><span>全部</span></button>
       </nav>
-      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} />
+      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} />
+      <BindEmailSheet
+        open={bindEmailOpen}
+        currentEmail={String(userInfo?.email || "")}
+        onClose={() => {
+          setBindEmailOpen(false);
+          // 邮箱弹窗关闭（不论绑没绑）→ 解除门控，引导可以走
+          setTourGatedByEmail(false);
+        }}
+        onSaved={() => {
+          refreshUserInfo();
+          // 邮箱已绑定成功 → 解除门控，引导可以走
+          setTourGatedByEmail(false);
+        }}
+        notify={notify}
+      />
       <Toast toast={toast} />
     </div>
   </DictionaryContext.Provider>;
@@ -1552,5 +3103,8 @@ export default function MobileAdmin() {
     <p>正在启动移动工作台</p>
   </div>;
   if (!token) return <LoginScreen onLogin={(nextToken, nextUsername) => { setStoredToken(nextToken); setToken(nextToken); setUsername(nextUsername); }} />;
-  return <AdminShell username={username} onLogout={logout} />;
+  return <OnboardingProvider>
+    <AdminShell username={username} onLogout={logout} />
+    <OnboardingOverlay />
+  </OnboardingProvider>;
 }

@@ -68,7 +68,7 @@ export default function AdminOrderEntry({ username, notify }: { username: string
     let mounted = true;
     Promise.all([
       apiRequest<{ data?: Purchaser[] }>("/biz/purchaser/list"),
-      apiRequest<{ data?: StoreRow[] }>("/search/store", { auth: false, query: { createBy: "", name: "" } }),
+      apiRequest<{ data?: StoreRow[] }>("/biz/store/options", { query: { createBy: "", name: "" } }),
       apiRequest<{ data?: { products?: Option[]; sizes?: Option[] } }>("/search/order-options", { auth: false }),
       apiRequest<{ data?: Row[] }>("/biz/exp/getAllCom"),
     ]).then(([purchaserResult, storeResult, optionResult, expressResult]) => {

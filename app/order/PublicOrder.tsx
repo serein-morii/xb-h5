@@ -3,6 +3,7 @@ import { Box, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { publicApiRequest } from "../lib/api";
 import OrderList, { PublicOrderRecord } from "../tools/OrderList";
+import PeachTip from "../components/PeachTip";
 
 function readLinkId() {
   const rawHash = window.location.hash.replace(/^#/, "").trim();
@@ -35,6 +36,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
 
   return <div className="tool-page signed-order-tool">
     <section className="tool-hero"><span><PackageCheck size={25} /></span><div><small>SECURE ORDER LINK</small><h1>订单详情</h1><p>查看订单与最新物流信息</p></div></section>
+    <PeachTip />
     {loading ? <section className="public-state signed-order-state"><LoaderCircle className="spin" size={32} /><h1>正在查询订单</h1><p>请稍候，正在同步最新订单与物流信息</p></section> : error ? <section className="public-state public-state-error signed-order-state"><Box size={34} /><h1>暂时无法查看</h1><p>{error}</p><button type="button" onClick={load}><RefreshCw size={17} />重新查询</button></section> : <OrderList orders={orders} contact={orders[0]?.linkNameAndPhone?.trim()} />}
     {!embedded ? <footer className="signed-order-footer"><span>喜八订单查询 · 信息以系统最新记录为准</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer> : null}
   </div>;

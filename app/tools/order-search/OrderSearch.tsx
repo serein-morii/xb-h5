@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { apiRequest } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { OrderStatsCards, StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
+import PeachTip from "../../components/PeachTip";
 
 type Row = Record<string, unknown>;
 
@@ -54,6 +55,7 @@ export default function OrderSearch() {
 
   return <div className="tool-page order-search-tool"><section className="tool-hero"><span><PackageSearch size={25} /></span><div><small>PUBLIC ORDER SEARCH</small><h1>订单查询</h1><p>输入收件手机号和验证码，无需登录即可查询订单。</p></div></section>
     <form className="tool-form-card" onSubmit={submit}><label><span>手机号</span><div className="tool-input"><Phone size={17} /><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="请输入收件手机号" /></div></label><label><span>验证码</span><div className="tool-captcha"><div className="tool-input"><CheckCircle2 size={17} /><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="请输入验证码" /></div><button type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={18} />}</button></div></label>{error ? <p className="tool-error">{error}</p> : null}<button className="tool-primary" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}{loading ? "正在查询" : "查询订单"}</button></form>
+    <PeachTip />
     {orders.length ? <div ref={resultsRef}>
       <OrderStatsCards stats={stats} filter={statusFilter} onSelect={setStatusFilter} label="查询结果概览" />
       <OrderList orders={filteredOrders} contact={orders[0]?.linkNameAndPhone?.trim()} />
