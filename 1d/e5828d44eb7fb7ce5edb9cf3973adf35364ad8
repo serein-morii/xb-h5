@@ -1,0 +1,14 @@
+README.md
+  h_d554d32aa9d663 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1de5828d44eb7fb7ce5edb9cf3973adf35364ad8",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
