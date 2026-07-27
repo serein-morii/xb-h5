@@ -318,6 +318,12 @@ input, textarea, select { font-size: 16px; }
 .order-pay-badge { display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 750; }
 .order-pay-badge.pay-paid { color: #14794e; background: #d6f0e1; }
 .order-pay-badge.pay-unpaid { color: #6b6b6b; background: #eee; }
+.quick-pay-filter { display: flex; gap: 7px; align-items: center; margin: 0 0 12px; padding: 0 2px; }
+.quick-pay-filter button { flex: none; min-height: 30px; padding: 0 13px; border: 0; border-radius: 999px; color: #5e7267; background: var(--surface); box-shadow: 0 1px 2px rgba(20,62,40,.04); font-size: 10.5px; font-weight: 700; cursor: pointer; transition: color .15s, background .15s, box-shadow .15s; -webkit-tap-highlight-color: transparent; display: inline-flex; align-items: center; gap: 5px; }
+.quick-pay-filter button:hover:not(.active) { color: var(--ink); }
+.quick-pay-filter button.active { color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 6px 16px rgba(20,121,78,.28); }
+html.theme-dark .quick-pay-filter button { color: var(--muted); background: rgba(255,255,255,.06); }
+
 .order-pay-badge.pay-refunded { color: #b45309; background: #fef3c7; }
 html.theme-dark .order-pay-badge.pay-unpaid { color: #aaa; background: rgba(255,255,255,.08); }
 .select-check input { position: absolute; opacity: 0; }

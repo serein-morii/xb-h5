@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, Clock3, Copy, CreditCard, Edit3, Eye, Inbox, MapPin, Search, Store, Trash2, Truck, User, Wallet } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Copy, CreditCard, Edit3, Eye, Inbox, MapPin, RefreshCw, Search, Store, Trash2, Truck, User, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { copyToClipboard } from "../lib/api";
 
@@ -59,12 +59,14 @@ function formatCost(value?: number) {
   return Number(value).toFixed(2);
 }
 
-export default function OrderList({ orders, contact, onEdit, onDelete, onView }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void }) {
+export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void }) {
   const [active, setActive] = useState("ALL");
   const [activePay, setActivePay] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  async function handleRefresh() { if (!onRefresh || refreshing) return; setRefreshing(true); try { await onRefresh(); } finally { setRefreshing(false); } }
 
   const statuses = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
@@ -101,7 +103,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView }:
   }
 
   return <>
-    <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div></section>
+    <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-result-head-right">{onRefresh ? <button type="button" className="tool-result-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="刷新订单列表"><RefreshCw className={refreshing ? "spin" : ""} size={16} /></button> : null}<div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div></div></section>
     <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips" role="listbox" aria-label="订单状态筛选"><button type="button" className={active === "ALL" ? "active" : ""} onClick={() => setActive("ALL")}>全部 {orders.length}</button>{statuses.map(([key, item]) => <button type="button" className={active === key ? "active" : ""} onClick={() => setActive(key)} key={key}>{item.label} {item.count}</button>)}</div></div>
     <div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div></div>
     <section className="tool-order-results soft-list">{visible.map((order) => {

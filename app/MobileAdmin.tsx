@@ -2100,6 +2100,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   // 串行刷新物流进度（与同步所有同款结构）
   const [refreshState, setRefreshState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [markPayState, setMarkPayState] = useState<{ loading: boolean; kind: "paid" | "unpaid"; current: number; total: number; success: number; failed: number }>({ loading: false, kind: "paid", current: 0, total: 0, success: 0, failed: 0 });
+  const [batchActionState, setBatchActionState] = useState<{ loading: boolean; path: string; label: string; current: number; total: number; success: number; failed: number }>({ loading: false, path: "", label: "", current: 0, total: 0, success: 0, failed: 0 });
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
 
   const load = useCallback(async () => {
@@ -2150,7 +2151,8 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
     shipping: rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
     transit: rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
   }), [rows]);
-  // 按顶部状态卡片过滤后的可见订单（用于列表渲染 + 全选本页）
+  // 付款状态快捷筛选数量（基于全量 rows 客户端聚合）
+  const payCounts = useMemo(() => ({ paid: rows.filter((row) => Number(row.payStatus) === 1).length, unpaid: rows.filter((row) => Number(row.payStatus) !== 1).length }), [rows]);
   const visibleRows = useMemo(() => {
     if (!statusFilter) return rows;
     if (statusFilter === "pending") return rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`));
@@ -2183,24 +2185,58 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
       catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); }
     };
   }
+  // 批量逐条串行执行（发货/完成/待发）：进度展示在批量条按钮上
+  async function runBatchSequential(path: string, label: string, idArr: string[]) {
+    if (batchActionState.loading) return;
+    const total = idArr.length;
+    let success = 0;
+    let failed = 0;
+    let firstErrorMsg = "";
+    setBatchActionState({ loading: true, path, label, current: 0, total, success: 0, failed: 0 });
+    for (const id of idArr) {
+      try {
+        await apiRequest(`/biz/order/${path}/${id}`, { method: "PATCH" });
+        success += 1;
+      } catch (error) {
+        failed += 1;
+        if (!firstErrorMsg) firstErrorMsg = error instanceof Error ? error.message : "操作失败";
+      }
+      setBatchActionState({ loading: true, path, label, current: success + failed, total, success, failed });
+    }
+    setBatchActionState({ loading: false, path: "", label: "", current: 0, total: 0, success: 0, failed: 0 });
+    const summary = `${label}：成功 ${success} 条，失败 ${failed} 条${firstErrorMsg ? `（${firstErrorMsg}）` : ""}`;
+    notify(summary, failed ? "error" : "success");
+    setSelected(new Set());
+    await load();
+  }
   function requestBatch(path: string, label: string, row?: DataRow) {
     const targetIds = row ? String(row.id) : ids;
     const count = row ? 1 : selected.size;
     if (!targetIds) return notify("请先选择订单", "info");
-    setConfirm({ title: label, message: `确认对 ${count} 个订单执行“${label}”吗？`, action: action(path, targetIds, `${label}成功`) });
+    // 发货/完成/待发：逐条串行 + 进度；取消待发等仍走一次性
+    const sequential = ["send", "finish", "tosend"].includes(path);
+    const idArr = targetIds.split(",").filter(Boolean);
+    setConfirm({
+      title: label,
+      message: `确认对 ${count} 个订单执行“${label}”吗？${sequential && count > 1 ? "（将逐条执行并显示进度）" : ""}`,
+      action: sequential
+        ? async () => { await runBatchSequential(path, label, idArr); }
+        : action(path, targetIds, `${label}成功`),
+    });
   }
+  
   function requestDelete(row?: DataRow) {
     const target = row ? String(row.id) : ids;
     if (!target) return notify("请先选择订单", "info");
     setConfirm({ title: "删除订单", message: `删除后无法恢复，确认删除 ${row ? 1 : selected.size} 个订单？`, danger: true, action: async () => { await apiRequest(`/biz/order/${target}`, { method: "DELETE" }); notify("删除成功", "success"); setSelected(new Set()); await load(); } });
   }
   // 标记付款 / 取消付款（批量条用，逐条串行 + 按钮进度）
-  async function markPay(kind: "paid" | "unpaid") {
+  async function markPay(kind: "paid" | "unpaid", row?: DataRow) {
     if (markPayState.loading) return;
-    if (!ids) return notify("请先选择订单", "info");
     const path = kind === "paid" ? "markPaid" : "markUnpaid";
     const label = kind === "paid" ? "已标记已付款" : "已取消付款标记";
-    const idList = ids.split(",").filter(Boolean);
+    const idList = row ? [String(row.id)] : ids.split(",").filter(Boolean);
+    if (!idList.length) return notify("请先选择订单", "info");
     const total = idList.length;
     let success = 0;
     let failed = 0;
@@ -2311,6 +2347,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         <button type="button" className={statusFilter === "shipping" ? "active" : ""} onClick={() => setStatusFilter("shipping")} aria-pressed={statusFilter === "shipping"}><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></button>
         <button type="button" className={statusFilter === "transit" ? "active" : ""} onClick={() => setStatusFilter("transit")} aria-pressed={statusFilter === "transit"}><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></button>
       </div>
+      <div className="quick-pay-filter" role="toolbar" aria-label="付款状态快捷筛选"><button type="button" className={!filters.payStatus ? "active" : ""} onClick={() => setFilters((current: DataRow) => { const next: DataRow = { ...current, pageNum: 1 }; if (current.payStatus) delete next.payStatus; return next; })}>全部付款 {rows.length}</button><button type="button" className={String(filters.payStatus || "") === "1" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "1", pageNum: 1 }))}><CreditCard size={13} />已付款 {payCounts.paid}</button><button type="button" className={String(filters.payStatus || "") === "0" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "0", pageNum: 1 }))}>未付款 {payCounts.unpaid}</button></div>
       <div className="toolbar-card search-toolbar">
         <label className="quick-search">
           <Search size={15} strokeWidth={2.2} />
@@ -2342,7 +2379,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         </button>
       </div>
 
-      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")}><RotateCw size={15} />待发</button><button onClick={() => requestBatch("send", "一键发货")}><Send size={15} />一键发货</button><button onClick={() => requestBatch("finish", "一键完成")}><CircleCheck size={15} />完成</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button onClick={() => markPay("paid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "paid" ? <LoaderCircle className="spin" size={15} /> : <CreditCard size={15} />}{markPayState.loading && markPayState.kind === "paid" ? `标记中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "标已付"}</button><button onClick={() => markPay("unpaid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "unpaid" ? <LoaderCircle className="spin" size={15} /> : <X size={15} />}{markPayState.loading && markPayState.kind === "unpaid" ? `取消中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "取消付款"}</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
+      {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")} disabled={batchActionState.loading && batchActionState.path === "tosend"} className={batchActionState.loading && batchActionState.path === "tosend" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "tosend" ? <LoaderCircle className="spin" size={15} /> : <RotateCw size={15} />}{batchActionState.loading && batchActionState.path === "tosend" ? `待发中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "待发"}</button><button onClick={() => requestBatch("send", "一键发货")} disabled={batchActionState.loading && batchActionState.path === "send"} className={batchActionState.loading && batchActionState.path === "send" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "send" ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />}{batchActionState.loading && batchActionState.path === "send" ? `发货中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "一键发货"}</button><button onClick={() => requestBatch("finish", "一键完成")} disabled={batchActionState.loading && batchActionState.path === "finish"} className={batchActionState.loading && batchActionState.path === "finish" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "finish" ? <LoaderCircle className="spin" size={15} /> : <CircleCheck size={15} />}{batchActionState.loading && batchActionState.path === "finish" ? `完成中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "完成"}</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button onClick={() => markPay("paid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "paid" ? <LoaderCircle className="spin" size={15} /> : <CreditCard size={15} />}{markPayState.loading && markPayState.kind === "paid" ? `付款标记中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "标已付"}</button><button onClick={() => markPay("unpaid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "unpaid" ? <LoaderCircle className="spin" size={15} /> : <X size={15} />}{markPayState.loading && markPayState.kind === "unpaid" ? `取消中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "取消付款"}</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
 
       <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条{statusFilter ? ` · 筛选后 ${visibleRows.length} 条` : ""}</span></div>{visibleRows.length ? <button type="button" onClick={() => setSelected(visibleRows.every((row) => selected.has(String(row.id))) ? new Set() : new Set(visibleRows.map((row) => String(row.id))))}>{visibleRows.every((row) => selected.has(String(row.id))) ? "取消全选" : "全选本页"}</button> : null}</div>
       <div className="mobile-card-list">
@@ -2358,7 +2395,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
             <div className="shipping-line"><span><Truck size={15} />{row.expComDesc || (row.expCom ? optionLabel(row.expCom, dictionaries.expressCompanies) : "尚未选择快递")}</span><span>{row.expCode || row.orderTime?.slice(0, 10) || ""}</span></div>
             {row.expNewDesc ? <p className="latest-route"><span />{row.expNewDesc}</p> : null}
             <div className="card-actions"><button onClick={() => getDetail(row)}><Eye size={16} />详情</button><button onClick={() => getEditor(row)}><Pencil size={16} />修改</button><button onClick={() => setCopyTarget(row)}><Copy size={16} />复制</button><button className="primary-action" onClick={() => openShipping(row)}><Send size={16} />发货</button></div>
-            <div className="card-more"><button onClick={() => requestBatch("tosend", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button>{Number(row.payStatus) === 1 ? <button onClick={async () => { try { await apiRequest("/biz/order/markUnpaid", { method: "PATCH", body: { ids: [row.id] } }); notify("已取消付款标记", "success"); await load(); } catch (e) { notify(e instanceof Error ? e.message : "操作失败", "error"); } }}>取消付款</button> : <button onClick={async () => { try { await apiRequest("/biz/order/markPaid", { method: "PATCH", body: { ids: [row.id] } }); notify("已标记已付款", "success"); await load(); } catch (e) { notify(e instanceof Error ? e.message : "操作失败", "error"); } }}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
+            <div className="card-more"><button onClick={() => requestBatch("tosend", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button>{Number(row.payStatus) === 1 ? <button onClick={() => markPay("unpaid", row)}>取消付款</button> : <button onClick={() => markPay("paid", row)}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
           </article>
         ))}
       </div>

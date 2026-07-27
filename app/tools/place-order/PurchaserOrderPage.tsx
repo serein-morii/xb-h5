@@ -524,7 +524,7 @@ export default function PurchaserOrderPage() {
         <div><Wallet size={14} /><b>已解锁成本价</b><em>每笔订单会显示总成本与销售价</em></div>
         <button type="button" onClick={lockCostPrice}><Lock size={13} />重新上锁</button>
       </section> : null}
-      {orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}
+      {orders.length ? <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={() => loadOrders(linkKey.purchaserId, costPriceUnlocked ? costPwd.trim() : undefined)} /> : <div className="purchaser-no-orders"><History size={27} /><h2>还没有关联订单</h2><p>使用当前专属链接下单后，订单会自动显示在这里。</p></div>}
     </>}
 
     {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "ORDER CODE" : "FINAL VERIFICATION"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "请确认订单信息并完成验证"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取" : "提交后无法修改，请仔细核对下方信息。"}</p><div className="purchaser-captcha-summary">
