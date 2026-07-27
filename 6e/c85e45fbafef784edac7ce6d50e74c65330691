@@ -1,0 +1,19 @@
+app/MobileAdmin.tsx
+  s_6fbdd6c3e2c004::t_2d63cc4220331d 2102,2197,2199,2203-2217,2219-2223,2225-2226,2345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "6ec85e45fbafef784edac7ce6d50e74c65330691",
+  "prompts": {},
+  "sessions": {
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
