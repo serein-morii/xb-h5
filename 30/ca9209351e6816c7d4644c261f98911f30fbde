@@ -1,0 +1,27 @@
+app/tools/OrderList.tsx
+  s_6fbdd6c3e2c004::t_c83b32e5074e63 1
+  s_6fbdd6c3e2c004::t_9e7c417ea1ec17 62,68-69,106
+app/MobileAdmin.tsx
+  s_6fbdd6c3e2c004::t_3b1da2f7144ba1 2216-2225,2227
+  s_6fbdd6c3e2c004::t_267bb50fdc987f 2103,2154-2155,2188-2211,2234,2238-2239,2350,2382,2398
+app/globals.css
+  s_6fbdd6c3e2c004::t_285eccfdb90b4c 321-326
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_6fbdd6c3e2c004::t_661f332074157b 527
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "30ca9209351e6816c7d4644c261f98911f30fbde",
+  "prompts": {},
+  "sessions": {
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
