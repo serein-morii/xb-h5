@@ -2124,6 +2124,12 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
       .catch(() => { /* 加载失败不影响主功能 */ });
     return () => { mounted = false; };
   }, []);
+  const [purchasers, setPurchasers] = useState<DataRow[]>([]);
+  useEffect(() => {
+    apiRequest<{ data?: DataRow[] }>("/biz/purchaser/list")
+      .then((result) => { setPurchasers(Array.isArray(result.data) ? result.data : []); })
+      .catch(() => { });
+  }, []);
   const storeNameByCode = useMemo(() => {
     const map: Record<string, string> = {};
     storeList.forEach((row) => {
@@ -2303,7 +2309,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
           {filters.orderCode ? <button className="search-clear" type="button" aria-label="清空" onClick={() => setFilters((current: DataRow) => ({ ...current, orderCode: "", pageNum: 1 }))}><X size={14} /></button> : null}
         </label>
         <button
-          className={`filter-chip${[filters.orderStatus, filters.orderName, filters.orderType, filters.customer, filters.phone, filters.purchaser, filters.store, filters.expCom, filters.expCode].some((value) => String(value || "").trim()) ? " active" : ""}`}
+          className={`filter-chip${[filters.orderStatus, filters.payStatus, filters.orderName, filters.orderType, filters.customer, filters.phone, filters.purchaser, filters.store, filters.expCom, filters.expCode].some((value) => String(value || "").trim()) ? " active" : ""}`}
           type="button"
           onClick={() => setFilterOpen(true)}
         >
@@ -2327,7 +2333,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
       <div className="mobile-card-list">
         {!visibleRows.length ? <EmptyState loading={loading} label={statusFilter ? "筛选结果" : "订单"} /> : visibleRows.map((row) => (
           <article className={`order-card ${selected.has(String(row.id)) ? "selected" : ""}`} key={String(row.id)}>
-            <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><div className="card-topline-badges"><span className={`order-pay-badge pay-${Number(row.payStatus) === 1 ? "paid" : "unpaid"}`}><CreditCard size={11} />{Number(row.payStatus) === 1 ? "已付款" : "未付款"}</span><StatusBadge row={row} /></div></div>
+            <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><div className="card-topline-badges"><span className={`order-pay-badge pay-${Number(row.payStatus) === 1 ? "paid" : Number(row.payStatus) === 2 ? "refunded" : "unpaid"}`}><CreditCard size={11} />{Number(row.payStatus) === 1 ? "已付款" : Number(row.payStatus) === 2 ? "已退款" : "未付款"}</span><StatusBadge row={row} /></div></div>
             <button className="card-main" type="button" onClick={() => getDetail(row)}>
               <span className="product-avatar">{String(row.orderNameDesc || "果").slice(-1)}</span>
               <span className="product-copy"><b>{row.orderNameDesc || optionLabel(row.orderName, dictionaries.products) || "未命名商品"}</b><small>{row.orderTypeDesc || optionLabel(row.orderType, dictionaries.sizes)} · 数量 {row.orderNum || 1}</small></span>
@@ -2366,6 +2372,15 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
                     onClick={() => setFilters((current: DataRow) => ({ ...current, orderStatus: item.value }))}
                   >{item.label}</button>
                 ))}
+              </div>
+            </section>
+
+            <section className="filter-section">
+              <header><h3>付款状态</h3></header>
+              <div className="filter-chips" role="listbox" aria-label="付款状态">
+                <button type="button" className={!filters.payStatus ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "" }))}>全部</button>
+                <button type="button" className={String(filters.payStatus || "") === "1" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "1" }))}>已付款</button>
+                <button type="button" className={String(filters.payStatus || "") === "0" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "0" }))}>未付款</button>
               </div>
             </section>
 
@@ -2428,7 +2443,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
                 <div className="filter-field-grid">
                   <label>
                     <span>下单人</span>
-                    <input value={filters.purchaser || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, purchaser: e.target.value }))} placeholder="买家/下单人" />
+                    <select value={filters.purchaser || ""} onChange={(e) => setFilters((current: DataRow) => { const next: DataRow = { ...current }; if (e.target.value) next.purchaser = e.target.value; else delete next.purchaser; return next; })}><option value="">全部买家</option>{purchasers.map((p) => <option key={String(p.id)} value={String(p.name || "")}>{p.name || "未命名"}{p.phone ? ` · ${p.phone}` : ""}</option>)}</select>
                   </label>
                   <label>
                     <span>创建人</span>
@@ -2499,6 +2514,8 @@ function OrderDetail({ row, onCopy, storeNameByCode }: { row: DataRow; onCopy: (
       <div className="order-detail-grid">
         <div><span>下单人</span><b>{row.purchaser || "--"}</b></div>
         <div><span>下单时间</span><b>{String(row.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</b></div>
+        <div><span>付款状态</span><b>{Number(row.payStatus) === 1 ? "已付款" : Number(row.payStatus) === 2 ? "已退款" : "未付款"}</b></div>
+        {Number(row.payStatus) === 1 && row.paidTime ? <div><span>付款时间</span><b>{String(row.paidTime).replace("T", " ").slice(0, 16)}</b></div> : null}
         <div className="full-width"><span>商品</span><b>{product || "--"}</b></div>
         {storeName ? <div><span>店铺</span><b>{storeName}</b></div> : null}
       </div>
