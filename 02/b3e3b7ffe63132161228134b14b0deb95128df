@@ -1,0 +1,31 @@
+app/tools/purchasers/PurchaserManager.tsx
+  s_6fbdd6c3e2c004::t_55e61d8dd01512 270-272
+app/MobileAdmin.tsx
+  s_6fbdd6c3e2c004::t_84b0971ce5749e 2127-2132,2312,2378-2386
+  s_6fbdd6c3e2c004::t_b80c5eb137d8cb 2446
+  s_6fbdd6c3e2c004::t_dcf9cd15ac4c89 2336
+  s_6fbdd6c3e2c004::t_04ee768c2a616a 2517-2518
+app/tools/OrderList.tsx
+  s_6fbdd6c3e2c004::t_c94e6a7e5cb065 105-106
+  s_6fbdd6c3e2c004::t_dcf9cd15ac4c89 113
+app/globals.css
+  s_6fbdd6c3e2c004::t_dcf9cd15ac4c89 321,1112-1114
+  s_6fbdd6c3e2c004::t_7f3403eb2b6589 1083-1096
+  s_6fbdd6c3e2c004::t_df2d851a95b72f 1727-1728,1746,1763,1780-1787
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "02b3e3b7ffe63132161228134b14b0deb95128df",
+  "prompts": {},
+  "sessions": {
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
