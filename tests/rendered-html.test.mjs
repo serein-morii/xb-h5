@@ -82,16 +82,18 @@ test("contains all order module entries and authentication endpoints", async () 
 });
 
 test("keeps the migrated authenticated quick order entry workflow", async () => {
-  const [admin, entry] = await Promise.all([
+  const [admin, entry, api] = await Promise.all([
     source("app/MobileAdmin.tsx"),
     source("app/AdminOrderEntry.tsx"),
+    source("app/lib/api.ts"),
   ]);
   assert.match(admin, /active === "orderEntry"/);
   for (const endpoint of ["/biz/purchaser/list", "/biz/purchaser", "/biz/store/options", "/search/order-options", "/search/addr", "/biz/exp/getAllCom", "/biz/exp/getCom", "/biz/order"]) {
     assert.match(entry, new RegExp(endpoint.replaceAll("/", "\\/")));
   }
   assert.match(entry, /purchaserShortId/);
-  assert.match(entry, /navigator\.clipboard\.readText/);
+  assert.match(entry, /readFromClipboard/);
+  assert.match(api, /navigator\.clipboard\.readText/);
   assert.match(entry, /BarcodeDetector/);
   assert.doesNotMatch(entry, /captchaImage/);
 });
@@ -146,7 +148,7 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
 });
 
 test("keeps the original public HTML capabilities in the integrated project", async () => {
-  const [menu, linkQuery, search, orderList, calculator, compare, freightData, admin] = await Promise.all([
+  const [menu, linkQuery, search, orderList, calculator, compare, freightData, admin, api] = await Promise.all([
     source("app/tools/page.tsx"),
     source("app/tools/LinkQueryCard.tsx"),
     source("app/tools/order-search/OrderSearch.tsx"),
@@ -155,6 +157,7 @@ test("keeps the original public HTML capabilities in the integrated project", as
     source("app/tools/freight-compare/FreightCompare.tsx"),
     source("app/tools/freight-data.ts"),
     source("app/MobileAdmin.tsx"),
+    source("app/lib/api.ts"),
   ]);
   for (const route of ["/tools/order-search", "/tools/freight-calculator", "/tools/freight-compare"]) assert.match(menu, new RegExp(route));
   assert.ok(menu.indexOf("<LinkQueryCard />") < menu.indexOf("freightTools.map"));
@@ -172,7 +175,8 @@ test("keeps the original public HTML capabilities in the integrated project", as
   assert.match(orderList, /expDesc/);
   assert.match(orderList, /expanded/);
   assert.match(calculator, /sheet_to_json/);
-  assert.match(calculator, /navigator\.clipboard/);
+  assert.match(calculator, /copyToClipboard/);
+  assert.match(api, /navigator\.clipboard\.writeText/);
   assert.match(compare, /XLSX\.writeFile/);
   for (const company of ["京东", "顺丰", "邮政"]) assert.match(freightData, new RegExp(company));
   assert.match(admin, /href="\/tools"/);

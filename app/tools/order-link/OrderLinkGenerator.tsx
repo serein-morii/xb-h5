@@ -5,7 +5,7 @@ import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "./format";
 
 type StoreRow = { id?: number; name?: string; text?: string; value?: string; code?: string; isDelete?: number };
-type Purchaser = { id?: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; createTime?: string; updateTime?: string; orderCodePwd?: string; lastOrderTime?: string; orderCount?: number };
+type Purchaser = { id?: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; createTime?: string; updateTime?: string; orderCodePwd?: string; lastOrderTime?: string; orderCount?: number | string | null };
 type OrderSummary = { id?: number; orderCode?: string; orderNameDesc?: string; orderTypeDesc?: string; orderNum?: number; customer?: string; phone?: string; store?: string; orderStatusDesc?: string; orderTime?: string };
 type Candidate = { purchaser?: Purchaser; orders?: OrderSummary[] };
 
@@ -244,7 +244,8 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
         <div className="generated-link-history-group-header"><span>{group.label}</span><em>{group.items.length}</em></div>
         <div>{group.items.map((item) => {
           const value = orderLink(item);
-          const orderCount = Number(item.orderCount || 0);
+          const parsedOrderCount = Number(item.orderCount);
+          const hasOrderCount = item.orderCount !== undefined && item.orderCount !== null && item.orderCount !== "" && Number.isFinite(parsedOrderCount);
           return <article key={String(item.id || item.shortId)} className="generated-link-card-item">
             <div className="generated-link-card-main">
               <span className="generated-link-avatar">{String(item.name || "买").slice(0, 1)}</span>
@@ -258,10 +259,11 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
                 </p>
                 <p className="generated-link-stats">
                   <CalendarClock size={11} />
-                  {orderCount > 0
-                    ? <>最近下单 <b>{formatRelativeTime(item.lastOrderTime)}</b> · 共 <b>{orderCount}</b> 单</>
-                    : <>暂无订单记录</>}
-                  <span className="generated-link-divider">·</span>
+                  {hasOrderCount ? <>
+                    {item.lastOrderTime ? <>最近下单 <b>{formatRelativeTime(item.lastOrderTime)}</b><span className="generated-link-divider">·</span></> : null}
+                    共 <b>{Math.max(0, parsedOrderCount)}</b> 单
+                    <span className="generated-link-divider">·</span>
+                  </> : null}
                   <span>创建于 {formatRelativeTime(item.createTime)}</span>
                 </p>
               </div>

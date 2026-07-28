@@ -100,28 +100,6 @@ type MenuKey = "home" | "orders" | "orderEntry" | "batchOrder" | "bills" | "expr
 const ALL_MENU_KEYS: MenuKey[] = ["home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks"];
 // 当前访问页面：用 localStorage 缓存（URL 保持干净，不带查询参数）
 const ACTIVE_PAGE_CACHE_KEY = "xb-h5-active-page";
-// 夜间模式：localStorage 记录用户的偏好；null=跟随系统，'light'/'dark'=手动
-const THEME_CACHE_KEY = "xb-h5-theme";
-type ThemePref = "light" | "dark" | "system";
-function readCachedTheme(): ThemePref {
-  if (typeof window === "undefined") return "system";
-  try {
-    const raw = window.localStorage.getItem(THEME_CACHE_KEY) as ThemePref | null;
-    if (raw === "light" || raw === "dark" || raw === "system") return raw;
-  } catch { /* ignore */ }
-  return "system";
-}
-function applyTheme(pref: ThemePref) {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  const wantDark = pref === "dark" || (pref === "system" && typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-  root.classList.toggle("theme-dark", wantDark);
-  root.classList.toggle("theme-light", !wantDark);
-}
-function persistTheme(pref: ThemePref) {
-  try { window.localStorage.setItem(THEME_CACHE_KEY, pref); } catch { /* ignore */ }
-  applyTheme(pref);
-}
 function readCachedActivePage(): MenuKey {
   if (typeof window === "undefined") return "home";
   try {
@@ -2089,6 +2067,7 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   const [loading, setLoading] = useState(true);
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
   const [filters, setFilters] = useState<DataRow>({ pageNum: 1, pageSize: 20 });
+  const [pageKeyword, setPageKeyword] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
   const [detail, setDetail] = useState<DataRow | null>(null);
@@ -2154,11 +2133,35 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   // 付款状态快捷筛选数量（基于全量 rows 客户端聚合）
   const payCounts = useMemo(() => ({ paid: rows.filter((row) => Number(row.payStatus) === 1).length, unpaid: rows.filter((row) => Number(row.payStatus) !== 1).length }), [rows]);
   const visibleRows = useMemo(() => {
-    if (!statusFilter) return rows;
-    if (statusFilter === "pending") return rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`));
-    if (statusFilter === "shipping") return rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`));
-    return rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`));
-  }, [rows, statusFilter]);
+    const statusRows = !statusFilter
+      ? rows
+      : statusFilter === "pending"
+        ? rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`))
+        : statusFilter === "shipping"
+          ? rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`))
+          : rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+    const keywords = pageKeyword.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    if (!keywords.length) return statusRows;
+    return statusRows.filter((row) => {
+      const searchableText = [
+        row.orderCode,
+        row.orderNameDesc,
+        optionLabel(row.orderName, dictionaries.products),
+        row.orderTypeDesc,
+        optionLabel(row.orderType, dictionaries.sizes),
+        row.purchaser,
+        row.customer,
+        row.phone,
+        row.address,
+        row.expComDesc,
+        optionLabel(row.expCom, dictionaries.expressCompanies),
+        row.expCode,
+        row.orderStatusDesc,
+        row.expNewDesc,
+      ].filter(Boolean).join(" ").toLocaleLowerCase();
+      return keywords.every((keyword) => searchableText.includes(keyword));
+    });
+  }, [dictionaries.expressCompanies, dictionaries.products, dictionaries.sizes, pageKeyword, rows, statusFilter]);
 
   function toggle(id: unknown) {
     const value = String(id);
@@ -2352,16 +2355,17 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         <label className="quick-search">
           <Search size={15} strokeWidth={2.2} />
           <input
-            value={filters.orderCode || ""}
-            onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value, pageNum: 1 }))}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); load(); } }}
-            placeholder="搜索订单号"
+            value={pageKeyword}
+            onChange={(e) => setPageKeyword(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+            placeholder="检索本页关键信息"
+            aria-label="检索当前页面已加载的订单内容"
             enterKeyHint="search"
           />
-          {filters.orderCode ? <button className="search-clear" type="button" aria-label="清空" onClick={() => setFilters((current: DataRow) => ({ ...current, orderCode: "", pageNum: 1 }))}><X size={14} /></button> : null}
+          {pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}
         </label>
         <button
-          className={`filter-chip${[filters.orderStatus, filters.payStatus, filters.orderName, filters.orderType, filters.customer, filters.phone, filters.purchaser, filters.store, filters.expCom, filters.expCode].some((value) => String(value || "").trim()) ? " active" : ""}`}
+          className={`filter-chip${[filters.orderCode, filters.orderStatus, filters.payStatus, filters.orderName, filters.orderType, filters.customer, filters.phone, filters.purchaser, filters.store, filters.expCom, filters.expCode].some((value) => String(value || "").trim()) ? " active" : ""}`}
           type="button"
           onClick={() => setFilterOpen(true)}
         >
@@ -2381,9 +2385,9 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
 
       {selected.size ? <div className="batch-bar"><div><b>已选 {selected.size} 项</b><button type="button" onClick={() => setSelected(new Set())}>取消选择</button></div><div className="batch-scroll"><button onClick={() => requestBatch("cancelsend", "取消待发")}><X size={15} />取消待发</button><button onClick={() => requestBatch("tosend", "设为待发")} disabled={batchActionState.loading && batchActionState.path === "tosend"} className={batchActionState.loading && batchActionState.path === "tosend" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "tosend" ? <LoaderCircle className="spin" size={15} /> : <RotateCw size={15} />}{batchActionState.loading && batchActionState.path === "tosend" ? `待发中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "待发"}</button><button onClick={() => requestBatch("send", "一键发货")} disabled={batchActionState.loading && batchActionState.path === "send"} className={batchActionState.loading && batchActionState.path === "send" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "send" ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />}{batchActionState.loading && batchActionState.path === "send" ? `发货中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "一键发货"}</button><button onClick={() => requestBatch("finish", "一键完成")} disabled={batchActionState.loading && batchActionState.path === "finish"} className={batchActionState.loading && batchActionState.path === "finish" ? "is-loading" : ""}>{batchActionState.loading && batchActionState.path === "finish" ? <LoaderCircle className="spin" size={15} /> : <CircleCheck size={15} />}{batchActionState.loading && batchActionState.path === "finish" ? `完成中 ${batchActionState.success + batchActionState.failed}/${batchActionState.total}` : "完成"}</button><button onClick={refreshLogisticsAll} disabled={refreshState.loading} className={refreshState.loading ? "is-loading" : ""}>{refreshState.loading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}{refreshState.loading ? `刷新中 ${refreshState.success + refreshState.failed}/${refreshState.total}` : "刷新物流"}</button><button onClick={() => markPay("paid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "paid" ? <LoaderCircle className="spin" size={15} /> : <CreditCard size={15} />}{markPayState.loading && markPayState.kind === "paid" ? `付款标记中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "标已付"}</button><button onClick={() => markPay("unpaid")} disabled={markPayState.loading} className={markPayState.loading ? "is-loading" : ""}>{markPayState.loading && markPayState.kind === "unpaid" ? <LoaderCircle className="spin" size={15} /> : <X size={15} />}{markPayState.loading && markPayState.kind === "unpaid" ? `取消中 ${markPayState.success + markPayState.failed}/${markPayState.total}` : "取消付款"}</button><button className="danger" onClick={() => requestDelete()}><Trash2 size={15} />删除</button></div></div> : null}
 
-      <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条{statusFilter ? ` · 筛选后 ${visibleRows.length} 条` : ""}</span></div>{visibleRows.length ? <button type="button" onClick={() => setSelected(visibleRows.every((row) => selected.has(String(row.id))) ? new Set() : new Set(visibleRows.map((row) => String(row.id))))}>{visibleRows.every((row) => selected.has(String(row.id))) ? "取消全选" : "全选本页"}</button> : null}</div>
+      <div className="list-heading"><div><h2>订单列表</h2><span>共 {total} 条{statusFilter || pageKeyword.trim() ? ` · 本页匹配 ${visibleRows.length} 条` : ""}</span></div>{visibleRows.length ? <button type="button" onClick={() => setSelected(visibleRows.every((row) => selected.has(String(row.id))) ? new Set() : new Set(visibleRows.map((row) => String(row.id))))}>{visibleRows.every((row) => selected.has(String(row.id))) ? "取消全选" : "全选本页"}</button> : null}</div>
       <div className="mobile-card-list">
-        {!visibleRows.length ? <EmptyState loading={loading} label={statusFilter ? "筛选结果" : "订单"} /> : visibleRows.map((row) => (
+        {!visibleRows.length ? <EmptyState loading={loading} label={pageKeyword.trim() ? "本页匹配结果" : statusFilter ? "筛选结果" : "订单"} /> : visibleRows.map((row) => (
           <article className={`order-card ${selected.has(String(row.id)) ? "selected" : ""}`} key={String(row.id)}>
             <div className="card-topline"><label className="select-check"><input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggle(row.id)} /><span><Check size={13} /></span></label><button className="order-number" type="button" onClick={() => setCopyTarget(row)}>{row.orderCode || "暂无订单号"}<Copy size={13} /></button><div className="card-topline-badges"><span className={`order-pay-badge pay-${Number(row.payStatus) === 1 ? "paid" : Number(row.payStatus) === 2 ? "refunded" : "unpaid"}`}><CreditCard size={11} />{Number(row.payStatus) === 1 ? "已付款" : Number(row.payStatus) === 2 ? "已退款" : "未付款"}</span><StatusBadge row={row} /></div></div>
             <button className="card-main" type="button" onClick={() => getDetail(row)}>
@@ -2724,6 +2728,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
   const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [query, setQuery] = useState<DataRow>({ pageNum: 1, pageSize: 15 });
+  const [pageKeyword, setPageKeyword] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
@@ -2733,7 +2738,22 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   const fileRef = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => { setLoading(true); try { const result = await apiRequest<DataRow>(`${config.api}/list`, { query }); setRows(Array.isArray(result.rows) ? result.rows : []); setTotal(Number(result.total || 0)); } catch (error) { notify(error instanceof Error ? error.message : `${config.itemName}加载失败`, "error"); } finally { setLoading(false); } }, [config, notify, query]);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { setExpanded(new Set()); }, [config.key]);
+  useEffect(() => { setExpanded(new Set()); setPageKeyword(""); }, [config.key]);
+  const visibleRows = useMemo(() => {
+    const keywords = pageKeyword.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    if (!keywords.length) return rows;
+    return rows.filter((row) => {
+      const searchableText = [
+        ...Object.values(row).map((value) => typeof value === "string" || typeof value === "number" ? String(value) : ""),
+        config.subtitle?.(row),
+        config.note?.(row),
+        ...config.display.map((item) => item.format ? item.format(row) : optionLabel(row[item.key], item.options)),
+        ...(config.expand || []).map((item) => item.format ? item.format(row) : optionLabel(row[item.key], item.options)),
+        ...(config.summary || []).map((item) => item.valueFormat ? item.valueFormat(row) : String(row[item.key] ?? "")),
+      ].filter(Boolean).join(" ").toLocaleLowerCase();
+      return keywords.every((keyword) => searchableText.includes(keyword));
+    });
+  }, [config, pageKeyword, rows]);
   async function edit(row: DataRow) { try { const result = await apiRequest<DataRow>(`${config.api}/${row.id}`); setEditor(result.data || row); } catch (error) { notify(error instanceof Error ? error.message : "数据加载失败", "error"); } }
   function resolveExtra(row: DataRow): { label: string; path: (row: DataRow) => string; method: string; danger?: boolean; confirm?: string } | null {
     if (!config.extraAction) return null;
@@ -2876,7 +2896,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
   return (
     <div className="module-page">
       <div className="module-hero compact-hero"><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>共 {total} 条数据，支持手机端快速维护</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
-      <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={query[config.searchFields[0]?.key] || ""} onChange={(event) => setQuery((current: DataRow) => ({ ...current, [config.searchFields[0]?.key]: event.target.value, pageNum: 1 }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); load(); } }} placeholder={`搜索${config.searchFields[0]?.label || config.itemName}`} enterKeyHint="search" />{query[config.searchFields[0]?.key] ? <button className="search-clear" type="button" aria-label="清空" onClick={() => setQuery((current: DataRow) => ({ ...current, [config.searchFields[0]?.key]: "", pageNum: 1 }))}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
+      <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
         {config.importable ? <><button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button><button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/importTemplate`, {}, `${config.key}_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button><input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { await uploadFile(`${config.api}/importData`, file, { updateSupport: false }); notify("导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} /></> : null}
@@ -2888,14 +2908,14 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
           {syncAllState.loading ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
           {syncAllState.loading ? (syncAllState.total ? `同步中 ${syncAllState.current}/${syncAllState.total} · 成功${syncAllState.success}/失败${syncAllState.failed}` : "同步中…") : "同步所有"}
         </button> : null}
-        {config.batchAction ? <button type="button" className="primary-action" onClick={() => setBatchOpen(true)} disabled={!rows.length}>
+        {config.batchAction ? <button type="button" className="primary-action" onClick={() => setBatchOpen(true)} disabled={!visibleRows.length}>
           <Sparkles size={16} />{config.batchAction.label}
-          <small>· 当前 {rows.length} 条</small>
+          <small>· 当前 {visibleRows.length} 条</small>
         </button> : null}
       </div>
-      <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条</span></div></div>
+      <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条{pageKeyword.trim() ? ` · 本页匹配 ${visibleRows.length} 条` : ""}</span></div></div>
       <div className="mobile-card-list">
-        {!rows.length ? <EmptyState loading={loading} label={config.itemName} /> : rows.map((row) => {
+        {!visibleRows.length ? <EmptyState loading={loading} label={pageKeyword.trim() ? "本页匹配结果" : config.itemName} /> : visibleRows.map((row) => {
           const note = config.note?.(row) || "";
           const summary = config.summary;
           const expand = config.expand;
@@ -2949,7 +2969,7 @@ function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dict
       </Sheet>
       <Sheet open={editor !== null} title={`${editor === "new" ? "新增" : "修改"}${config.itemName}`} onClose={() => setEditor(null)} wide>{editor !== null ? <CrudEditor config={config} initial={editor === "new" ? null : editor} onClose={() => setEditor(null)} onSaved={load} notify={notify} /> : null}</Sheet>
       {config.batchAction ? <Sheet open={batchOpen} title={config.batchAction.title} onClose={() => setBatchOpen(false)} wide>
-        <BatchEditor config={config} rows={rows} onClose={() => setBatchOpen(false)} onSaved={() => { setBatchOpen(false); load(); }} notify={notify} />
+        <BatchEditor config={config} rows={visibleRows} onClose={() => setBatchOpen(false)} onSaved={() => { setBatchOpen(false); load(); }} notify={notify} />
       </Sheet> : null}
       {config.key === "bills" ? <Sheet open={syncModeOpen} title="选择同步方式" onClose={() => setSyncModeOpen(false)}>
         <BillsSyncModeSheet api={config.api} query={query} onClose={() => setSyncModeOpen(false)} onSync={(allRows, force) => { setSyncModeOpen(false); void syncBillRows(allRows, force); }} />
@@ -3348,13 +3368,6 @@ export default function MobileAdmin() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
   useEffect(() => {
-    // 应用主题偏好：localStorage 优先；并订阅系统 dark mode 变化用于 "system" 模式
-    applyTheme(readCachedTheme());
-    if (typeof window !== "undefined" && window.matchMedia) {
-      const mql = window.matchMedia("(prefers-color-scheme: dark)");
-      const onChange = () => { if (readCachedTheme() === "system") applyTheme("system"); };
-      try { mql.addEventListener("change", onChange); } catch { mql.addListener(onChange); }
-    }
     const stored = getStoredToken();
     const savedName = window.localStorage.getItem("xb-mobile-username");
     if (stored) setToken(stored);

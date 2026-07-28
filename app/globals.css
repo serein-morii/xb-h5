@@ -41,8 +41,7 @@
 }
 
 /* 暗色主题：html.theme-dark 触发；自动跟随系统的 @media */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     --ink: var(--dark-ink);
     --muted: var(--dark-muted);
     --line: var(--dark-line);
@@ -55,7 +54,6 @@
     --state-neutral-soft: var(--dark-state-neutral-soft);
     color-scheme: dark;
   }
-}
 
 html.theme-dark {
   --ink: var(--dark-ink);
@@ -1385,17 +1383,15 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .peach-tip-body ol { margin: 0; padding: 0 0 0 22px; display: grid; gap: 6px; }
 .peach-tip-body li { color: #6b5018; font-size: 11.5px; line-height: 1.7; }
 .peach-tip-body li b { color: #a45a14; font-weight: 800; }
-@media (prefers-color-scheme: dark) {
-  .peach-tip-toggle { background: linear-gradient(135deg, rgba(214,167,86,.14), rgba(214,167,86,.08)) !important; border: 1px solid rgba(214,167,86,.28) !important; color: #f0c97a !important; box-shadow: none !important; }
-  .peach-tip-badge { color: #f0c97a !important; background: rgba(0,0,0,.18) !important; }
-  .peach-tip-badge svg { color: #f0c97a !important; }
-  .peach-tip-state { color: rgba(240,201,122,.7) !important; }
-  .peach-tip-chevron { color: #f0c97a !important; }
-  .peach-tip-body { background: rgba(214,167,86,.06) !important; border-color: rgba(214,167,86,.28) !important; }
-  .peach-tip-body h3 { color: #f0c97a !important; }
-  .peach-tip-body li { color: #d8c499 !important; }
-  .peach-tip-body li b { color: #f0c97a !important; }
-}
+html.theme-dark .peach-tip-toggle { background: linear-gradient(135deg, rgba(214,167,86,.14), rgba(214,167,86,.08)) !important; border: 1px solid rgba(214,167,86,.28) !important; color: #f0c97a !important; box-shadow: none !important; }
+html.theme-dark .peach-tip-badge { color: #f0c97a !important; background: rgba(0,0,0,.18) !important; }
+html.theme-dark .peach-tip-badge svg { color: #f0c97a !important; }
+html.theme-dark .peach-tip-state { color: rgba(240,201,122,.7) !important; }
+html.theme-dark .peach-tip-chevron { color: #f0c97a !important; }
+html.theme-dark .peach-tip-body { background: rgba(214,167,86,.06) !important; border-color: rgba(214,167,86,.28) !important; }
+html.theme-dark .peach-tip-body h3 { color: #f0c97a !important; }
+html.theme-dark .peach-tip-body li { color: #d8c499 !important; }
+html.theme-dark .peach-tip-body li b { color: #f0c97a !important; }
 html.theme-dark .peach-tip-toggle { background: linear-gradient(135deg, rgba(214,167,86,.14), rgba(214,167,86,.08)) !important; border: 1px solid rgba(214,167,86,.28) !important; color: #f0c97a !important; box-shadow: none !important; }
 html.theme-dark .peach-tip-badge { color: #f0c97a !important; background: rgba(0,0,0,.18) !important; }
 html.theme-dark .peach-tip-badge svg { color: #f0c97a !important; }
@@ -2670,40 +2666,46 @@ select:focus-visible {
   background: rgba(30, 34, 44, .38);
 }
 
-@media (prefers-color-scheme: dark) {
-  .link-query-backdrop {
+html.theme-dark .link-query-backdrop {
     background: rgba(0, 0, 0, .55);
   }
-  .link-query-dialog {
+
+html.theme-dark .link-query-dialog {
     border-color: var(--ios-separator);
     box-shadow: 0 30px 90px rgba(0, 0, 0, .5) !important;
   }
-  .link-query-dialog > header > button {
+
+html.theme-dark .link-query-dialog > header > button {
     color: var(--ios-secondary-label);
     background: var(--ios-secondary-fill);
   }
-  .link-query-dialog > p {
+
+html.theme-dark .link-query-dialog > p {
     color: var(--ios-secondary-label);
   }
-  .link-query-dialog label > span {
+
+html.theme-dark .link-query-dialog label > span {
     color: var(--ios-secondary-label);
   }
-  .link-query-input {
+
+html.theme-dark .link-query-input {
     color: var(--app-tint);
     background: var(--app-tint-soft);
   }
-  .link-query-input:focus-within {
+
+html.theme-dark .link-query-input:focus-within {
     background: var(--ios-secondary-fill);
     box-shadow: 0 0 0 4px rgba(7, 193, 96, .18);
   }
-  .link-query-example {
+
+html.theme-dark .link-query-example {
     color: var(--ios-secondary-label);
     background: var(--ios-secondary-fill);
   }
-  .link-query-example code {
+
+html.theme-dark .link-query-example code {
     color: var(--app-tint);
   }
-}
 
 .filter-button.active,
 .choice-chip.active,
@@ -5125,8 +5127,7 @@ select:focus-visible {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+html.theme-dark {
     --app-tint: #07c160;
     --app-tint-pressed: #09d86d;
     --app-tint-soft: rgba(7, 193, 96, .17);
@@ -5143,164 +5144,62 @@ select:focus-visible {
     --ios-shadow: 0 10px 28px rgba(0, 0, 0, .24);
   }
 
-  html,
-  body,
-  .admin-shell,
-  .app-main,
-  .public-tools-shell,
-  .product-shell,
-  .login-page,
-  .dashboard-page,
-  .tool-page,
-  .admin-tool-module {
+html.theme-dark, html.theme-dark body, html.theme-dark .admin-shell, html.theme-dark .app-main, html.theme-dark .public-tools-shell, html.theme-dark .product-shell, html.theme-dark .login-page, html.theme-dark .dashboard-page, html.theme-dark .tool-page, html.theme-dark .admin-tool-module {
     color: var(--ios-label);
     background: var(--ios-grouped-bg) !important;
   }
 
-  .public-tools-header,
-  .workspace-dock {
+html.theme-dark .public-tools-header, html.theme-dark .workspace-dock {
     border-color: var(--ios-separator);
     background: rgba(27, 33, 30, .86) !important;
   }
 
-  .home-attention,
-  .detail-code,
-  .profile-card,
-  .tracking-manual,
-  .purchaser-order-hero,
-  .dashboard-welcome {
+html.theme-dark .home-attention, html.theme-dark .detail-code, html.theme-dark .profile-card, html.theme-dark .tracking-manual, html.theme-dark .purchaser-order-hero, html.theme-dark .dashboard-welcome {
     color: var(--primary-action-label);
     background: var(--primary-action) !important;
   }
 
-  .home-attention > span,
-  .home-attention p,
-  .detail-code small,
-  .profile-card small,
-  .profile-card p,
-  .tracking-manual p,
-  .purchaser-order-hero small,
-  .purchaser-order-hero p,
-  .dashboard-welcome .eyebrow,
-  .dashboard-welcome p {
+html.theme-dark .home-attention > span, html.theme-dark .home-attention p, html.theme-dark .detail-code small, html.theme-dark .profile-card small, html.theme-dark .profile-card p, html.theme-dark .tracking-manual p, html.theme-dark .purchaser-order-hero small, html.theme-dark .purchaser-order-hero p, html.theme-dark .dashboard-welcome .eyebrow, html.theme-dark .dashboard-welcome p {
     color: rgba(6, 38, 20, .72) !important;
   }
 
-  .home-stat-strip,
-  .home-action-rail,
-  .home-feed,
-  .home-logistics-row article,
-  .module-hero,
-  .admin-tool-module .tool-hero,
-  .tool-page .tool-form-card,
-  .tool-page .freight-result-card,
-  .tool-page .order-link-login,
-  .tool-page .purchaser-match-panel,
-  .tool-page .generated-link-card,
-  .tool-page .generated-link-history,
-  .order-card,
-  .data-card,
-  .toolbar-card,
-  .sheet,
-  .purchaser-help-modal,
-  .purchaser-missing-modal,
-  .purchaser-success-modal,
-  .purchaser-captcha-modal,
-  .purchaser-create-modal,
-  .purchaser-order-form > section,
-  .tracking-card,
-  .dashboard-order-list,
-  .dashboard-logistics,
-  .dashboard-purchaser-list,
-  .profile-info,
-  .public-order-card,
-  .admin-entry-loading,
-  .admin-entry-buyer-list > button {
+html.theme-dark .home-stat-strip, html.theme-dark .home-action-rail, html.theme-dark .home-feed, html.theme-dark .home-logistics-row article, html.theme-dark .module-hero, html.theme-dark .admin-tool-module .tool-hero, html.theme-dark .tool-page .tool-form-card, html.theme-dark .tool-page .freight-result-card, html.theme-dark .tool-page .order-link-login, html.theme-dark .tool-page .purchaser-match-panel, html.theme-dark .tool-page .generated-link-card, html.theme-dark .tool-page .generated-link-history, html.theme-dark .order-card, html.theme-dark .data-card, html.theme-dark .toolbar-card, html.theme-dark .sheet, html.theme-dark .purchaser-help-modal, html.theme-dark .purchaser-missing-modal, html.theme-dark .purchaser-success-modal, html.theme-dark .purchaser-captcha-modal, html.theme-dark .purchaser-create-modal, html.theme-dark .purchaser-order-form > section, html.theme-dark .tracking-card, html.theme-dark .dashboard-order-list, html.theme-dark .dashboard-logistics, html.theme-dark .dashboard-purchaser-list, html.theme-dark .profile-info, html.theme-dark .public-order-card, html.theme-dark .admin-entry-loading, html.theme-dark .admin-entry-buyer-list > button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-grouped-surface) !important;
     box-shadow: none !important;
   }
 
-  .detail-grid > div,
-  .tool-order-address,
-  .tool-tracking-toggle,
-  .tracking-guide,
-  .dashboard-pulse,
-  .admin-entry-buyer-search,
-  .admin-entry-create,
-  .admin-entry-selected-buyer,
-  .profile-back,
-  .purchaser-order-tabs,
-  [class*="address"],
-  [class*="location"] {
+html.theme-dark .detail-grid > div, html.theme-dark .tool-order-address, html.theme-dark .tool-tracking-toggle, html.theme-dark .tracking-guide, html.theme-dark .dashboard-pulse, html.theme-dark .admin-entry-buyer-search, html.theme-dark .admin-entry-create, html.theme-dark .admin-entry-selected-buyer, html.theme-dark .profile-back, html.theme-dark .purchaser-order-tabs {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-secondary-fill) !important;
   }
 
-  .detail-grid span,
-  .tool-order-address p,
-  .tool-tracking-toggle small,
-  .profile-info span,
-  .tracking-guide p,
-  .purchaser-order-form header p,
-  .admin-entry-selected-buyer p,
-  .admin-entry-selected-buyer small,
-  [class*="address"] p,
-  [class*="address"] small,
-  [class*="location"] small {
+html.theme-dark .detail-grid span, html.theme-dark .tool-order-address p, html.theme-dark .tool-tracking-toggle small, html.theme-dark .profile-info span, html.theme-dark .tracking-guide p, html.theme-dark .purchaser-order-form header p, html.theme-dark .admin-entry-selected-buyer p, html.theme-dark .admin-entry-selected-buyer small {
     color: var(--ios-secondary-label) !important;
   }
 
-  .input-shell,
-  .tool-page .tool-input,
-  .tool-page .tool-textarea textarea,
-  .mobile-form input:not([type="checkbox"]),
-  .mobile-form textarea,
-  .mobile-form select,
-  .purchaser-order-form input,
-  .purchaser-order-form textarea,
-  .purchaser-order-form select,
-  .purchaser-create-modal input,
-  .purchaser-create-modal select,
-  .purchaser-create-modal textarea,
-  .admin-entry-create select,
-  .admin-order-entry-form select,
-  .quick-search,
-  .captcha-login > button {
+html.theme-dark .input-shell, html.theme-dark .tool-page .tool-input, html.theme-dark .tool-page .tool-textarea textarea, html.theme-dark .mobile-form input:not([type="checkbox"]), html.theme-dark .mobile-form textarea, html.theme-dark .mobile-form select, html.theme-dark .purchaser-order-form input, html.theme-dark .purchaser-order-form textarea, html.theme-dark .purchaser-order-form select, html.theme-dark .purchaser-create-modal input, html.theme-dark .purchaser-create-modal select, html.theme-dark .purchaser-create-modal textarea, html.theme-dark .admin-entry-create select, html.theme-dark .admin-order-entry-form select, html.theme-dark .quick-search, html.theme-dark .captcha-login > button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: #272e2a !important;
   }
 
-  .mobile-form input:disabled,
-  option {
+html.theme-dark .mobile-form input:disabled, html.theme-dark option {
     color: var(--ios-secondary-label);
     background: #272e2a;
   }
 
-  .dashboard-order-list > button,
-  .dashboard-purchaser-list article,
-  .home-order-list > button,
-  .home-buyer-list article,
-  .home-logistics-row article,
-  .profile-info > div {
+html.theme-dark .dashboard-order-list > button, html.theme-dark .dashboard-purchaser-list article, html.theme-dark .home-order-list > button, html.theme-dark .home-buyer-list article, html.theme-dark .home-logistics-row article, html.theme-dark .profile-info > div {
     border-color: var(--ios-separator) !important;
     background: var(--ios-grouped-surface) !important;
   }
 
-  .login-submit,
-  .tool-page .tool-primary,
-  .tool-page .tool-primary-blue,
-  .tool-page .tool-primary-amber,
-  .purchaser-submit,
-  .home-create-order,
-  .workspace-dock .dock-create {
+html.theme-dark .login-submit, html.theme-dark .tool-page .tool-primary, html.theme-dark .tool-page .tool-primary-blue, html.theme-dark .tool-page .tool-primary-amber, html.theme-dark .purchaser-submit, html.theme-dark .home-create-order, html.theme-dark .workspace-dock .dock-create {
     color: var(--primary-action-label) !important;
     background: var(--primary-action) !important;
   }
-}
 
 /* Complete public toolbox treatment, including every utility route. */
 .public-tools-shell {
@@ -7437,8 +7336,7 @@ select:focus-visible {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+html.theme-dark {
     --app-tint: #ff9f0a;
     --app-tint-pressed: #ffb340;
     --app-tint-soft: rgba(255, 159, 10, .16);
@@ -7459,38 +7357,29 @@ select:focus-visible {
     --ios-shadow: 0 10px 30px rgba(0, 0, 0, .22);
   }
 
-  .public-tools-header,
-  .workspace-dock {
+html.theme-dark .public-tools-header, html.theme-dark .workspace-dock {
     border-color: rgba(84, 84, 88, .55);
     background: rgba(28, 28, 30, .78);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
   }
 
-  .tool-page .tool-input,
-  .tool-page .tool-textarea textarea,
-  .input-shell,
-  .quick-search,
-  .tool-page .tool-captcha > button,
-  .tool-page .tool-upload,
-  .tool-page .tool-upload-blue,
-  .captcha-login > button {
+html.theme-dark .tool-page .tool-input, html.theme-dark .tool-page .tool-textarea textarea, html.theme-dark .input-shell, html.theme-dark .quick-search, html.theme-dark .tool-page .tool-captcha > button, html.theme-dark .tool-page .tool-upload, html.theme-dark .tool-page .tool-upload-blue, html.theme-dark .captcha-login > button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-secondary-label);
     background: #2c2c2e !important;
   }
 
-  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n):hover {
+html.theme-dark .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n):hover {
     background: rgba(118, 118, 128, .14) !important;
   }
 
-  .status-success {
+html.theme-dark .status-success {
     color: #30d158;
   }
 
-  .status-warning {
+html.theme-dark .status-warning {
     color: #ff9f0a;
   }
-}
 
 @media (prefers-reduced-transparency: reduce) {
   .public-tools-header,
@@ -7535,8 +7424,7 @@ select:focus-visible {
   .home-action-rail > button, .home-action-rail > button:first-child { min-height: 86px; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+html.theme-dark {
     --app-tint: #07c160;
     --app-tint-pressed: #09d86d;
     --app-tint-soft: rgba(7, 193, 96, .17);
@@ -7552,70 +7440,131 @@ select:focus-visible {
     --ios-tertiary-label: #738077;
   }
 
-  html, body, .admin-shell, .app-main, .public-tools-shell, .product-shell, .login-page, .dashboard-page, .tool-page, .admin-tool-module { color: var(--ios-label); background: var(--ios-grouped-bg) !important; }
-  .public-tools-header, .workspace-dock { border-color: var(--ios-separator); background: rgba(27, 33, 30, .86) !important; box-shadow: 0 14px 44px rgba(0, 0, 0, .28) !important; }
-  .home-attention, .detail-code, .profile-card, .tracking-manual, .purchaser-order-hero, .dashboard-welcome { color: var(--primary-action-label); background: var(--primary-action) !important; }
-  .home-attention > span, .home-attention p, .detail-code small, .profile-card small, .profile-card p, .tracking-manual p, .purchaser-order-hero small, .purchaser-order-hero p, .dashboard-welcome .eyebrow, .dashboard-welcome p { color: rgba(6, 38, 20, .72) !important; }
-  .home-stat-strip, .home-action-rail, .home-feed, .home-logistics-row article, .module-hero, .admin-tool-module .tool-hero, .tool-page > .tool-hero, .tool-page .tool-form-card, .tool-page .freight-result-card, .tool-page .order-link-login, .tool-page .purchaser-match-panel, .tool-page .generated-link-card, .tool-page .generated-link-history, .order-card, .data-card, .toolbar-card, .sheet, .purchaser-help-modal, .purchaser-missing-modal, .purchaser-success-modal, .purchaser-captcha-modal, .purchaser-edit-modal, .purchaser-edit-form > section, .purchaser-create-modal, .purchaser-order-form > section, .tracking-card, .dashboard-order-list, .dashboard-logistics, .dashboard-purchaser-list, .profile-info, .public-order-card, .admin-entry-loading, .admin-entry-buyer-list > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
-  .detail-grid > div, .tool-order-address, .tool-tracking-toggle, .tracking-guide, .dashboard-pulse, .admin-entry-buyer-search, .admin-entry-create, .admin-entry-selected-buyer, .profile-back, .purchaser-order-tabs, [class*="address"], [class*="location"] { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; }
-  /* 专属下单"我的订单"tab 容器是深色，需要把里面未激活的按钮文字 + 数量徽章背景调亮才看得见 */
-  .purchaser-order-tabs button { color: var(--ios-secondary-label) !important; }
-  .purchaser-order-tabs button.active { color: #fff !important; }
-  .purchaser-order-tabs button span { color: var(--app-tint) !important; background: rgba(7, 193, 96, .18) !important; box-shadow: inset 0 0 0 .5px rgba(7, 193, 96, .4) !important; }
-  /* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
-  .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
-  .detail-grid span, .tool-order-address p, .tool-tracking-toggle small, .profile-info span, .tracking-guide p, .purchaser-order-form header p, .admin-entry-selected-buyer p, .admin-entry-selected-buyer small, [class*="address"] p, [class*="address"] small, [class*="location"] small { color: var(--ios-secondary-label) !important; }
-  .input-shell, .tool-page .tool-input, .tool-page .tool-textarea textarea, .mobile-form input:not([type="checkbox"]), .mobile-form textarea, .mobile-form select, .purchaser-order-form input, .purchaser-order-form textarea, .purchaser-order-form select, .purchaser-edit-form section input, .purchaser-edit-form section textarea, .purchaser-edit-form section select, .purchaser-create-modal input, .purchaser-create-modal select, .admin-entry-create select, .admin-order-entry-form select, .quick-search, .captcha-login > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: #272e2a !important; }
-  .mobile-form input:disabled, option { color: var(--ios-secondary-label); background: #272e2a; }
-  .dashboard-order-list > button, .dashboard-purchaser-list article, .home-order-list > button, .home-buyer-list article, .home-logistics-row article, .profile-info > div { border-color: var(--ios-separator) !important; background: var(--ios-grouped-surface) !important; }
-  /* Home uses solid, stepped dark surfaces. Green is a signal, never a large background. */
-  .home-attention { border: .5px solid var(--app-tint-line); color: var(--ios-label); background: #1d2821 !important; }
-  .home-attention > span, .home-attention p { color: var(--ios-secondary-label) !important; }
-  .home-attention strong, .home-attention em { color: var(--app-tint) !important; }
-  .home-stat-strip, .home-stat-strip button { border-color: var(--ios-separator) !important; color: var(--ios-label); background: var(--ios-grouped-surface) !important; }
-  .home-stat-strip small, .home-stat-strip span { color: var(--ios-secondary-label) !important; }
-  .home-feed, .home-order-list > button, .home-buyer-list article { border-color: var(--ios-separator) !important; color: var(--ios-label); background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
-  .home-order-list, .home-buyer-list { border-top-color: var(--ios-separator) !important; }
-  .home-order-list > button, .home-buyer-list article { border-bottom-color: var(--ios-separator) !important; }
-  .home-order-list small, .home-buyer-list p { color: var(--ios-secondary-label) !important; }
-  .recipient-block, .purchaser-captcha-summary { border: .5px solid var(--ios-separator); color: var(--ios-label); background: var(--ios-secondary-fill) !important; }
-  .recipient-block p, .purchaser-captcha-summary > div > span:first-child { color: var(--ios-secondary-label) !important; }
-  .recipient-block a { color: var(--app-tint) !important; }
-  .latest-route { color: var(--ios-secondary-label); background: var(--app-tint-soft) !important; }
-  .login-submit, .tool-page .tool-primary, .tool-page .tool-primary-blue, .tool-page .tool-primary-amber, .purchaser-submit, .home-create-order, .workspace-dock .dock-create { color: var(--primary-action-label) !important; background: var(--primary-action) !important; }
-  /* Order-link page: green accents (#14794e / #e8f7ef / #ecf2ee / #c5d4cb) need dark-mode tokens */
-  .purchaser-history small { color: var(--ios-secondary-label) !important; }
-  .purchaser-history em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .purchaser-create-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 1px var(--app-tint-line) !important; }
-  .generated-link-card p { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
-  .generated-link-card button, .generated-link-card a { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
-  .generated-link-history article > button, .generated-link-history article > a { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .generated-link-history article > button:hover, .generated-link-history article > a:hover { background: rgba(7, 193, 96, .26) !important; }
-  .generated-link-history > header em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .generated-link-history-empty svg { color: var(--ios-tertiary-label) !important; }
-  .generated-link-card-sticky { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 38px rgba(0,0,0,.4) !important; }
-  .generated-link-url { color: var(--app-tint) !important; background: transparent !important; }
-  .generated-link-pwd { color: var(--ios-secondary-label) !important; background: transparent !important; }
-  .generated-link-pwd b { color: #ffb84d !important; }
-  .generated-link-actions > a, .generated-link-actions > button { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
-  .generated-link-actions > button:first-child { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
-  .generated-link-history-filter .filter-clear { color: var(--ios-tertiary-label) !important; }
-  .generated-link-history-group-header { color: var(--app-tint) !important; }
-  .generated-link-history-group-header > em { color: var(--ios-tertiary-label) !important; background: rgba(7, 193, 96, .14) !important; }
-  .generated-link-avatar { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
-  .generated-link-short-id { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .generated-link-card-actions { border-top-color: rgba(255,255,255,.08) !important; }
-  .generated-link-action-primary { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
-  .generated-link-action-secondary { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .order-link-login a { background: linear-gradient(135deg, #0c6b45, #1f9c63) !important; box-shadow: 0 8px 20px rgba(7, 193, 96, .28) !important; }
-  /* Order card: copy icon in header + compact edit/delete pills */
-  .tool-copy-icon { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
-  .tool-copy-icon:hover { background: rgba(7, 193, 96, .26) !important; }
-  .tool-edit { color: var(--system-blue) !important; background: rgba(10, 132, 255, .14) !important; border-color: rgba(10, 132, 255, .32) !important; }
-  .tool-edit:hover { background: rgba(10, 132, 255, .22) !important; }
-  .tool-delete { color: var(--ios-red) !important; background: rgba(255, 69, 58, .14) !important; border-color: rgba(255, 69, 58, .32) !important; }
-  .tool-delete:hover { background: rgba(255, 69, 58, .22) !important; }
-}
+html.theme-dark, html.theme-dark body, html.theme-dark .admin-shell, html.theme-dark .app-main, html.theme-dark .public-tools-shell, html.theme-dark .product-shell, html.theme-dark .login-page, html.theme-dark .dashboard-page, html.theme-dark .tool-page, html.theme-dark .admin-tool-module { color: var(--ios-label); background: var(--ios-grouped-bg) !important; }
+
+html.theme-dark .public-tools-header, html.theme-dark .workspace-dock { border-color: var(--ios-separator); background: rgba(27, 33, 30, .86) !important; box-shadow: 0 14px 44px rgba(0, 0, 0, .28) !important; }
+
+html.theme-dark .home-attention, html.theme-dark .detail-code, html.theme-dark .profile-card, html.theme-dark .tracking-manual, html.theme-dark .purchaser-order-hero, html.theme-dark .dashboard-welcome { color: var(--primary-action-label); background: var(--primary-action) !important; }
+
+html.theme-dark .home-attention > span, html.theme-dark .home-attention p, html.theme-dark .detail-code small, html.theme-dark .profile-card small, html.theme-dark .profile-card p, html.theme-dark .tracking-manual p, html.theme-dark .purchaser-order-hero small, html.theme-dark .purchaser-order-hero p, html.theme-dark .dashboard-welcome .eyebrow, html.theme-dark .dashboard-welcome p { color: rgba(6, 38, 20, .72) !important; }
+
+html.theme-dark .home-stat-strip, html.theme-dark .home-action-rail, html.theme-dark .home-feed, html.theme-dark .home-logistics-row article, html.theme-dark .module-hero, html.theme-dark .admin-tool-module .tool-hero, html.theme-dark .tool-page > .tool-hero, html.theme-dark .tool-page .tool-form-card, html.theme-dark .tool-page .freight-result-card, html.theme-dark .tool-page .order-link-login, html.theme-dark .tool-page .purchaser-match-panel, html.theme-dark .tool-page .generated-link-card, html.theme-dark .tool-page .generated-link-history, html.theme-dark .order-card, html.theme-dark .data-card, html.theme-dark .toolbar-card, html.theme-dark .sheet, html.theme-dark .purchaser-help-modal, html.theme-dark .purchaser-missing-modal, html.theme-dark .purchaser-success-modal, html.theme-dark .purchaser-captcha-modal, html.theme-dark .purchaser-edit-modal, html.theme-dark .purchaser-edit-form > section, html.theme-dark .purchaser-create-modal, html.theme-dark .purchaser-order-form > section, html.theme-dark .tracking-card, html.theme-dark .dashboard-order-list, html.theme-dark .dashboard-logistics, html.theme-dark .dashboard-purchaser-list, html.theme-dark .profile-info, html.theme-dark .public-order-card, html.theme-dark .admin-entry-loading, html.theme-dark .admin-entry-buyer-list > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
+
+html.theme-dark .detail-grid > div, html.theme-dark .tool-order-address, html.theme-dark .tool-tracking-toggle, html.theme-dark .tracking-guide, html.theme-dark .dashboard-pulse, html.theme-dark .admin-entry-buyer-search, html.theme-dark .admin-entry-create, html.theme-dark .admin-entry-selected-buyer, html.theme-dark .profile-back, html.theme-dark .purchaser-order-tabs { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; }
+
+/* 专属下单"我的订单"tab 容器是深色，需要把里面未激活的按钮文字 + 数量徽章背景调亮才看得见 */
+
+html.theme-dark .purchaser-order-tabs button { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .purchaser-order-tabs button.active { color: #fff !important; }
+
+html.theme-dark .purchaser-order-tabs button span { color: var(--app-tint) !important; background: rgba(7, 193, 96, .18) !important; box-shadow: inset 0 0 0 .5px rgba(7, 193, 96, .4) !important; }
+
+/* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
+
+html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
+
+html.theme-dark .detail-grid span, html.theme-dark .tool-order-address p, html.theme-dark .tool-tracking-toggle small, html.theme-dark .profile-info span, html.theme-dark .tracking-guide p, html.theme-dark .purchaser-order-form header p, html.theme-dark .admin-entry-selected-buyer p, html.theme-dark .admin-entry-selected-buyer small { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .input-shell, html.theme-dark .tool-page .tool-input, html.theme-dark .tool-page .tool-textarea textarea, html.theme-dark .mobile-form input:not([type="checkbox"]), html.theme-dark .mobile-form textarea, html.theme-dark .mobile-form select, html.theme-dark .purchaser-order-form input, html.theme-dark .purchaser-order-form textarea, html.theme-dark .purchaser-order-form select, html.theme-dark .purchaser-edit-form section input, html.theme-dark .purchaser-edit-form section textarea, html.theme-dark .purchaser-edit-form section select, html.theme-dark .purchaser-create-modal input, html.theme-dark .purchaser-create-modal select, html.theme-dark .admin-entry-create select, html.theme-dark .admin-order-entry-form select, html.theme-dark .quick-search, html.theme-dark .captcha-login > button { border-color: var(--ios-separator) !important; color: var(--ios-label) !important; background: #272e2a !important; }
+
+html.theme-dark .mobile-form input:disabled, html.theme-dark option { color: var(--ios-secondary-label); background: #272e2a; }
+
+html.theme-dark .dashboard-order-list > button, html.theme-dark .dashboard-purchaser-list article, html.theme-dark .home-order-list > button, html.theme-dark .home-buyer-list article, html.theme-dark .home-logistics-row article, html.theme-dark .profile-info > div { border-color: var(--ios-separator) !important; background: var(--ios-grouped-surface) !important; }
+
+/* Home uses solid, stepped dark surfaces. Green is a signal, never a large background. */
+
+html.theme-dark .home-attention { border: .5px solid var(--app-tint-line); color: var(--ios-label); background: #1d2821 !important; }
+
+html.theme-dark .home-attention > span, html.theme-dark .home-attention p { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .home-attention strong, html.theme-dark .home-attention em { color: var(--app-tint) !important; }
+
+html.theme-dark .home-stat-strip, html.theme-dark .home-stat-strip button { border-color: var(--ios-separator) !important; color: var(--ios-label); background: var(--ios-grouped-surface) !important; }
+
+html.theme-dark .home-stat-strip small, html.theme-dark .home-stat-strip span { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .home-feed, html.theme-dark .home-order-list > button, html.theme-dark .home-buyer-list article { border-color: var(--ios-separator) !important; color: var(--ios-label); background: var(--ios-grouped-surface) !important; box-shadow: none !important; }
+
+html.theme-dark .home-order-list, html.theme-dark .home-buyer-list { border-top-color: var(--ios-separator) !important; }
+
+html.theme-dark .home-order-list > button, html.theme-dark .home-buyer-list article { border-bottom-color: var(--ios-separator) !important; }
+
+html.theme-dark .home-order-list small, html.theme-dark .home-buyer-list p { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .recipient-block, html.theme-dark .purchaser-captcha-summary { border: .5px solid var(--ios-separator); color: var(--ios-label); background: var(--ios-secondary-fill) !important; }
+
+html.theme-dark .recipient-block p, html.theme-dark .purchaser-captcha-summary > div > span:first-child { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .recipient-block a { color: var(--app-tint) !important; }
+
+html.theme-dark .latest-route { color: var(--ios-secondary-label); background: var(--app-tint-soft) !important; }
+
+html.theme-dark .login-submit, html.theme-dark .tool-page .tool-primary, html.theme-dark .tool-page .tool-primary-blue, html.theme-dark .tool-page .tool-primary-amber, html.theme-dark .purchaser-submit, html.theme-dark .home-create-order, html.theme-dark .workspace-dock .dock-create { color: var(--primary-action-label) !important; background: var(--primary-action) !important; }
+
+/* Order-link page: green accents (#14794e / #e8f7ef / #ecf2ee / #c5d4cb) need dark-mode tokens */
+
+html.theme-dark .purchaser-history small { color: var(--ios-secondary-label) !important; }
+
+html.theme-dark .purchaser-history em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+html.theme-dark .purchaser-create-new { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; box-shadow: inset 0 0 0 1px var(--app-tint-line) !important; }
+
+html.theme-dark .generated-link-card p { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
+
+html.theme-dark .generated-link-card button, html.theme-dark .generated-link-card a { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
+
+html.theme-dark .generated-link-history article > button, html.theme-dark .generated-link-history article > a { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+html.theme-dark .generated-link-history article > button:hover, html.theme-dark .generated-link-history article > a:hover { background: rgba(7, 193, 96, .26) !important; }
+
+html.theme-dark .generated-link-history > header em { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+html.theme-dark .generated-link-history-empty svg { color: var(--ios-tertiary-label) !important; }
+
+html.theme-dark .generated-link-card-sticky { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 38px rgba(0,0,0,.4) !important; }
+
+html.theme-dark .generated-link-url { color: var(--app-tint) !important; background: transparent !important; }
+
+html.theme-dark .generated-link-pwd { color: var(--ios-secondary-label) !important; background: transparent !important; }
+
+html.theme-dark .generated-link-pwd b { color: #ffb84d !important; }
+
+html.theme-dark .generated-link-actions > a, html.theme-dark .generated-link-actions > button { color: var(--app-tint) !important; background: var(--ios-secondary-fill) !important; }
+
+html.theme-dark .generated-link-actions > button:first-child { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
+
+html.theme-dark .generated-link-history-filter .filter-clear { color: var(--ios-tertiary-label) !important; }
+
+html.theme-dark .generated-link-history-group-header { color: var(--app-tint) !important; }
+
+html.theme-dark .generated-link-history-group-header > em { color: var(--ios-tertiary-label) !important; background: rgba(7, 193, 96, .14) !important; }
+
+html.theme-dark .generated-link-avatar { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
+
+html.theme-dark .generated-link-short-id { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+html.theme-dark .generated-link-card-actions { border-top-color: rgba(255,255,255,.08) !important; }
+
+html.theme-dark .generated-link-action-primary { color: #062614 !important; background: linear-gradient(135deg, #4dd49b, #07c160) !important; }
+
+html.theme-dark .generated-link-action-secondary { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+
+html.theme-dark .order-link-login a { background: linear-gradient(135deg, #0c6b45, #1f9c63) !important; box-shadow: 0 8px 20px rgba(7, 193, 96, .28) !important; }
+
+/* Order card: copy icon in header + compact edit/delete pills */
+
+html.theme-dark .tool-copy-icon { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+
+html.theme-dark .tool-copy-icon:hover { background: rgba(7, 193, 96, .26) !important; }
+
+html.theme-dark .tool-edit { color: var(--system-blue) !important; background: rgba(10, 132, 255, .14) !important; border-color: rgba(10, 132, 255, .32) !important; }
+
+html.theme-dark .tool-edit:hover { background: rgba(10, 132, 255, .22) !important; }
+
+html.theme-dark .tool-delete { color: var(--ios-red) !important; background: rgba(255, 69, 58, .14) !important; border-color: rgba(255, 69, 58, .32) !important; }
+
+html.theme-dark .tool-delete:hover { background: rgba(255, 69, 58, .22) !important; }
 
 /* Shortcut actions are six independent destinations, not a card inside another card. */
 .home-action-rail {
@@ -7666,19 +7615,15 @@ select:focus-visible {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .home-action-rail > button,
-  .home-action-rail > button:first-child {
+html.theme-dark .home-action-rail > button, html.theme-dark .home-action-rail > button:first-child {
     border-color: var(--ios-separator);
     color: var(--ios-label);
     background: var(--ios-grouped-surface) !important;
   }
 
-  .home-action-rail > button:hover,
-  .home-action-rail > button:first-child:hover {
+html.theme-dark .home-action-rail > button:hover, html.theme-dark .home-action-rail > button:first-child:hover {
     background: var(--ios-secondary-fill) !important;
   }
-}
 
 /* Product initials are identifiers, not decorative gradient badges. */
 .product-avatar {
@@ -7688,97 +7633,76 @@ select:focus-visible {
   box-shadow: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  .product-avatar {
+html.theme-dark .product-avatar {
     color: var(--app-tint);
     border-color: var(--app-tint-line);
     background: var(--app-tint-soft);
   }
-}
 
 /* Function menu follows the same solid dark list system as the rest of the app. */
-@media (prefers-color-scheme: dark) {
-  .menu-user-button {
+html.theme-dark .menu-user-button {
     border-color: var(--ios-separator);
     color: var(--ios-secondary-label);
     background: var(--ios-secondary-fill);
   }
-
-  .menu-user-button > span {
+html.theme-dark .menu-user-button > span {
     color: var(--app-tint) !important;
     background: var(--app-tint-soft) !important;
   }
-
-  .menu-public-tools,
-  .menu-public-tools.menu-home-entry {
+html.theme-dark .menu-public-tools, html.theme-dark .menu-public-tools.menu-home-entry {
     border: .5px solid var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-grouped-surface) !important;
     box-shadow: none !important;
   }
-
-  .menu-home-entry.active {
+html.theme-dark .menu-home-entry.active {
     border-color: var(--app-tint-line) !important;
     background: var(--app-tint-soft) !important;
   }
-
-  .menu-public-tools > svg,
-  .menu-public-tools > span > b {
+html.theme-dark .menu-public-tools > svg, html.theme-dark .menu-public-tools > span > b {
     color: var(--app-tint) !important;
   }
-
-  .menu-home-entry > span > b {
+html.theme-dark .menu-home-entry > span > b {
     color: var(--ios-label) !important;
   }
-
-  .menu-public-tools small {
+html.theme-dark .menu-public-tools small {
     color: var(--ios-secondary-label) !important;
   }
-
-  .secondary-actions button {
+html.theme-dark .secondary-actions button {
     border-color: var(--ios-separator);
     color: var(--ios-secondary-label);
     background: var(--ios-secondary-fill) !important;
     box-shadow: none;
   }
-
-  .secondary-actions button > svg {
+html.theme-dark .secondary-actions button > svg {
     color: var(--app-tint);
   }
-
-  .secondary-actions button:hover,
-  .secondary-actions button:active {
+html.theme-dark .secondary-actions button:hover, html.theme-dark .secondary-actions button:active {
     border-color: var(--app-tint-line);
     color: var(--ios-label);
     background: var(--app-tint-soft) !important;
   }
-
-  /* Card audit details are secondary metadata, never a light notice inside a dark card. */
-  .data-note {
+/* Card audit details are secondary metadata, never a light notice inside a dark card. */
+html.theme-dark .data-note {
     border: .5px solid var(--ios-separator);
     color: var(--ios-secondary-label);
     background: var(--ios-secondary-fill) !important;
   }
-
-  /* Empty/loading states must read as part of the dark list, not a legacy white overlay. */
-  .empty-state {
+/* Empty/loading states must read as part of the dark list, not a legacy white overlay. */
+html.theme-dark .empty-state {
     border-color: var(--ios-separator);
     color: var(--ios-secondary-label);
     background: var(--ios-grouped-surface) !important;
   }
-
-  .empty-state > svg {
+html.theme-dark .empty-state > svg {
     color: var(--app-tint);
   }
-
-  .empty-state h3 {
+html.theme-dark .empty-state h3 {
     color: var(--ios-label);
   }
-
-  .empty-state p {
+html.theme-dark .empty-state p {
     color: var(--ios-secondary-label);
   }
-}
 
 /* Light mode keeps original brand tones for order/shipping chrome.
    Darker surfaces apply only in night mode. */
@@ -7807,56 +7731,50 @@ select:focus-visible {
   color: var(--app-tint) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .shipping-editor > section,
-  .detail-code {
+html.theme-dark .shipping-editor > section, html.theme-dark .detail-code {
     border: .5px solid rgba(255, 255, 255, .1) !important;
     color: #f5f5f7 !important;
     background: #0f0f10 !important;
     box-shadow: none !important;
   }
 
-  .shipping-editor > section > span {
+html.theme-dark .shipping-editor > section > span {
     color: #f5f5f7 !important;
     background: rgba(255, 255, 255, .1) !important;
   }
 
-  .shipping-editor > section small,
-  .detail-code small {
+html.theme-dark .shipping-editor > section small, html.theme-dark .detail-code small {
     color: rgba(245, 245, 247, .58) !important;
     opacity: 1 !important;
   }
 
-  .shipping-editor > section h3,
-  .detail-code b {
+html.theme-dark .shipping-editor > section h3, html.theme-dark .detail-code b {
     color: #f5f5f7 !important;
   }
 
-  .shipping-editor > section p {
+html.theme-dark .shipping-editor > section p {
     color: rgba(245, 245, 247, .62) !important;
   }
 
-  .detail-code .icon-button {
+html.theme-dark .detail-code .icon-button {
     color: #f5f5f7 !important;
     background: rgba(255, 255, 255, .1) !important;
     box-shadow: none !important;
   }
 
-  .shipping-code-input button {
+html.theme-dark .shipping-code-input button {
     border-color: rgba(255, 255, 255, .12) !important;
     color: #f5f5f7 !important;
     background: #3a3a3c !important;
   }
 
-  .shipping-code-input button:hover,
-  .shipping-code-input button:active {
+html.theme-dark .shipping-code-input button:hover, html.theme-dark .shipping-code-input button:active {
     background: #48484a !important;
   }
 
-  .shipping-code-input button svg {
+html.theme-dark .shipping-code-input button svg {
     color: #f5f5f7 !important;
   }
-}
 /* Center dock action: day = brand green, night = dark glyph. */
 .workspace-dock .dock-create,
 .workspace-dock .dock-create:hover,
@@ -7919,12 +7837,11 @@ select:focus-visible {
     inset 0 1px 0 rgba(255, 255, 255, .22) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .workspace-dock .dock-create {
+html.theme-dark .workspace-dock .dock-create {
     color: var(--ios-secondary-label) !important;
   }
 
-  .workspace-dock .dock-create-glyph {
+html.theme-dark .workspace-dock .dock-create-glyph {
     border-color: #1b211e;
     color: #f5f5f7 !important;
     background: linear-gradient(160deg, #3a3a3c 0%, #1c1c1e 74%) !important;
@@ -7933,21 +7850,20 @@ select:focus-visible {
       inset 0 1px 0 rgba(255, 255, 255, .1) !important;
   }
 
-  .workspace-dock .dock-create-glyph svg {
+html.theme-dark .workspace-dock .dock-create-glyph svg {
     color: #f5f5f7 !important;
     stroke: #f5f5f7 !important;
   }
 
-  .workspace-dock .dock-create:hover .dock-create-glyph,
-  .workspace-dock .dock-create:active .dock-create-glyph {
+html.theme-dark .workspace-dock .dock-create:hover .dock-create-glyph, html.theme-dark .workspace-dock .dock-create:active .dock-create-glyph {
     background: linear-gradient(160deg, #48484a 0%, #2c2c2e 74%) !important;
   }
 
-  .workspace-dock .dock-create.active {
+html.theme-dark .workspace-dock .dock-create.active {
     color: var(--app-tint) !important;
   }
 
-  .workspace-dock .dock-create.active .dock-create-glyph {
+html.theme-dark .workspace-dock .dock-create.active .dock-create-glyph {
     border-color: #1b211e;
     background: linear-gradient(160deg, #1d2c24 0%, #101916 74%) !important;
     box-shadow:
@@ -7956,80 +7872,70 @@ select:focus-visible {
       inset 0 1px 0 rgba(255, 255, 255, .1) !important;
   }
 
-  .workspace-dock .dock-create.active .dock-create-glyph svg {
+html.theme-dark .workspace-dock .dock-create.active .dock-create-glyph svg {
     color: #34d399 !important;
     stroke: #34d399 !important;
   }
 
-  /* Order product/size chips and related entry surfaces in night mode. */
-  .purchaser-choice-grid button {
+/* Order product/size chips and related entry surfaces in night mode. */
+
+html.theme-dark .purchaser-choice-grid button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-secondary-fill) !important;
     box-shadow: none !important;
   }
 
-  .purchaser-choice-grid button.active {
+html.theme-dark .purchaser-choice-grid button.active {
     color: var(--app-tint) !important;
     border-color: var(--app-tint-line) !important;
     background: var(--app-tint-soft) !important;
     box-shadow: 0 0 0 1px var(--app-tint-line) !important;
   }
 
-  .purchaser-order-form > section,
-  .admin-order-entry-form > section {
+html.theme-dark .purchaser-order-form > section, html.theme-dark .admin-order-entry-form > section {
     border-color: var(--ios-separator) !important;
     background: var(--ios-grouped-surface) !important;
     box-shadow: none !important;
   }
 
-  .purchaser-order-form > section > header > span,
-  .admin-order-entry-form > section > header > span {
+html.theme-dark .purchaser-order-form > section > header > span, html.theme-dark .admin-order-entry-form > section > header > span {
     color: #f5f5f7 !important;
     background: #3a3a3c !important;
   }
 
-  .purchaser-order-form input,
-  .purchaser-order-form textarea,
-  .purchaser-order-form select,
-  .admin-order-entry-form input:not([type="checkbox"]),
-  .admin-order-entry-form textarea,
-  .admin-order-entry-form select {
+html.theme-dark .purchaser-order-form input, html.theme-dark .purchaser-order-form textarea, html.theme-dark .purchaser-order-form select, html.theme-dark .admin-order-entry-form input:not([type="checkbox"]), html.theme-dark .admin-order-entry-form textarea, html.theme-dark .admin-order-entry-form select {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: #272e2a !important;
   }
 
-  .admin-entry-selected-buyer,
-  .admin-entry-create,
-  .admin-entry-buyer-search {
+html.theme-dark .admin-entry-selected-buyer, html.theme-dark .admin-entry-create, html.theme-dark .admin-entry-buyer-search {
     border-color: var(--ios-separator) !important;
     background: var(--ios-secondary-fill) !important;
   }
 
-  .admin-entry-selected-buyer > span {
+html.theme-dark .admin-entry-selected-buyer > span {
     color: #f5f5f7 !important;
     background: #3a3a3c !important;
   }
 
-  .admin-entry-selected-buyer > button,
-  .admin-entry-express-code button {
+html.theme-dark .admin-entry-selected-buyer > button, html.theme-dark .admin-entry-express-code button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: #2c2c2e !important;
   }
 
-  .admin-entry-buyer-list > button {
+html.theme-dark .admin-entry-buyer-list > button {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-grouped-surface) !important;
   }
 
-  .admin-entry-buyer-list > button > span {
+html.theme-dark .admin-entry-buyer-list > button > span {
     color: var(--app-tint) !important;
     background: var(--app-tint-soft) !important;
   }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .workspace-dock .dock-create-glyph,
@@ -8074,27 +7980,25 @@ select:focus-visible {
   font-weight: 650 !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .admin-entry-buyer-search {
+html.theme-dark .admin-entry-buyer-search {
     border-color: var(--ios-separator) !important;
     color: var(--ios-secondary-label) !important;
     background: #272e2a !important;
   }
 
-  .admin-entry-buyer-search input {
+html.theme-dark .admin-entry-buyer-search input {
     color: var(--ios-label) !important;
     background: transparent !important;
   }
 
-  .admin-entry-buyer-search input::placeholder {
+html.theme-dark .admin-entry-buyer-search input::placeholder {
     color: var(--ios-tertiary-label);
   }
 
-  .admin-entry-buyer-search > button {
+html.theme-dark .admin-entry-buyer-search > button {
     color: #062614 !important;
     background: var(--app-tint) !important;
   }
-}
 
 /* Compact search toolbar - iOS / Linear density */
 .toolbar-card.search-toolbar {
@@ -8281,56 +8185,51 @@ select:focus-visible {
   color: var(--app-tint) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .toolbar-card.search-toolbar .quick-search {
+html.theme-dark .toolbar-card.search-toolbar .quick-search {
     color: var(--ios-secondary-label);
     background: rgba(118, 118, 128, .24);
   }
 
-  .toolbar-card.search-toolbar .quick-search:focus-within {
+html.theme-dark .toolbar-card.search-toolbar .quick-search:focus-within {
     color: var(--ios-label);
     background: rgba(118, 118, 128, .32);
   }
 
-  .toolbar-card.search-toolbar .quick-search input {
+html.theme-dark .toolbar-card.search-toolbar .quick-search input {
     color: var(--ios-label);
   }
 
-  .toolbar-card.search-toolbar .search-clear {
+html.theme-dark .toolbar-card.search-toolbar .search-clear {
     background: rgba(152, 152, 157, .42);
   }
 
-  .toolbar-card.search-toolbar .filter-chip,
-  .toolbar-card.search-toolbar .toolbar-icon {
+html.theme-dark .toolbar-card.search-toolbar .filter-chip, html.theme-dark .toolbar-card.search-toolbar .toolbar-icon {
     color: var(--ios-secondary-label);
     background: rgba(118, 118, 128, .24);
   }
 
-  .toolbar-card.search-toolbar .filter-chip.active {
+html.theme-dark .toolbar-card.search-toolbar .filter-chip.active {
     color: var(--app-tint);
     background: var(--app-tint-soft);
   }
 
-  .secondary-actions button {
+html.theme-dark .secondary-actions button {
     color: var(--ios-secondary-label) !important;
     background: rgba(118, 118, 128, .24) !important;
   }
 
-  .secondary-actions button > svg {
+html.theme-dark .secondary-actions button > svg {
     color: var(--ios-secondary-label) !important;
   }
 
-  .secondary-actions button:hover,
-  .secondary-actions button:active {
+html.theme-dark .secondary-actions button:hover, html.theme-dark .secondary-actions button:active {
     color: var(--ios-label) !important;
     background: rgba(118, 118, 128, .34) !important;
   }
 
-  .secondary-actions button:hover > svg,
-  .secondary-actions button:active > svg {
+html.theme-dark .secondary-actions button:hover > svg, html.theme-dark .secondary-actions button:active > svg {
     color: var(--app-tint) !important;
   }
-}
 
 /* Filter sheet redesign */
 .filter-sheet {
@@ -8484,297 +8383,248 @@ select:focus-visible {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .filter-section > header h3,
-  .filter-section label > span {
+html.theme-dark .filter-section > header h3, html.theme-dark .filter-section label > span {
     color: var(--ios-secondary-label);
   }
 
-  .filter-chips button {
+html.theme-dark .filter-chips button {
     color: var(--ios-label);
     background: rgba(118, 118, 128, .24);
   }
 
-  .filter-chips button.active {
+html.theme-dark .filter-chips button.active {
     color: #062614;
     background: var(--app-tint);
   }
 
-  .filter-section input,
-  .filter-section select,
-  .filter-section textarea {
+html.theme-dark .filter-section input, html.theme-dark .filter-section select, html.theme-dark .filter-section textarea {
     color: var(--ios-label);
     background: rgba(118, 118, 128, .24);
   }
 
-  .filter-section input:focus,
-  .filter-section select:focus,
-  .filter-section textarea:focus {
+html.theme-dark .filter-section input:focus, html.theme-dark .filter-section select:focus, html.theme-dark .filter-section textarea:focus {
     background: rgba(118, 118, 128, .32);
   }
 
-  .filter-sheet-footer {
+html.theme-dark .filter-sheet-footer {
     background:
       linear-gradient(180deg, transparent, var(--ios-grouped-surface) 18%);
   }
 
-  .filter-reset {
+html.theme-dark .filter-reset {
     color: var(--ios-label);
     background: rgba(118, 118, 128, .24);
   }
 
-  .filter-apply {
+html.theme-dark .filter-apply {
     color: #062614;
     background: var(--app-tint);
   }
-}
 
 /* Dark mode polish: filter footer, toast, purchaser current store */
-@media (prefers-color-scheme: dark) {
-  /* Sheet footer legacy + new filter actions */
-  .form-footer {
+/* Sheet footer legacy + new filter actions */
+html.theme-dark .form-footer {
     background: linear-gradient(transparent, var(--ios-grouped-surface) 18%) !important;
   }
-
-  .button-ghost,
-  .filter-reset {
+html.theme-dark .button-ghost, html.theme-dark .filter-reset {
     color: var(--ios-label) !important;
     background: rgba(118, 118, 128, .28) !important;
     border: 0 !important;
     box-shadow: none !important;
   }
-
-  .button-soft {
+html.theme-dark .button-soft {
     color: #4cd394 !important;
     background: rgba(29, 163, 105, .22) !important;
     border-color: rgba(76, 211, 148, .35) !important;
     box-shadow: none !important;
   }
-
-  .button-primary,
-  .filter-apply {
+html.theme-dark .button-primary, html.theme-dark .filter-apply {
     color: #062614 !important;
     background: var(--app-tint) !important;
     box-shadow: none !important;
   }
-
-  .filter-sheet-footer {
+html.theme-dark .filter-sheet-footer {
     background: linear-gradient(180deg, transparent, var(--ios-grouped-surface) 22%) !important;
   }
-
-  .filter-reset {
+html.theme-dark .filter-reset {
     color: var(--ios-label) !important;
     background: #2c3230 !important;
   }
-
-  .filter-apply {
+html.theme-dark .filter-apply {
     color: #062614 !important;
     background: var(--app-tint) !important;
   }
-
-  /* Toast / copy success feedback */
-  .toast,
-  .toast-success,
-  .toast-info,
-  .public-copy-toast {
+/* Toast / copy success feedback */
+html.theme-dark .toast, html.theme-dark .toast-success, html.theme-dark .toast-info, html.theme-dark .public-copy-toast {
     border: .5px solid rgba(255, 255, 255, .1) !important;
     color: #f5f5f7 !important;
     background: #1c1c1e !important;
     box-shadow: 0 16px 40px rgba(0, 0, 0, .4) !important;
   }
-
-  .toast-success {
+html.theme-dark .toast-success {
     border-color: rgba(7, 193, 96, .28) !important;
     background: #142019 !important;
   }
-
-  .toast-error {
+html.theme-dark .toast-error {
     border-color: rgba(255, 69, 58, .3) !important;
     background: #2a1414 !important;
   }
-
-  .toast svg,
-  .public-copy-toast svg {
+html.theme-dark .toast svg, html.theme-dark .public-copy-toast svg {
     color: var(--app-tint) !important;
   }
-
-  .toast-error svg {
+html.theme-dark .toast-error svg {
     color: #ff6b6b !important;
   }
-
-  .tool-success,
-  .purchaser-manager-message.tool-success,
-  .purchaser-manager-message.tool-success {
+html.theme-dark .tool-success, html.theme-dark .purchaser-manager-message.tool-success, html.theme-dark .purchaser-manager-message.tool-success {
     border: .5px solid rgba(7, 193, 96, .28) !important;
     color: #86efac !important;
     background: rgba(7, 193, 96, .12) !important;
   }
-
-  .tool-success svg,
-  .purchaser-manager-message.tool-success svg {
+html.theme-dark .tool-success svg, html.theme-dark .purchaser-manager-message.tool-success svg {
     color: var(--app-tint) !important;
   }
-
-  /* Buyer manager: current store block + actions */
-  .purchaser-current-store {
+/* Buyer manager: current store block + actions */
+html.theme-dark .purchaser-current-store {
     border: .5px solid var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-secondary-fill) !important;
   }
-
-  .purchaser-current-store > svg {
+html.theme-dark .purchaser-current-store > svg {
     color: var(--app-tint) !important;
   }
-
-  .purchaser-current-store small {
+html.theme-dark .purchaser-current-store small {
     color: var(--ios-secondary-label) !important;
   }
-
-  .purchaser-current-store b {
+html.theme-dark .purchaser-current-store b {
     color: var(--ios-label) !important;
   }
-
-  .purchaser-current-store button {
+html.theme-dark .purchaser-current-store button {
     border: .5px solid var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: #2c2c2e !important;
   }
-
-  .purchaser-current-store button.copy-link {
+html.theme-dark .purchaser-current-store button.copy-link {
     color: var(--app-tint) !important;
     border-color: var(--app-tint-line) !important;
     background: var(--app-tint-soft) !important;
   }
-
-  .purchaser-current-store button:not(.copy-link):not(.purchaser-current-store-bind) {
+html.theme-dark .purchaser-current-store button:not(.copy-link):not(.purchaser-current-store-bind) {
     color: #ff6b6b !important;
     border-color: rgba(255, 107, 107, .28) !important;
     background: rgba(255, 69, 58, .12) !important;
   }
-
-  .purchaser-current-store-select {
+html.theme-dark .purchaser-current-store-select {
     color: var(--ios-label) !important;
     background: #2c2c2e !important;
     border: .5px solid var(--ios-separator) !important;
   }
-
-  .purchaser-current-store .purchaser-current-store-bind {
+html.theme-dark .purchaser-current-store .purchaser-current-store-bind {
     color: #fff !important;
     background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important;
     box-shadow: 0 3px 8px rgba(0,0,0,.25) !important;
   }
-
-  .purchaser-manager-toolbar,
-  .purchaser-manager-list > article,
-  .purchaser-bind-row select {
+html.theme-dark .purchaser-manager-toolbar, html.theme-dark .purchaser-manager-list > article, html.theme-dark .purchaser-bind-row select {
     border-color: var(--ios-separator) !important;
     color: var(--ios-label) !important;
     background: var(--ios-grouped-surface) !important;
   }
-
-  .purchaser-manager-toolbar > div,
-  .purchaser-manager-toolbar input {
+html.theme-dark .purchaser-manager-toolbar > div, html.theme-dark .purchaser-manager-toolbar input {
     color: var(--ios-label) !important;
     background: transparent !important;
   }
-
-  .purchaser-manager-toolbar > button {
+html.theme-dark .purchaser-manager-toolbar > button {
     color: var(--ios-label) !important;
     background: var(--ios-secondary-fill) !important;
   }
-
-  .purchaser-bind-row button {
+html.theme-dark .purchaser-bind-row button {
     color: #062614 !important;
     background: var(--app-tint) !important;
   }
-
-  .order-purchaser-current {
+html.theme-dark .order-purchaser-current {
     border: .5px solid var(--app-tint-line) !important;
     color: var(--app-tint) !important;
     background: var(--app-tint-soft) !important;
   }
-
-  /* 批量录单页暗色 */
-  .batch-order-section { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; box-shadow: var(--ios-shadow) !important; }
-  .batch-order-section > header h2 { color: var(--ios-label) !important; }
-  .batch-order-section > header p { color: var(--ios-secondary-label) !important; }
-  .batch-order-section > header > span { background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important; color: var(--primary-action-label) !important; }
-  .batch-order-textarea { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-table-wrap { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-table thead { background: var(--ios-secondary-fill) !important; color: var(--ios-secondary-label) !important; }
-  .batch-order-table th, .batch-order-table td { color: var(--ios-label) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-summary > span { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-summary > span b { color: var(--app-tint) !important; }
-  .batch-order-empty { color: var(--ios-secondary-label) !important; }
-  .batch-order-file-btn { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
-  .batch-order-error { color: #ff6b6b !important; }
-  .batch-order-card { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-card-num { color: var(--ios-secondary-label) !important; }
-  .batch-order-card-time { color: var(--ios-secondary-label) !important; }
-  .batch-order-card-product { color: var(--ios-label) !important; }
-  .batch-order-card-meta-label { color: var(--ios-secondary-label) !important; }
-  .batch-order-card-meta-value { color: var(--ios-label) !important; }
-  .batch-order-card-address { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-card-remark { color: #d6b97a !important; background: rgba(214, 185, 122, .12) !important; }
-  .batch-order-card-message { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-card-result-grid > div { background: var(--ios-secondary-fill) !important; }
-  .batch-order-card-result-grid > div > span { color: var(--ios-secondary-label) !important; }
-  .batch-order-card-result-grid > div > b { color: var(--app-tint) !important; }
-  .batch-order-card-duplicate { background: rgba(214, 185, 122, .06) !important; }
-  .batch-order-card-failed { background: rgba(255, 107, 107, .06) !important; }
-  .batch-order-card-new { background: rgba(44, 171, 113, .06) !important; }
-  .batch-order-card-existing { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-auto-tag { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-decision { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-decision.active { color: #fff !important; background: linear-gradient(135deg, #14794e, #1da369) !important; border-color: transparent !important; box-shadow: 0 4px 10px rgba(20,132,84,.35) !important; }
-  .batch-order-decision-skip.active { color: #fff !important; background: linear-gradient(135deg, #8a9891, #6b7d73) !important; border-color: transparent !important; box-shadow: 0 4px 10px rgba(107,125,115,.4) !important; }
-  .batch-order-card-arrow { color: var(--ios-secondary-label) !important; }
-  .batch-order-pick { background: var(--ios-secondary-fill) !important; }
-  .batch-order-pick-search { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-pick-item { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; }
-  .batch-order-pick-item.active { border-color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-pick-item-name { color: var(--ios-label) !important; }
-  .batch-order-pick-item-meta { color: var(--ios-secondary-label) !important; }
-  .batch-order-detail-modal { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; }
-  .batch-order-detail-close { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-detail-modal > header h2 { color: var(--ios-label) !important; }
-  .batch-order-detail-modal > header p { color: var(--ios-secondary-label) !important; }
-  .batch-order-detail-list { background: var(--ios-separator) !important; }
-  .batch-order-detail-list > div { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-detail-list > div > span:first-child { color: var(--ios-secondary-label) !important; }
-  .batch-order-detail-list > div > b { color: var(--ios-label) !important; }
-  /* 格式模板：暗色 */
-  .batch-order-template-current { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-template-select { color: var(--ios-label) !important; }
-  .batch-order-template-mgmt { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
-  .batch-order-template-download { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
-  .batch-order-template-hint { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-template-stats { color: var(--app-tint) !important; }
-  .batch-order-template-item { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-template-item.is-active { border-color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-template-item-name { color: var(--ios-label) !important; }
-  .batch-order-template-item-meta, .batch-order-template-item-desc { color: var(--ios-secondary-label) !important; }
-  .batch-order-template-badge { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-template-footer { border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-btn { color: var(--app-tint) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-btn-danger { color: #ff6b6b !important; background: rgba(255, 107, 107, .12) !important; border-color: rgba(255, 107, 107, .25) !important; }
-  .batch-order-template-form { border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-field > span { color: var(--ios-secondary-label) !important; }
-  .batch-order-tpl-field > input, .batch-order-tpl-field > select { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-field > input:disabled, .batch-order-tpl-field > select:disabled { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-template-fields-title { color: var(--ios-label) !important; }
-  .batch-order-template-fields-hint { color: var(--ios-secondary-label) !important; }
-  .batch-order-tpl-row-item { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-row-num { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
-  .batch-order-tpl-row-key, .batch-order-tpl-row-aliases, .batch-order-tpl-row-dropdown { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-row-required { color: var(--ios-secondary-label) !important; }
-  .batch-order-tpl-row-move button { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-  .batch-order-tpl-row-move button:disabled { color: #555 !important; }
-  .batch-order-tpl-row-del { color: #ff6b6b !important; background: rgba(255, 107, 107, .12) !important; }
-  .batch-order-tpl-row-del:disabled { color: #555 !important; background: var(--ios-secondary-fill) !important; }
-  .batch-order-tpl-add { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
-  .batch-order-tpl-add:disabled { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
-}
+/* 批量录单页暗色 */
+html.theme-dark .batch-order-section { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; box-shadow: var(--ios-shadow) !important; }
+html.theme-dark .batch-order-section > header h2 { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-section > header p { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-section > header > span { background: linear-gradient(135deg, var(--app-tint), var(--app-tint-pressed)) !important; color: var(--primary-action-label) !important; }
+html.theme-dark .batch-order-textarea { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-table-wrap { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-table thead { background: var(--ios-secondary-fill) !important; color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-table th, html.theme-dark .batch-order-table td { color: var(--ios-label) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-summary > span { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-summary > span b { color: var(--app-tint) !important; }
+html.theme-dark .batch-order-empty { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-file-btn { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+html.theme-dark .batch-order-error { color: #ff6b6b !important; }
+html.theme-dark .batch-order-card { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-card-num { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-card-time { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-card-product { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-card-meta-label { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-card-meta-value { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-card-address { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-card-remark { color: #d6b97a !important; background: rgba(214, 185, 122, .12) !important; }
+html.theme-dark .batch-order-card-message { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-card-result-grid > div { background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-card-result-grid > div > span { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-card-result-grid > div > b { color: var(--app-tint) !important; }
+html.theme-dark .batch-order-card-duplicate { background: rgba(214, 185, 122, .06) !important; }
+html.theme-dark .batch-order-card-failed { background: rgba(255, 107, 107, .06) !important; }
+html.theme-dark .batch-order-card-new { background: rgba(44, 171, 113, .06) !important; }
+html.theme-dark .batch-order-card-existing { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-auto-tag { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-decision { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-decision.active { color: #fff !important; background: linear-gradient(135deg, #14794e, #1da369) !important; border-color: transparent !important; box-shadow: 0 4px 10px rgba(20,132,84,.35) !important; }
+html.theme-dark .batch-order-decision-skip.active { color: #fff !important; background: linear-gradient(135deg, #8a9891, #6b7d73) !important; border-color: transparent !important; box-shadow: 0 4px 10px rgba(107,125,115,.4) !important; }
+html.theme-dark .batch-order-card-arrow { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-pick { background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-pick-search { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-pick-item { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; }
+html.theme-dark .batch-order-pick-item.active { border-color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-pick-item-name { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-pick-item-meta { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-detail-modal { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; }
+html.theme-dark .batch-order-detail-close { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-detail-modal > header h2 { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-detail-modal > header p { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-detail-list { background: var(--ios-separator) !important; }
+html.theme-dark .batch-order-detail-list > div { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-detail-list > div > span:first-child { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-detail-list > div > b { color: var(--ios-label) !important; }
+/* 格式模板：暗色 */
+html.theme-dark .batch-order-template-current { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-template-select { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-template-mgmt { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+html.theme-dark .batch-order-template-download { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+html.theme-dark .batch-order-template-hint { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-template-stats { color: var(--app-tint) !important; }
+html.theme-dark .batch-order-template-item { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-template-item.is-active { border-color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-template-item-name { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-template-item-meta, html.theme-dark .batch-order-template-item-desc { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-template-badge { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-template-footer { border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-btn { color: var(--app-tint) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-btn-danger { color: #ff6b6b !important; background: rgba(255, 107, 107, .12) !important; border-color: rgba(255, 107, 107, .25) !important; }
+html.theme-dark .batch-order-template-form { border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-field > span { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-tpl-field > input, html.theme-dark .batch-order-tpl-field > select { color: var(--ios-label) !important; background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-field > input:disabled, html.theme-dark .batch-order-tpl-field > select:disabled { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-template-fields-title { color: var(--ios-label) !important; }
+html.theme-dark .batch-order-template-fields-hint { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-tpl-row-item { background: var(--ios-grouped-surface) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-row-num { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; }
+html.theme-dark .batch-order-tpl-row-key, html.theme-dark .batch-order-tpl-row-aliases, html.theme-dark .batch-order-tpl-row-dropdown { color: var(--ios-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-row-required { color: var(--ios-secondary-label) !important; }
+html.theme-dark .batch-order-tpl-row-move button { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
+html.theme-dark .batch-order-tpl-row-move button:disabled { color: #555 !important; }
+html.theme-dark .batch-order-tpl-row-del { color: #ff6b6b !important; background: rgba(255, 107, 107, .12) !important; }
+html.theme-dark .batch-order-tpl-row-del:disabled { color: #555 !important; background: var(--ios-secondary-fill) !important; }
+html.theme-dark .batch-order-tpl-add { color: var(--app-tint) !important; background: var(--app-tint-soft) !important; border-color: var(--app-tint-line) !important; }
+html.theme-dark .batch-order-tpl-add:disabled { color: var(--ios-secondary-label) !important; background: var(--ios-secondary-fill) !important; border-color: var(--ios-separator) !important; }
 
 /* Search toolbar: one continuous bar, no white seams between controls */
 .toolbar-card.search-toolbar {
@@ -8863,43 +8713,34 @@ select:focus-visible {
   background: color-mix(in srgb, var(--app-tint) 16%, transparent) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .toolbar-card.search-toolbar {
+html.theme-dark .toolbar-card.search-toolbar {
     background: rgba(118, 118, 128, .24) !important;
   }
 
-  .toolbar-card.search-toolbar .quick-search,
-  .toolbar-card.search-toolbar .filter-chip,
-  .toolbar-card.search-toolbar .toolbar-icon {
+html.theme-dark .toolbar-card.search-toolbar .quick-search, html.theme-dark .toolbar-card.search-toolbar .filter-chip, html.theme-dark .toolbar-card.search-toolbar .toolbar-icon {
     color: var(--ios-secondary-label) !important;
     background: transparent !important;
   }
 
-  .toolbar-card.search-toolbar .quick-search input {
+html.theme-dark .toolbar-card.search-toolbar .quick-search input {
     color: var(--ios-label) !important;
   }
 
-  .toolbar-card.search-toolbar .filter-chip::before,
-  .toolbar-card.search-toolbar .toolbar-icon::before {
+html.theme-dark .toolbar-card.search-toolbar .filter-chip::before, html.theme-dark .toolbar-card.search-toolbar .toolbar-icon::before {
     background: rgba(235, 235, 245, .18);
   }
 
-  .toolbar-card.search-toolbar .filter-chip.active {
+html.theme-dark .toolbar-card.search-toolbar .filter-chip.active {
     color: var(--app-tint) !important;
     background: var(--app-tint-soft) !important;
   }
 
-  .toolbar-card.search-toolbar .filter-chip:hover,
-  .toolbar-card.search-toolbar .toolbar-icon:hover,
-  .toolbar-card.search-toolbar .filter-chip:active,
-  .toolbar-card.search-toolbar .toolbar-icon:active {
+html.theme-dark .toolbar-card.search-toolbar .filter-chip:hover, html.theme-dark .toolbar-card.search-toolbar .toolbar-icon:hover, html.theme-dark .toolbar-card.search-toolbar .filter-chip:active, html.theme-dark .toolbar-card.search-toolbar .toolbar-icon:active {
     background: rgba(118, 118, 128, .18) !important;
   }
-}
 
 /* ===== 暗色模式补丁：覆盖硬编码浅色（工具箱/专属下单/弹窗/表单） ===== */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     /* 工具箱卡片 */
     .tools-menu-card p { color: var(--muted) !important; }
     .tools-menu-card > svg { color: var(--muted) !important; }
@@ -9025,11 +8866,9 @@ select:focus-visible {
     /* sheet 分隔线硬编码 #edf2ef */
     .sheet-header { border-color: var(--line) !important; }
   }
-}
 
 /* ===== 暗色模式补丁 2：状态条/分隔区/表格 硬编码浅色 ===== */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     /* 订单卡片内的浅底信息条 */
     .recipient-block { background: var(--dark-canvas) !important; }
     .latest-route { background: var(--dark-canvas) !important; color: var(--muted) !important; }
@@ -9145,11 +8984,9 @@ select:focus-visible {
     .short-link-visits-list li { background: var(--dark-canvas) !important; color: var(--ink) !important; }
     .short-link-visits-ip { color: #4cd394 !important; }
   }
-}
 
 /* ===== 暗色模式补丁 3：剩余硬编码浅色 ===== */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     /* 登录页验证码按钮底 */
     .captcha-login > button { background: var(--dark-canvas) !important; }
 
@@ -9179,11 +9016,9 @@ select:focus-visible {
     .timeline section p { color: var(--muted) !important; }
     .timeline section small { color: var(--muted) !important; }
   }
-}
 
 /* ===== 暗色补丁 4：专属下单页购买数量/粘贴区 ===== */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .purchaser-quantity { background: var(--dark-canvas) !important; }
     .purchaser-quantity button { background: var(--dark-surface) !important; color: var(--app-tint) !important; box-shadow: 0 1px 2px rgba(0,0,0,.2) !important; }
     .purchaser-quantity button:hover { color: var(--app-tint) !important; }
@@ -9192,11 +9027,9 @@ select:focus-visible {
     .purchaser-paste textarea { background: var(--dark-canvas) !important; border-color: var(--line) !important; color: var(--ink) !important; }
     .purchaser-paste button { background: var(--app-tint-soft) !important; color: var(--app-tint) !important; }
   }
-}
 
 /* ===== 暗色补丁 5：专属下单链接生成页（form / 匹配 / 已生成链接） ===== */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     /* form 容器 + 标签 + 输入框 + 主按钮 */
     .order-link-form { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 10px 28px rgba(0,0,0,.22) !important; }
     .order-link-form label > span { color: var(--muted) !important; }
@@ -9231,7 +9064,6 @@ select:focus-visible {
     /* active 按钮本身已是深绿渐变，里面的数量徽章要翻成白底深绿字才看得见 */
     .purchaser-order-tabs button.active span { color: #14794e !important; background: #fff !important; box-shadow: none !important; }
   }
-}
 
 /* 手动 html.theme-dark 时也走同样的补丁（不依赖 prefers-color-scheme） */
 html.theme-dark .order-link-form { background: var(--dark-surface) !important; border-color: var(--line) !important; box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 10px 28px rgba(0,0,0,.22) !important; }
@@ -9281,8 +9113,7 @@ html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !impor
 .purchaser-stat.active { border-color: var(--app-tint); background: var(--app-tint-soft); }
 .purchaser-stat.active b { color: var(--app-tint); }
 
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .purchaser-stat { background: var(--dark-surface) !important; box-shadow: 0 6px 16px rgba(0,0,0,.2) !important; }
     .purchaser-stat b { color: var(--ink) !important; }
     .purchaser-stat small { color: var(--muted) !important; }
@@ -9294,7 +9125,6 @@ html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !impor
     .metric-grid > * { background: var(--dark-surface) !important; box-shadow: 0 6px 16px rgba(0,0,0,.2) !important; }
     .metric-grid > *.active { border-color: var(--app-tint) !important; background: rgba(76,140,108,.18) !important; }
   }
-}
 
 /* 专属下单页 hero 副标（订单在路上提示） */
 .purchaser-order-hero-sub { display: inline-flex; align-items: center; gap: 3px; margin: 6px 0 0 !important; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.16); color: rgba(255,255,255,.92) !important; font-size: 10px; font-weight: 700; }
@@ -9319,28 +9149,23 @@ html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !impor
 .compare-price-cell.na > b { color: var(--muted); }
 .compare-card-tip { margin-top: 8px; padding: 6px 10px; border-radius: 9px; background: var(--app-tint-soft); color: var(--app-tint); font-size: 10px; font-weight: 700; text-align: center; }
 
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .compare-card-item { background: var(--dark-surface) !important; border-color: var(--line) !important; }
     .compare-card-province { background: var(--dark-canvas) !important; }
     .compare-price-cell { background: var(--dark-canvas) !important; }
     .compare-price-cell.lowest { background: var(--app-tint-soft) !important; }
   }
-}
 
 /* 工具箱列表标题：日间强制深色（不依赖变量链） */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) h2 {
+html.theme-dark:not(.theme-light) .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) h2 {
     color: #edf4ef !important;
   }
-}
 
 /* 运费计算排序下拉 */
 .freight-sort-select { flex: 1; min-width: 0; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2374877d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
 
 /* 暗色补丁：登录页二级链接 / 邮箱 Sheet / 资料页动作按钮 */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .login-link-divider { background: #3a434f; }
     .email-auth-tip { background: rgba(49, 89, 201, .14); color: #b8c4e0; }
     .email-code-button:disabled { background: #2a2f38 !important; border-color: #2a2f38 !important; color: #5e6776 !important; }
@@ -9348,7 +9173,6 @@ html.theme-dark .purchaser-order-tabs button.active span { color: #14794e !impor
     .profile-action { background: rgba(76, 140, 108, .14); border-color: rgba(76, 140, 108, .35); color: #b8dccd; }
     .profile-action:disabled { color: #5e6776; background: #1c1f24; border-color: #2a2f38; }
   }
-}
 html.theme-dark {
   .login-link-divider { background: #3a434f; }
   .email-auth-tip { background: rgba(49, 89, 201, .14); color: #b8c4e0; }
@@ -9411,12 +9235,10 @@ html.theme-dark {
 }
 .edit-profile-actions .button { flex: 1; }
 .profile-info-warn { color: #b86a1f; font-weight: 700; }
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .edit-profile-form .field-readonly { background: #1c1f24; border-color: #2a2f38; color: #8a93a0; }
     .profile-info-warn { color: #f0a663; }
   }
-}
 html.theme-dark .edit-profile-form .field-readonly { background: #1c1f24; border-color: #2a2f38; color: #8a93a0; }
 html.theme-dark .profile-info-warn { color: #f0a663; }
 
@@ -9477,8 +9299,7 @@ html.theme-dark .profile-info-warn { color: #f0a663; }
 .button.button-small { padding: 4px 10px; font-size: 11px; border-radius: 10px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 0 0; font-size: 12px; color: var(--muted); }
 
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) {
+html.theme-dark:not(.theme-light) {
     .logistics-store-card { background: var(--ios-grouped-surface, #1c1f24); border-color: var(--ios-separator, #2a2f38); }
     .quota-badge { background: #1c1f24; }
     .quota-bar { background: #1c1f24; }
@@ -9494,7 +9315,6 @@ html.theme-dark .profile-info-warn { color: #f0a663; }
     .logistics-page .data-table th { background: #1c1f24; }
     .logistics-page .data-table .td-warn { color: #f08458; }
   }
-}
 html.theme-dark .logistics-store-card { background: var(--ios-grouped-surface, #1c1f24); border-color: var(--ios-separator, #2a2f38); }
 html.theme-dark .logistics-global-card { background: linear-gradient(135deg, #1c1f24, rgba(29, 163, 105, .12) 70%); border-color: #2f6e4f; box-shadow: 0 8px 22px rgba(0, 0, 0, .3); }
 html.theme-dark .logistics-global-card .quota-header h3 { color: #4cd394; }
@@ -9559,47 +9379,41 @@ html.theme-dark .onboarding-btn.primary { background: linear-gradient(135deg, #0
 @keyframes onboarding-pulse-dot { 0%, 100% { box-shadow: 0 0 0 0 rgba(44, 171, 113, .6); } 50% { box-shadow: 0 0 0 6px rgba(44, 171, 113, 0); } }
 
 /* 短链解析中（正在跳转）的占位 — 暗黑模式 */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) .spa-short-link-loading {
+html.theme-dark:not(.theme-light) .spa-short-link-loading {
     color: var(--ink, #e6ebe5);
     background: var(--dark-canvas, #0e1410);
   }
-  html:not(.theme-light) .spa-short-link-loading p {
+html.theme-dark:not(.theme-light) .spa-short-link-loading p {
     color: #4cd394;
   }
-}
 
 /* 专属查询（店铺列表 / 单店查询）— 暗黑模式 */
-@media (prefers-color-scheme: dark) {
-  html:not(.theme-light) .store-query-list-filter .tool-input,
-  html:not(.theme-light) .store-query-list-loading,
-  html:not(.theme-light) .store-query-list-card {
+html.theme-dark:not(.theme-light) .store-query-list-filter .tool-input, html.theme-dark:not(.theme-light) .store-query-list-loading, html.theme-dark:not(.theme-light) .store-query-list-card {
     border-color: rgba(255,255,255,.08);
     background: rgba(255,255,255,.04);
     color: #d6ded8;
   }
-  html:not(.theme-light) .store-query-list-card-body h2 {
+html.theme-dark:not(.theme-light) .store-query-list-card-body h2 {
     color: #e6ebe5;
   }
-  html:not(.theme-light) .store-query-list-card-body p {
+html.theme-dark:not(.theme-light) .store-query-list-card-body p {
     color: #8a9690;
   }
-  html:not(.theme-light) .store-query-list-card-icon {
+html.theme-dark:not(.theme-light) .store-query-list-card-icon {
     color: #4cd394;
     background: rgba(76, 211, 148, .14);
   }
-  html:not(.theme-light) .store-query-list-card > svg {
+html.theme-dark:not(.theme-light) .store-query-list-card > svg {
     color: #6e7a73;
   }
-  html:not(.theme-light) .store-query-back {
+html.theme-dark:not(.theme-light) .store-query-back {
     color: #8a9690;
   }
-  html:not(.theme-light) .store-query-back:hover {
+html.theme-dark:not(.theme-light) .store-query-back:hover {
     background: rgba(76, 211, 148, .14);
     color: #4cd394;
   }
-  html:not(.theme-light) .store-query-notice {
+html.theme-dark:not(.theme-light) .store-query-notice {
     color: #b9c4be;
     background: rgba(76, 211, 148, .10);
   }
-}

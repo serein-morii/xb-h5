@@ -1,0 +1,1635 @@
+/*
+ * XB H5 unified product theme
+ *
+ * This file is intentionally imported after globals.css. It is the only
+ * final visual layer: legacy selectors keep their business layout while
+ * semantic tokens below decide color, material, radius and hierarchy.
+ */
+
+:root,
+html.theme-light {
+  --xb-accent: #07c160;
+  --xb-accent-pressed: #06ad56;
+  --xb-accent-soft: rgba(7, 193, 96, .11);
+  --xb-accent-line: rgba(7, 193, 96, .25);
+  --xb-action: #07843f;
+  --xb-on-action: #ffffff;
+  --xb-bg: #f4f7f5;
+  --xb-surface: #ffffff;
+  --xb-surface-muted: #edf2ef;
+  --xb-surface-strong: #e4ebe7;
+  --xb-text: #18231d;
+  --xb-text-secondary: #66736b;
+  --xb-text-tertiary: #95a19a;
+  --xb-line: rgba(37, 51, 43, .14);
+  --xb-danger: #c93e3e;
+  --xb-danger-soft: rgba(201, 62, 62, .09);
+  --xb-warning: #a96812;
+  --xb-warning-soft: rgba(169, 104, 18, .11);
+  --xb-info: #2672b8;
+  --xb-info-soft: rgba(38, 114, 184, .10);
+  --xb-hero-radius: 20px;
+  --xb-card-radius: 16px;
+  --xb-control-radius: 12px;
+  --xb-compact-radius: 10px;
+  --xb-shadow: 0 1px 2px rgba(24, 55, 37, .025), 0 9px 26px rgba(24, 55, 37, .045);
+
+  --app-tint: var(--xb-accent);
+  --app-tint-pressed: var(--xb-accent-pressed);
+  --app-tint-soft: var(--xb-accent-soft);
+  --app-tint-line: var(--xb-accent-line);
+  --primary-action: var(--xb-action);
+  --primary-action-label: var(--xb-on-action);
+  --ios-label: var(--xb-text);
+  --ios-secondary-label: var(--xb-text-secondary);
+  --ios-tertiary-label: var(--xb-text-tertiary);
+  --ios-grouped-bg: var(--xb-bg);
+  --ios-grouped-surface: var(--xb-surface);
+  --ios-secondary-fill: var(--xb-surface-muted);
+  --ios-separator: var(--xb-line);
+  --consumer-accent: var(--xb-accent);
+  --consumer-accent-strong: var(--xb-accent-pressed);
+  --consumer-accent-soft: var(--xb-accent-soft);
+  --consumer-bg: var(--xb-bg);
+  --consumer-surface: var(--xb-surface);
+  --consumer-ink: var(--xb-text);
+  --consumer-muted: var(--xb-text-secondary);
+  --consumer-line: var(--xb-line);
+  --ink: var(--xb-text);
+  --muted: var(--xb-text-secondary);
+  --line: var(--xb-line);
+  --surface: var(--xb-surface);
+  --canvas: var(--xb-bg);
+  --green: var(--xb-accent);
+  --green-dark: var(--xb-accent-pressed);
+  --green-soft: var(--xb-accent-soft);
+  color-scheme: light;
+}
+
+html.theme-dark {
+  --xb-accent: #07c160;
+  --xb-accent-pressed: #09d86d;
+  --xb-accent-soft: rgba(7, 193, 96, .17);
+  --xb-accent-line: rgba(7, 193, 96, .36);
+  --xb-action: #07c160;
+  --xb-on-action: #062614;
+  --xb-bg: #101512;
+  --xb-surface: #1a211d;
+  --xb-surface-muted: #252d28;
+  --xb-surface-strong: #2d3731;
+  --xb-text: #edf4ef;
+  --xb-text-secondary: #a5b1aa;
+  --xb-text-tertiary: #748078;
+  --xb-line: rgba(184, 199, 190, .18);
+  --xb-danger: #ff7b73;
+  --xb-danger-soft: rgba(255, 69, 58, .14);
+  --xb-warning: #f0b45c;
+  --xb-warning-soft: rgba(255, 159, 10, .14);
+  --xb-info: #71a9df;
+  --xb-info-soft: rgba(77, 141, 231, .15);
+  --xb-shadow: 0 1px 2px rgba(0, 0, 0, .24), 0 12px 30px rgba(0, 0, 0, .20);
+
+  --dark-ink: var(--xb-text);
+  --dark-muted: var(--xb-text-secondary);
+  --dark-line: var(--xb-line);
+  --dark-surface: var(--xb-surface);
+  --dark-canvas: var(--xb-bg);
+  --dark-surface-2: var(--xb-surface-muted);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html.theme-light body,
+html.theme-light .product-shell,
+html.theme-light .public-tools-shell,
+html.theme-light .login-page,
+html.theme-light .spa-short-link-loading,
+html.theme-light .spa-not-found,
+html.theme-dark body,
+html.theme-dark .product-shell,
+html.theme-dark .public-tools-shell,
+html.theme-dark .login-page,
+html.theme-dark .spa-short-link-loading,
+html.theme-dark .spa-not-found {
+  color: var(--xb-text) !important;
+  background: var(--xb-bg) !important;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  color: var(--xb-text);
+  background: var(--xb-accent-soft);
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--xb-accent) !important;
+  outline-offset: 2px;
+}
+
+/*
+ * Shared shells and navigation
+ */
+
+html.theme-light .public-tools-header,
+html.theme-light .workspace-dock {
+  border-color: rgba(37, 51, 43, .12) !important;
+  background: rgba(255, 255, 255, .88) !important;
+}
+
+html.theme-dark .public-tools-header,
+html.theme-dark .workspace-dock {
+  border-color: var(--xb-line) !important;
+  background: rgba(26, 33, 29, .90) !important;
+}
+
+.public-tools-header,
+.workspace-dock {
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+  backdrop-filter: blur(24px) saturate(165%);
+}
+
+.public-tools-header nav a,
+.workspace-dock button {
+  color: var(--xb-text-secondary);
+}
+
+.workspace-dock button.active {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+html.theme-light .workspace-dock .dock-create,
+html.theme-light .workspace-dock .dock-create:hover,
+html.theme-light .workspace-dock .dock-create.active,
+html.theme-dark .workspace-dock .dock-create,
+html.theme-dark .workspace-dock .dock-create:hover,
+html.theme-dark .workspace-dock .dock-create.active {
+  color: var(--xb-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.theme-light .workspace-dock .dock-create.active,
+html.theme-dark .workspace-dock .dock-create.active {
+  color: var(--xb-accent) !important;
+}
+
+/*
+ * Page rhythm and shared headers
+ */
+
+.module-page,
+.admin-tool-module,
+.batch-order-page,
+.tool-page {
+  width: min(100%, 680px);
+  margin-inline: auto;
+  padding-inline: 16px;
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+
+.tool-page {
+  padding-top: 18px;
+}
+
+.module-hero,
+.admin-tool-module .tool-hero {
+  min-height: 0 !important;
+  padding: 14px 4px 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--xb-text) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.module-hero::after,
+.admin-tool-module .tool-hero::after {
+  display: none !important;
+}
+
+.module-hero > div > small,
+.module-hero .eyebrow,
+.admin-tool-module .tool-hero > div > small {
+  display: none !important;
+}
+
+.module-hero h1,
+.admin-tool-module .tool-hero h1 {
+  margin: 0 0 5px !important;
+  color: var(--xb-text) !important;
+  font-size: clamp(25px, 7vw, 30px) !important;
+  font-weight: 720 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1.12 !important;
+  text-shadow: none !important;
+}
+
+.module-hero p,
+.admin-tool-module .tool-hero p {
+  margin: 0 !important;
+  color: var(--xb-text-secondary) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+.module-hero > span,
+.module-hero .hero-tool-icon,
+.admin-tool-module .tool-hero > span {
+  width: 40px !important;
+  height: 40px !important;
+  border: 0 !important;
+  border-radius: var(--xb-compact-radius) !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+/* Public tool titles are grouped surfaces, not unbounded page copy. */
+.tool-page > .tool-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 96px !important;
+  align-items: center;
+  gap: 13px;
+  padding: 17px 18px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-hero-radius) !important;
+  color: var(--xb-text) !important;
+  background:
+    linear-gradient(135deg, var(--xb-accent-soft), transparent 62%),
+    var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+.tool-page > .tool-hero::after {
+  display: none !important;
+}
+
+.tool-page > .tool-hero > div > small {
+  display: block !important;
+  margin-bottom: 3px;
+  color: var(--xb-accent) !important;
+  opacity: .78 !important;
+}
+
+.tool-page > .tool-hero h1 {
+  margin: 0 0 4px !important;
+  color: var(--xb-text) !important;
+  font-size: clamp(22px, 6vw, 27px) !important;
+  font-weight: 720 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1.12 !important;
+  text-shadow: none !important;
+}
+
+.tool-page > .tool-hero p {
+  margin: 0 !important;
+  color: var(--xb-text-secondary) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.tool-page > .tool-hero > span,
+.tool-page > .tool-hero.tool-hero-blue > span,
+.tool-page > .tool-hero.tool-hero-amber > span {
+  width: 42px !important;
+  height: 42px !important;
+  border: .5px solid var(--xb-accent-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Toolbox: four equal primary destinations plus one secondary route.
+ */
+
+.tools-home {
+  width: min(100%, 640px);
+  padding: 24px 16px 52px;
+}
+
+.tools-home-intro {
+  padding: 18px;
+  border: .5px solid var(--xb-line);
+  border-radius: var(--xb-hero-radius);
+  background:
+    linear-gradient(135deg, var(--xb-accent-soft), transparent 64%),
+    var(--xb-surface);
+  box-shadow: var(--xb-shadow);
+}
+
+.tools-home-intro h1 {
+  margin: 0;
+  color: var(--xb-text) !important;
+  font-size: 32px;
+  font-weight: 720;
+  letter-spacing: -.04em;
+}
+
+.tools-home-intro p {
+  margin: 7px 0 0;
+  color: var(--xb-text-secondary) !important;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.tools-service-section > header {
+  padding: 0 2px 9px;
+}
+
+.tools-service-section > header h2 {
+  color: var(--xb-text) !important;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.tools-service-section > header span {
+  color: var(--xb-text-tertiary) !important;
+  font-size: 11px;
+}
+
+.tools-service-group {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tools-home-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  border: 0 !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) {
+  position: relative;
+  min-width: 0;
+  min-height: 150px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start;
+  flex-direction: column !important;
+  gap: 13px !important;
+  padding: 16px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  color: var(--xb-text) !important;
+  text-align: left;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n)::after {
+  display: none !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) > span {
+  width: 40px !important;
+  height: 40px !important;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--xb-compact-radius) !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) > div {
+  width: 100%;
+  margin-top: auto;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) h2 {
+  margin: 0 0 5px;
+  color: var(--xb-text) !important;
+  font-size: 15px;
+  font-weight: 680;
+  line-height: 1.25;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) p {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 32px;
+  margin: 0;
+  color: var(--xb-text-secondary) !important;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) > svg {
+  position: absolute !important;
+  top: 18px !important;
+  right: 15px !important;
+  color: var(--xb-text-tertiary) !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n):hover {
+  transform: translateY(-1px);
+  border-color: var(--xb-accent-line) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--xb-accent) 9%, transparent) !important;
+}
+
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n):active {
+  transform: scale(.985);
+  background: var(--xb-accent-soft) !important;
+}
+
+.tools-secondary-entry {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 11px 14px;
+  border: .5px solid var(--xb-line);
+  border-radius: var(--xb-card-radius);
+  color: var(--xb-text);
+  text-decoration: none;
+  background: var(--xb-surface);
+  box-shadow: none;
+}
+
+.tools-secondary-entry > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--xb-compact-radius);
+  color: var(--xb-accent);
+  background: var(--xb-accent-soft);
+}
+
+.tools-secondary-entry > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  flex: 1;
+}
+
+.tools-secondary-entry b {
+  color: var(--xb-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.tools-secondary-entry small {
+  overflow: hidden;
+  color: var(--xb-text-secondary);
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tools-secondary-entry > svg {
+  flex: none;
+  color: var(--xb-text-tertiary);
+}
+
+.tools-secondary-entry:hover,
+.tools-secondary-entry:active {
+  border-color: var(--xb-accent-line);
+  background: var(--xb-accent-soft);
+}
+
+/*
+ * Shared cards, forms and feedback states
+ */
+
+:is(
+  .metric-grid > *,
+  .toolbar-card,
+  .order-card,
+  .data-card,
+  .home-stat-strip,
+  .home-feed,
+  .home-logistics-row article,
+  .tracking-card,
+  .tracking-manual,
+  .tracking-guide,
+  .logistics-store-card,
+  .logistics-usage-card,
+  .batch-order-section,
+  .batch-order-card,
+  .admin-order-entry-form > section,
+  .purchaser-order-form > section,
+  .tool-page .tool-form-card,
+  .tool-page .freight-result-card,
+  .tool-page .order-link-login,
+  .tool-page .purchaser-match-panel,
+  .tool-page .generated-link-card,
+  .tool-page .generated-link-history,
+  .store-query-list-card,
+  .public-order-card,
+  .sheet,
+  .confirm-card
+) {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+:is(
+  .input-shell,
+  .quick-search,
+  .tool-input,
+  .tool-page .tool-input,
+  .tool-page .tool-textarea textarea,
+  .mobile-form input:not([type="checkbox"]),
+  .mobile-form textarea,
+  .mobile-form select,
+  .purchaser-order-form input:not([type="checkbox"]),
+  .purchaser-order-form textarea,
+  .purchaser-order-form select,
+  .admin-order-entry-form input,
+  .admin-order-entry-form textarea,
+  .admin-order-entry-form select,
+  .batch-order-textarea,
+  .batch-order-template-current,
+  .batch-order-tpl-field > input,
+  .batch-order-tpl-field > select,
+  .batch-order-tpl-row-key,
+  .batch-order-tpl-row-aliases,
+  .batch-order-tpl-row-dropdown,
+  .batch-order-pick-search,
+  .purchaser-edit-form section input,
+  .purchaser-edit-form section textarea,
+  .purchaser-edit-form section select,
+  .purchaser-create-modal input,
+  .purchaser-create-modal textarea,
+  .purchaser-create-modal select,
+  .purchaser-captcha-pwd,
+  .purchaser-captcha-row > input,
+  .purchaser-current-store-select,
+  .logistics-usage-filter select
+) {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .input-shell,
+  .quick-search,
+  .tool-input,
+  .tool-page .tool-input,
+  .tool-page .tool-textarea textarea,
+  .mobile-form input,
+  .mobile-form textarea,
+  .mobile-form select,
+  .purchaser-order-form input,
+  .purchaser-order-form textarea,
+  .purchaser-order-form select,
+  .admin-order-entry-form input,
+  .admin-order-entry-form textarea,
+  .admin-order-entry-form select,
+  .batch-order-textarea,
+  .batch-order-template-current,
+  .batch-order-pick-search,
+  .purchaser-edit-form section input,
+  .purchaser-edit-form section textarea,
+  .purchaser-edit-form section select,
+  .purchaser-create-modal input,
+  .purchaser-create-modal textarea,
+  .purchaser-create-modal select,
+  .purchaser-captcha-pwd,
+  .purchaser-captcha-row > input,
+  .purchaser-current-store-select,
+  .logistics-usage-filter select
+):focus,
+:is(.input-shell, .quick-search, .tool-input, .batch-order-template-current):focus-within {
+  border-color: var(--xb-accent) !important;
+  box-shadow: 0 0 0 3px var(--xb-accent-soft) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--xb-text-tertiary) !important;
+  opacity: 1;
+}
+
+option {
+  color: var(--xb-text);
+  background: var(--xb-surface);
+}
+
+:is(
+  .login-submit,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .batch-order-submit,
+  .batch-order-parse-btn,
+  .button-primary,
+  .home-create-order,
+  .round-add
+) {
+  border-color: transparent !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-on-action) !important;
+  background: var(--xb-action) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .button-soft,
+  .button-ghost,
+  .secondary-actions button,
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .tool-page .tool-upload,
+  .tool-page .tool-upload-blue,
+  .tool-page .tool-captcha > button,
+  .captcha-login > button
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .login-submit,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .purchaser-submit,
+  .batch-order-submit,
+  .batch-order-parse-btn,
+  .button-primary,
+  .home-create-order,
+  .round-add
+):active:not(:disabled) {
+  transform: scale(.985);
+  background: var(--xb-accent-pressed) !important;
+}
+
+:is(
+  .page-loading,
+  .public-state,
+  .empty-state,
+  .home-empty,
+  .tool-list-empty,
+  .store-query-list-loading,
+  .admin-entry-loading,
+  .batch-order-empty,
+  .spa-short-link-loading
+) {
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+:is(
+  .page-loading,
+  .public-state,
+  .empty-state,
+  .home-empty,
+  .tool-list-empty,
+  .store-query-list-loading,
+  .admin-entry-loading,
+  .batch-order-empty
+) svg {
+  color: var(--xb-accent) !important;
+}
+
+.tool-error {
+  border: 0 !important;
+  color: var(--xb-danger) !important;
+  background: var(--xb-danger-soft) !important;
+}
+
+.tool-success {
+  border: 0 !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+/*
+ * Order entry and batch entry share the same stepped form language.
+ */
+
+.admin-order-entry-form,
+.batch-order-form {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-order-entry-form > section,
+.batch-order-section {
+  padding: 17px !important;
+}
+
+.admin-order-entry-form > section > header,
+.batch-order-section > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.admin-order-entry-form > section > header > span,
+.batch-order-section > header > span,
+.purchaser-order-form section > header > span {
+  width: 28px !important;
+  height: 28px !important;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 0 !important;
+  border-radius: 9px !important;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+.admin-order-entry-form header h2,
+.batch-order-section header h2 {
+  margin: 1px 0 3px;
+  color: var(--xb-text);
+  font-size: 15px;
+  font-weight: 680;
+}
+
+.admin-order-entry-form header p,
+.batch-order-section header p {
+  margin: 0;
+  color: var(--xb-text-secondary) !important;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.admin-entry-buyer-search,
+.admin-entry-create,
+.admin-entry-selected-buyer,
+.admin-entry-buyer-list > button,
+.batch-order-template-hint,
+.batch-order-card-meta,
+.batch-order-card-existing {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.batch-order-template-hint,
+.batch-order-card-existing {
+  color: var(--xb-text-secondary) !important;
+}
+
+.batch-order-template-item,
+.batch-order-tpl-row-item {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+}
+
+.batch-order-template-item.is-active {
+  border-color: var(--xb-accent-line) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.batch-order-card-emoji,
+.batch-order-tpl-row-num {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+/*
+ * Tracking: service brands remain in the copy, while the product chrome
+ * consistently uses the application accent.
+ */
+
+.tracking-guide {
+  padding: 13px 14px !important;
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.tracking-grid {
+  gap: 10px;
+}
+
+.tracking-card {
+  min-height: 78px;
+  padding: 14px !important;
+}
+
+.tracking-logo,
+.tracking-orange .tracking-logo,
+.tracking-green .tracking-logo,
+.tracking-blue .tracking-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--xb-compact-radius);
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.tracking-card b {
+  color: var(--xb-text);
+  font-size: 14px;
+}
+
+.tracking-card p,
+.tracking-manual p,
+.tracking-guide p {
+  color: var(--xb-text-secondary) !important;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.tracking-manual {
+  padding: 16px !important;
+  background: var(--xb-surface) !important;
+}
+
+/*
+ * Logistics usage: grouped records instead of dashboard-style panels.
+ */
+
+.logistics-page {
+  gap: 12px;
+}
+
+.logistics-store-list {
+  gap: 10px;
+}
+
+.logistics-store-card,
+.logistics-usage-card {
+  gap: 11px;
+  padding: 15px !important;
+}
+
+.logistics-global-card {
+  border-color: var(--xb-accent-line) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: inset 3px 0 0 var(--xb-accent) !important;
+}
+
+.logistics-global-card .quota-header h3,
+.quota-header h3 {
+  color: var(--xb-text) !important;
+}
+
+.quota-header .card-sub,
+.quota-stats,
+.quota-switch small {
+  color: var(--xb-text-secondary) !important;
+}
+
+.quota-badge {
+  border-radius: var(--xb-control-radius);
+  color: var(--xb-text);
+  background: var(--xb-surface-muted) !important;
+}
+
+.quota-badge b {
+  color: var(--xb-text) !important;
+}
+
+.quota-badge small {
+  color: var(--xb-text-secondary) !important;
+}
+
+.quota-bar {
+  height: 6px;
+  background: var(--xb-surface-strong) !important;
+}
+
+.quota-bar > span {
+  background: var(--xb-accent) !important;
+}
+
+.quota-switch {
+  padding: 10px 12px;
+  border: 0 !important;
+  border-radius: var(--xb-control-radius);
+  background: var(--xb-surface-muted) !important;
+}
+
+.toggle {
+  background: var(--xb-surface-strong) !important;
+  box-shadow: none !important;
+}
+
+.toggle.on {
+  background: var(--xb-accent) !important;
+  box-shadow: none !important;
+}
+
+.toggle-status.on {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.toggle-status.off {
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+.logistics-usage-card .table-scroll {
+  overflow: auto;
+  border: .5px solid var(--xb-line);
+  border-radius: var(--xb-control-radius);
+}
+
+.logistics-page .data-table th {
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+.logistics-page .data-table td {
+  color: var(--xb-text);
+  background: var(--xb-surface);
+}
+
+.logistics-page .data-table th,
+.logistics-page .data-table td {
+  border-bottom-color: var(--xb-line) !important;
+}
+
+/*
+ * Public utilities and dialogs
+ */
+
+.tool-page .tool-input,
+.tool-page .tool-textarea textarea,
+.tool-page .tool-upload,
+.tool-page .tool-upload-blue,
+.tool-page .freight-output,
+.tool-page .freight-table-wrap {
+  color: var(--xb-text) !important;
+  border-color: var(--xb-line) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+.tool-page .tool-primary-blue,
+.tool-page .tool-primary-amber,
+.tool-page .freight-actions button.primary,
+.tool-page .freight-actions button.primary.blue {
+  color: var(--xb-on-action) !important;
+  background: var(--xb-action) !important;
+}
+
+.link-query-dialog,
+.privacy-sheet,
+.purchaser-help-modal,
+.purchaser-missing-modal,
+.purchaser-success-modal,
+.purchaser-captcha-modal,
+.purchaser-edit-modal,
+.purchaser-create-modal,
+.batch-order-confirm-modal,
+.batch-order-detail-modal {
+  border: .5px solid var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: 0 24px 68px rgba(0, 0, 0, .24) !important;
+}
+
+.link-query-dialog > header > span {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.link-query-input,
+.link-query-example,
+.email-auth-tip,
+.field-readonly {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+/* Legacy feature islands that used fixed light fills now share the same cards. */
+:is(
+  .purchaser-manager-toolbar > div,
+  .purchaser-manager-toolbar > button,
+  .purchaser-manager-loading,
+  .purchaser-manager-list > article,
+  .short-link-empty
+) {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+:is(
+  .short-link-visits-list li,
+  .purchaser-current-store,
+  .batch-order-pick,
+  .batch-order-pick-item
+) {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(.purchaser-block-banner, .purchaser-fullscreen-block, .purchaser-history-blocked) {
+  border: .5px solid color-mix(in srgb, var(--xb-warning) 28%, transparent) !important;
+  color: var(--xb-warning) !important;
+  background: var(--xb-warning-soft) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .purchaser-block-banner b,
+  .purchaser-block-banner p,
+  .purchaser-fullscreen-block h1,
+  .purchaser-fullscreen-block p,
+  .purchaser-fullscreen-block small,
+  .purchaser-fullscreen-block > svg,
+  .purchaser-history-blocked h2,
+  .purchaser-history-blocked p,
+  .purchaser-history-blocked > svg
+) {
+  color: var(--xb-warning) !important;
+}
+
+.store-query-list-card-body h2 {
+  color: var(--xb-text) !important;
+}
+
+.store-query-list-card-body p,
+.store-query-notice,
+.store-query-back {
+  color: var(--xb-text-secondary) !important;
+}
+
+.store-query-list-card-icon,
+.store-query-back:hover {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+/*
+ * Explicit light/dark conflict fixes. These selectors intentionally key from
+ * the resolved html class, so OS preference can never override a manual choice.
+ */
+
+html.theme-light .home-attention {
+  border-color: transparent !important;
+  color: var(--xb-on-action) !important;
+  background: var(--xb-action) !important;
+}
+
+html.theme-light .home-attention > span,
+html.theme-light .home-attention p {
+  color: rgba(255, 255, 255, .74) !important;
+}
+
+html.theme-dark .home-attention {
+  border: .5px solid var(--xb-accent-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+}
+
+html.theme-dark .home-attention > span,
+html.theme-dark .home-attention p {
+  color: var(--xb-text-secondary) !important;
+}
+
+html.theme-dark .home-attention strong,
+html.theme-dark .home-attention em {
+  color: var(--xb-accent) !important;
+}
+
+html.theme-light :is(
+  .home-stat-strip,
+  .home-action-rail > button,
+  .home-feed,
+  .home-order-list > button,
+  .home-buyer-list article,
+  .data-card,
+  .order-card,
+  .toolbar-card,
+  .tools-service-group,
+  .tools-menu-card,
+  .store-query-list-card
+),
+html.theme-dark :is(
+  .home-stat-strip,
+  .home-action-rail > button,
+  .home-feed,
+  .home-order-list > button,
+  .home-buyer-list article,
+  .data-card,
+  .order-card,
+  .toolbar-card,
+  .tools-service-group,
+  .tools-menu-card,
+  .store-query-list-card
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+}
+
+html.theme-light :is(
+  .recipient-block,
+  .latest-route,
+  .detail-grid > div,
+  .tool-order-address,
+  .tool-tracking-toggle,
+  .purchaser-captcha-summary
+),
+html.theme-dark :is(
+  .recipient-block,
+  .latest-route,
+  .detail-grid > div,
+  .tool-order-address,
+  .tool-tracking-toggle,
+  .purchaser-captcha-summary
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+html.theme-light .purchaser-order-tabs button.active span,
+html.theme-dark .purchaser-order-tabs button.active span {
+  color: var(--xb-accent) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: inset 0 0 0 .5px var(--xb-accent-line) !important;
+}
+
+html.theme-light .onboarding-tooltip,
+html.theme-dark .onboarding-tooltip {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+}
+
+html.theme-light .onboarding-tooltip h3,
+html.theme-dark .onboarding-tooltip h3 {
+  color: var(--xb-text) !important;
+}
+
+html.theme-light .onboarding-tooltip p,
+html.theme-dark .onboarding-tooltip p {
+  color: var(--xb-text-secondary) !important;
+}
+
+/*
+ * Legacy media-query closure. These components previously listened to the OS
+ * theme directly; keying them from the resolved class keeps manual light/dark
+ * preferences deterministic.
+ */
+html.theme-light :is(.shipping-editor > section, .order-copy-menu > section, .detail-code),
+html.theme-dark :is(.shipping-editor > section, .order-copy-menu > section, .detail-code) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(.shipping-editor > section > span, .order-copy-menu > section > span),
+html.theme-dark :is(.shipping-editor > section > span, .order-copy-menu > section > span) {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(
+  .shipping-editor > section small,
+  .shipping-editor > section p,
+  .order-copy-menu > section small,
+  .order-copy-menu > section p,
+  .detail-code small
+),
+html.theme-dark :is(
+  .shipping-editor > section small,
+  .shipping-editor > section p,
+  .order-copy-menu > section small,
+  .order-copy-menu > section p,
+  .detail-code small
+) {
+  color: var(--xb-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+html.theme-light :is(.shipping-editor > section h3, .order-copy-menu > section h3, .detail-code b),
+html.theme-dark :is(.shipping-editor > section h3, .order-copy-menu > section h3, .detail-code b) {
+  color: var(--xb-text) !important;
+}
+
+html.theme-light .detail-code .icon-button,
+html.theme-dark .detail-code .icon-button {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(.shipping-editor select, .shipping-editor input, .shipping-code-input button),
+html.theme-dark :is(.shipping-editor select, .shipping-editor input, .shipping-code-input button) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light .form-footer,
+html.theme-dark .form-footer {
+  background: linear-gradient(transparent, var(--xb-bg) 18%) !important;
+}
+
+html.theme-light :is(.peach-tip-toggle, .peach-tip-body, .purchaser-store-notice),
+html.theme-dark :is(.peach-tip-toggle, .peach-tip-body, .purchaser-store-notice) {
+  border-color: color-mix(in srgb, var(--xb-warning) 28%, transparent) !important;
+  color: var(--xb-warning) !important;
+  background: var(--xb-warning-soft) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(
+  .peach-tip-badge,
+  .peach-tip-badge svg,
+  .peach-tip-state,
+  .peach-tip-chevron,
+  .peach-tip-body h3,
+  .peach-tip-body li,
+  .peach-tip-body li b
+),
+html.theme-dark :is(
+  .peach-tip-badge,
+  .peach-tip-badge svg,
+  .peach-tip-state,
+  .peach-tip-chevron,
+  .peach-tip-body h3,
+  .peach-tip-body li,
+  .peach-tip-body li b
+) {
+  color: var(--xb-warning) !important;
+}
+
+html.theme-light .peach-tip-badge,
+html.theme-dark .peach-tip-badge {
+  background: var(--xb-surface) !important;
+}
+
+/* A text row must not be promoted to a card by the old [class*="address"] rule. */
+html.theme-light .compare-card-address,
+html.theme-dark .compare-card-address {
+  border-color: transparent !important;
+  color: var(--xb-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Purchaser access controls: one material system for the group, rows and
+ * controls. This closes the last hard-coded light surfaces in night mode.
+ */
+html.theme-light .purchaser-block-group,
+html.theme-dark .purchaser-block-group {
+  border: .5px solid var(--xb-line) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(
+  .purchaser-block-group .purchaser-order-code-row,
+  .purchaser-block-group .purchaser-block-row,
+  .purchaser-block-group .purchaser-block-display-row
+),
+html.theme-dark :is(
+  .purchaser-block-group .purchaser-order-code-row,
+  .purchaser-block-group .purchaser-block-row,
+  .purchaser-block-group .purchaser-block-display-row
+) {
+  border: .5px solid var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light :is(
+  .purchaser-block-group-head,
+  .purchaser-block-group-head > svg,
+  .purchaser-block-group-head em,
+  .purchaser-order-code-info small,
+  .purchaser-block-info small,
+  .purchaser-block-display-info small
+),
+html.theme-dark :is(
+  .purchaser-block-group-head,
+  .purchaser-block-group-head > svg,
+  .purchaser-block-group-head em,
+  .purchaser-order-code-info small,
+  .purchaser-block-info small,
+  .purchaser-block-display-info small
+) {
+  color: var(--xb-text-secondary) !important;
+}
+
+html.theme-light :is(
+  .purchaser-order-code-info b,
+  .purchaser-block-info b,
+  .purchaser-block-display-info b
+),
+html.theme-dark :is(
+  .purchaser-order-code-info b,
+  .purchaser-block-info b,
+  .purchaser-block-display-info b
+) {
+  color: var(--xb-text) !important;
+}
+
+html.theme-light :is(
+  .purchaser-block-group .purchaser-order-code-row > svg,
+  .purchaser-block-group .purchaser-block-row > svg,
+  .purchaser-block-group .purchaser-block-display-row > svg
+),
+html.theme-dark :is(
+  .purchaser-block-group .purchaser-order-code-row > svg,
+  .purchaser-block-group .purchaser-block-row > svg,
+  .purchaser-block-group .purchaser-block-display-row > svg
+) {
+  color: var(--xb-accent) !important;
+}
+
+html.theme-light .purchaser-block-display-select,
+html.theme-dark .purchaser-block-display-select {
+  border: .5px solid var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light .purchaser-order-code-btn,
+html.theme-dark .purchaser-order-code-btn {
+  border: 0 !important;
+  color: var(--xb-on-action) !important;
+  background: var(--xb-action) !important;
+  box-shadow: none !important;
+}
+
+html.theme-light .purchaser-block-toggle .toggle.off,
+html.theme-dark .purchaser-block-toggle .toggle.off {
+  background: var(--xb-surface-strong) !important;
+  box-shadow: inset 0 0 0 .5px var(--xb-line) !important;
+}
+
+html.theme-light .purchaser-block-toggle .toggle > span,
+html.theme-dark .purchaser-block-toggle .toggle > span {
+  background: var(--xb-surface) !important;
+}
+
+/* 专属下单链接：订单查询沿用与下单表单一致的「外层卡片 + 内层分组」层级。
+   原详情页曾把 summary 的圆角重置为 0，视觉上会像后台表格的连续行。 */
+:is(.purchaser-history-section, .tool-page) .tool-result-head {
+  align-items: center;
+  margin: 14px 0 10px !important;
+  padding: 12px 13px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+:is(.purchaser-history-section, .tool-page) .tool-inline-search,
+:is(.purchaser-history-section, .tool-page) .tool-result-refresh {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(.purchaser-history-section, .tool-page) .tool-filter-panel {
+  margin: 0 0 10px !important;
+  padding: 10px 12px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+:is(.purchaser-history-section, .tool-page) .tool-order-results > article.soft-card {
+  overflow: hidden;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+:is(.purchaser-history-section, .tool-page) .tool-order-address,
+:is(.purchaser-history-section, .tool-page) .tool-order-exp,
+:is(.purchaser-history-section, .tool-page) .tool-order-note,
+:is(.purchaser-history-section, .tool-page) .tool-tracking-toggle,
+:is(.purchaser-history-section, .tool-page) .tool-full-timeline {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(.purchaser-history-section, .tool-page) .tool-order-actions :is(button, a) {
+  border-radius: var(--xb-compact-radius) !important;
+}
+
+.purchaser-detail-modal .purchaser-detail-section {
+  margin-top: 10px;
+  padding: 12px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-card-radius) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+.purchaser-detail-modal .purchaser-detail-section:first-of-type {
+  margin-top: 0;
+}
+
+.purchaser-detail-modal .purchaser-detail-section .purchaser-captcha-summary {
+  padding: 10px 11px !important;
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  background: var(--xb-surface) !important;
+}
+
+.purchaser-detail-modal .tool-full-timeline {
+  padding: 11px 12px 2px;
+  border: .5px solid var(--xb-line);
+  border-radius: var(--xb-control-radius);
+  background: var(--xb-surface);
+}
+
+/* 全局补漏：弹层、链接管理和下单辅助信息都只使用同一组圆角与深浅表面。 */
+:is(
+  .link-query-dialog,
+  .privacy-sheet,
+  .purchaser-help-modal,
+  .purchaser-missing-modal,
+  .purchaser-success-modal,
+  .purchaser-captcha-modal,
+  .purchaser-edit-modal,
+  .purchaser-create-modal,
+  .batch-order-confirm-modal,
+  .batch-order-detail-modal
+) {
+  border-radius: var(--xb-hero-radius) !important;
+}
+
+:is(
+  .purchaser-captcha-summary,
+  .purchaser-success-info,
+  .purchaser-help-content > section,
+  .purchaser-help-contact,
+  .purchaser-missing-list > button,
+  .generated-link-card > p,
+  .generated-link-history article,
+  .generated-link-history article > button,
+  .generated-link-history article > a,
+  .short-link-card-target
+) {
+  border: .5px solid var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.purchaser-help-content > section,
+.purchaser-help-contact,
+.purchaser-success-info,
+.purchaser-captcha-summary {
+  padding: 12px !important;
+}
+
+.generated-link-history article {
+  background: var(--xb-surface) !important;
+}
+
+.generated-link-history article > button,
+.generated-link-history article > a {
+  color: var(--xb-accent) !important;
+}
+
+html.theme-light :is(.purchaser-help-content p, .purchaser-help-contact > span, .purchaser-success-info > div > span:first-child, .purchaser-captcha-summary > div > span:first-child),
+html.theme-dark :is(.purchaser-help-content p, .purchaser-help-contact > span, .purchaser-success-info > div > span:first-child, .purchaser-captcha-summary > div > span:first-child) {
+  color: var(--xb-text-secondary) !important;
+}
+
+/* 清除图标按输入框自身高度居中，避免受行高或父级 padding 影响产生视觉下沉。 */
+.generated-link-history-filter .filter-clear {
+  top: 0 !important;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  margin-block: auto;
+  padding: 0 !important;
+  transform: none !important;
+  line-height: 0;
+}
+
+.toolbar-card.search-toolbar .search-clear {
+  align-self: center;
+  line-height: 0;
+}
+
+@media (max-width: 680px) {
+  .module-page,
+  .admin-tool-module,
+  .batch-order-page,
+  .tool-page {
+    padding-inline: 14px;
+  }
+
+  .tools-home {
+    padding-inline: 14px;
+  }
+
+  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) {
+    min-height: 144px !important;
+    padding: 15px !important;
+  }
+
+  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) > svg {
+    top: 17px !important;
+    right: 14px !important;
+  }
+
+  .logistics-usage-card {
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 350px) {
+  .tools-home-grid {
+    gap: 8px !important;
+  }
+
+  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) {
+    min-height: 140px !important;
+    padding: 13px !important;
+  }
+
+  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) p {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .public-tools-header,
+  .workspace-dock {
+    background: var(--xb-surface) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
