@@ -1,0 +1,33 @@
+app/globals.css
+  s_ce3bec242a3f78::t_7743b4b78f3844 3856-3904
+app/unified-theme.css
+  s_ce3bec242a3f78::t_bbcb4fb049dab8 2424-2425
+  s_ce3bec242a3f78::t_2f9f16ed6c3494 2426-2428
+  s_ce3bec242a3f78::t_1bde797f7e993c 2308-2310
+  s_ce3bec242a3f78::t_225c16aa711be7 770,1380,1394
+  s_ce3bec242a3f78::t_139598dce5fa0c 2414-2423,2433-2446
+  s_ce3bec242a3f78::t_db57570781fa33 2080,2093,2101,2109,2118
+  s_ce3bec242a3f78::t_25e39f88e76251 2429-2432
+  s_ce3bec242a3f78::t_733f31854b7895 2129-2153
+app/MobileAdmin.tsx
+  s_ce3bec242a3f78::t_bbcb4fb049dab8 2107-2111
+  s_ce3bec242a3f78::t_7743b4b78f3844 1858,1867-1868,1910,1994,1998,2007-2008
+  s_ce3bec242a3f78::t_16eaafa5711f5e 2053,2056,2076-2091,2093-2098
+  s_ce3bec242a3f78::t_3a92920374085d 2102-2106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b1252b1e0a5bafc78b64cdb2a0eabedebd06b0cc",
+  "prompts": {},
+  "sessions": {
+    "s_ce3bec242a3f78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa973-6ce9-7e40-bb36-9bf5ae1b18b7",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
