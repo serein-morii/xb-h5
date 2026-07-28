@@ -261,7 +261,7 @@ export default function OrderLinkGenerator({ embedded = false }: { embedded?: bo
                   <CalendarClock size={11} />
                   {hasOrderCount ? <>
                     {item.lastOrderTime ? <>最近下单 <b>{formatRelativeTime(item.lastOrderTime)}</b><span className="generated-link-divider">·</span></> : null}
-                    共 <b>{Math.max(0, parsedOrderCount)}</b> 单
+                    <span className="generated-link-order-count">共 <b>{Math.max(0, parsedOrderCount)}</b> 单</span>
                     <span className="generated-link-divider">·</span>
                   </> : null}
                   <span>创建于 {formatRelativeTime(item.createTime)}</span>

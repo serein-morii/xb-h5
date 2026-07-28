@@ -1,8 +1,39 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
+import {
+  mergeOrderDetailPaymentStatus,
+  normalizeOrderPaymentStatus,
+} from "../app/lib/orderPayment.ts";
 
 const source = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("preserves and normalizes payment status when opening an order detail", () => {
+  assert.equal(normalizeOrderPaymentStatus(true), 1);
+  assert.equal(normalizeOrderPaymentStatus("1"), 1);
+  assert.equal(normalizeOrderPaymentStatus("PAID"), 1);
+  assert.equal(normalizeOrderPaymentStatus(false), 0);
+  assert.equal(normalizeOrderPaymentStatus("unpaid"), 0);
+  assert.equal(normalizeOrderPaymentStatus("已退款"), 2);
+  assert.equal(normalizeOrderPaymentStatus("unknown"), undefined);
+
+  assert.deepEqual(
+    mergeOrderDetailPaymentStatus(
+      { id: 8, payStatus: 1, paidTime: "2026-07-28 18:00:00" },
+      { id: 8, orderStatus: "DFH" },
+    ),
+    {
+      id: 8,
+      payStatus: 1,
+      paidTime: "2026-07-28 18:00:00",
+      orderStatus: "DFH",
+    },
+  );
+  assert.equal(
+    mergeOrderDetailPaymentStatus({ id: 9, payStatus: 1 }, { id: 9, isPaid: false }).payStatus,
+    0,
+  );
+});
 
 test("builds a self-contained static SPA for Nginx", async () => {
   const [html, assets] = await Promise.all([

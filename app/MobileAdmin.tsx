@@ -52,6 +52,7 @@ import {
 import {
   createContext,
   FormEvent,
+  PointerEvent as ReactPointerEvent,
   ReactNode,
   useCallback,
   useContext,
@@ -87,6 +88,7 @@ import {
   updateProfile,
   uploadFile,
 } from "./lib/api";
+import { mergeOrderDetailPaymentStatus } from "./lib/orderPayment";
 import AdminOrderEntry from "./AdminOrderEntry";
 import BatchOrderEntry from "./tools/batch-order/BatchOrderEntry";
 import OrderLinkGenerator from "./tools/order-link/OrderLinkGenerator";
@@ -429,7 +431,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) =
             <LockKeyhole size={14} />忘记密码
           </button>
         </div>
-        <a className="public-tools-entry" href="/tools"><Sparkles size={16} /><span><b>进入免登录工具箱</b><small>订单查询 · 运费计算 · 运费对比</small></span><ChevronRight size={16} /></a>
+          <a className="public-tools-entry" href="/tools"><Sparkles size={16} /><span><b>进入工具箱</b><small>订单查询 · 运费计算 · 运费对比</small></span><ChevronRight size={16} /></a>
         <a className="icp-link login-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
       </section>
       <EmailLoginSheet
@@ -1866,6 +1868,41 @@ type DashboardData = {
   recentPurchasers: DataRow[];
 };
 
+type OrderStatusView = "pending" | "shipping" | "transit" | "completed";
+
+const ORDER_STATUS_VIEW_KEY = "xb-h5-order-status-view";
+const ORDER_STATUS_CODES: Record<OrderStatusView, string> = {
+  pending: "DSH",
+  shipping: "DFH",
+  transit: "YFH",
+  completed: "YWC",
+};
+
+function saveOrderStatusView(status: OrderStatusView) {
+  try {
+    window.sessionStorage.setItem(ORDER_STATUS_VIEW_KEY, status);
+  } catch {
+    // Session storage may be unavailable in privacy mode. The orders page still opens normally.
+  }
+}
+
+function readOrderStatusView(): OrderStatusView | null {
+  try {
+    const status = window.sessionStorage.getItem(ORDER_STATUS_VIEW_KEY);
+    return status === "pending" || status === "shipping" || status === "transit" || status === "completed" ? status : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearOrderStatusView() {
+  try {
+    window.sessionStorage.removeItem(ORDER_STATUS_VIEW_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+}
+
 const EMPTY_DASHBOARD: DashboardData = {
   orderTotal: 0, pending: 0, waiting: 0, sent: 0, completed: 0, billTotal: 0, storeTotal: 0, purchaserTotal: 0, boundPurchaserTotal: 0, recentOrders: [], recentExpress: [], recentPurchasers: [],
 };
@@ -2001,7 +2038,62 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
   ];
 
   const attentionTotal = data.pending + data.waiting;
-  const animatedAttention = useCountUp(attentionTotal, 700);
+  const focusOrder: OrderStatusView[] = ["pending", "shipping", "transit", "completed"];
+  const [focusStatus, setFocusStatus] = useState<OrderStatusView>("pending");
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setFocusStatus((current) => {
+        const currentIndex = ["pending", "shipping", "transit", "completed"].indexOf(current);
+        return ["pending", "shipping", "transit", "completed"][(currentIndex + 1) % 4] as OrderStatusView;
+      });
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const focusSwipeStart = useRef<{ x: number; y: number } | null>(null);
+  const focusSwipeHandled = useRef(false);
+  const focusSource: Array<{ key: OrderStatusView; label: string; count: number }> = [
+    { key: "pending", label: "待处理", count: data.pending },
+    { key: "shipping", label: "待发货", count: data.waiting },
+    { key: "transit", label: "运输中", count: data.sent },
+    { key: "completed", label: "已完成", count: data.completed },
+  ];
+  const focusIndex = focusOrder.indexOf(focusStatus);
+  const activeFocusCard = focusSource[focusIndex];
+  const focusCards = [3, 2, 1, 0].map((offset) => focusSource[(focusIndex + offset) % focusSource.length]);
+  const animatedFocusCount = useCountUp(activeFocusCard.count, 500);
+  const attentionRatio = data.orderTotal > 0 ? Math.min(100, Math.round((activeFocusCard.count / data.orderTotal) * 100)) : 0;
+  const focusSummary = focusStatus === "pending"
+    ? (attentionTotal ? `${data.pending} 笔待处理 · ${data.waiting} 笔待发货` : "今天暂无待处理订单")
+    : focusStatus === "shipping"
+      ? `${data.waiting} 笔待发货 · ${data.pending} 笔待处理`
+      : focusStatus === "transit"
+        ? `${data.sent} 笔运输中 · ${data.completed} 笔已完成`
+        : `${data.completed} 笔已完成 · 累计 ${data.orderTotal} 笔`;
+  const openStatusOrders = (status: OrderStatusView) => {
+    saveOrderStatusView(status);
+    onNavigate("orders");
+  };
+  const moveFocusCard = (direction: -1 | 1) => {
+    setFocusStatus((current) => {
+      const currentIndex = focusOrder.indexOf(current);
+      return focusOrder[(currentIndex + direction + focusOrder.length) % focusOrder.length];
+    });
+  };
+  const beginFocusSwipe = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    focusSwipeStart.current = { x: event.clientX, y: event.clientY };
+    focusSwipeHandled.current = false;
+  };
+  const endFocusSwipe = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = focusSwipeStart.current;
+    focusSwipeStart.current = null;
+    if (!start) return;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < 42 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    focusSwipeHandled.current = true;
+    moveFocusCard(deltaX < 0 ? 1 : -1);
+  };
 
   return <div className="home-space">
     <header className="home-intro">
@@ -2017,16 +2109,47 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
     </header>
 
     <section className="home-glance" aria-label="今日订单概况">
-      <button className="home-attention" type="button" onClick={() => onNavigate("orders")}>
-        <div className="attention-body">
-          <span><RotateCw size={19} />今日重点</span>
-          <em>打开订单<ChevronRight size={16} /></em>
-        </div>
-        <div className={`attention-number ${attentionTotal ? "" : "zero"}`}>
-          <b>{animatedAttention}</b>
-          <small>{attentionTotal ? "待处理" : "已清空"}</small>
-        </div>
-      </button>
+      <div
+        className="home-focus-deck"
+        aria-label="订单状态快捷入口，左右滑动切换状态"
+        onPointerDown={beginFocusSwipe}
+        onPointerUp={endFocusSwipe}
+        onPointerCancel={() => { focusSwipeStart.current = null; }}
+      >
+        {focusCards.map((card, index) => {
+          const isFront = index === focusCards.length - 1;
+          return <button
+            className={`home-focus-card focus-level-${index}${isFront ? " is-front" : ""}`}
+            type="button"
+            key={card.key}
+            onClick={(event) => {
+              if (focusSwipeHandled.current) {
+                event.preventDefault();
+                focusSwipeHandled.current = false;
+                return;
+              }
+              openStatusOrders(card.key);
+            }}
+            aria-label={`查看${card.label}订单，共 ${card.count} 笔`}
+          >
+            <span className="home-focus-card-tab">
+              <b>{isFront ? "今日重点" : card.label}</b>
+              <em>{isFront ? card.label : `${card.count} 笔`}</em>
+            </span>
+            {isFront ? <span className="home-focus-card-body">
+              <span className="home-focus-copy">
+                <strong>{focusSummary}</strong>
+                <span className="home-focus-meter" aria-label={`${card.label}订单占全部订单 ${attentionRatio}%`}><i style={{ width: `${attentionRatio}%` }} /></span>
+                <em>查看{card.label}订单<ChevronRight size={15} /></em>
+              </span>
+              <span className="home-focus-number">
+                <b>{animatedFocusCount}</b>
+                <small>{card.label}</small>
+              </span>
+            </span> : null}
+          </button>;
+        })}
+      </div>
       <div className="home-stat-strip">
         <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
         <button type="button" onClick={() => onNavigate("orders")}><small>待发货</small><b>{data.waiting}</b><span><PackageCheck size={16} />需跟进</span></button>
@@ -2062,11 +2185,17 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
 
 function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "success" | "error" | "info") => void; onNavigate?: (key: MenuKey) => void }) {
   const dictionaries = useContext(DictionaryContext);
+  const [initialStatusFilter] = useState<OrderStatusView | null>(readOrderStatusView);
+  useEffect(() => { clearOrderStatusView(); }, []);
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
-  const [filters, setFilters] = useState<DataRow>({ pageNum: 1, pageSize: 20 });
+  const [filters, setFilters] = useState<DataRow>(() => ({
+    pageNum: 1,
+    pageSize: 20,
+    ...(initialStatusFilter ? { orderStatus: ORDER_STATUS_CODES[initialStatusFilter] } : {}),
+  }));
   const [pageKeyword, setPageKeyword] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
@@ -2074,8 +2203,8 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   const [shipping, setShipping] = useState<DataRow | null>(null);
   const [copyTarget, setCopyTarget] = useState<DataRow | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // 顶部状态卡片过滤：null = 不过滤（全部）
-  const [statusFilter, setStatusFilter] = useState<"pending" | "shipping" | "transit" | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatusView | null>(initialStatusFilter);
+  const [counts, setCounts] = useState({ pending: 0, shipping: 0, transit: 0, completed: 0 });
   // 串行刷新物流进度（与同步所有同款结构）
   const [refreshState, setRefreshState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [markPayState, setMarkPayState] = useState<{ loading: boolean; kind: "paid" | "unpaid"; current: number; total: number; success: number; failed: number }>({ loading: false, kind: "paid", current: 0, total: 0, success: 0, failed: 0 });
@@ -2085,8 +2214,18 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await apiRequest<DataRow>("/biz/order/list", { query: filters });
+      const [result, stats] = await Promise.all([
+        apiRequest<DataRow>("/biz/order/list", { query: filters }),
+        apiRequest<{ data?: DataRow }>("/biz/order/stats"),
+      ]);
       setRows(Array.isArray(result.rows) ? result.rows : []); setTotal(Number(result.total || 0));
+      const statsData = (stats.data && typeof stats.data === "object" ? stats.data : {}) as DataRow;
+      setCounts({
+        pending: Number(statsData.pending || 0),
+        shipping: Number(statsData.waiting || 0),
+        transit: Number(statsData.sent || 0),
+        completed: Number(statsData.completed || 0),
+      });
     } catch (error) { notify(error instanceof Error ? error.message : "订单加载失败", "error"); }
     finally { setLoading(false); }
   }, [filters, notify]);
@@ -2124,12 +2263,16 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
   const selectedRows = rows.filter((row) => selected.has(String(row.id)));
   const ids = selectedRows.map((row) => row.id).join(",");
   const codes = selectedRows.map((row) => row.orderCode).join(",");
-  // 顶部 4 个状态卡片：基于全量 rows 客户端聚合（不受 statusFilter 影响）
-  const counts = useMemo(() => ({
-    pending: rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
-    shipping: rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
-    transit: rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`)).length,
-  }), [rows]);
+  const applyStatusFilter = (status: OrderStatusView | null) => {
+    setStatusFilter(status);
+    setSelected(new Set());
+    setFilters((current: DataRow) => {
+      const next: DataRow = { ...current, pageNum: 1 };
+      if (status) next.orderStatus = ORDER_STATUS_CODES[status];
+      else delete next.orderStatus;
+      return next;
+    });
+  };
   // 付款状态快捷筛选数量（基于全量 rows 客户端聚合）
   const payCounts = useMemo(() => ({ paid: rows.filter((row) => Number(row.payStatus) === 1).length, unpaid: rows.filter((row) => Number(row.payStatus) !== 1).length }), [rows]);
   const visibleRows = useMemo(() => {
@@ -2139,7 +2282,9 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         ? rows.filter((row) => /DSH|待处理/.test(`${row.orderStatus}${row.orderStatusDesc}`))
         : statusFilter === "shipping"
           ? rows.filter((row) => /DTF|DFH|待发/.test(`${row.orderStatus}${row.orderStatusDesc}`))
-          : rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`));
+          : statusFilter === "transit"
+            ? rows.filter((row) => /YFH|YSJ|YSZ|发货|运输/.test(`${row.orderStatus}${row.orderStatusDesc}`))
+            : rows.filter((row) => /YWC|已完成|已归档/.test(`${row.orderStatus}${row.orderStatusDesc}`));
     const keywords = pageKeyword.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
     if (!keywords.length) return statusRows;
     return statusRows.filter((row) => {
@@ -2168,7 +2313,13 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
     setSelected((current) => { const next = new Set(current); if (next.has(value)) next.delete(value); else next.add(value); return next; });
   }
   async function getDetail(row: DataRow) {
-    try { const result = await apiRequest<DataRow>(`/biz/order/${row.id}`); setDetail(result.data || row); }
+    try {
+      const result = await apiRequest<DataRow>(`/biz/order/${row.id}`);
+      const detailRow = result.data && typeof result.data === "object" && !Array.isArray(result.data)
+        ? result.data as DataRow
+        : null;
+      setDetail(mergeOrderDetailPaymentStatus(row, detailRow));
+    }
     catch (error) { notify(error instanceof Error ? error.message : "详情加载失败", "error"); }
   }
   async function getEditor(row: DataRow) {
@@ -2344,11 +2495,12 @@ function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "
         <div><span className="eyebrow">今日工作台</span><h1>订单管理</h1><p>查询、审核、发货与物流跟进</p></div>
         <button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button>
       </div>
-      <div className="metric-grid">
-        <button type="button" className={statusFilter === null ? "active" : ""} onClick={() => setStatusFilter(null)} aria-pressed={statusFilter === null}><span className="metric-icon peach"><ShoppingBag size={19} /></span><p>本页订单</p><b>{rows.length}</b></button>
-        <button type="button" className={statusFilter === "pending" ? "active" : ""} onClick={() => setStatusFilter("pending")} aria-pressed={statusFilter === "pending"}><span className="metric-icon amber"><RotateCw size={19} /></span><p>待处理</p><b>{counts.pending}</b></button>
-        <button type="button" className={statusFilter === "shipping" ? "active" : ""} onClick={() => setStatusFilter("shipping")} aria-pressed={statusFilter === "shipping"}><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></button>
-        <button type="button" className={statusFilter === "transit" ? "active" : ""} onClick={() => setStatusFilter("transit")} aria-pressed={statusFilter === "transit"}><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></button>
+      <div className="metric-grid orders-status-grid">
+        <button type="button" className={statusFilter === null ? "active" : ""} onClick={() => applyStatusFilter(null)} aria-pressed={statusFilter === null}><span className="metric-icon peach"><ShoppingBag size={19} /></span><p>本页订单</p><b>{rows.length}</b></button>
+        <button type="button" className={statusFilter === "pending" ? "active" : ""} onClick={() => applyStatusFilter("pending")} aria-pressed={statusFilter === "pending"}><span className="metric-icon amber"><RotateCw size={19} /></span><p>待处理</p><b>{counts.pending}</b></button>
+        <button type="button" className={statusFilter === "shipping" ? "active" : ""} onClick={() => applyStatusFilter("shipping")} aria-pressed={statusFilter === "shipping"}><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></button>
+        <button type="button" className={statusFilter === "transit" ? "active" : ""} onClick={() => applyStatusFilter("transit")} aria-pressed={statusFilter === "transit"}><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></button>
+        <button type="button" className={statusFilter === "completed" ? "active" : ""} onClick={() => applyStatusFilter("completed")} aria-pressed={statusFilter === "completed"}><span className="metric-icon green"><CircleCheck size={19} /></span><p>已完成</p><b>{counts.completed}</b></button>
       </div>
       <div className="quick-pay-filter" role="toolbar" aria-label="付款状态快捷筛选"><button type="button" className={!filters.payStatus ? "active" : ""} onClick={() => setFilters((current: DataRow) => { const next: DataRow = { ...current, pageNum: 1 }; if (current.payStatus) delete next.payStatus; return next; })}>全部付款 {rows.length}</button><button type="button" className={String(filters.payStatus || "") === "1" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "1", pageNum: 1 }))}><CreditCard size={13} />已付款 {payCounts.paid}</button><button type="button" className={String(filters.payStatus || "") === "0" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "0", pageNum: 1 }))}>未付款 {payCounts.unpaid}</button></div>
       <div className="toolbar-card search-toolbar">
@@ -3208,7 +3360,7 @@ function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogo
     <section className="menu-group" data-onboard="menu-group-manage"><div className="menu-group-title"><b>经营管理</b><small>账单、价格、店铺、物流额度及短链</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores", "logistics", "shortLinks"])}</div></section>
     <section className="menu-group" data-onboard="menu-group-buyer"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
     <section className="menu-group" data-onboard="menu-group-tracking"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
-  </div><a className="menu-public-tools" data-onboard="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>免登录工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
+  </div><a className="menu-public-tools" data-onboard="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
 }
 
 function AdminShell({ username, onLogout }: { username: string; onLogout: () => void }) {
@@ -3390,7 +3542,7 @@ export default function MobileAdmin() {
   }
   if (showSplash) return <div className={`app-loading${splashFading ? " fading" : ""}`}>
     <div className="brand-mark app-loading-mark"><span /></div>
-    <h1>xb</h1>
+    <h1>XB</h1>
     <div className="app-loading-bar"><span /></div>
     <p>正在启动移动工作台</p>
   </div>;

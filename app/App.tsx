@@ -33,13 +33,13 @@ const routes: Record<string, RouteConfig> = {
   },
   "/tools": {
     title: "公开工具｜喜八",
-    description: "无需登录使用订单查询、运费计算与运费对比工具。",
+    description: "使用订单查询、运费计算与运费对比工具。",
     tools: true,
     content: <ToolsPage />,
   },
   "/tools/order-search": {
     title: "订单查询｜喜八Tools",
-    description: "通过手机号和验证码免登录查询订单。",
+    description: "通过手机号和验证码查询订单。",
     tools: true,
     content: <OrderSearch />,
   },
@@ -51,13 +51,13 @@ const routes: Record<string, RouteConfig> = {
   },
   "/tools/order-link": {
     title: "生成链接｜喜八",
-    description: "选择店铺和买家，生成专属免登录下单链接。",
+    description: "选择店铺和买家，生成专属下单链接。",
     tools: true,
     content: <OrderLinkGenerator />,
   },
   "/tools/place-order": {
     title: "专属下单｜喜八",
-    description: "通过下单人专属短链接下单并免登录查询历史订单。",
+    description: "通过下单人专属短链接下单并查询历史订单。",
     tools: true,
     content: <PurchaserOrderPage />,
   },
@@ -99,7 +99,7 @@ function NotFound() {
       <h1>页面不存在</h1>
       <p>链接可能已经失效，或者页面地址有误。</p>
       <a href="/">返回管理首页</a>
-      <a href="/tools">打开免登录工具箱</a>
+      <a href="/tools">打开工具箱</a>
     </main>
   );
 }
@@ -180,7 +180,7 @@ export default function App() {
   } else if (orderShortIdMatch) {
     content = <PurchaserOrderPage />;
     title = "专属下单｜喜八Tools";
-    description = "通过下单人专属短链接下单并免登录查询历史订单。";
+    description = "通过下单人专属短链接下单并查询历史订单。";
     isToolsRoute = true;
   } else if (storeQueryMatch) {
     const rawCode = storeQueryMatch[1] || "";

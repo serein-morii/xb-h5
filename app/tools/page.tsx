@@ -35,7 +35,6 @@ export default function ToolsPage() {
     <section className="tools-service-section" aria-labelledby="tools-service-title">
       <header>
         <h2 id="tools-service-title">常用服务</h2>
-        <span>无需登录</span>
       </header>
       <div className="tools-service-group">
         <div className="tools-home-grid">
