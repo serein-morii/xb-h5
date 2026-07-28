@@ -767,6 +767,7 @@ html.theme-dark .workspace-dock .dock-create.active {
   .order-card,
   .data-card,
   .home-stat-strip,
+  .home-trend-card,
   .home-feed,
   .home-logistics-row article,
   .tracking-card,
@@ -1376,6 +1377,7 @@ html.theme-dark .home-attention em {
 
 html.theme-light :is(
   .home-stat-strip,
+  .home-trend-card,
   .home-action-rail > button,
   .home-feed,
   .home-order-list > button,
@@ -1389,6 +1391,7 @@ html.theme-light :is(
 ),
 html.theme-dark :is(
   .home-stat-strip,
+  .home-trend-card,
   .home-action-rail > button,
   .home-feed,
   .home-order-list > button,
@@ -2074,6 +2077,7 @@ html.theme-dark .home-attention .attention-number {
   overflow: hidden;
   border: 1px solid rgba(6, 92, 45, .14);
   border-radius: var(--xb-hero-radius);
+  box-shadow: 0 9px 22px rgba(37, 103, 65, .08);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -2086,7 +2090,7 @@ html.theme-dark .home-attention .attention-number {
   z-index: 1;
   width: 82%;
   color: #315b43;
-  background: #ddf3e6;
+  background: #e8f6ed;
 }
 
 .home-focus-card.focus-level-1 {
@@ -2094,7 +2098,7 @@ html.theme-dark .home-attention .attention-number {
   z-index: 2;
   width: 88%;
   color: #23543a;
-  background: #a9dfbf;
+  background: #bfe7cd;
 }
 
 .home-focus-card.focus-level-2 {
@@ -2102,7 +2106,7 @@ html.theme-dark .home-attention .attention-number {
   z-index: 3;
   width: 94%;
   color: #fff;
-  background: #43ad72;
+  background: #63bd88;
 }
 
 .home-focus-card.focus-level-3 {
@@ -2111,7 +2115,7 @@ html.theme-dark .home-attention .attention-number {
   width: 100%;
   border-color: rgba(4, 72, 35, .34);
   color: #fff;
-  background: var(--xb-action);
+  background: linear-gradient(135deg, #2f9d66, #178653);
 }
 
 .home-focus-card:hover {
@@ -2120,6 +2124,31 @@ html.theme-dark .home-attention .attention-number {
 
 .home-focus-card:active {
   transform: translateX(-50%) scale(.992);
+}
+
+/* 首页重点收敛为单张卡，避免与趋势、统计模块争夺视觉焦点。 */
+.home-focus-deck:has(.home-focus-single) {
+  height: auto;
+}
+
+.home-focus-card.home-focus-single {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-height: 150px;
+  padding: 0 16px;
+  border-color: rgba(4, 72, 35, .22);
+  background: linear-gradient(135deg, #2f9d66, #178653);
+  box-shadow: 0 12px 28px rgba(37, 103, 65, .15);
+  transform: none;
+}
+
+.home-focus-card.home-focus-single:active {
+  transform: scale(.992);
+}
+
+.home-focus-single .home-focus-card-body {
+  height: 122px;
 }
 
 .home-focus-card-tab {
@@ -2276,7 +2305,9 @@ html.theme-dark .home-focus-card.focus-level-3 {
 }
 
 .order-page {
-  width: 100%;
+  /* 订单页与账单管理共用同一条内容轨道，避免 iPad 横向铺满。 */
+  width: min(100%, 680px);
+  margin-inline: auto;
   overflow-x: hidden;
   overflow-x: clip;
   overscroll-behavior-x: none;
@@ -2378,6 +2409,39 @@ html.theme-dark .home-focus-card.focus-level-3 {
   .home-focus-meter i {
     transition: none;
   }
+}
+
+/* 首页趋势卡沿用统一卡片材质，只补充图表自身的节奏。 */
+.home-trend-card {
+  margin-top: 18px;
+  padding: 16px 15px 12px;
+}
+
+.home-trend-card .home-section-heading {
+  margin: 0 1px 12px;
+}
+
+.home-trend-card + .home-stat-strip,
+.home-stat-strip + .home-trend-card {
+  margin-top: 22px;
+}
+
+.home-glance + .home-stat-strip {
+  margin-top: 16px;
+}
+
+.home-trend-bars {
+  height: 104px;
+  gap: 7px;
+}
+
+.home-trend-bar span {
+  width: min(20px, 66%);
+  background: var(--xb-accent-soft);
+}
+
+.home-trend-bar i {
+  background: var(--xb-accent);
 }
 
 @media (max-width: 680px) {

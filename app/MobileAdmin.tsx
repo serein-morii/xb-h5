@@ -1855,6 +1855,7 @@ function OrderCopyMenu({ row, onCopy }: { row: DataRow; onCopy: (text: string, m
 
 type DashboardData = {
   orderTotal: number;
+  todayOrders: number;
   pending: number;
   waiting: number;
   sent: number;
@@ -1863,6 +1864,8 @@ type DashboardData = {
   storeTotal: number;
   purchaserTotal: number;
   boundPurchaserTotal: number;
+  attentionTotal: number;
+  trend: Array<{ day: string; count: number }>;
   recentOrders: DataRow[];
   recentExpress: DataRow[];
   recentPurchasers: DataRow[];
@@ -1904,7 +1907,7 @@ function clearOrderStatusView() {
 }
 
 const EMPTY_DASHBOARD: DashboardData = {
-  orderTotal: 0, pending: 0, waiting: 0, sent: 0, completed: 0, billTotal: 0, storeTotal: 0, purchaserTotal: 0, boundPurchaserTotal: 0, recentOrders: [], recentExpress: [], recentPurchasers: [],
+  orderTotal: 0, todayOrders: 0, pending: 0, waiting: 0, sent: 0, completed: 0, billTotal: 0, storeTotal: 0, purchaserTotal: 0, boundPurchaserTotal: 0, attentionTotal: 0, trend: [], recentOrders: [], recentExpress: [], recentPurchasers: [],
 };
 
 // 工作台随机鸡汤（按当前时间/待办/完成数取不同池子）
@@ -1988,10 +1991,11 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
     try {
       // 后端聚合接口：一次返回订单按状态分组计数、账单/店铺/买家总数、最近 10/8/8 列表
       // 替代原先的 8 个并发分页请求（其中 4 个 pageSize=1 只为拿 total）
-      const stats = await apiRequest<{ data?: DataRow }>("/biz/order/stats");
+      const stats = await apiRequest<{ data?: DataRow }>("/biz/order/dashboard");
       const payload = (stats.data && typeof stats.data === "object" ? stats.data : {}) as DataRow;
       setData({
         orderTotal: Number(payload.orderTotal || 0),
+        todayOrders: Number(payload.todayOrders || 0),
         pending: Number(payload.pending || 0),
         waiting: Number(payload.waiting || 0),
         sent: Number(payload.sent || 0),
@@ -2000,6 +2004,8 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
         storeTotal: Number(payload.storeTotal || 0),
         purchaserTotal: Number(payload.purchaserTotal || 0),
         boundPurchaserTotal: Number(payload.boundPurchaserTotal || 0),
+        attentionTotal: Number(payload.attentionTotal || 0),
+        trend: Array.isArray(payload.trend) ? payload.trend.map((item) => ({ day: String(item.day || ""), count: Number(item.count || 0) })) : [],
         recentOrders: Array.isArray(payload.recentOrders) ? payload.recentOrders : [],
         recentExpress: Array.isArray(payload.recentExpress) ? payload.recentExpress : [],
         recentPurchasers: Array.isArray(payload.recentPurchasers) ? payload.recentPurchasers : [],
@@ -2038,61 +2044,19 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
   ];
 
   const attentionTotal = data.pending + data.waiting;
-  const focusOrder: OrderStatusView[] = ["pending", "shipping", "transit", "completed"];
-  const [focusStatus, setFocusStatus] = useState<OrderStatusView>("pending");
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setFocusStatus((current) => {
-        const currentIndex = ["pending", "shipping", "transit", "completed"].indexOf(current);
-        return ["pending", "shipping", "transit", "completed"][(currentIndex + 1) % 4] as OrderStatusView;
-      });
-    }, 6000);
-    return () => window.clearInterval(timer);
-  }, []);
-  const focusSwipeStart = useRef<{ x: number; y: number } | null>(null);
-  const focusSwipeHandled = useRef(false);
   const focusSource: Array<{ key: OrderStatusView; label: string; count: number }> = [
     { key: "pending", label: "待处理", count: data.pending },
     { key: "shipping", label: "待发货", count: data.waiting },
     { key: "transit", label: "运输中", count: data.sent },
     { key: "completed", label: "已完成", count: data.completed },
   ];
-  const focusIndex = focusOrder.indexOf(focusStatus);
-  const activeFocusCard = focusSource[focusIndex];
-  const focusCards = [3, 2, 1, 0].map((offset) => focusSource[(focusIndex + offset) % focusSource.length]);
+  const activeFocusCard = focusSource[0];
   const animatedFocusCount = useCountUp(activeFocusCard.count, 500);
   const attentionRatio = data.orderTotal > 0 ? Math.min(100, Math.round((activeFocusCard.count / data.orderTotal) * 100)) : 0;
-  const focusSummary = focusStatus === "pending"
-    ? (attentionTotal ? `${data.pending} 笔待处理 · ${data.waiting} 笔待发货` : "今天暂无待处理订单")
-    : focusStatus === "shipping"
-      ? `${data.waiting} 笔待发货 · ${data.pending} 笔待处理`
-      : focusStatus === "transit"
-        ? `${data.sent} 笔运输中 · ${data.completed} 笔已完成`
-        : `${data.completed} 笔已完成 · 累计 ${data.orderTotal} 笔`;
+  const focusSummary = attentionTotal ? `${data.pending} 笔待处理 · ${data.waiting} 笔待发货` : "今天暂无待处理订单";
   const openStatusOrders = (status: OrderStatusView) => {
     saveOrderStatusView(status);
     onNavigate("orders");
-  };
-  const moveFocusCard = (direction: -1 | 1) => {
-    setFocusStatus((current) => {
-      const currentIndex = focusOrder.indexOf(current);
-      return focusOrder[(currentIndex + direction + focusOrder.length) % focusOrder.length];
-    });
-  };
-  const beginFocusSwipe = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    focusSwipeStart.current = { x: event.clientX, y: event.clientY };
-    focusSwipeHandled.current = false;
-  };
-  const endFocusSwipe = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const start = focusSwipeStart.current;
-    focusSwipeStart.current = null;
-    if (!start) return;
-    const deltaX = event.clientX - start.x;
-    const deltaY = event.clientY - start.y;
-    if (Math.abs(deltaX) < 42 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-    focusSwipeHandled.current = true;
-    moveFocusCard(deltaX < 0 ? 1 : -1);
   };
 
   return <div className="home-space">
@@ -2109,52 +2073,41 @@ function DashboardPage({ username, userInfo, onNavigate, notify }: { username: s
     </header>
 
     <section className="home-glance" aria-label="今日订单概况">
-      <div
-        className="home-focus-deck"
-        aria-label="订单状态快捷入口，左右滑动切换状态"
-        onPointerDown={beginFocusSwipe}
-        onPointerUp={endFocusSwipe}
-        onPointerCancel={() => { focusSwipeStart.current = null; }}
-      >
-        {focusCards.map((card, index) => {
-          const isFront = index === focusCards.length - 1;
-          return <button
-            className={`home-focus-card focus-level-${index}${isFront ? " is-front" : ""}`}
-            type="button"
-            key={card.key}
-            onClick={(event) => {
-              if (focusSwipeHandled.current) {
-                event.preventDefault();
-                focusSwipeHandled.current = false;
-                return;
-              }
-              openStatusOrders(card.key);
-            }}
-            aria-label={`查看${card.label}订单，共 ${card.count} 笔`}
-          >
-            <span className="home-focus-card-tab">
-              <b>{isFront ? "今日重点" : card.label}</b>
-              <em>{isFront ? card.label : `${card.count} 笔`}</em>
+      <div className="home-focus-deck">
+        <button
+          className="home-focus-card home-focus-single is-front"
+          type="button"
+          onClick={() => openStatusOrders(activeFocusCard.key)}
+          aria-label={`查看${activeFocusCard.label}订单，共 ${activeFocusCard.count} 笔`}
+        >
+          <span className="home-focus-card-tab">
+            <b>今日重点</b>
+            <em>{activeFocusCard.label}</em>
+          </span>
+          <span className="home-focus-card-body">
+            <span className="home-focus-copy">
+              <strong>{focusSummary}</strong>
+              <span className="home-focus-meter" aria-label={`${activeFocusCard.label}订单占全部订单 ${attentionRatio}%`}><i style={{ width: `${attentionRatio}%` }} /></span>
+              <em>查看{activeFocusCard.label}订单<ChevronRight size={15} /></em>
             </span>
-            {isFront ? <span className="home-focus-card-body">
-              <span className="home-focus-copy">
-                <strong>{focusSummary}</strong>
-                <span className="home-focus-meter" aria-label={`${card.label}订单占全部订单 ${attentionRatio}%`}><i style={{ width: `${attentionRatio}%` }} /></span>
-                <em>查看{card.label}订单<ChevronRight size={15} /></em>
-              </span>
-              <span className="home-focus-number">
-                <b>{animatedFocusCount}</b>
-                <small>{card.label}</small>
-              </span>
-            </span> : null}
-          </button>;
-        })}
+            <span className="home-focus-number">
+              <b>{animatedFocusCount}</b>
+              <small>{activeFocusCard.label}</small>
+            </span>
+          </span>
+        </button>
       </div>
-      <div className="home-stat-strip">
-        <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
-        <button type="button" onClick={() => onNavigate("orders")}><small>待发货</small><b>{data.waiting}</b><span><PackageCheck size={16} />需跟进</span></button>
-        <button type="button" onClick={() => onNavigate("orders")}><small>已完成</small><b>{data.completed}</b><span><CircleCheck size={16} />已归档</span></button>
-      </div>
+    </section>
+
+    <div className="home-stat-strip">
+      <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
+      <button type="button" onClick={() => onNavigate("orders")}><small>待发货</small><b>{data.waiting}</b><span><PackageCheck size={16} />需跟进</span></button>
+      <button type="button" onClick={() => onNavigate("orders")}><small>已完成</small><b>{data.completed}</b><span><CircleCheck size={16} />已归档</span></button>
+    </div>
+
+    <section className="home-trend-card" aria-label="近七日订单趋势">
+      <div className="home-section-heading"><div><h2>近 7 日订单趋势</h2><p>今日新增 {data.todayOrders} 单 · 待处理 {data.attentionTotal} 单</p></div><button type="button" onClick={() => onNavigate("orders")}>查看订单<ChevronRight size={15} /></button></div>
+      <div className="home-trend-bars">{data.trend.map((point) => { const max = Math.max(...data.trend.map((item) => item.count), 1); return <div className="home-trend-bar" key={point.day}><small>{point.count}</small><span><i style={{ height: `${Math.max(8, point.count / max * 100)}%` }} /></span><label>{point.day.slice(5)}</label></div>; })}</div>
     </section>
 
     <section className="home-actions">

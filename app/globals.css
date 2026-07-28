@@ -3853,6 +3853,55 @@ html.theme-dark .generated-link-action-secondary:hover { background: rgba(7, 193
   font-size: 9px;
 }
 
+.home-trend-card {
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(35, 83, 57, .06);
+}
+
+.home-trend-bars {
+  display: flex;
+  align-items: end;
+  justify-content: space-around;
+  gap: 8px;
+  height: 112px;
+  padding-top: 9px;
+}
+
+.home-trend-bar {
+  display: grid;
+  grid-template-rows: 16px 1fr 17px;
+  justify-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.home-trend-bar small,
+.home-trend-bar label {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.home-trend-bar span {
+  display: flex;
+  align-items: end;
+  width: min(23px, 70%);
+  height: 100%;
+  border-radius: 7px 7px 3px 3px;
+  background: var(--app-tint-soft);
+  overflow: hidden;
+}
+
+.home-trend-bar i {
+  display: block;
+  width: 100%;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, #42bf7c, var(--app-tint));
+}
+
 .home-actions,
 .home-logistics {
   margin-top: 34px;
