@@ -92,18 +92,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const indexRef = useRef(index);
   indexRef.current = index;
 
-  const finishRun = useCallback((completedIds: string[]) => {
-    const completedSet = new Set(completedIds);
-    setPersist((current) => {
-      const pageIntros = Array.from(new Set([...current.pageIntros, ...completedSet]));
-      const next: PersistShape = { systemDone: current.systemDone, pageIntros };
-      // 如果这批 ids 包含 system 标记，则 systemDone=true
-      // 标记规则：调用方传入 "__system" 完成集
-      writePersist(next);
-      return next;
-    });
-  }, []);
-
   const closeTour = useCallback((markSystemDone: boolean) => {
     const current = stepsRef.current;
     if (current) {

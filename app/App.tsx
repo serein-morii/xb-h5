@@ -1,17 +1,18 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./lib/api";
-import MobileAdmin from "./MobileAdmin";
-import PublicOrder from "./order/PublicOrder";
-import FreightCalculator from "./tools/freight-calculator/FreightCalculator";
-import FreightCompare from "./tools/freight-compare/FreightCompare";
-import ToolsLayout from "./tools/layout";
-import OrderLinkGenerator from "./tools/order-link/OrderLinkGenerator";
-import OrderSearch from "./tools/order-search/OrderSearch";
-import ToolsPage from "./tools/page";
-import PurchaserOrderPage from "./tools/place-order/PurchaserOrderPage";
-import PurchaserManager from "./tools/purchasers/PurchaserManager";
-import StoreQuery from "./tools/store-query/StoreQuery";
-import StoreQueryList from "./tools/store-query/StoreQueryList";
+
+const MobileAdmin = lazy(() => import("./MobileAdmin"));
+const PublicOrder = lazy(() => import("./order/PublicOrder"));
+const FreightCalculator = lazy(() => import("./tools/freight-calculator/FreightCalculator"));
+const FreightCompare = lazy(() => import("./tools/freight-compare/FreightCompare"));
+const ToolsLayout = lazy(() => import("./tools/layout"));
+const OrderLinkGenerator = lazy(() => import("./tools/order-link/OrderLinkGenerator"));
+const OrderSearch = lazy(() => import("./tools/order-search/OrderSearch"));
+const ToolsPage = lazy(() => import("./tools/page"));
+const PurchaserOrderPage = lazy(() => import("./tools/place-order/PurchaserOrderPage"));
+const PurchaserManager = lazy(() => import("./tools/purchasers/PurchaserManager"));
+const StoreQuery = lazy(() => import("./tools/store-query/StoreQuery"));
+const StoreQueryList = lazy(() => import("./tools/store-query/StoreQueryList"));
 
 type RouteConfig = {
   title: string;
@@ -112,12 +113,20 @@ function ShortLinkLoading() {
   );
 }
 
+function RouteFallback() {
+  return (
+    <main className="spa-short-link-loading">
+      <div className="app-loading-mark"><span /></div>
+    </main>
+  );
+}
+
 type ShortLinkResolveState =
   | { status: "loading" }
   | { status: "not-found" };
 
 export default function App() {
-  const [pathname, setPathname] = useState(() => normalizePath(window.location.pathname));
+  const pathname = normalizePath(window.location.pathname);
   const [shortLinkState, setShortLinkState] = useState<ShortLinkResolveState | null>(null);
   // 专属查单页用：店铺名异步加载好之后回传上来，标题/描述才有真名而不是 URL 里的 code
   const [storeQueryResolvedName, setStoreQueryResolvedName] = useState<string>("");
@@ -148,8 +157,6 @@ export default function App() {
           setShortLinkState({ status: "not-found" });
           return;
         }
-        // 短链命中：直接 replace；window.location.replace 在用户手势之后异步
-        // 触发的跳转是允许的（不会弹拦截），但用 try/catch 兜底兜任何异常。
         try {
           window.location.replace(data.target);
         } catch {
@@ -186,7 +193,6 @@ export default function App() {
     const rawCode = storeQueryMatch[1] || "";
     let storeCode = rawCode;
     try { storeCode = decodeURIComponent(rawCode); } catch { /* keep raw */ }
-    // 优先用异步回填的真名（没有就用 code 占位）
     const displayName = storeQueryResolvedName || storeCode;
     content = (
       <StoreQuery
@@ -200,8 +206,6 @@ export default function App() {
   } else if (shortLinkState?.status === "not-found") {
     return <NotFound />;
   } else {
-    // loading / redirecting：都显示"正在解析短链…"
-    // window.location.replace 已经触发，整页马上会被替换掉
     return <ShortLinkLoading />;
   }
 
@@ -211,5 +215,9 @@ export default function App() {
     if (meta) meta.content = description;
   }, [title, description]);
 
-  return isToolsRoute ? <ToolsLayout><div className="page-transition" key={pathname}>{content}</div></ToolsLayout> : <div className="page-transition" key={pathname}>{content}</div>;
+  const body = isToolsRoute
+    ? <ToolsLayout><div className="page-transition" key={pathname}>{content}</div></ToolsLayout>
+    : <div className="page-transition" key={pathname}>{content}</div>;
+
+  return <Suspense fallback={<RouteFallback />}>{body}</Suspense>;
 }

@@ -390,7 +390,7 @@ export function parseGridWithTemplate(grid: string[][], template: FormatTemplate
 }
 
 // ============================================================
-// 模板样例下载：用 SheetJS 生成 .xlsx 并触发浏览器下载
+// 模板样例下载：用 ExcelJS 生成 .xlsx 并触发浏览器下载
 // ============================================================
 
 /** 每个字段对应的样例数据（按 FIELD_KEY 顺序填写） */
@@ -506,28 +506,18 @@ export async function downloadTemplateXlsx(template: FormatTemplate): Promise<vo
     return;
   } catch (e) {
     // 继续走 fallback
-    console.warn("[downloadTemplateXlsx] ExcelJS 失败，回退到 SheetJS", e);
+    console.warn("[downloadTemplateXlsx] ExcelJS 带下拉模板失败，回退简化导出", e);
   }
 
-  // 2) 回退：SheetJS（无下拉）
+  // 2) 回退：无下拉的简易 xlsx（仍用 exceljs 封装）
   try {
-    const XLSX = await import("xlsx");
-    const sheetData: any[][] = [];
+    const { downloadExcelAoa } = await import("../../lib/excel");
+    const sheetData: (string | number)[][] = [];
     if (template.headerRow === 1) sheetData.push(headers);
     rows.forEach((r) => sheetData.push(r));
-    const ws = XLSX.utils.aoa_to_sheet(sheetData);
-    ws["!cols"] = headers.map((h, i) => {
-      const maxLen = Math.max(
-        h.length,
-        ...rows.map((r) => r[i]?.length || 0),
-      );
-      return { wch: Math.min(28, Math.max(8, maxLen * 2 + 2)) };
-    });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "录单模板");
-    XLSX.writeFile(wb, fname);
+    await downloadExcelAoa(fname, "录单模板", sheetData, { headerBold: template.headerRow === 1 });
     return;
-  } catch (e) {
+  } catch {
     // 继续走 txt 回退
   }
 

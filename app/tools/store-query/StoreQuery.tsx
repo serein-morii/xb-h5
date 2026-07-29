@@ -136,7 +136,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
       <ArrowLeft size={16} />
       <span>返回店铺列表</span>
     </a>
-    <section className="tool-hero tool-hero-blue">
+    <section className="tool-hero">
       <span><StoreIcon size={25} /></span>
       <div>
         <small>STORE-SCOPED ORDER SEARCH</small>
@@ -176,7 +176,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
         </div>
       </label>
       {error ? <p className="tool-error">{error}</p> : null}
-      <button className="tool-primary tool-primary-blue" disabled={loading} type="submit">
+      <button className="tool-primary" disabled={loading} type="submit">
         {loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}
         {loading ? "正在查询" : "查询该店铺订单"}
       </button>

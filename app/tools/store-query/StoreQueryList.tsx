@@ -49,7 +49,7 @@ export default function StoreQueryList() {
   }, [stores, keyword]);
 
   return <div className="tool-page store-query-list-tool">
-    <section className="tool-hero tool-hero-blue">
+    <section className="tool-hero">
       <span><StoreIcon size={25} /></span>
       <div>
         <small>STORE-SCOPED ORDER SEARCH</small>

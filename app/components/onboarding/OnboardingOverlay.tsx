@@ -98,9 +98,7 @@ export default function OnboardingOverlay() {
     if (!current?.target) return;
     const el = document.querySelector(current.target) as HTMLElement | null;
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    // 仅在步骤 id 变化时触发
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id]);
+  }, [current?.id, current?.target]);
 
   if (!current) return null;
   const vw = typeof window === "undefined" ? 360 : window.innerWidth;

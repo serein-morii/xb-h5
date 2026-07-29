@@ -17,6 +17,6 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
         {actionsOpen ? <X size={17} /> : <Menu size={17} />}
       </button>
     </aside> : null}
-    <footer className="public-tools-footer"><span>喜八Tools</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer>
+    <footer className="public-tools-footer"><span>喜八Tools</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer>
   </div>;
 }

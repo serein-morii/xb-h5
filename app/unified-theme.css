@@ -7034,3 +7034,120 @@ html.theme-dark .purchaser-order-page .purchaser-history-section .tool-copy-icon
     animation: none;
   }
 }
+
+/*
+ * 移动端输入防自动缩放：
+ * iOS Safari 会在表单控件字号低于 16px 时自动放大页面。
+ * 这里只提升可编辑控件的计算字号，不改变标签、按钮和说明文字。
+ */
+@media (max-width: 768px) {
+  :is(
+    input:not([type]),
+    input[type="text"],
+    input[type="search"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    input[type="month"],
+    input[type="week"],
+    textarea,
+    select
+  ) {
+    font-size: 16px !important;
+  }
+}
+
+/*
+ * 禁止页面双指缩放，同时保留横向控件和纵向页面的单指滚动。
+ * JavaScript 侧另行拦截 iOS Safari 专有 gesture 事件。
+ */
+html,
+body,
+#root {
+  touch-action: pan-x pan-y;
+}
+
+/*
+ * “筛选订单”只做纵向滚动。纵向 auto 在存在宽内容时会连带开启横向滚动，
+ * 因此对筛选表单单独锁住横轴，并让选项在容器内等宽换行。
+ */
+.filter-sheet,
+.filter-sheet-body,
+.filter-sheet .filter-section,
+.filter-sheet .filter-field-grid,
+.filter-sheet .filter-field-stack {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.filter-sheet,
+.filter-sheet-body {
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+.filter-sheet-body {
+  touch-action: pan-y;
+}
+
+.filter-sheet .filter-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  width: 100%;
+  overflow: visible;
+}
+
+.filter-sheet .filter-chips button {
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* 我的订单顶部检索条：减少纵向占用，搜索、筛选与刷新保持同一节奏。 */
+.order-page .toolbar-card.search-toolbar {
+  margin-block: 6px !important;
+  border-radius: 10px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .quick-search,
+.order-page .toolbar-card.search-toolbar .filter-chip,
+.order-page .toolbar-card.search-toolbar .toolbar-icon {
+  height: 32px !important;
+  min-height: 32px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .quick-search {
+  padding-inline: 9px 6px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .quick-search input {
+  height: 30px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .quick-search > svg,
+.order-page .toolbar-card.search-toolbar .toolbar-icon > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.order-page .toolbar-card.search-toolbar .filter-chip {
+  padding-inline: 10px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .toolbar-icon {
+  width: 32px !important;
+  min-width: 32px !important;
+}
+
+.order-page .toolbar-card.search-toolbar .filter-chip::before,
+.order-page .toolbar-card.search-toolbar .toolbar-icon::before {
+  top: 8px;
+  bottom: 8px;
+}

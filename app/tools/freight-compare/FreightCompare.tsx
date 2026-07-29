@@ -1,18 +1,15 @@
 import { CheckCircle2, ClipboardCopy, Download, FileSpreadsheet, LoaderCircle, Scale, Upload } from "lucide-react";
 import { ChangeEvent, useMemo, useState } from "react";
 import { copyToClipboard } from "../../lib/api";
-import { extractProvince, FreightRow, parsePastedRows, priceFor } from "../freight-data";
+import { extractProvince, freightRowFromRecord, FreightRow, parsePastedRows, priceFor } from "../freight-data";
 
 type CompareRow = FreightRow & { index: number; province: string; 京东?: number; 顺丰?: number; 邮政?: number };
 
 async function readExcel(file: File): Promise<FreightRow[]> {
-  const XLSX = await import("xlsx");
-  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  return (XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet) || []).flatMap((row) => {
-    const spec = String(row["商品规格"] || "").trim();
-    const address = String(row["地址"] || "").trim();
-    return spec && address ? [{ name: String(row["收件人"] || "").trim(), spec, address, company: "" }] : [];
+  const { readExcelJson } = await import("../../lib/excel");
+  return (await readExcelJson(file)).flatMap((row) => {
+    const parsedRow = freightRowFromRecord(row);
+    return parsedRow ? [{ ...parsedRow, company: "" }] : [];
   });
 }
 
@@ -45,7 +42,17 @@ export default function FreightCompare() {
     finally { setLoading(false); }
   }
 
-  function chooseFile(event: ChangeEvent<HTMLInputElement>) { setFile(event.target.files?.[0] || null); setMessage(""); }
+  function chooseFile(event: ChangeEvent<HTMLInputElement>) {
+    const next = event.target.files?.[0] || null;
+    if (next?.name.toLowerCase().endsWith(".xls")) {
+      setFile(null);
+      setMessage("旧版 .xls 暂不支持，请在 Excel 中另存为 .xlsx 后重试");
+      event.target.value = "";
+      return;
+    }
+    setFile(next);
+    setMessage("");
+  }
   async function copy() {
     if (!rows.length) return;
     const ok = await copyToClipboard(clipboardText(rows));
@@ -53,25 +60,23 @@ export default function FreightCompare() {
   }
   async function exportExcel() {
     if (!rows.length) return;
-    const XLSX = await import("xlsx");
+    const { downloadExcelJson } = await import("../../lib/excel");
     const data = rows.map((row) => ({ 序号: row.index, 收件人: row.name, 地址: row.address, 省份: row.province, 商品规格: row.spec, 京东: row.京东 ?? "-", 顺丰: row.顺丰 ?? "-", 邮政: row.邮政 ?? "-" }));
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data), "运费对比");
     const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
-    XLSX.writeFile(workbook, `运费对比表_${timestamp}.xlsx`);
+    await downloadExcelJson(`运费对比表_${timestamp}.xlsx`, "运费对比", data);
   }
 
   return <div className="tool-page freight-tool">
-    <section className="tool-hero tool-hero-blue"><span><Scale size={25} /></span><div><small>FREIGHT COMPARISON</small><h1>运费对比</h1><p>同一批地址同时计算三家快递，快速找出更优价格。</p></div></section>
+    <section className="tool-hero"><span><Scale size={25} /></span><div><small>FREIGHT COMPARISON</small><h1>运费对比</h1><p>同一批地址同时计算三家快递，快速找出更优价格。</p></div></section>
     <section className="tool-form-card">
       <div className="tool-section-title"><div><b>导入待比较订单</b><p>表头需要包含收件人、商品规格和地址。</p></div><FileSpreadsheet size={20} /></div>
-      <label className={`tool-upload tool-upload-blue ${file ? "selected" : ""}`}><Upload size={20} /><span><b>{file ? file.name : "选择 Excel 文件"}</b><small>支持 .xlsx 和 .xls 文件</small></span><input type="file" accept=".xlsx,.xls" onChange={chooseFile} /></label>
+      <label className={`tool-upload ${file ? "selected" : ""}`}><Upload size={20} /><span><b>{file ? file.name : "选择 Excel 文件"}</b><small>支持 .xlsx，兼容商品规格/商品重量、收件地址等常见表头</small></span><input type="file" accept=".xlsx" onChange={chooseFile} /></label>
       <div className="tool-divider"><span>或粘贴数据</span></div>
       <label className="tool-textarea"><span>订单 JSON / Excel 表格内容</span><textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="粘贴接口 rows 数据，或从 Excel 直接复制订单行" /></label>
       {message && message !== "对比表已复制" ? <p className="tool-error">{message}</p> : null}
-      <button className="tool-primary tool-primary-blue" disabled={loading} type="button" onClick={compare}>{loading ? <LoaderCircle className="spin" size={18} /> : <Scale size={18} />}{loading ? "正在对比" : "生成对比表"}</button>
+      <button className="tool-primary" disabled={loading} type="button" onClick={compare}>{loading ? <LoaderCircle className="spin" size={18} /> : <Scale size={18} />}{loading ? "正在对比" : "生成对比表"}</button>
     </section>
-    {rows.length ? <section className="freight-result-card compare-card"><header><div><small>对比完成</small><h2>{rows.length} 个地址</h2></div><strong><small>京东 / 顺丰价差合计</small>¥{savings}</strong></header><div className="freight-actions freight-export-actions"><button type="button" onClick={copy}><ClipboardCopy size={15} />复制表格</button><button type="button" className="primary blue" onClick={exportExcel}><Download size={15} />导出 Excel</button></div><div className="compare-list">{rows.map((row) => {
+    {rows.length ? <section className="freight-result-card compare-card"><header><div><small>对比完成</small><h2>{rows.length} 个地址</h2></div><strong><small>京东 / 顺丰价差合计</small>¥{savings}</strong></header><div className="freight-actions freight-export-actions"><button type="button" onClick={copy}><ClipboardCopy size={15} />复制表格</button><button type="button" className="primary" onClick={exportExcel}><Download size={15} />导出 Excel</button></div><div className="compare-list">{rows.map((row) => {
       const entries: Array<{ key: string; price?: number }> = [{ key: "京东", price: row.京东 }, { key: "顺丰", price: row.顺丰 }, { key: "邮政", price: row.邮政 }];
       const valid = entries.filter((e): e is { key: string; price: number } => typeof e.price === "number");
       const min = valid.length ? Math.min(...valid.map((e) => e.price)) : -1;

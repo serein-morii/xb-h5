@@ -185,16 +185,17 @@ export default function BatchOrderEntry() {
     if (!file) return;
     setError("");
     const name = file.name.toLowerCase();
-    if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+    if (name.endsWith(".xls")) {
+      setError("旧版 .xls 暂不支持，请在 Excel 中另存为 .xlsx 后重试");
+      event.target.value = "";
+      return;
+    }
+    if (name.endsWith(".xlsx")) {
       try {
         if (!activeTemplate) { setError("无可用格式模板"); event.target.value = ""; return; }
-        const XLSX = await import("xlsx");
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        if (!firstSheetName) { setError("Excel 文件没有可读工作表"); event.target.value = ""; return; }
-        const sheet = workbook.Sheets[firstSheetName];
-        const grid = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: "", blankrows: false });
+        const { readExcelGrid } = await import("../../lib/excel");
+        const grid = await readExcelGrid(file);
+        if (!grid.length) { setError("Excel 文件没有可读工作表"); event.target.value = ""; return; }
         const result = parseGridWithTemplate(grid as string[][], activeTemplate);
         setLastParse(result);
         if (result.items.length === 0) {
@@ -206,7 +207,7 @@ export default function BatchOrderEntry() {
           event.target.value = "";
           return;
         }
-        const text = (grid as any[][]).map((row) => row.map((c) => String(c ?? "")).join("\t")).join("\n");
+        const text = grid.map((row) => row.map((c) => String(c ?? "")).join("\t")).join("\n");
         setRawText(text);
         setItems(result.items);
         const initNames: Record<number, string> = {};
@@ -499,7 +500,7 @@ export default function BatchOrderEntry() {
               <Settings2 size={15} />管理模板
             </button>
             <button type="button" className="batch-order-file-btn" onClick={() => fileRef.current?.click()}><Upload size={15} />选择文件</button>
-            <input ref={fileRef} hidden type="file" accept=".txt,.csv,.xlsx,.xls" onChange={handleFile} />
+            <input ref={fileRef} hidden type="file" accept=".txt,.csv,.xlsx" onChange={handleFile} />
             <button type="button" className="batch-order-parse-btn" onClick={handlePaste}><ClipboardPaste size={15} />解析内容</button>
           </div>
           <textarea
@@ -935,7 +936,6 @@ function TemplateEditor(props: {
             </span>
           </div>
           {t.fields.map((f, i) => {
-            const label = FIELD_OPTIONS.find((o) => o.key === f.key)?.label || f.key;
             return (
               <div key={`${f.key}-${i}`} className="batch-order-tpl-row-item">
                 <div className="batch-order-tpl-row-num">{i + 1}</div>
@@ -955,14 +955,14 @@ function TemplateEditor(props: {
                   className="batch-order-tpl-row-aliases"
                   value={f.aliases.join(" / ")}
                   placeholder="识别词（/ 分隔，如 收款时间 / 支付时间）"
-                  onChange={(e) => props.onChangeField(i, "aliases", e.target.value.split(/[\/,,]/).map((s) => s.trim()).filter(Boolean))}
+                  onChange={(e) => props.onChangeField(i, "aliases", e.target.value.split(/[/,，]/).map((s) => s.trim()).filter(Boolean))}
                   disabled={!!t.builtin}
                 />
                 <input
                   className="batch-order-tpl-row-dropdown"
                   value={(f.dropdown || []).join(" / ")}
                   placeholder="下拉（/ 分隔，留空 = 自由文本）"
-                  onChange={(e) => props.onChangeField(i, "dropdown", e.target.value.split(/[\/,,]/).map((s) => s.trim()).filter(Boolean))}
+                  onChange={(e) => props.onChangeField(i, "dropdown", e.target.value.split(/[/,，]/).map((s) => s.trim()).filter(Boolean))}
                   disabled={!!t.builtin}
                 />
                 <label className="batch-order-tpl-row-required">

@@ -53,17 +53,55 @@ export function toQuery(params: Record<string, unknown> = {}) {
   return value ? `?${value}` : "";
 }
 
+/** 默认请求超时（毫秒） */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
 type RequestOptions = Omit<RequestInit, "body"> & {
   auth?: boolean;
   query?: Record<string, unknown>;
   body?: BodyInit | Record<string, unknown>;
+  /** 超时毫秒，默认 30000；传 0 关闭超时 */
+  timeoutMs?: number;
 };
+
+/**
+ * 带超时的 fetch：timeoutMs 到期后 abort；若调用方传入 signal，则合并两者。
+ */
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit = {},
+  timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  if (!timeoutMs || timeoutMs <= 0) {
+    return fetch(input, init);
+  }
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  if (init.signal) {
+    if (init.signal.aborted) controller.abort();
+    else init.signal.addEventListener("abort", onAbort, { once: true });
+  }
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      // 调用方主动 abort 时仍抛 AbortError；超时则包装为可读错误
+      if (init.signal?.aborted) throw error;
+      throw new ApiError("请求超时，请检查网络后重试", 408);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+    init.signal?.removeEventListener("abort", onAbort);
+  }
+}
 
 export async function apiRequest<T = Record<string, unknown>>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { auth = true, query, headers, body, ...rest } = options;
+  const { auth = true, query, headers, body, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, ...rest } = options;
   const requestHeaders = new Headers(headers);
   if (auth) {
     const token = getStoredToken();
@@ -80,12 +118,16 @@ export async function apiRequest<T = Record<string, unknown>>(
     requestBody = JSON.stringify(requestBody);
   }
 
-  const response = await fetch(`${API_BASE}${path}${toQuery(query)}`, {
-    ...rest,
-    headers: requestHeaders,
-    body: requestBody,
-    cache: "no-store",
-  });
+  const response = await fetchWithTimeout(
+    `${API_BASE}${path}${toQuery(query)}`,
+    {
+      ...rest,
+      headers: requestHeaders,
+      body: requestBody,
+      cache: "no-store",
+    },
+    timeoutMs,
+  );
 
   if (response.status === 401) {
     handleSessionExpired();
@@ -403,11 +445,17 @@ export function listPublicStores(params: { code?: string; name?: string; createB
 export async function publicApiRequest<T = Record<string, unknown>>(
   path: string,
   query: Record<string, unknown> = {},
+  options: { timeoutMs?: number; signal?: AbortSignal } = {},
 ): Promise<T> {
-  const response = await fetch(`${PUBLIC_API_BASE}${path}${toQuery(query)}`, {
-    headers: { isToken: "false" },
-    cache: "no-store",
-  });
+  const response = await fetchWithTimeout(
+    `${PUBLIC_API_BASE}${path}${toQuery(query)}`,
+    {
+      headers: { isToken: "false" },
+      cache: "no-store",
+      signal: options.signal,
+    },
+    options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+  );
   if (!response.ok) throw new ApiError(`请求失败（${response.status}）`, response.status);
   const result = (await response.json()) as Record<string, unknown>;
   const code = Number(result.code ?? 200);

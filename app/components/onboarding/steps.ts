@@ -93,7 +93,10 @@ export function getSystemTourSteps(): OnboardingStep[] {
       body: "「批量录单」「链接下单」「物流跟踪」—— 进店到发货的全套工具。",
       target: "[data-onboard='menu-group-orders']",
       placement: "bottom",
-      beforeEnter: waitForMenuAnimation,
+      beforeEnter: async () => {
+        onOpenMenu?.();
+        await waitForMenuAnimation();
+      },
     },
     {
       id: "menu-group-manage",

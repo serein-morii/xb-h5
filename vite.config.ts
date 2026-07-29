@@ -6,6 +6,17 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("exceljs")) return "exceljs";
+          if (id.includes("jsencrypt")) return "jsencrypt";
+          if (id.includes("lucide-react")) return "lucide";
+          if (id.includes("react-dom") || id.includes("react")) return "react-vendor";
+        },
+      },
+    },
   },
   server: {
     // 监听所有网卡，便于手机扫码访问（dev 模式下后端仍在 127.0.0.1:8080，
