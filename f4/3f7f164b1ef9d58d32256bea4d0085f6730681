@@ -1,0 +1,35 @@
+app/globals.css
+  s_e16ce9c90de77f::t_fb2539444efad0 1147
+  s_e16ce9c90de77f::t_794d4357f100eb 1142
+  s_e16ce9c90de77f::t_f5fd996222f346 1130-1132,1140-1141,1143-1146,1148-1151,1155-1158
+  s_e16ce9c90de77f::t_ba8d014508a8d6 1136-1139,1634-1637,1639
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_e16ce9c90de77f::t_6816a1ecf89c0b 147-153
+  s_e16ce9c90de77f::t_ad2adb2a9e6467 20,132-146,154,645-647,662,674
+  s_e16ce9c90de77f::t_3a83b0c59c1aed 112-116,526,608,627
+  s_e16ce9c90de77f::t_f5fd996222f346 865
+  s_e16ce9c90de77f::t_ba8d014508a8d6 68,73-74,643-644,648,660-661,667-673,675-679,845,862-863
+app/unified-theme.css
+  s_e16ce9c90de77f::t_2247acfad0c458 4761-4774
+app/admin/crud.tsx
+  s_e16ce9c90de77f::t_a49a2d1aa71fa1 65,93,530
+app/tools/OrderList.tsx
+  s_e16ce9c90de77f::t_fb2539444efad0 85,101-106,169
+  s_e16ce9c90de77f::t_f5fd996222f346 1,74,81,84,86-100,160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "f43f7f164b1ef9d58d32256bea4d0085f6730681",
+  "prompts": {},
+  "sessions": {
+    "s_e16ce9c90de77f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fae6f-b302-7c33-8849-778571a68055",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
