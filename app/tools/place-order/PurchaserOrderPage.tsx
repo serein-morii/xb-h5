@@ -17,6 +17,7 @@ type AddressDraft = { id?: number; receiverName: string; receiverPhone: string; 
 type AddressBookView = "auth" | "list" | "edit" | "delete";
 const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
 const EMPTY_ADDRESS_DRAFT: AddressDraft = { receiverName: "", receiverPhone: "", address: "", isDefault: false };
+const COST_ACCESS_STORAGE_PREFIX = "xb:cost-access:";
 // 指定快递：买家仅可从这三家中选（值与 sys_exp_com 字典一致）
 const COURIER_OPTIONS: Option[] = [
   { value: "SF", label: "顺丰", icon: "https://cdn.kuaidi100.com/images/all/144/shunfeng.png" },
@@ -64,11 +65,13 @@ export default function PurchaserOrderPage() {
   const [viewingOrder, setViewingOrder] = useState<PublicOrderRecord | null>(null);
   // confirm 模式：进入或切到被拦 tab 时弹窗提醒（每个 tab 切回去都会再弹一次）
   const [blockConfirm, setBlockConfirm] = useState<{ orders: boolean; query: boolean } | null>(null);
-  // 成本价查看：当前是否解锁（验证过密码）；解锁后下次进页面靠 expireTime 重新走
+  // 成本价查看：当前页解锁后保持 30 分钟，刷新订单列表也继续带上验证密码
   const [costPwd, setCostPwd] = useState("");
   const [costPwdBusy, setCostPwdBusy] = useState(false);
   const [costPwdError, setCostPwdError] = useState("");
   const [costPriceUnlocked, setCostPriceUnlocked] = useState(false);
+  const [costAccessPassword, setCostAccessPassword] = useState("");
+  const [costAccessExpiresAt, setCostAccessExpiresAt] = useState(0);
   const [addressBookOpen, setAddressBookOpen] = useState(false);
   const [addressBookView, setAddressBookView] = useState<AddressBookView>("auth");
   const [addressBookBusy, setAddressBookBusy] = useState(false);
@@ -106,6 +109,11 @@ export default function PurchaserOrderPage() {
     return data;
   }, []);
 
+  const reloadOrders = useCallback(() => {
+    const password = costPriceUnlocked && costAccessExpiresAt > Date.now() ? costAccessPassword : undefined;
+    return loadOrders(linkKey.purchaserId, password);
+  }, [costAccessExpiresAt, costAccessPassword, costPriceUnlocked, linkKey.purchaserId, loadOrders]);
+
   const initialize = useCallback(async () => {
     const parsed = parseShortId(); setLinkKey(parsed); setError(""); setLoading(true); setLinkContext(null);
     if (!parsed.purchaserId || !/^[2-9a-hj-km-np-z]{6}$/.test(parsed.purchaserId)) {
@@ -121,7 +129,29 @@ export default function PurchaserOrderPage() {
       const productRows = optionsResult.data?.products || []; const sizeRows = optionsResult.data?.sizes || [];
       setProducts(productRows); setSizes(sizeRows);
       // 订单查询被拦时不开单（不论哪种展示模式都不需要加载订单列表），避免错误冒到下单页面顶部
-      if (contextResult.data.blockQuery !== 1) await loadOrders(parsed.purchaserId);
+      if (contextResult.data.blockQuery !== 1) {
+        let restoredPassword = "";
+        try {
+          const saved = JSON.parse(window.sessionStorage.getItem(`${COST_ACCESS_STORAGE_PREFIX}${parsed.purchaserId}`) || "null") as { password?: string; expiresAt?: number } | null;
+          if (saved?.password && Number(saved.expiresAt) > Date.now()) {
+            restoredPassword = saved.password;
+            setCostAccessPassword(saved.password);
+            setCostAccessExpiresAt(Number(saved.expiresAt));
+            setCostPriceUnlocked(true);
+          } else {
+            window.sessionStorage.removeItem(`${COST_ACCESS_STORAGE_PREFIX}${parsed.purchaserId}`);
+          }
+        } catch {
+          restoredPassword = "";
+        }
+        const restoredOrders = await loadOrders(parsed.purchaserId, restoredPassword || undefined);
+        if (restoredPassword && !restoredOrders.some((order) => order.totalPrice !== undefined && order.totalPrice !== null)) {
+          setCostPriceUnlocked(false);
+          setCostAccessPassword("");
+          setCostAccessExpiresAt(0);
+          try { window.sessionStorage.removeItem(`${COST_ACCESS_STORAGE_PREFIX}${parsed.purchaserId}`); } catch { /* ignore storage errors */ }
+        }
+      }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "下单链接无效"); }
     finally { setLoading(false); }
   }, [loadOrders]);
@@ -493,7 +523,7 @@ export default function PurchaserOrderPage() {
       const body = { ...form, orderNameDesc: form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label, orderTypeDesc: form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label, purchaserShortId: linkKey.purchaserId, code: code.trim(), uuid, pwd: requirePwd ? pwd.trim() : undefined, addressId: selectedAddressId || undefined, saveAddress: selectedAddressId ? false : saveAddress };
       const result = await apiRequest<{ data?: Row }>("/search/order", { auth: false, method: "POST", body });
       setSuccess(result.data || {}); setCaptchaOpen(false); setForm((current) => ({ ...EMPTY_FORM, orderName: current.orderName, orderType: current.orderType })); setPasteText(""); setPwd(""); setSelectedAddressId(null); setSaveAddress(true);
-      await loadOrders(linkKey.purchaserId);
+      await reloadOrders();
       if (addressToken) await loadAddresses(addressToken);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "下单失败，请重试");
@@ -575,7 +605,7 @@ export default function PurchaserOrderPage() {
       };
       await apiRequest(`/search/order/${editingOrder.id}`, { auth: false, method: "PUT", query: { purchaserShortId: linkKey.purchaserId }, body });
       setConfirmingEdit(false); setEditingOrder(null); setEditForm(EMPTY_FORM);
-      await loadOrders(linkKey.purchaserId);
+      await reloadOrders();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "修改失败，请重试");
       setConfirmingEdit(false);
@@ -594,7 +624,7 @@ export default function PurchaserOrderPage() {
     try {
       await apiRequest(`/search/order/${confirmingDelete.id}`, { auth: false, method: "DELETE", query: { purchaserShortId: linkKey.purchaserId } });
       setConfirmingDelete(null);
-      await loadOrders(linkKey.purchaserId);
+      await reloadOrders();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "删除失败，请重试");
       setConfirmingDelete(null);
@@ -610,7 +640,12 @@ export default function PurchaserOrderPage() {
       const fresh = await loadOrders(linkKey.purchaserId, costPwd.trim());
       const unlocked = fresh.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
       if (unlocked) {
-        setCostPriceUnlocked(true); setCostPwd(""); setCostPwdError("");
+        setCostPriceUnlocked(true);
+        setCostAccessPassword(costPwd.trim());
+        const expiresAt = Date.now() + 30 * 60 * 1000;
+        setCostAccessExpiresAt(expiresAt);
+        try { window.sessionStorage.setItem(`${COST_ACCESS_STORAGE_PREFIX}${linkKey.purchaserId}`, JSON.stringify({ password: costPwd.trim(), expiresAt })); } catch { /* 当前浏览器不支持会话存储时仍可在本页使用 */ }
+        setCostPwd(""); setCostPwdError("");
       } else {
         setCostPwdError("密码错误或已过期，请向店铺重新索取");
       }
@@ -622,9 +657,25 @@ export default function PurchaserOrderPage() {
 
   function lockCostPrice() {
     setCostPriceUnlocked(false);
+    setCostAccessPassword("");
+    setCostAccessExpiresAt(0);
+    try { window.sessionStorage.removeItem(`${COST_ACCESS_STORAGE_PREFIX}${linkKey.purchaserId}`); } catch { /* ignore storage errors */ }
     // 重新拉一次不带密码的订单，把成本价字段从内存里去掉
     void loadOrders(linkKey.purchaserId);
   }
+
+  useEffect(() => {
+    if (!costPriceUnlocked || !costAccessExpiresAt) return;
+    const delay = Math.max(0, costAccessExpiresAt - Date.now());
+    const timer = window.setTimeout(() => {
+      setCostPriceUnlocked(false);
+      setCostAccessPassword("");
+      setCostAccessExpiresAt(0);
+      try { window.sessionStorage.removeItem(`${COST_ACCESS_STORAGE_PREFIX}${linkKey.purchaserId}`); } catch { /* ignore storage errors */ }
+      void loadOrders(linkKey.purchaserId);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [costPriceUnlocked, costAccessExpiresAt, linkKey.purchaserId, loadOrders]);
 
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
@@ -791,7 +842,7 @@ export default function PurchaserOrderPage() {
         </form>
       </>
     ) : (blockDisplay === "confirm" && blockQueryOn) ? null : <section id="purchaser-history-section" className="purchaser-history-section">
-      {/* 成本价密码：店铺开启"允许查看成本价"才显示；解锁后变成"重新上锁"小按钮 */}
+      {/* 成本价密码：店铺开启"允许查看成本价"才显示 */}
       {Number(linkContext.viewCostPrice) === 1 && !costPriceUnlocked ? <details className="purchaser-secondary-tools purchaser-cost-disclosure">
         <summary>
           <span><LockKeyhole size={17} /><span><b>成本价权限</b><small>输入店铺提供的密码后查看</small></span></span>
@@ -808,10 +859,10 @@ export default function PurchaserOrderPage() {
         </section>
       </details> : null}
       {Number(linkContext.viewCostPrice) === 1 && costPriceUnlocked ? <section className="purchaser-cost-unlocked">
-        <div><Wallet size={14} /><b>已解锁成本价</b><em>每笔订单会显示总成本与销售价</em></div>
-        <button type="button" onClick={lockCostPrice}><Lock size={13} />重新上锁</button>
+        <div className="purchaser-cost-unlocked-main"><span className="purchaser-cost-unlocked-icon"><Wallet size={17} /></span><span><b>成本价已解锁</b><small>商品、包装、快递和总成本 · 本次有效 30 分钟</small></span></div>
+        <button type="button" onClick={lockCostPrice}><Lock size={13} />立即锁定</button>
       </section> : null}
-      <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={() => loadOrders(linkKey.purchaserId, costPriceUnlocked ? costPwd.trim() : undefined)} collapseExtras />
+      <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} collapseExtras enableCostSelection={costPriceUnlocked} />
     </section>) : null}
 
     <nav className="purchaser-bottom-nav" aria-label="专属下单导航">
@@ -1044,7 +1095,6 @@ export default function PurchaserOrderPage() {
           {viewingOrder.packagePrice !== undefined && viewingOrder.packagePrice !== null ? <div><span>包装费</span><b>¥{Number(viewingOrder.packagePrice).toFixed(2)}</b></div> : null}
           {viewingOrder.expPrice !== undefined && viewingOrder.expPrice !== null ? <div><span>快递费</span><b>¥{Number(viewingOrder.expPrice).toFixed(2)}</b></div> : null}
           <div className="full"><span>总成本</span><b>¥{Number(viewingOrder.totalPrice).toFixed(2)}</b></div>
-          {viewingOrder.salePrice !== undefined && viewingOrder.salePrice !== null ? <div className="full"><span>销售价</span><b>¥{Number(viewingOrder.salePrice).toFixed(2)}</b></div> : null}
         </div>
       </div> : null}
     </section></div> : null}

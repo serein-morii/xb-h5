@@ -62,11 +62,9 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
     subtitle: (row) => `${row.orderNameDesc || optionLabel(row.orderName, dictionaries.products)} · ${row.orderTypeDesc || optionLabel(row.orderType, dictionaries.sizes)} · ${row.customer || "暂无收件人"}`,
     searchFields: [{ key: "orderCode", label: "订单号" }, { key: "createBy", label: "创建人" }],
-    fields: [{ key: "orderCode", label: "订单号", required: true }, { key: "goodsPrice", label: "商品成本", type: "number" }, { key: "packagePrice", label: "包装费", type: "number" }, { key: "expPrice", label: "快递费", type: "number" }, { key: "addPrice", label: "附加费", type: "number" }, { key: "totalPrice", label: "总成本", type: "number", readonly: true }, { key: "salePrice", label: "销售价格", type: "number" }, { key: "gainPrice", label: "盈利", type: "number", readonly: true }, { key: "remark", label: "备注", type: "textarea" }],
+    fields: [{ key: "orderCode", label: "订单号", required: true }, { key: "goodsPrice", label: "商品成本", type: "number" }, { key: "packagePrice", label: "包装费", type: "number" }, { key: "expPrice", label: "快递费", type: "number" }, { key: "addPrice", label: "附加费", type: "number" }, { key: "totalPrice", label: "总成本", type: "number", readonly: true }, { key: "remark", label: "备注", type: "textarea" }],
     summary: [
-      { key: "salePrice", label: "售价", money: true, tone: "default" },
       { key: "totalPrice", label: "总成本", money: true, tone: "default" },
-      { key: "gainPrice", label: "盈利", money: true, tone: "success" },
     ],
     display: [
       { key: "orderName", label: "商品名称", options: dictionaries.products },
@@ -92,7 +90,7 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
           path: () => `/biz/bill/forceSync/${row.id}`,
           method: "PATCH",
           danger: true,
-          confirm: `该账单关联订单状态为「${row.orderStatusDesc || status}」，已发货/已产生物流的价格通常不应再被覆盖。\n\n确认要强制刷新吗？（会重算总成本/盈利）`,
+          confirm: `该账单关联订单状态为「${row.orderStatusDesc || status}」，已发货/已产生物流的价格通常不应再被覆盖。\n\n确认要强制刷新吗？（会重算成本）`,
         };
       }
       return { label: "同步价格", path: () => `/biz/bill/${row.id}`, method: "PATCH" };
@@ -529,7 +527,7 @@ export function BatchEditor({ config, rows, onSaved, notify }: { config: CrudCon
 export function CrudEditor({ config, initial, onClose, onSaved, notify }: { config: CrudConfig; initial: DataRow | null; onClose: () => void; onSaved: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const [form, setForm] = useState<DataRow>(() => ({ ...(config.key === "stores" ? { isDelete: 1 } : {}), ...(initial || {}) }));
   const [saving, setSaving] = useState(false);
-  function update(key: string, value: unknown) { setForm((current) => { const next = { ...current, [key]: value }; if (config.key === "bills") { const total = Number(next.goodsPrice || 0) + Number(next.packagePrice || 0) + Number(next.expPrice || 0) + Number(next.addPrice || 0); next.totalPrice = total; next.gainPrice = Number(next.salePrice || 0) - total; } if (config.key === "prices") next.totalPrice = Number(next.goodsPrice || 0) + Number(next.expPrice || 0) + Number(next.packagePrice || 0); return next; }); }
+  function update(key: string, value: unknown) { setForm((current) => { const next = { ...current, [key]: value }; if (config.key === "bills") { const total = Number(next.goodsPrice || 0) + Number(next.packagePrice || 0) + Number(next.expPrice || 0) + Number(next.addPrice || 0); next.totalPrice = total; } if (config.key === "prices") next.totalPrice = Number(next.goodsPrice || 0) + Number(next.expPrice || 0) + Number(next.packagePrice || 0); return next; }); }
   async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { const payload = { ...form }; if (config.key === "express" && typeof payload.expTime === "string") payload.expTime = payload.expTime.replace("T", " "); if (config.key === "stores") payload.isDelete = Number(payload.isDelete || 1); await apiRequest(config.api, { method: form.id ? "PUT" : "POST", body: payload }); notify(form.id ? "修改成功" : "新增成功", "success"); onSaved(); onClose(); } catch (error) { notify(error instanceof Error ? error.message : "保存失败", "error"); } finally { setSaving(false); } }
   return <form className="mobile-form" onSubmit={submit}><div className="form-grid">{config.fields.map((field) => <label className={field.type === "textarea" ? "span-full" : ""} key={field.key}><span>{field.label}{field.required ? " *" : ""}</span><FieldInput field={field} value={form[field.key]} onChange={(value) => update(field.key, value)} /></label>)}</div><button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Check size={18} />}保存</button></form>;
 }

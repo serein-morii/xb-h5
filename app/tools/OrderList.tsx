@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, Clock3, Copy, CreditCard, Edit3, Eye, Inbox, MapPin, RefreshCw, Search, Store, Trash2, Truck, User, Wallet } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Clock3, Copy, CreditCard, Edit3, Eye, Inbox, MapPin, RefreshCw, Search, Store, Trash2, Truck, User, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { copyToClipboard } from "../lib/api";
 
@@ -44,7 +44,6 @@ export type PublicOrderRecord = Record<string, unknown> & {
   packagePrice?: number;
   expPrice?: number;
   totalPrice?: number;
-  salePrice?: number;
 };
 
 function statusTone(code?: string) {
@@ -72,14 +71,38 @@ function formatCost(value?: number) {
   return Number(value).toFixed(2);
 }
 
-export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh, collapseExtras = false }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean }) {
+export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh, collapseExtras = false, enableCostSelection = false }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean; enableCostSelection?: boolean }) {
   const [active, setActive] = useState("ALL");
   const [activePay, setActivePay] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedCostOrders, setSelectedCostOrders] = useState<Set<number>>(new Set());
   async function handleRefresh() { if (!onRefresh || refreshing) return; setRefreshing(true); try { await onRefresh(); } finally { setRefreshing(false); } }
+
+  const selectedCostRows = useMemo(() => orders.filter((order) => selectedCostOrders.has(order.id) && order.totalPrice !== undefined && order.totalPrice !== null), [orders, selectedCostOrders]);
+  const selectableCostRows = useMemo(() => orders.filter((order) => order.totalPrice !== undefined && order.totalPrice !== null), [orders]);
+  const costSummary = useMemo(() => selectedCostRows.reduce((summary, order) => ({
+    goods: summary.goods + (Number(order.goodsPrice) || 0),
+    package: summary.package + (Number(order.packagePrice) || 0),
+    express: summary.express + (Number(order.expPrice) || 0),
+    total: summary.total + (Number(order.totalPrice) || 0),
+  }), { goods: 0, package: 0, express: 0, total: 0 }), [selectedCostRows]);
+
+  function toggleCostOrder(order: PublicOrderRecord) {
+    setSelectedCostOrders((current) => {
+      const next = new Set(current);
+      if (next.has(order.id)) next.delete(order.id); else next.add(order.id);
+      return next;
+    });
+  }
+
+  function toggleAllCostOrders() {
+    setSelectedCostOrders((current) => current.size === selectableCostRows.length
+      ? new Set()
+      : new Set(selectableCostRows.map((order) => order.id)));
+  }
 
   const statuses = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
@@ -134,7 +157,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
         <div className="tool-order-address"><p><User size={14} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={14} />{order.address || "暂无地址"}</p></div>
         <div className="tool-order-exp"><Truck size={14} /><span><b>{order.expComDesc || "暂无快递"}</b><small>{order.expCode && order.expCode !== "无" ? order.expCode : "暂无快递单号"}</small></span></div>
         {Number(order.payStatus) === 1 && order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} />付款时间：{String(order.paidTime).replace("T", " ").slice(0, 16)}{order.paidAmount ? <b> · 实付 ¥{Number(order.paidAmount).toFixed(2)}</b> : null}</div> : null}
-        {order.totalPrice !== undefined && order.totalPrice !== null ? <div className="tool-order-cost-row"><Wallet size={13} />成本：<b>¥{formatCost(order.totalPrice)}</b>{order.salePrice !== undefined && order.salePrice !== null ? <em> · 售价 ¥{formatCost(order.salePrice)}</em> : null}{order.goodsPrice !== undefined && order.goodsPrice !== null ? <em> · 商品 ¥{formatCost(order.goodsPrice)}</em> : null}</div> : null}
+        {order.totalPrice !== undefined && order.totalPrice !== null ? <div className="tool-order-cost-row"><div className="tool-order-cost-head"><span><Wallet size={13} /><b className="tool-order-cost-title">成本明细</b></span>{enableCostSelection ? <button type="button" className={`tool-order-cost-select${selectedCostOrders.has(order.id) ? " active" : ""}`} onClick={() => toggleCostOrder(order)}>{selectedCostOrders.has(order.id) ? <><Check size={12} />已选择</> : "选择订单"}</button> : null}</div><div className="tool-order-cost-grid">{order.goodsPrice !== undefined && order.goodsPrice !== null ? <span>商品 <b>¥{formatCost(order.goodsPrice)}</b></span> : null}{order.packagePrice !== undefined && order.packagePrice !== null ? <span>包装 <b>¥{formatCost(order.packagePrice)}</b></span> : null}{order.expPrice !== undefined && order.expPrice !== null ? <span>快递 <b>¥{formatCost(order.expPrice)}</b></span> : null}<span>合计 <b>¥{formatCost(order.totalPrice)}</b></span></div></div> : null}
         {(order.storeName || order.store || order.purchaser || order.createBy) ? <div className="tool-order-meta-row">{(order.storeName || order.store) ? <span><Store size={13} />店铺：{order.storeName || order.store}</span> : null}{order.purchaser || order.createBy ? <span><User size={13} />下单人：{order.purchaser || order.createBy}</span> : null}</div> : null}
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}
         <button type="button" className={`tool-tracking-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleTracking(order.id)}><Clock3 size={15} /><span><b>物流信息详情</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"} · 共 {tracking.length} 条</small></span><ChevronDown size={17} /></button>
@@ -143,6 +166,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
       </article>;
     })}</section>
     {!visible.length ? <div className="tool-list-empty"><Inbox size={32} /><h3>{orders.length ? "没有符合当前筛选条件的订单" : "还没有关联订单"}</h3><p>{orders.length ? "试着切换状态、清除搜索词，或者刷新一下数据。" : "使用当前专属链接下单后，订单会自动显示在这里。"}</p></div> : null}
+    {enableCostSelection && selectedCostRows.length ? <aside className="tool-cost-summary-float"><div className="tool-cost-summary-head"><span><Wallet size={15} /><b>已选 {selectedCostRows.length} 笔订单</b></span><div className="tool-cost-summary-actions"><button type="button" onClick={toggleAllCostOrders}>{selectedCostOrders.size === selectableCostRows.length ? "取消全选" : "全选"}</button><button type="button" onClick={() => setSelectedCostOrders(new Set())}>清空</button></div></div><div className="tool-cost-summary-grid"><span>桃 <b>¥{formatCost(costSummary.goods)}</b></span><span>包装 <b>¥{formatCost(costSummary.package)}</b></span><span>快递 <b>¥{formatCost(costSummary.express)}</b></span><span>总成本 <b>¥{formatCost(costSummary.total)}</b></span></div></aside> : null}
     {copied ? <div className="public-copy-toast"><CheckCircle2 size={16} />订单信息已复制</div> : null}
   </>;
 }

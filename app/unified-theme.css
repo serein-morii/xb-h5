@@ -4758,6 +4758,20 @@ html.theme-dark .purchaser-home-actions small {
   color: var(--xb-text-secondary);
 }
 
+html.theme-dark .purchaser-order-page .purchaser-cost-disclosure > summary,
+html.theme-dark .purchaser-order-page .purchaser-cost-disclosure > summary b {
+  color: var(--xb-text) !important;
+}
+
+html.theme-dark .purchaser-order-page .purchaser-cost-disclosure > summary small {
+  color: var(--xb-text-secondary) !important;
+}
+
+html.theme-dark .purchaser-order-page .purchaser-cost-disclosure > summary > span > svg,
+html.theme-dark .purchaser-order-page .purchaser-cost-disclosure > summary > svg {
+  color: var(--xb-accent) !important;
+}
+
 html.theme-dark .purchaser-home-meta small:last-child,
 html.theme-dark .purchaser-home-overview > div b,
 html.theme-dark .purchaser-home-recent strong {
