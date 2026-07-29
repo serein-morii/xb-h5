@@ -1,0 +1,147 @@
+app/unified-theme.css
+  s_6e013c9d5b93ad::t_13f7d31cda45b7 7037-7061
+  s_6e013c9d5b93ad::t_bdc44cf328ee52 7065-7074
+  s_6e013c9d5b93ad::t_62b87498443791 7075-7091,7093-7112
+  s_6e013c9d5b93ad::t_3d124a036a443f 7063-7064,7113-7153
+  s_6e013c9d5b93ad::t_3c314eb406fc1f 7092
+  s_6e013c9d5b93ad::t_8727ac98ee6673 7062
+app/tools/store-query/StoreQuery.tsx
+  s_6e013c9d5b93ad::t_df097d4bb4890f 139,179
+app/admin/orders.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 50-63
+  s_6e013c9d5b93ad::t_3d4d495bb4c262 47-49
+  s_6e013c9d5b93ad::t_11c121fcc3017d 64-66
+app/App.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 129
+  s_6fbdd6c3e2c004::t_75027fd630723e 1,3-15,116-123,218-222
+app/tools/batch-order/BatchOrderEntry.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 188-193,196-198,210,503,958,965
+app/tools/freight-calculator/FreightCalculator.tsx
+  s_6e013c9d5b93ad::t_3448d0eb24b272 184
+  s_6e013c9d5b93ad::t_026a44985a1cdc 7,99-104
+  s_6e013c9d5b93ad::t_4f31460837fe53 4,10-13,37-38,187
+  s_6e013c9d5b93ad::t_2b14700fc31651 24-28,34,39-64,88,110-111,114,118,128-137,174,189,191-195
+  s_6e013c9d5b93ad::t_86313a8fac82ba 167-173
+  s_6e013c9d5b93ad::t_799ab2e1bd4ac2 1,91,124-127,138-139,141,145-163,210-221
+tests/rendered-html.test.mjs
+  s_6e013c9d5b93ad::t_13f7d31cda45b7 44,46-47,50-55,116,154,164,174,184
+  s_6e013c9d5b93ad::t_bbbc2ba9166f33 8,16-17,20-42
+  s_6e013c9d5b93ad::t_bdc44cf328ee52 45,48-49,56-62
+  s_6e013c9d5b93ad::t_5cf699ee41cd17 9,63-115
+  s_6e013c9d5b93ad::t_96684ae3703a91 18-19
+  s_6fbdd6c3e2c004::t_c42629b9a5c951 12-15,43,145-153,155-163,165-173,175-183,185,221-223,229-238,247,252,273,291,341,361
+app/components/onboarding/steps.ts
+  s_6e013c9d5b93ad::t_86313a8fac82ba 96-98
+  s_6fbdd6c3e2c004::t_d1da0e860cb29b 99
+app/components/onboarding/OnboardingOverlay.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 101
+app/tools/freight-compare/FreightCompare.tsx
+  s_6e013c9d5b93ad::t_3448d0eb24b272 4,9-12,70,73,77,79
+  s_6e013c9d5b93ad::t_86313a8fac82ba 45-55
+  s_6fbdd6c3e2c004::t_0be520e41f36ab 63,66
+index.html
+  s_6e013c9d5b93ad::t_13f7d31cda45b7 5-8
+app/tools/freight-data.ts
+  s_6e013c9d5b93ad::t_2f995003eef1a4 70-74,108,190,221-226
+  s_6e013c9d5b93ad::t_799ab2e1bd4ac2 117,206
+  s_6e013c9d5b93ad::t_d4c191f7164064 16-49,161,165-171
+  s_6e013c9d5b93ad::t_386f388cf918c0 62-63
+  s_6e013c9d5b93ad::t_4f31460837fe53 2-3,66-69,75-107,109-116,119,121-125,180-183,189,191,195-205,207,218-220,227
+  s_6e013c9d5b93ad::t_65bc187d08f63a 118
+  s_6e013c9d5b93ad::t_feaeb7028150d7 120
+app/globals.css
+  s_6e013c9d5b93ad::t_2b14700fc31651 1218-1225
+  s_6e013c9d5b93ad::t_799ab2e1bd4ac2 1226-1239
+  s_6e013c9d5b93ad::t_3448d0eb24b272 1212-1213
+app/MobileAdmin.tsx
+  s_6e013c9d5b93ad::t_b4826f081d4232 3
+  s_6e013c9d5b93ad::t_35583456690443 2
+  s_6e013c9d5b93ad::t_ea8017297a5aaa 5-8
+app/admin/dashboard.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 20-22
+  s_6e013c9d5b93ad::t_b82a98a3461e07 17-19
+  s_6e013c9d5b93ad::t_5b1fd61a967182 23-25
+app/admin/logistics.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 22
+  s_6e013c9d5b93ad::t_2e29593f32206b 19-21
+  s_6e013c9d5b93ad::t_b952542a289ed7 23-25
+app/lib/excel.ts
+  s_6e013c9d5b93ad::t_faeca3e9a07154 38-40
+  s_6e013c9d5b93ad::t_96684ae3703a91 6-36,58,80,89-124,137,149
+  s_6e013c9d5b93ad::t_86313a8fac82ba 144-148
+  s_6e013c9d5b93ad::t_9bdbf63c856f22 3-5
+  s_6e013c9d5b93ad::t_2c3bef4dcb3608 37
+  s_6e013c9d5b93ad::t_36c36705d1a363 41-43,55-57
+  s_6e013c9d5b93ad::t_e7a36042181621 59-61,77-79
+  s_6e013c9d5b93ad::t_a4c1b5e53b87d5 81-83,86-88
+  s_6e013c9d5b93ad::t_9f6a12a59c5d4b 125-127,134-136
+  s_6e013c9d5b93ad::t_6ee61ff41ec287 138-143
+  s_6e013c9d5b93ad::t_90f1052c488c52 1-2,44-54,62-76,84-85,128-133
+app/admin/crud.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 30-503
+  s_6e013c9d5b93ad::t_b55c2440aab241 27-29
+  s_6e013c9d5b93ad::t_6b47e63b713635 504-506
+app/admin/login.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 24
+  s_6e013c9d5b93ad::t_e7bf75a2915542 21-23
+  s_6e013c9d5b93ad::t_0ca6f8561f0ebb 25-27
+app/tools/store-query/StoreQueryList.tsx
+  s_6e013c9d5b93ad::t_df097d4bb4890f 52
+src/main.tsx
+  s_6e013c9d5b93ad::t_bdc44cf328ee52 5,14-18
+app/lib/viewport.ts
+  s_6e013c9d5b93ad::t_bdc44cf328ee52 1-29
+app/tools/batch-order/formatTemplates.ts
+  s_6e013c9d5b93ad::t_4e3f949dec1e3e 393
+  s_6fbdd6c3e2c004::t_7f7bba2dc7d903 509,512,514-515,518,520
+app/admin/shell.tsx
+  s_6e013c9d5b93ad::t_86313a8fac82ba 37
+  s_6e013c9d5b93ad::t_da2d58759b462c 8-20,55-300
+  s_6e013c9d5b93ad::t_ccaa16d168843c 5-7
+  s_6e013c9d5b93ad::t_4ddfe4373f5b57 21-23,34-36
+  s_6e013c9d5b93ad::t_6f3e133c8cf954 38-40,52-54
+  s_6e013c9d5b93ad::t_aeb6eb8a4d2249 301-303
+  s_6e013c9d5b93ad::t_7e316a69e83114 1-4,24-33,41-51,304-367
+README.md
+  s_6fbdd6c3e2c004::t_551a4fb7475cde 15
+app/lib/api.ts
+  s_6fbdd6c3e2c004::t_f0b8b2f3cd0d22 56-58,63-64,67-99,104,121-130,448,450-458
+package-lock.json
+  s_6fbdd6c3e2c004::t_cb606e9b21e3dc 15
+package.json
+  s_6fbdd6c3e2c004::t_bb1707eda1b05c 21
+vite.config.ts
+  s_e4aa181a8c5e50::t_db1e59703a3dc8 9-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fbd80477156dd3112a7c38f571fa96bf5468334f",
+  "prompts": {},
+  "sessions": {
+    "s_6e013c9d5b93ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faba0-a1e6-77e1-884b-2c3c44038b89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_e4aa181a8c5e50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99a631df-de71-4628-a97b-ab347c3c0f89",
+        "model": "unknown"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
