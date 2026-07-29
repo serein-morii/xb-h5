@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
-type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
+type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; addressVerifyEnabled?: number; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
 const BLOCK_DISPLAY_OPTIONS: { value: BlockDisplay; label: string; hint: string }[] = [
   { value: "banner", label: "顶部 tab", hint: "禁用哪个，整个页面不展示，tab 没有选项，只显示一个占满整行" },
@@ -249,6 +249,18 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     finally { setBlockBusyId(null); }
   }
 
+  async function toggleAddressVerify(item: Purchaser, next: 0 | 1) {
+    if (blockBusyId === item.id) return;
+    setBlockBusyId(item.id); setError("");
+    try {
+      await apiRequest(`/biz/purchaser/${item.id}/address-verify`, { method: "PUT", body: { addressVerifyEnabled: next } });
+      setNotice(next === 1 ? "已开启常用地址访问验证" : "已关闭常用地址访问验证");
+      await load();
+      window.setTimeout(() => setNotice(""), 1600);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "地址验证设置失败"); }
+    finally { setBlockBusyId(null); }
+  }
+
   async function setBlockDisplay(item: Purchaser, next: BlockDisplay) {
     if (blockBusyId === item.id) return;
     if ((item.blockDisplayType || "banner") === next) return;
@@ -270,6 +282,13 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     {loading ? <div className="purchaser-manager-loading"><LoaderCircle className="spin" size={24} />正在加载下单人</div> : <section className="purchaser-manager-list">{visible.map((item) => <article key={item.id}><header><span>{String(item.name || "下").slice(0, 1)}</span><div><h2>{item.name || "未命名"}</h2><p><Phone size={12} />{item.phone || "--"}<em>ID {item.shortId}</em></p></div><i className={item.storeId ? "bound" : ""}>{item.storeId ? "已绑定" : "未绑定"}</i></header><div className="purchaser-current-store"><Store size={16} /><div className="purchaser-current-store-info"><small>当前店铺</small><b>{item.storeName || "尚未绑定店铺"}</b></div><select className="purchaser-current-store-select" value={draftStore[item.id] || ""} onChange={(event) => setDraftStore((current) => ({ ...current, [item.id]: event.target.value }))} disabled={busyId === item.id}><option value="">{item.storeId ? "换绑到…" : "选择店铺"}</option>{stores.map((store) => <option value={store.code} key={store.code}>{store.name || store.text || store.value || store.code}</option>)}</select><button type="button" className={`purchaser-current-store-bind ${item.storeId ? "rebind" : "bind"}`} disabled={busyId === item.id || !draftStore[item.id]} onClick={() => bind(item)}>{busyId === item.id ? <LoaderCircle className="spin" size={14} /> : <Link2 size={14} />}{item.storeId ? "换绑" : "绑定"}</button>{item.storeId ? <><button className="copy-link" type="button" onClick={() => copyOrderLink(item)}><Copy size={14} />复制链接</button><button type="button" disabled={busyId === item.id} onClick={() => requestUnbind(item)}><Unlink size={14} />解绑</button></> : null}</div>      <div className="purchaser-block-group">
         <div className="purchaser-block-group-head"><Ban size={14} /><span>配置</span><em>下单码与访问控制</em></div>
         <div className="purchaser-order-code-row"><KeyRound size={15} /><div className="purchaser-order-code-info"><small>下单码</small><b>{item.requirePwd === 1 ? "需密码" : item.requirePwd === 0 ? "免密码" : "跟店铺"}</b>{item.orderCodePwd ? <em>码 {item.orderCodePwd}</em> : null}{item.orderCodePwdExpire ? <em>至 {String(item.orderCodePwdExpire).slice(0, 10)}</em> : null}</div><button type="button" className="purchaser-order-code-btn" onClick={() => openCodeConfig(item)}>配置</button></div>
+        <div className="purchaser-block-row">
+          <ShieldCheck size={15} />
+          <div className="purchaser-block-info"><small>常用地址访问验证</small><b>{item.addressVerifyEnabled === 1 ? "已开启，打开前需验证" : "已关闭，直接打开地址库"}</b></div>
+          <div className="purchaser-block-toggle">
+            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.addressVerifyEnabled === 1 ? "on" : "off"}`} aria-label="切换常用地址访问验证" aria-pressed={item.addressVerifyEnabled === 1} onClick={() => toggleAddressVerify(item, item.addressVerifyEnabled === 1 ? 0 : 1)}><span /></button>}
+          </div>
+        </div>
         <div className="purchaser-block-row">
           <Ban size={15} />
           <div className="purchaser-block-info"><small>禁止下单</small><b>{item.blockOrder === 1 ? "已拦截下单" : "未拦截"}</b></div>
