@@ -1631,6 +1631,18 @@ html.theme-dark :is(
   color: var(--xb-accent) !important;
 }
 
+html.theme-light .purchaser-refresh-control label,
+html.theme-dark .purchaser-refresh-control label {
+  border-color: var(--xb-line) !important;
+  background: var(--xb-surface) !important;
+  color: var(--xb-text-secondary) !important;
+}
+
+html.theme-light .purchaser-refresh-control input,
+html.theme-dark .purchaser-refresh-control input {
+  color: var(--xb-text) !important;
+}
+
 html.theme-light .purchaser-block-display-select,
 html.theme-dark .purchaser-block-display-select {
   border: .5px solid var(--xb-line) !important;
@@ -7164,4 +7176,1793 @@ body,
 .order-page .toolbar-card.search-toolbar .toolbar-icon::before {
   top: 8px;
   bottom: 8px;
+}
+
+/*
+ * Global purchaser-blue theme
+ *
+ * The dedicated order page is the visual source of truth for XB H5:
+ * cool blue actions, mist-blue canvas, crisp white surfaces, soft blue
+ * shadows and a consistent 16 / 12px radius hierarchy.
+ */
+:root,
+html.theme-light {
+  --xb-accent: #2867ee;
+  --xb-accent-pressed: #174fc8;
+  --xb-accent-soft: #e8f0ff;
+  --xb-accent-line: #bcd0ff;
+  --xb-action: #2867ee;
+  --xb-on-action: #f8fbff;
+  --xb-bg: #eef3f8;
+  --xb-surface: #ffffff;
+  --xb-surface-muted: #f3f6fa;
+  --xb-surface-strong: #e7edf5;
+  --xb-text: #121722;
+  --xb-text-secondary: #647087;
+  --xb-text-tertiary: #8c96a8;
+  --xb-line: #e2e8f1;
+  --xb-info: #2867ee;
+  --xb-info-soft: #e8f0ff;
+  --xb-shadow: 0 1px 2px rgba(36, 68, 119, .025), 0 10px 28px rgba(36, 68, 119, .065);
+
+  --app-tint: var(--xb-accent);
+  --app-tint-pressed: var(--xb-accent-pressed);
+  --app-tint-soft: var(--xb-accent-soft);
+  --app-tint-line: var(--xb-accent-line);
+  --primary-action: var(--xb-action);
+  --primary-action-label: var(--xb-on-action);
+  --consumer-accent: var(--xb-accent);
+  --consumer-accent-strong: var(--xb-accent-pressed);
+  --consumer-accent-soft: var(--xb-accent-soft);
+  --consumer-bg: var(--xb-bg);
+  --consumer-surface: var(--xb-surface);
+  --consumer-ink: var(--xb-text);
+  --consumer-muted: var(--xb-text-secondary);
+  --consumer-line: var(--xb-line);
+  --ios-label: var(--xb-text);
+  --ios-secondary-label: var(--xb-text-secondary);
+  --ios-tertiary-label: var(--xb-text-tertiary);
+  --ios-grouped-bg: var(--xb-bg);
+  --ios-grouped-surface: var(--xb-surface);
+  --ios-secondary-fill: var(--xb-surface-muted);
+  --ios-separator: var(--xb-line);
+  --ink: var(--xb-text);
+  --muted: var(--xb-text-secondary);
+  --line: var(--xb-line);
+  --surface: var(--xb-surface);
+  --canvas: var(--xb-bg);
+  --green: var(--xb-accent);
+  --green-dark: var(--xb-accent-pressed);
+  --green-soft: var(--xb-accent-soft);
+  --blue: var(--xb-accent);
+}
+
+html.theme-dark {
+  --xb-accent: #78a0ff;
+  --xb-accent-pressed: #9bb8ff;
+  --xb-accent-soft: #182b50;
+  --xb-accent-line: #31528e;
+  --xb-action: #78a0ff;
+  --xb-on-action: #0d1b35;
+  --xb-bg: #0f1722;
+  --xb-surface: #172131;
+  --xb-surface-muted: #202d40;
+  --xb-surface-strong: #29384d;
+  --xb-text: #f1f5ff;
+  --xb-text-secondary: #a8b3c5;
+  --xb-text-tertiary: #748198;
+  --xb-line: #2d3b50;
+  --xb-info: #78a0ff;
+  --xb-info-soft: #182b50;
+  --xb-shadow: 0 1px 2px rgba(0, 0, 0, .26), 0 14px 34px rgba(0, 0, 0, .24);
+
+  --app-tint: var(--xb-accent);
+  --app-tint-pressed: var(--xb-accent-pressed);
+  --app-tint-soft: var(--xb-accent-soft);
+  --app-tint-line: var(--xb-accent-line);
+  --primary-action: var(--xb-action);
+  --primary-action-label: var(--xb-on-action);
+  --ios-label: var(--xb-text);
+  --ios-secondary-label: var(--xb-text-secondary);
+  --ios-tertiary-label: var(--xb-text-tertiary);
+  --ios-grouped-bg: var(--xb-bg);
+  --ios-grouped-surface: var(--xb-surface);
+  --ios-secondary-fill: var(--xb-surface-muted);
+  --ios-separator: var(--xb-line);
+  --dark-ink: var(--xb-text);
+  --dark-muted: var(--xb-text-secondary);
+  --dark-line: var(--xb-line);
+  --dark-surface: var(--xb-surface);
+  --dark-canvas: var(--xb-bg);
+  --dark-surface-2: var(--xb-surface-muted);
+  --ink: var(--xb-text);
+  --muted: var(--xb-text-secondary);
+  --line: var(--xb-line);
+  --surface: var(--xb-surface);
+  --canvas: var(--xb-bg);
+  --green: var(--xb-accent);
+  --green-dark: var(--xb-accent-pressed);
+  --green-soft: var(--xb-accent-soft);
+}
+
+html.theme-light body,
+html.theme-light .admin-shell,
+html.theme-light .app-main,
+html.theme-light .dashboard-page,
+html.theme-light .product-shell,
+html.theme-light .public-tools-shell,
+html.theme-light .tool-page,
+html.theme-light .admin-tool-module,
+html.theme-light .spa-short-link-loading,
+html.theme-light .spa-not-found {
+  color: var(--xb-text) !important;
+  background-color: var(--xb-bg) !important;
+  background-image:
+    radial-gradient(circle at 88% 0, rgba(78, 144, 255, .11), transparent 24%),
+    linear-gradient(180deg, #f7faff 0, #f3f6fb 46%, var(--xb-bg) 100%) !important;
+  background-attachment: fixed !important;
+}
+
+html.theme-dark body,
+html.theme-dark .admin-shell,
+html.theme-dark .app-main,
+html.theme-dark .dashboard-page,
+html.theme-dark .product-shell,
+html.theme-dark .public-tools-shell,
+html.theme-dark .tool-page,
+html.theme-dark .admin-tool-module,
+html.theme-dark .spa-short-link-loading,
+html.theme-dark .spa-not-found {
+  color: var(--xb-text) !important;
+  background-color: var(--xb-bg) !important;
+  background-image:
+    radial-gradient(circle at 88% 0, rgba(76, 124, 235, .12), transparent 25%),
+    linear-gradient(180deg, #111c2a 0, var(--xb-bg) 48%) !important;
+  background-attachment: fixed !important;
+}
+
+html.theme-light .login-page {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(78, 144, 255, .18), transparent 26%),
+    radial-gradient(circle at 92% 92%, rgba(40, 103, 238, .10), transparent 30%),
+    linear-gradient(155deg, #f8fbff, #eef3f8) !important;
+}
+
+html.theme-dark .login-page {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(78, 144, 255, .14), transparent 26%),
+    linear-gradient(155deg, #121d2c, #0f1722) !important;
+}
+
+.login-orb-one {
+  background: radial-gradient(circle, rgba(78, 144, 255, .25), transparent 69%) !important;
+}
+
+.login-orb-two {
+  background: radial-gradient(circle, rgba(40, 103, 238, .15), transparent 68%) !important;
+}
+
+.login-card,
+.soft-card,
+.data-card,
+.toolbar-card,
+.sheet,
+.module-hero,
+.tool-page > .tool-hero,
+.tool-page .tool-form-card,
+.tool-page .freight-result-card,
+.tool-page .order-link-login,
+.tool-page .purchaser-match-panel,
+.tool-page .generated-link-card,
+.tool-page .generated-link-history,
+.order-card,
+.public-order-card,
+.home-stat-strip,
+.home-feed,
+.home-logistics-row > article,
+.dashboard-order-list,
+.dashboard-logistics,
+.dashboard-purchaser-list,
+.profile-info,
+.admin-entry-loading {
+  border-color: var(--xb-line) !important;
+  background-color: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+.login-card {
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(45, 67, 104, .16) !important;
+}
+
+.soft-card,
+.data-card,
+.toolbar-card,
+.module-hero,
+.tool-page > .tool-hero,
+.tool-page .tool-form-card,
+.tool-page .freight-result-card,
+.tool-page .order-link-login,
+.tool-page .purchaser-match-panel,
+.tool-page .generated-link-card,
+.tool-page .generated-link-history,
+.order-card,
+.public-order-card,
+.home-stat-strip,
+.home-feed,
+.home-logistics-row > article,
+.dashboard-order-list,
+.dashboard-logistics,
+.dashboard-purchaser-list,
+.profile-info,
+.admin-entry-loading {
+  border-radius: var(--xb-card-radius) !important;
+}
+
+:is(
+  .input-shell,
+  .quick-search,
+  .tool-input,
+  .tool-textarea textarea,
+  .mobile-form input:not([type="checkbox"]),
+  .mobile-form textarea,
+  .mobile-form select,
+  .purchaser-order-form input,
+  .purchaser-order-form textarea,
+  .purchaser-order-form select,
+  .purchaser-edit-form input,
+  .purchaser-edit-form textarea,
+  .purchaser-edit-form select,
+  .purchaser-create-modal input,
+  .purchaser-create-modal textarea,
+  .purchaser-create-modal select
+) {
+  border-color: var(--xb-line) !important;
+  border-radius: var(--xb-control-radius) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .input-shell,
+  .quick-search,
+  .tool-input,
+  .tool-textarea textarea,
+  .mobile-form input:not([type="checkbox"]),
+  .mobile-form textarea,
+  .mobile-form select,
+  .purchaser-order-form input,
+  .purchaser-order-form textarea,
+  .purchaser-order-form select,
+  .purchaser-edit-form input,
+  .purchaser-edit-form textarea,
+  .purchaser-edit-form select,
+  .purchaser-create-modal input,
+  .purchaser-create-modal textarea,
+  .purchaser-create-modal select
+):focus,
+:is(.input-shell, .quick-search):focus-within {
+  border-color: var(--xb-accent) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--xb-accent) 11%, transparent) !important;
+}
+
+:is(
+  .login-submit,
+  .button-primary,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .home-create-order,
+  .workspace-dock .dock-create
+) {
+  border-color: transparent !important;
+  color: var(--xb-on-action) !important;
+  background: var(--xb-action) !important;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--xb-accent) 23%, transparent) !important;
+}
+
+:is(
+  .login-submit,
+  .button-primary,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .home-create-order,
+  .workspace-dock .dock-create
+):hover:not(:disabled) {
+  background: var(--xb-accent-pressed) !important;
+}
+
+:is(
+  .login-submit,
+  .button-primary,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .home-create-order,
+  .workspace-dock .dock-create
+):active:not(:disabled) {
+  transform: scale(.985);
+}
+
+.brand-mark,
+.app-loading-mark,
+.dashboard-welcome,
+.home-attention {
+  background:
+    radial-gradient(circle at 92% 4%, rgba(255, 255, 255, .20), transparent 30%),
+    linear-gradient(145deg, #4f8fff, #2867ee 62%, #1c56d0) !important;
+}
+
+.brand-mark {
+  box-shadow: 0 10px 24px rgba(40, 103, 238, .22) !important;
+}
+
+.dashboard-welcome,
+.home-attention {
+  border: 1px solid rgba(255, 255, 255, .26) !important;
+  border-radius: 22px !important;
+  color: #f8fbff !important;
+  box-shadow: 0 18px 38px rgba(40, 103, 238, .22) !important;
+}
+
+.dashboard-welcome :is(.eyebrow, p),
+.home-attention :is(span, p) {
+  color: rgba(248, 251, 255, .76) !important;
+}
+
+.dashboard-welcome > button {
+  border-color: rgba(255, 255, 255, .22) !important;
+  color: #f8fbff !important;
+  background: rgba(255, 255, 255, .15) !important;
+}
+
+:is(
+  .dashboard-pulse > span,
+  .dashboard-shortcuts > button > span,
+  .home-action-rail > button > span,
+  .home-action-rail > button:first-child > span,
+  .tools-menu-card > span,
+  .tools-secondary-entry > span,
+  .module-hero > span,
+  .tool-page > .tool-hero > span,
+  .purchaser-order-form section > header > span
+) {
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft) !important;
+}
+
+.dashboard-pulse {
+  border-color: var(--xb-line) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+.dashboard-shortcuts > button,
+.home-action-rail > button,
+.home-action-rail > button:first-child,
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n),
+.tools-secondary-entry {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+.dashboard-shortcuts > button,
+.home-action-rail > button,
+.home-action-rail > button:first-child,
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n) {
+  border-radius: var(--xb-card-radius) !important;
+}
+
+.dashboard-shortcuts > button:hover,
+.home-action-rail > button:hover,
+.tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n):hover,
+.tools-secondary-entry:hover {
+  border-color: var(--xb-accent-line) !important;
+  background: color-mix(in srgb, var(--xb-accent-soft) 55%, var(--xb-surface)) !important;
+}
+
+:is(
+  .filter-button.active,
+  .choice-chip.active,
+  .tool-filter-chips button.active,
+  .segmented button.active,
+  .workspace-dock button.active,
+  .purchaser-order-tabs button.active
+) {
+  border-color: var(--xb-accent-line) !important;
+  color: var(--xb-accent-pressed) !important;
+  background: var(--xb-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+.public-tools-header,
+.workspace-dock,
+.tools-login-trigger,
+.tools-login-action,
+.tools-back-trigger {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text-secondary) !important;
+  background: color-mix(in srgb, var(--xb-surface) 90%, transparent) !important;
+  box-shadow: var(--xb-shadow) !important;
+}
+
+html.theme-dark :is(
+  .login-card,
+  .soft-card,
+  .data-card,
+  .toolbar-card,
+  .sheet,
+  .module-hero,
+  .tool-page > .tool-hero,
+  .tool-page .tool-form-card,
+  .tool-page .freight-result-card,
+  .tool-page .order-link-login,
+  .tool-page .purchaser-match-panel,
+  .tool-page .generated-link-card,
+  .tool-page .generated-link-history,
+  .order-card,
+  .public-order-card,
+  .home-stat-strip,
+  .home-feed,
+  .home-logistics-row > article,
+  .dashboard-order-list,
+  .dashboard-logistics,
+  .dashboard-purchaser-list,
+  .profile-info,
+  .admin-entry-loading,
+  .dashboard-shortcuts > button,
+  .home-action-rail > button,
+  .tools-service-group .tools-home-grid > .tools-menu-card:nth-child(n),
+  .tools-secondary-entry
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background-color: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+html.theme-dark :is(.dashboard-welcome, .home-attention) {
+  border-color: var(--xb-accent-line) !important;
+  color: var(--xb-text) !important;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(120, 160, 255, .11), transparent 30%),
+    linear-gradient(145deg, #1d3157, #172a4e) !important;
+  box-shadow: none !important;
+}
+
+html.theme-dark :is(.dashboard-welcome, .home-attention) :is(.eyebrow, span, p) {
+  color: var(--xb-text-secondary) !important;
+}
+
+@media (max-width: 680px) {
+  .login-card {
+    box-shadow: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .login-submit,
+    .button-primary,
+    .tool-primary,
+    .purchaser-submit,
+    .purchaser-captcha-submit,
+    .home-create-order,
+    .dashboard-shortcuts > button,
+    .home-action-rail > button,
+    .tools-menu-card
+  ) {
+    transition-duration: .01ms !important;
+  }
+}
+
+/*
+ * Local appearance system
+ *
+ * `data-palette` is persisted by app/lib/theme.ts. All product accents below
+ * derive from these semantic values, including the dedicated order page.
+ */
+:root,
+:root[data-palette="ocean"] {
+  --theme-accent: #2867ee;
+  --theme-accent-hover: #174fc8;
+  --theme-accent-soft: #e8f0ff;
+  --theme-accent-line: #bcd0ff;
+  --theme-accent-rgb: 40 103 238;
+  --theme-on-accent: #f8fbff;
+}
+
+:root[data-palette="emerald"] {
+  --theme-accent: #0b9563;
+  --theme-accent-hover: #08764e;
+  --theme-accent-soft: #e4f5ed;
+  --theme-accent-line: #b5dfcb;
+  --theme-accent-rgb: 11 149 99;
+  --theme-on-accent: #f7fffb;
+}
+
+:root[data-palette="amber"] {
+  --theme-accent: #d97706;
+  --theme-accent-hover: #b45309;
+  --theme-accent-soft: #fff1db;
+  --theme-accent-line: #f2ce98;
+  --theme-accent-rgb: 217 119 6;
+  --theme-on-accent: #fffaf3;
+}
+
+:root[data-palette="berry"] {
+  --theme-accent: #d94672;
+  --theme-accent-hover: #b72855;
+  --theme-accent-soft: #fde8ef;
+  --theme-accent-line: #f3bfd0;
+  --theme-accent-rgb: 217 70 114;
+  --theme-on-accent: #fff8fb;
+}
+
+:root,
+html.theme-light {
+  --xb-accent: var(--theme-accent);
+  --xb-accent-pressed: var(--theme-accent-hover);
+  --xb-accent-soft: var(--theme-accent-soft);
+  --xb-accent-line: var(--theme-accent-line);
+  --xb-action: var(--theme-accent);
+  --xb-on-action: var(--theme-on-accent);
+  --app-tint: var(--theme-accent);
+  --app-tint-pressed: var(--theme-accent-hover);
+  --app-tint-soft: var(--theme-accent-soft);
+  --app-tint-line: var(--theme-accent-line);
+  --primary-action: var(--theme-accent);
+  --primary-action-label: var(--theme-on-accent);
+  --consumer-accent: var(--theme-accent);
+  --consumer-accent-strong: var(--theme-accent-hover);
+  --consumer-accent-soft: var(--theme-accent-soft);
+  --green: var(--theme-accent);
+  --green-dark: var(--theme-accent-hover);
+  --green-soft: var(--theme-accent-soft);
+  --blue: var(--theme-accent);
+}
+
+html.theme-dark {
+  --xb-accent: color-mix(in srgb, var(--theme-accent) 72%, white);
+  --xb-accent-pressed: color-mix(in srgb, var(--theme-accent) 56%, white);
+  --xb-accent-soft: color-mix(in srgb, var(--theme-accent) 19%, #172131);
+  --xb-accent-line: color-mix(in srgb, var(--theme-accent) 42%, #2d3b50);
+  --xb-action: color-mix(in srgb, var(--theme-accent) 72%, white);
+  --xb-on-action: #0d1728;
+  --app-tint: var(--xb-accent);
+  --app-tint-pressed: var(--xb-accent-pressed);
+  --app-tint-soft: var(--xb-accent-soft);
+  --app-tint-line: var(--xb-accent-line);
+  --primary-action: var(--xb-action);
+  --primary-action-label: var(--xb-on-action);
+  --green: var(--xb-accent);
+  --green-dark: var(--xb-accent-pressed);
+  --green-soft: var(--xb-accent-soft);
+}
+
+html.theme-light body,
+html.theme-light .admin-shell,
+html.theme-light .app-main,
+html.theme-light .dashboard-page,
+html.theme-light .product-shell,
+html.theme-light .public-tools-shell,
+html.theme-light .tool-page,
+html.theme-light .admin-tool-module,
+html.theme-light .spa-short-link-loading,
+html.theme-light .spa-not-found {
+  background-image:
+    radial-gradient(circle at 88% 0, rgb(var(--theme-accent-rgb) / .11), transparent 24%),
+    linear-gradient(180deg, #f9fbff 0, #f3f6fb 46%, var(--xb-bg) 100%) !important;
+}
+
+/*
+ * Theme settings control
+ */
+.theme-settings-trigger {
+  position: fixed;
+  right: 14px;
+  bottom: calc(94px + env(safe-area-inset-bottom));
+  z-index: 145;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--xb-line);
+  border-radius: 14px;
+  color: var(--xb-accent);
+  background: color-mix(in srgb, var(--xb-surface) 92%, transparent);
+  box-shadow: 0 10px 28px rgb(var(--theme-accent-rgb) / .12);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+  transition: background .16s ease, color .16s ease, transform .12s ease;
+}
+
+.theme-settings-trigger:hover,
+.theme-settings-trigger:focus-visible {
+  color: var(--xb-accent-pressed);
+  background: var(--xb-accent-soft);
+}
+
+.theme-settings-trigger:active {
+  transform: scale(.96);
+}
+
+.theme-settings-backdrop {
+  position: fixed;
+  z-index: 180;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 38, .44);
+  -webkit-backdrop-filter: blur(9px) saturate(110%);
+  backdrop-filter: blur(9px) saturate(110%);
+  animation: theme-backdrop-in .18s ease-out;
+}
+
+.theme-settings-panel {
+  width: min(100%, 430px);
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--xb-line) 82%, white);
+  border-radius: 24px;
+  color: var(--xb-text);
+  background: var(--xb-surface);
+  box-shadow: 0 28px 80px rgba(18, 31, 55, .26);
+  animation: theme-panel-in .22s cubic-bezier(.2, .8, .2, 1);
+}
+
+.theme-settings-panel > header {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 34px;
+  gap: 11px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.theme-settings-panel > header > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--xb-accent);
+  background: var(--xb-accent-soft);
+}
+
+.theme-settings-panel > header > div {
+  min-width: 0;
+}
+
+.theme-settings-panel h2 {
+  margin: 0;
+  color: var(--xb-text);
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+
+.theme-settings-panel > header p {
+  margin: 4px 0 0;
+  color: var(--xb-text-secondary);
+  font-size: 10px;
+}
+
+.theme-settings-panel > header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--xb-line);
+  border-radius: 11px;
+  color: var(--xb-text-secondary);
+  background: var(--xb-surface-muted);
+  cursor: pointer;
+}
+
+.theme-settings-section + .theme-settings-section {
+  margin-top: 20px;
+}
+
+.theme-settings-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.theme-settings-label b {
+  color: var(--xb-text);
+  font-size: 12px;
+}
+
+.theme-settings-label small {
+  color: var(--xb-text-tertiary);
+  font-size: 9px;
+}
+
+.theme-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-palette-option {
+  position: relative;
+  display: grid;
+  min-height: 72px;
+  grid-template-columns: 48px minmax(0, 1fr) 16px;
+  gap: 9px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--xb-line);
+  border-radius: 15px;
+  color: var(--xb-text);
+  background: var(--xb-surface-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .12s ease;
+}
+
+.theme-palette-option:hover {
+  border-color: var(--palette-color);
+}
+
+.theme-palette-option:active {
+  transform: scale(.985);
+}
+
+.theme-palette-option.active {
+  border-color: var(--palette-color);
+  background: color-mix(in srgb, var(--palette-color) 9%, var(--xb-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--palette-color) 16%, transparent);
+}
+
+.theme-palette-option > span:first-child {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 42px;
+}
+
+.theme-palette-option > span:first-child i {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--xb-surface);
+  border-radius: 10px;
+  box-shadow: 0 5px 12px rgba(26, 37, 57, .12);
+}
+
+.theme-palette-option > span:first-child i:nth-child(1) {
+  top: 0;
+  left: 0;
+  background: var(--palette-color);
+}
+
+.theme-palette-option > span:first-child i:nth-child(2) {
+  right: 0;
+  bottom: 0;
+  background: var(--palette-soft);
+}
+
+.theme-palette-option > span:first-child i:nth-child(3) {
+  right: 9px;
+  bottom: 7px;
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  border-radius: 5px;
+  background: var(--xb-surface);
+}
+
+.theme-palette-option > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.theme-palette-option b {
+  color: var(--xb-text);
+  font-size: 11px;
+}
+
+.theme-palette-option small {
+  overflow: hidden;
+  color: var(--xb-text-secondary);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-palette-option > svg {
+  color: var(--palette-color);
+}
+
+.theme-palette-ocean {
+  --palette-color: #2867ee;
+  --palette-soft: #bcd0ff;
+}
+
+.theme-palette-emerald {
+  --palette-color: #0b9563;
+  --palette-soft: #b5dfcb;
+}
+
+.theme-palette-amber {
+  --palette-color: #d97706;
+  --palette-soft: #f2ce98;
+}
+
+.theme-palette-berry {
+  --palette-color: #d94672;
+  --palette-soft: #f3bfd0;
+}
+
+.theme-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid var(--xb-line);
+  border-radius: 15px;
+  background: var(--xb-surface-muted);
+}
+
+.theme-mode-grid button {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--xb-text-secondary);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.theme-mode-grid button.active {
+  color: var(--xb-accent-pressed);
+  background: var(--xb-surface);
+  box-shadow: 0 5px 14px rgb(var(--theme-accent-rgb) / .10);
+}
+
+.theme-settings-footnote {
+  margin: 16px 0 0;
+  color: var(--xb-text-tertiary);
+  font-size: 9px;
+  text-align: center;
+}
+
+html.theme-dark .theme-settings-panel {
+  border-color: var(--xb-line);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .44);
+}
+
+@keyframes theme-backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes theme-panel-in {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+}
+
+/*
+ * Full accent audit
+ *
+ * Legacy feature modules still contain fixed green and dedicated-page blue.
+ * These rules connect every interactive accent to the selected palette while
+ * semantic success, warning and danger states keep their own meaning.
+ */
+:is(
+  .brand-mark,
+  .app-loading-mark,
+  .dashboard-welcome,
+  .home-attention,
+  .tools-menu-hero,
+  .tool-hero,
+  .profile-card,
+  .detail-code,
+  .tracking-manual
+) {
+  background:
+    radial-gradient(circle at 92% 4%, rgba(255, 255, 255, .20), transparent 30%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-accent) 72%, white),
+      var(--theme-accent) 62%,
+      var(--theme-accent-hover)
+    ) !important;
+  box-shadow: 0 16px 36px rgb(var(--theme-accent-rgb) / .20) !important;
+}
+
+:is(
+  .login-submit,
+  .button-primary,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .tool-copy,
+  .order-link-login a,
+  .purchaser-match-person > button,
+  .admin-entry-buyer-search button,
+  .admin-entry-create > button,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .purchaser-current-store .purchaser-current-store-bind,
+  .purchaser-order-code-btn,
+  .batch-order-parse-btn,
+  .batch-order-confirm-ok,
+  .batch-order-template-footer > .batch-order-confirm-ok,
+  .batch-order-template-new,
+  .generated-link-actions > button:first-child,
+  .generated-link-action-primary,
+  .onboarding-btn.primary
+) {
+  border-color: transparent !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  box-shadow: 0 8px 20px rgb(var(--theme-accent-rgb) / .22) !important;
+}
+
+:is(
+  .quick-pay-filter button.active,
+  .segmented > button.is-active,
+  .tool-status-tabs button.active,
+  .tool-filter-chips button.active,
+  .purchaser-code-switch-group label.active,
+  .short-link-presets button.active,
+  .batch-order-decision.active,
+  .batch-order-template-active-tag
+) {
+  border-color: transparent !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  box-shadow: 0 6px 16px rgb(var(--theme-accent-rgb) / .20) !important;
+}
+
+:is(
+  .button-soft,
+  .tool-copy-icon,
+  .tool-view,
+  .generated-link-history > header em,
+  .generated-link-history article > button,
+  .generated-link-history article > a,
+  .generated-link-actions > a,
+  .generated-link-actions > button,
+  .generated-link-action-secondary,
+  .generated-link-short-id,
+  .purchaser-history em,
+  .purchaser-create-new,
+  .purchaser-order-code-info em,
+  .purchaser-code-hint,
+  .batch-order-card-existing,
+  .batch-order-pick-selected,
+  .batch-order-template-badge,
+  .batch-order-tpl-row-num,
+  .onboarding-badge,
+  .onboarding-await-hint,
+  .store-query-back
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+:is(
+  .store-extra-line .store-notice-url,
+  .store-extra-copy,
+  .public-tools-header nav a,
+  .freight-result-card header small,
+  .purchaser-match-panel > header small,
+  .purchaser-match-person > div > em,
+  .generated-link-card small,
+  .generated-link-history > header small,
+  .generated-link-history-group-header,
+  .purchaser-quantity button,
+  .admin-entry-buyer-list em,
+  .admin-entry-selected-buyer small,
+  .admin-entry-selected-buyer > button,
+  .admin-entry-express-code button,
+  .short-link-visits-ip,
+  .purchaser-current-store button.copy-link,
+  .purchaser-create-modal > small,
+  .batch-order-card-result-grid > div > b,
+  .batch-order-pick-selected button,
+  .batch-order-summary > span b,
+  .batch-order-template-current svg,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-template-stats,
+  .batch-order-tpl-btn,
+  .batch-order-tpl-row-dropdown,
+  .batch-order-tpl-add,
+  .logistics-global-card .quota-header h3
+) {
+  color: var(--theme-accent) !important;
+}
+
+:is(
+  .sync-mode-card-icon,
+  .tools-menu-card > span,
+  .tools-secondary-entry > span,
+  .tool-tone-green > span,
+  .tool-tone-green em,
+  .order-link-login > svg,
+  .purchaser-match-person > span,
+  .generated-link-history article > span,
+  .generated-link-avatar,
+  .purchaser-order-form section > header > span,
+  .purchaser-edit-form section > header > span,
+  .admin-entry-buyer-list > button > span,
+  .admin-entry-selected-buyer > span,
+  .purchaser-create-modal > span,
+  .batch-order-section > header > span,
+  .batch-order-result > header > span,
+  .store-query-list-card-icon
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .soft-input,
+  .tool-input,
+  .tool-textarea textarea,
+  .tool-inline-search,
+  .admin-entry-buyer-search,
+  .admin-entry-create select,
+  .admin-order-entry-form select,
+  .purchaser-order-form input,
+  .purchaser-order-form textarea,
+  .purchaser-order-form select,
+  .purchaser-edit-form input,
+  .purchaser-edit-form textarea,
+  .purchaser-edit-form select,
+  .purchaser-create-modal input,
+  .purchaser-create-modal select,
+  .purchaser-create-modal textarea,
+  .purchaser-current-store-select
+):focus,
+:is(.soft-input, .tool-input, .tool-inline-search, .admin-entry-buyer-search):focus-within {
+  border-color: var(--theme-accent) !important;
+  box-shadow: 0 0 0 4px rgb(var(--theme-accent-rgb) / .11) !important;
+}
+
+.generated-link-card,
+.admin-entry-create,
+.tools-menu-tip,
+.logistics-global-card {
+  border-color: var(--theme-accent-line) !important;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-accent-soft) 70%, var(--xb-surface)),
+      var(--xb-surface)
+    ) !important;
+  box-shadow: 0 10px 26px rgb(var(--theme-accent-rgb) / .09) !important;
+}
+
+.generated-link-card > span,
+.generated-link-card p,
+.generated-link-card button,
+.generated-link-card a {
+  color: var(--theme-accent) !important;
+}
+
+.toggle.on {
+  background: var(--theme-accent) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .10), 0 3px 8px rgb(var(--theme-accent-rgb) / .22) !important;
+}
+
+.toggle-status.on {
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.onboarding-tooltip.is-awaiting-click {
+  border-color: var(--theme-accent) !important;
+  box-shadow: 0 24px 56px rgba(11, 22, 38, .28), 0 0 0 2px rgb(var(--theme-accent-rgb) / .34) !important;
+}
+
+.onboarding-await-dot {
+  background: var(--theme-accent) !important;
+  box-shadow: 0 0 0 0 rgb(var(--theme-accent-rgb) / .52) !important;
+}
+
+/*
+ * Dedicated order page now inherits the selected palette instead of locking
+ * itself to blue. Layout and material remain the reference design.
+ */
+.purchaser-order-page {
+  --xb-action: var(--theme-accent);
+  --xb-accent: var(--theme-accent);
+  --xb-accent-pressed: var(--theme-accent-hover);
+  --xb-accent-soft: var(--theme-accent-soft);
+  --xb-accent-line: var(--theme-accent-line);
+  --xb-on-action: var(--theme-on-accent);
+  --app-tint: var(--theme-accent);
+  --app-tint-soft: var(--theme-accent-soft);
+  --green: var(--theme-accent);
+  --green-dark: var(--theme-accent-hover);
+  --green-soft: var(--theme-accent-soft);
+  --state-success: var(--theme-accent);
+  --state-success-soft: var(--theme-accent-soft);
+  --state-info: var(--theme-accent);
+  --state-info-soft: var(--theme-accent-soft);
+  background:
+    radial-gradient(circle at 84% 1%, rgb(var(--theme-accent-rgb) / .15), transparent 24%),
+    linear-gradient(180deg, #f9fbff 0, #f3f6fb 48%, #eef3f8 100%) !important;
+}
+
+.purchaser-home-brand > span,
+.purchaser-page-create .purchaser-subpage-head {
+  background:
+    radial-gradient(circle at 92% 2%, rgba(255, 255, 255, .20), transparent 30%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-accent) 72%, white),
+      var(--theme-accent) 62%,
+      var(--theme-accent-hover)
+    ) !important;
+  box-shadow: 0 14px 32px rgb(var(--theme-accent-rgb) / .22) !important;
+}
+
+.purchaser-home-hero {
+  background:
+    radial-gradient(circle at 76% 30%, rgba(255, 255, 255, .98) 0 7%, transparent 8%),
+    radial-gradient(circle at 90% 18%, rgba(255, 255, 255, .7) 0 13%, transparent 14%),
+    linear-gradient(
+      138deg,
+      #fafdff 8%,
+      color-mix(in srgb, var(--theme-accent) 15%, white) 57%,
+      color-mix(in srgb, var(--theme-accent) 26%, white) 100%
+    ) !important;
+  box-shadow: 0 18px 44px rgb(var(--theme-accent-rgb) / .13) !important;
+}
+
+.purchaser-home-visual {
+  color: var(--theme-accent) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent) 72%, white),
+      color-mix(in srgb, var(--theme-accent) 23%, white) 52%,
+      rgba(255, 255, 255, .92)
+    ) !important;
+  box-shadow:
+    inset 0 0 0 6px rgba(255, 255, 255, .55),
+    0 20px 36px rgb(var(--theme-accent-rgb) / .17) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-home-actions button.primary,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-paste button,
+  .purchaser-cost-pwd-row button,
+  .purchaser-success-primary,
+  .purchaser-missing-close,
+  .purchaser-create-action.primary
+) {
+  border-color: var(--theme-accent) !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  box-shadow: 0 10px 24px rgb(var(--theme-accent-rgb) / .22) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-home-overview > div b,
+  .purchaser-home-recent strong,
+  .purchaser-subpage-head > span,
+  .purchaser-order-notice-card,
+  .purchaser-design-summary-icon,
+  .purchaser-design-summary-head em,
+  .purchaser-design-product-foot > button,
+  .purchaser-design-address-head,
+  .purchaser-design-delivery-head,
+  .purchaser-bottom-nav button.active
+) {
+  color: var(--theme-accent) !important;
+}
+
+.purchaser-order-page .purchaser-home-meta small:last-child {
+  color: var(--theme-accent-hover) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-store-notice svg,
+  .purchaser-product-option > span,
+  .purchaser-secondary-tools > summary > span > svg,
+  .tool-result-refresh,
+  .tool-order-address svg,
+  .tool-order-exp > svg,
+  .tool-tracking-toggle > svg:first-child,
+  .tool-copy-icon,
+  .tool-view,
+  .purchaser-cost-unlocked,
+  .purchaser-cost-unlocked-icon,
+  .purchaser-detail-section h3,
+  .purchaser-address-pin,
+  .purchaser-address-list-head button,
+  .purchaser-address-empty > svg
+) {
+  color: var(--theme-accent) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-product-option.active,
+  .purchaser-choice-grid button.active,
+  .purchaser-cost-unlocked
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-product-option > span,
+  .purchaser-cost-unlocked-icon,
+  .purchaser-address-pin
+) {
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-order-form > section.purchaser-form-section > header > span {
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-order-form :is(input, textarea, select):focus {
+  border-color: var(--theme-accent) !important;
+  box-shadow: 0 0 0 4px rgb(var(--theme-accent-rgb) / .10) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-home-recent strong,
+  .purchaser-subpage-head > span,
+  .purchaser-design-summary-icon,
+  .purchaser-bottom-nav button.active,
+  .purchaser-popup-form .purchaser-product-option.active,
+  .purchaser-popup-form .purchaser-choice-grid button.active
+) {
+  border-color: var(--theme-accent-line) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.purchaser-order-page :is(
+  .purchaser-design-product-card,
+  .purchaser-design-address-card,
+  .purchaser-design-delivery-card
+).active {
+  border-color: var(--theme-accent-line) !important;
+}
+
+/*
+ * Admin home focus and metrics use the same palette hierarchy as the
+ * dedicated page instead of the previous fixed green / mixed pastel deck.
+ */
+.home-focus-card {
+  border-color: var(--theme-accent-line) !important;
+  box-shadow: 0 10px 24px rgb(var(--theme-accent-rgb) / .10) !important;
+}
+
+.home-focus-card.focus-level-0 {
+  color: var(--theme-accent-hover) !important;
+  background: color-mix(in srgb, var(--theme-accent-soft) 62%, var(--xb-surface)) !important;
+}
+
+.home-focus-card.focus-level-1 {
+  color: var(--theme-accent-hover) !important;
+  background: color-mix(in srgb, var(--theme-accent) 18%, var(--xb-surface)) !important;
+}
+
+.home-focus-card.focus-level-2 {
+  color: var(--theme-on-accent) !important;
+  background: color-mix(in srgb, var(--theme-accent) 68%, white) !important;
+}
+
+.home-focus-card.focus-level-3,
+.home-focus-card.home-focus-single {
+  border-color: color-mix(in srgb, var(--theme-accent) 58%, transparent) !important;
+  color: var(--theme-on-accent) !important;
+  background:
+    radial-gradient(circle at 92% 5%, rgba(255, 255, 255, .18), transparent 30%),
+    linear-gradient(145deg, var(--theme-accent), var(--theme-accent-hover)) !important;
+  box-shadow: 0 14px 30px rgb(var(--theme-accent-rgb) / .20) !important;
+}
+
+.home-stat-strip {
+  border-color: var(--xb-line) !important;
+  background: var(--xb-line) !important;
+}
+
+.home-stat-strip button:nth-child(n) {
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+}
+
+.home-stat-strip button:nth-child(n):hover {
+  background: var(--theme-accent-soft) !important;
+}
+
+.home-stat-strip button:nth-child(n) span {
+  color: var(--theme-accent) !important;
+}
+
+html.theme-dark .home-focus-card.focus-level-0 {
+  color: var(--xb-text-secondary) !important;
+  background: color-mix(in srgb, var(--xb-accent-soft) 38%, var(--xb-surface)) !important;
+}
+
+html.theme-dark .home-focus-card.focus-level-1 {
+  color: var(--xb-text) !important;
+  background: color-mix(in srgb, var(--xb-accent-soft) 64%, var(--xb-surface)) !important;
+}
+
+html.theme-dark .home-focus-card.focus-level-2 {
+  background: color-mix(in srgb, var(--xb-accent) 58%, var(--xb-surface)) !important;
+}
+
+html.theme-dark .home-focus-card.focus-level-3,
+html.theme-dark .home-focus-card.home-focus-single {
+  background:
+    radial-gradient(circle at 92% 5%, rgb(var(--theme-accent-rgb) / .15), transparent 30%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-accent) 54%, #172131),
+      color-mix(in srgb, var(--theme-accent-hover) 58%, #101827)
+    ) !important;
+}
+
+html.theme-dark .purchaser-order-page {
+  --theme-on-accent: #0d1728;
+  background:
+    radial-gradient(circle at 84% 1%, rgb(var(--theme-accent-rgb) / .14), transparent 24%),
+    linear-gradient(180deg, #111c2a, #0f1722) !important;
+}
+
+html.theme-dark :is(
+  .generated-link-card,
+  .admin-entry-create,
+  .tools-menu-tip,
+  .logistics-global-card
+) {
+  border-color: var(--xb-accent-line) !important;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--xb-accent-soft) 55%, var(--xb-surface)),
+      var(--xb-surface)
+    ) !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 520px) {
+  .theme-settings-backdrop {
+    place-items: end center;
+    padding: 10px;
+  }
+
+  .theme-settings-panel {
+    padding: 20px 18px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 23px;
+  }
+}
+
+@media (max-width: 360px) {
+  .theme-palette-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-settings-trigger,
+  .theme-settings-backdrop,
+  .theme-settings-panel,
+  .theme-palette-option {
+    animation: none !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/*
+ * Button completion pass
+ *
+ * A few feature-local controls were still painted by legacy green values.
+ * Keep destructive actions semantic red, while every normal action follows
+ * the locally selected palette.
+ */
+:is(
+  .email-code-button,
+  .filter-apply,
+  .card-actions .primary-action:not(.danger-action),
+  .purchaser-bind-row button,
+  .public-state button,
+  .freight-actions button.primary,
+  .order-success-card > button,
+  .admin-entry-success > button
+) {
+  border-color: var(--theme-accent) !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  box-shadow: 0 8px 20px rgb(var(--theme-accent-rgb) / .20) !important;
+}
+
+:is(
+  .shipping-code-input button,
+  .admin-entry-express-code button,
+  .admin-entry-paste > div button:last-child,
+  .purchaser-manager-toolbar > button,
+  .short-link-card-actions button:not(.danger-text),
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-tpl-btn:not(.batch-order-tpl-btn-danger),
+  .batch-order-tpl-add,
+  .store-extra-copy,
+  .purchaser-current-store button.copy-link,
+  .purchaser-order-code-btn,
+  .generated-link-action-secondary
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .secondary-actions button,
+  .button-ghost,
+  .filter-reset,
+  .load-more,
+  .purchaser-cost-unlocked > button,
+  .batch-order-confirm-cancel,
+  .purchaser-success-secondary,
+  .purchaser-create-action.secondary
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text-secondary) !important;
+  background: var(--xb-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .short-link-type-toggle button.active,
+  .short-link-presets button.active,
+  .public-status-tabs button.active,
+  .toolbar-card.search-toolbar .filter-chip.active,
+  .filter-chips button.active,
+  .logistics-tabs button.active
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  box-shadow: inset 0 0 0 1px rgb(var(--theme-accent-rgb) / .05) !important;
+}
+
+:is(
+  .login-link-button,
+  .data-more-toggle,
+  .data-more-toggle.open,
+  .batch-bar > div:first-child button,
+  .home-section-heading button,
+  .home-list-toggle,
+  .search-clear
+) {
+  color: var(--theme-accent) !important;
+}
+
+:is(
+  .home-refresh,
+  .toolbar-icon,
+  .filter-chip,
+  .purchaser-manager-toolbar > button,
+  .icon-button
+) {
+  border-color: var(--xb-line) !important;
+  color: var(--theme-accent) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: 0 5px 16px rgb(var(--theme-accent-rgb) / .07) !important;
+}
+
+:is(
+  .purchaser-choice-grid button.active,
+  .admin-entry-buyer-list > button:hover,
+  .admin-entry-selected-buyer > button,
+  .purchaser-quantity button
+) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+:is(
+  .email-code-button,
+  .filter-apply,
+  .card-actions .primary-action:not(.danger-action),
+  .purchaser-bind-row button,
+  .public-state button,
+  .freight-actions button.primary,
+  .order-success-card > button,
+  .admin-entry-success > button
+):hover:not(:disabled) {
+  border-color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-hover) !important;
+  box-shadow: 0 10px 24px rgb(var(--theme-accent-rgb) / .25) !important;
+}
+
+:is(
+  .shipping-code-input button,
+  .admin-entry-express-code button,
+  .admin-entry-paste > div button:last-child,
+  .purchaser-manager-toolbar > button,
+  .short-link-card-actions button:not(.danger-text),
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-tpl-btn:not(.batch-order-tpl-btn-danger),
+  .batch-order-tpl-add,
+  .store-extra-copy
+):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--theme-accent) 42%, transparent) !important;
+  color: var(--theme-accent-hover) !important;
+  background: color-mix(in srgb, var(--theme-accent-soft) 78%, var(--xb-surface)) !important;
+}
+
+:is(
+  .email-code-button,
+  .filter-apply,
+  .card-actions button,
+  .secondary-actions button,
+  .shipping-code-input button,
+  .admin-entry-express-code button,
+  .purchaser-manager-toolbar > button,
+  .short-link-card-actions button,
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-tpl-btn,
+  .batch-order-tpl-add,
+  .filter-reset,
+  .button-ghost
+):active:not(:disabled) {
+  transform: scale(.97);
+}
+
+:is(
+  .email-code-button,
+  .filter-apply,
+  .filter-reset,
+  .card-actions button,
+  .secondary-actions button,
+  .shipping-code-input button,
+  .admin-entry-express-code button,
+  .purchaser-manager-toolbar > button,
+  .short-link-card-actions button,
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-tpl-btn,
+  .batch-order-tpl-add,
+  .purchaser-current-store button,
+  .purchaser-order-code-btn
+):disabled {
+  border-color: var(--xb-line) !important;
+  color: var(--xb-text-tertiary) !important;
+  background: var(--xb-surface-strong) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  opacity: .62;
+}
+
+/* Danger and destructive controls deliberately remain red in every palette. */
+:is(.danger-text, .batch-order-tpl-btn-danger) {
+  color: var(--xb-danger) !important;
+}
+
+:is(.danger-action, .purchaser-create-action.danger) {
+  border-color: var(--xb-danger) !important;
+  color: #fff !important;
+  background: var(--xb-danger) !important;
+  box-shadow: 0 8px 18px rgb(198 66 66 / .18) !important;
+}
+
+/*
+ * Final interactive-surface normalization
+ *
+ * Feature CSS contains several high-specificity light/dark shadow rules.
+ * Buttons in the reference order page are flat, so all button-like controls
+ * now use borders and fills for hierarchy instead of leftover dark shadows.
+ */
+html :is(
+  button,
+  .button,
+  [role="button"],
+  .tools-login-action,
+  .public-tools-entry,
+  .order-link-login > a,
+  .generated-link-actions > a,
+  .generated-link-history article > a
+):not(#xb-preserve-legacy-shadow) {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html :is(
+  button,
+  .button,
+  [role="button"],
+  .tools-login-action,
+  .public-tools-entry,
+  .order-link-login > a,
+  .generated-link-actions > a,
+  .generated-link-history article > a
+):not(#xb-preserve-legacy-shadow):focus-visible {
+  outline: 2px solid var(--theme-accent) !important;
+  outline-offset: 2px;
+}
+
+html :is(
+  .login-submit,
+  .email-code-button,
+  .button-primary,
+  .tool-primary,
+  .tool-primary-blue,
+  .tool-primary-amber,
+  .tool-copy,
+  .home-create-order,
+  .round-add,
+  .filter-apply,
+  .purchaser-submit,
+  .purchaser-captcha-submit,
+  .purchaser-create-submit,
+  .purchaser-success-primary,
+  .purchaser-current-store .purchaser-current-store-bind,
+  .purchaser-order-code-btn,
+  .batch-order-submit,
+  .batch-order-parse-btn,
+  .batch-order-confirm-ok,
+  .batch-order-template-new,
+  .card-actions .primary-action:not(.danger-action),
+  .onboarding-btn.primary,
+  .workspace-dock .dock-create.active .dock-create-glyph,
+  .purchaser-home-actions button.primary
+):not(#xb-preserve-legacy-shadow) {
+  border-color: var(--theme-accent) !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html :is(
+  .button-soft,
+  .shipping-code-input button,
+  .admin-entry-express-code button,
+  .admin-entry-paste > div button:last-child,
+  .purchaser-manager-toolbar > button,
+  .short-link-card-actions button:not(.danger-text),
+  .batch-order-file-btn,
+  .batch-order-template-mgmt,
+  .batch-order-template-download,
+  .batch-order-tpl-btn:not(.batch-order-tpl-btn-danger),
+  .batch-order-tpl-add,
+  .store-extra-copy,
+  .purchaser-current-store button.copy-link,
+  .generated-link-action-secondary
+):not(#xb-preserve-legacy-shadow) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html :is(
+  .quick-pay-filter button.active,
+  .segmented > button.active,
+  .segmented > button.is-active,
+  .tool-status-tabs button.active,
+  .tool-filter-chips button.active,
+  .filter-chips button.active,
+  .public-status-tabs button.active,
+  .short-link-type-toggle button.active,
+  .short-link-presets button.active,
+  .logistics-tabs button.active,
+  .purchaser-choice-grid button.active,
+  .purchaser-product-option.active,
+  .toolbar-card.search-toolbar .filter-chip.active
+):not(#xb-preserve-legacy-shadow) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html :is(
+  .purchaser-order-tabs button.active,
+  .purchaser-bottom-nav button.active,
+  .workspace-dock button.active
+):not(#xb-preserve-legacy-shadow) {
+  color: var(--theme-accent) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html :is(
+  .purchaser-order-tabs button span,
+  .purchaser-bottom-nav button span,
+  .workspace-dock button span,
+  .dock-create-glyph
+):not(#xb-preserve-legacy-shadow) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html :is(.danger-action, .purchaser-create-action.danger):not(#xb-preserve-legacy-shadow) {
+  border-color: var(--xb-danger) !important;
+  color: #fff !important;
+  background: var(--xb-danger) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html :is(.danger-text, .batch-order-tpl-btn-danger):not(#xb-preserve-legacy-shadow) {
+  color: var(--xb-danger) !important;
+  box-shadow: none !important;
+}
+
+/* Page audit: the order metric selection and center dock glyph were the last
+ * two button surfaces still retaining their feature-local treatment. */
+html .order-page .metric-grid button.active:not(#xb-preserve-legacy-shadow) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html .workspace-dock .dock-create .dock-create-glyph:not(#xb-preserve-legacy-shadow),
+html.theme-dark .workspace-dock .dock-create .dock-create-glyph:not(#xb-preserve-legacy-shadow) {
+  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--xb-surface)) !important;
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }

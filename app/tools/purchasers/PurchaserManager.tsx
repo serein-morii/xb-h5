@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
-type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; addressVerifyEnabled?: number; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
+type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; addressVerifyEnabled?: number; queryExpRefreshEnabled?: number; queryExpRefreshIntervalMinutes?: number; lastQueryExpRefreshTime?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
 const BLOCK_DISPLAY_OPTIONS: { value: BlockDisplay; label: string; hint: string }[] = [
   { value: "banner", label: "顶部 tab", hint: "禁用哪个，整个页面不展示，tab 没有选项，只显示一个占满整行" },
@@ -21,6 +21,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [keyword, setKeyword] = useState("");
   const [draftStore, setDraftStore] = useState<Record<number, string>>({});
+  const [refreshIntervalDraft, setRefreshIntervalDraft] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
       const rows = Array.isArray(purchaserResult.data) ? purchaserResult.data : [];
       setPurchasers(rows); setStores(Array.isArray(storeResult.data) ? storeResult.data : []);
       setDraftStore(Object.fromEntries(rows.map((item) => [item.id, item.storeCode || ""])));
+      setRefreshIntervalDraft(Object.fromEntries(rows.map((item) => [item.id, String(item.queryExpRefreshIntervalMinutes || 120)])));
     } catch (cause) { setError(cause instanceof Error ? cause.message : "下单人列表加载失败"); }
     finally { setLoading(false); }
   }, []);
@@ -261,6 +263,47 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     finally { setBlockBusyId(null); }
   }
 
+  async function toggleQueryExpRefresh(item: Purchaser, next: 0 | 1) {
+    if (blockBusyId === item.id) return;
+    setBlockBusyId(item.id); setError("");
+    try {
+      const interval = Number(refreshIntervalDraft[item.id] || item.queryExpRefreshIntervalMinutes || 120);
+      await apiRequest(`/biz/purchaser/${item.id}/query-exp-refresh`, {
+        method: "PUT",
+        body: { queryExpRefreshEnabled: next, queryExpRefreshIntervalMinutes: interval },
+      });
+      setNotice(next === 1 ? "已开启主动拉取快递" : "已关闭主动拉取快递");
+      await load();
+      window.setTimeout(() => setNotice(""), 1600);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "快递刷新设置失败"); }
+    finally { setBlockBusyId(null); }
+  }
+
+  async function saveQueryExpRefreshInterval(item: Purchaser) {
+    if (blockBusyId === item.id) return;
+    const interval = Number(refreshIntervalDraft[item.id]);
+    if (!Number.isInteger(interval) || interval < 1 || interval > 43200) {
+      setError("刷新间隔请输入 1 到 43200 的整数分钟");
+      setRefreshIntervalDraft((current) => ({ ...current, [item.id]: String(item.queryExpRefreshIntervalMinutes || 120) }));
+      return;
+    }
+    if (interval === (item.queryExpRefreshIntervalMinutes || 120)) return;
+    setBlockBusyId(item.id); setError("");
+    try {
+      await apiRequest(`/biz/purchaser/${item.id}/query-exp-refresh`, {
+        method: "PUT",
+        body: {
+          queryExpRefreshEnabled: item.queryExpRefreshEnabled === 0 ? 0 : 1,
+          queryExpRefreshIntervalMinutes: interval,
+        },
+      });
+      setNotice(`刷新间隔已改为 ${interval} 分钟`);
+      await load();
+      window.setTimeout(() => setNotice(""), 1600);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "刷新间隔保存失败"); }
+    finally { setBlockBusyId(null); }
+  }
+
   async function setBlockDisplay(item: Purchaser, next: BlockDisplay) {
     if (blockBusyId === item.id) return;
     if ((item.blockDisplayType || "banner") === next) return;
@@ -287,6 +330,17 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
           <div className="purchaser-block-info"><small>常用地址访问验证</small><b>{item.addressVerifyEnabled === 1 ? "已开启，打开前需验证" : "已关闭，直接打开地址库"}</b></div>
           <div className="purchaser-block-toggle">
             {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.addressVerifyEnabled === 1 ? "on" : "off"}`} aria-label="切换常用地址访问验证" aria-pressed={item.addressVerifyEnabled === 1} onClick={() => toggleAddressVerify(item, item.addressVerifyEnabled === 1 ? 0 : 1)}><span /></button>}
+          </div>
+        </div>
+        <div className="purchaser-block-row">
+          <RefreshCw size={15} />
+          <div className="purchaser-block-info purchaser-refresh-info">
+            <small>允许主动拉取快递</small>
+            <b>{item.queryExpRefreshEnabled === 0 ? "已关闭" : `已开启 · 上次 ${item.lastQueryExpRefreshTime || "尚未刷新"}`}</b>
+          </div>
+          <div className="purchaser-block-toggle purchaser-refresh-control">
+            <label><input type="number" min="1" max="43200" inputMode="numeric" value={refreshIntervalDraft[item.id] || "120"} disabled={blockBusyId === item.id} onChange={(event) => setRefreshIntervalDraft((current) => ({ ...current, [item.id]: event.target.value }))} onBlur={() => { void saveQueryExpRefreshInterval(item); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span>分钟</span></label>
+            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.queryExpRefreshEnabled === 0 ? "off" : "on"}`} aria-label="切换主动拉取快递" aria-pressed={item.queryExpRefreshEnabled !== 0} onClick={() => toggleQueryExpRefresh(item, item.queryExpRefreshEnabled === 0 ? 1 : 0)}><span /></button>}
           </div>
         </div>
         <div className="purchaser-block-row">

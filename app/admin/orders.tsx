@@ -355,7 +355,6 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
 
   const selectedRows = rows.filter((row) => selected.has(String(row.id)));
   const ids = selectedRows.map((row) => row.id).join(",");
-  const codes = selectedRows.map((row) => row.orderCode).join(",");
   const applyStatusFilter = (status: OrderStatusView | null) => {
     setStatusFilter(status);
     setSelected(new Set());
@@ -508,12 +507,12 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   
 // 单条刷新（卡片/批量条都用）
   async function refreshLogistics(row?: DataRow) {
-    const target = row ? String(row.orderCode) : codes;
-    if (!target) return notify("请先选择订单", "info");
-    try { await apiRequest(`/biz/exp/refresh/${target}`, { method: "PATCH" }); notify("物流轨迹已更新", "success"); await load(); }
+    const targets = row ? [String(row.orderCode)] : selectedRows.map((item) => String(item.orderCode)).filter(Boolean);
+    if (!targets.length) return notify("请先选择订单", "info");
+    try { await apiRequest("/biz/exp/refresh", { method: "PATCH", body: targets, timeoutMs: 0 }); notify("物流轨迹已更新", "success"); await load(); }
     catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
   }
-  // 串行刷新：按列表顺序，只刷「已发货 YFH」状态；与价格页「同步所有」同款实现
+  // 一次提交全部已发货订单，避免逐条请求被同一买家的刷新间隔拦截。
   async function refreshLogisticsAll() {
     if (refreshState.loading) return;
     // 选中有 → 只刷选中的已发货；未选 → 刷当前可见的已发货（顶部过滤后剩余）
@@ -524,25 +523,21 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
       return;
     }
     const total = targets.length;
-    let processed = 0;
-    let success = 0;
-    let failed = 0;
-    let firstErrorMsg = "";
     setRefreshState({ loading: true, current: 0, total, success: 0, failed: 0 });
-    for (const row of targets) {
-      try {
-        await apiRequest(`/biz/exp/refresh/${row.orderCode}`, { method: "PATCH" });
-        success += 1;
-      } catch (error) {
-        failed += 1;
-        if (!firstErrorMsg) firstErrorMsg = error instanceof Error ? error.message : "刷新失败";
-      }
-      processed += 1;
-      setRefreshState({ loading: true, current: processed, total, success, failed });
+    try {
+      await apiRequest("/biz/exp/refresh", {
+        method: "PATCH",
+        body: targets.map((row) => String(row.orderCode)).filter(Boolean),
+        timeoutMs: 0,
+      });
+      setRefreshState({ loading: true, current: total, total, success: total, failed: 0 });
+      notify(`刷新完成：已提交 ${total} 条`, "success");
+    } catch (error) {
+      setRefreshState({ loading: true, current: total, total, success: 0, failed: total });
+      notify(error instanceof Error ? error.message : "物流刷新失败", "error");
+    } finally {
+      setRefreshState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
     }
-    setRefreshState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
-    const summary = `刷新完成：成功 ${success} 条，失败 ${failed} 条${firstErrorMsg ? `（${firstErrorMsg}）` : ""}`;
-    notify(summary, failed ? "error" : "success");
     await load();
   }
   async function copy(text: string, message: string) {

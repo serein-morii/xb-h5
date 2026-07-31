@@ -1822,6 +1822,11 @@ html.theme-dark .purchaser-detail-section.purchaser-detail-cost .purchaser-captc
 .purchaser-block-toggle .toggle { width: 40px; height: 24px; }
 .purchaser-block-toggle .toggle > span { width: 18px; height: 18px; top: 3px; left: 3px; }
 .purchaser-block-toggle .toggle.on > span { transform: translateX(16px); }
+.purchaser-refresh-info b { font-size: 10px; }
+.purchaser-refresh-control label { display: inline-flex; align-items: center; height: 25px; padding: 0 7px; border: 1px solid rgba(169,110,11,.18); border-radius: 9px; background: rgba(255,255,255,.72); color: #846033; }
+.purchaser-refresh-control label input { width: 42px; padding: 0; border: 0; outline: 0; background: transparent; color: inherit; font-size: 11px; font-weight: 800; text-align: right; appearance: textfield; }
+.purchaser-refresh-control label input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.purchaser-refresh-control label span { margin-left: 3px; font-size: 9px; font-weight: 700; white-space: nowrap; }
 
 /* 买家管理卡片：访问控制三件套（两个 block toggle + 一个 display select） */
 .purchaser-block-group { margin: 0 14px 10px; padding: 8px 6px 6px; border: 0; border-radius: 16px; background: #f7faf8; }

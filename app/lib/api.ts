@@ -59,7 +59,7 @@ export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 type RequestOptions = Omit<RequestInit, "body"> & {
   auth?: boolean;
   query?: Record<string, unknown>;
-  body?: BodyInit | Record<string, unknown>;
+  body?: BodyInit | Record<string, unknown> | unknown[];
   /** 超时毫秒，默认 30000；传 0 关闭超时 */
   timeoutMs?: number;
 };
