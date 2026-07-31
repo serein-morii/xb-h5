@@ -7779,10 +7779,10 @@ html.theme-light .spa-not-found {
   position: fixed;
   right: 14px;
   bottom: calc(94px + env(safe-area-inset-bottom));
-  z-index: 145;
+  z-index: 45;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   padding: 0;
   border: 1px solid var(--xb-line);
@@ -7793,7 +7793,30 @@ html.theme-light .spa-not-found {
   cursor: pointer;
   -webkit-backdrop-filter: blur(18px) saturate(145%);
   backdrop-filter: blur(18px) saturate(145%);
-  transition: background .16s ease, color .16s ease, transform .12s ease;
+  transition:
+    background .16s ease,
+    color .16s ease,
+    opacity .14s ease,
+    transform .12s ease,
+    visibility 0s linear .14s;
+}
+
+body:has(
+  .sheet-backdrop,
+  .purchaser-help-backdrop,
+  .purchaser-missing-backdrop,
+  .purchaser-success-backdrop,
+  .purchaser-captcha-backdrop,
+  .purchaser-create-backdrop,
+  .purchaser-address-backdrop,
+  .purchaser-order-editor-backdrop,
+  .theme-settings-backdrop
+) .theme-settings-trigger {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition-delay: 0s;
 }
 
 .theme-settings-trigger:hover,
@@ -8965,4 +8988,641 @@ html.theme-dark .workspace-dock .dock-create .dock-create-glyph:not(#xb-preserve
   background-image: none !important;
   box-shadow: none !important;
   filter: none !important;
+}
+
+/*
+ * Orders page — dedicated-order-page visual language
+ *
+ * Keep the management workflow intact, but bring its hierarchy, surfaces and
+ * spacing closer to the purchaser's dedicated order experience.
+ */
+.order-page {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 24px;
+}
+
+.order-page::before {
+  position: absolute;
+  z-index: -1;
+  top: -18px;
+  right: -18px;
+  left: -18px;
+  height: 290px;
+  border-radius: 0 0 42px 42px;
+  background:
+    radial-gradient(circle at 88% 8%, rgb(var(--theme-accent-rgb) / .14), transparent 31%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent-soft) 58%, var(--xb-bg)),
+      transparent
+    );
+  content: "";
+  pointer-events: none;
+}
+
+.order-page .module-hero {
+  position: relative;
+  min-height: 138px;
+  align-items: flex-end;
+  padding: 22px 20px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 16%, var(--xb-line)) !important;
+  border-radius: 25px !important;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(255, 255, 255, .78) 0 8%, transparent 9%),
+    radial-gradient(circle at 96% 2%, rgba(255, 255, 255, .46) 0 18%, transparent 19%),
+    linear-gradient(
+      138deg,
+      color-mix(in srgb, var(--theme-accent-soft) 36%, var(--xb-surface)) 2%,
+      color-mix(in srgb, var(--theme-accent) 17%, var(--xb-surface)) 100%
+    ) !important;
+  box-shadow: none !important;
+}
+
+.order-page .module-hero::after {
+  position: absolute;
+  right: 80px;
+  bottom: -34px;
+  width: 118px;
+  height: 118px;
+  border: 18px solid rgb(var(--theme-accent-rgb) / .07);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.order-page .module-hero > div {
+  position: relative;
+  z-index: 1;
+}
+
+.order-page .module-hero .eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border: 1px solid var(--theme-accent-line);
+  border-radius: 999px;
+  color: var(--theme-accent-hover) !important;
+  background: color-mix(in srgb, var(--theme-accent-soft) 76%, var(--xb-surface));
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+
+.order-page .module-hero h1 {
+  margin-bottom: 5px;
+  font-size: clamp(25px, 7vw, 31px);
+  letter-spacing: -.045em;
+}
+
+.order-page .module-hero p {
+  max-width: 230px;
+  color: var(--xb-text-secondary) !important;
+  line-height: 1.55;
+}
+
+.order-page .round-add {
+  z-index: 2;
+  width: 54px;
+  height: 54px;
+  border: 4px solid rgb(255 255 255 / .68) !important;
+  border-radius: 18px !important;
+}
+
+.order-page .orders-status-grid {
+  gap: 8px;
+  margin: 12px 0 10px;
+  padding: 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.order-page .orders-status-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.order-page .orders-status-grid > button {
+  min-width: 82px;
+  min-height: 86px;
+  padding: 10px 7px;
+  scroll-snap-align: start;
+  border: 1px solid var(--xb-line) !important;
+  border-radius: 17px !important;
+  color: var(--xb-text) !important;
+  background: color-mix(in srgb, var(--xb-surface) 94%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.order-page .orders-status-grid > button .metric-icon {
+  width: 30px;
+  height: 30px;
+  border: 0 !important;
+  border-radius: 10px;
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.order-page .orders-status-grid > button p {
+  color: var(--xb-text-secondary) !important;
+  font-size: 9.5px;
+}
+
+.order-page .orders-status-grid > button b {
+  color: var(--xb-text) !important;
+  font-size: 17px;
+}
+
+html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-shadow) {
+  border-color: var(--theme-accent-line) !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.order-page .orders-status-grid > button.active .metric-icon {
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+}
+
+.order-page .orders-status-grid > button.active :is(p, b) {
+  color: var(--theme-accent-hover) !important;
+}
+
+.order-page .quick-pay-filter {
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 10px;
+  padding: 4px;
+  border: 1px solid var(--xb-line);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--xb-surface) 92%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.order-page .quick-pay-filter button {
+  min-height: 32px;
+  border-radius: 11px !important;
+}
+
+.order-page .search-toolbar {
+  gap: 0;
+  min-height: 54px;
+  margin-bottom: 8px;
+  padding: 5px 7px 5px 14px !important;
+  border: 1px solid var(--xb-line) !important;
+  border-radius: 17px !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+.order-page .search-toolbar .quick-search {
+  min-height: 42px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.order-page .search-toolbar :is(.filter-chip, .toolbar-icon) {
+  height: 40px !important;
+  min-height: 40px !important;
+  border-left: 1px solid var(--xb-line) !important;
+  color: var(--theme-accent) !important;
+}
+
+.order-page .search-toolbar .filter-chip {
+  width: 54px !important;
+  white-space: nowrap;
+}
+
+.order-page .search-toolbar .toolbar-icon {
+  width: 40px !important;
+}
+
+.order-page .secondary-actions {
+  gap: 7px;
+  margin-bottom: 17px;
+  padding: 0 1px;
+}
+
+.order-page .secondary-actions button {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-accent-line) !important;
+  border-radius: 12px;
+  color: var(--theme-accent-hover) !important;
+  background: color-mix(in srgb, var(--theme-accent-soft) 60%, var(--xb-surface)) !important;
+}
+
+.order-page .list-heading {
+  margin: 0 2px 10px;
+}
+
+.order-page .list-heading h2 {
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+
+.order-page .list-heading span {
+  color: var(--xb-text-secondary);
+}
+
+.order-page .list-heading > button {
+  min-height: 36px;
+  padding: 0 7px;
+  border-radius: 10px;
+  color: var(--theme-accent) !important;
+}
+
+.order-page .mobile-card-list {
+  gap: 11px;
+}
+
+.order-page .order-card {
+  overflow: hidden;
+  border: 1px solid var(--xb-line) !important;
+  border-radius: 20px !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+.order-page .order-card.selected {
+  border-color: var(--theme-accent-line) !important;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-accent-soft) 40%, var(--xb-surface)),
+      var(--xb-surface) 46%
+    ) !important;
+}
+
+.order-page .order-card .product-avatar {
+  border-radius: 14px !important;
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.order-page .order-card :is(.recipient-block, .shipping-line) {
+  border-color: var(--xb-line) !important;
+  background: var(--xb-surface-muted) !important;
+}
+
+.order-page .order-card .card-actions {
+  border-color: var(--xb-line) !important;
+  background: color-mix(in srgb, var(--xb-surface-muted) 56%, var(--xb-surface)) !important;
+}
+
+.order-page .order-card .card-more {
+  min-height: 42px;
+  border-top: 1px solid var(--xb-line);
+}
+
+.order-page .order-card .card-more button {
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 0;
+  padding: 0 3px;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.order-page .empty-state {
+  min-height: 210px;
+  border: 1px dashed var(--theme-accent-line) !important;
+  border-radius: 20px;
+  color: var(--xb-text-secondary) !important;
+  background:
+    radial-gradient(circle at 50% 34%, rgb(var(--theme-accent-rgb) / .09), transparent 25%),
+    var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+.order-page .empty-state > svg {
+  color: var(--theme-accent) !important;
+}
+
+.order-page + .workspace-dock,
+.product-shell:has(.order-page) .workspace-dock {
+  border-color: color-mix(in srgb, var(--theme-accent) 12%, var(--xb-line)) !important;
+  background: color-mix(in srgb, var(--xb-surface) 88%, transparent) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: none !important;
+}
+
+html.theme-dark .order-page::before {
+  background:
+    radial-gradient(circle at 88% 8%, rgb(var(--theme-accent-rgb) / .13), transparent 31%),
+    linear-gradient(180deg, rgb(var(--theme-accent-rgb) / .07), transparent);
+}
+
+html.theme-dark .order-page .module-hero {
+  background:
+    radial-gradient(circle at 90% 14%, rgb(var(--theme-accent-rgb) / .13), transparent 29%),
+    linear-gradient(
+      138deg,
+      color-mix(in srgb, var(--theme-accent-soft) 32%, var(--xb-surface)),
+      var(--xb-surface)
+    ) !important;
+}
+
+@media (max-width: 380px) {
+  .order-page .module-hero {
+    min-height: 128px;
+    padding: 18px 16px;
+  }
+
+  .order-page .orders-status-grid > button {
+    min-width: 76px;
+  }
+}
+
+/*
+ * Dedicated order subpage header consistency
+ *
+ * The create tab previously regained a large accent block in the palette
+ * layer. Keep it identical to the orders tab: a compact, transparent header
+ * with themed controls only.
+ */
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head,
+html.theme-dark .purchaser-order-page.purchaser-page-create .purchaser-subpage-head {
+  min-height: 58px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > button {
+  border: 1px solid var(--xb-line) !important;
+  color: var(--xb-text) !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > div {
+  padding-top: 0;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > div h1 {
+  color: var(--xb-text) !important;
+  font-size: 17px;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > div p {
+  margin-top: 2px;
+  color: var(--xb-text-secondary) !important;
+  font-size: 10px;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > .purchaser-head-count {
+  border: 0 !important;
+  color: var(--xb-text-secondary) !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.purchaser-order-page.purchaser-page-create .purchaser-subpage-head > .purchaser-head-count b {
+  color: var(--theme-accent) !important;
+}
+
+/*
+ * Compact search controls
+ *
+ * Search is a frequent utility, not a primary action. Keep the field compact
+ * across admin lists, purchaser management and public order results.
+ */
+.toolbar-card.search-toolbar {
+  min-height: 42px;
+  padding: 3px 5px 3px 10px !important;
+  border-radius: 13px !important;
+}
+
+.toolbar-card.search-toolbar .quick-search {
+  min-height: 32px;
+  height: 32px;
+  gap: 6px;
+  padding-left: 7px;
+  border-radius: 9px;
+}
+
+.toolbar-card.search-toolbar .quick-search input {
+  height: 30px;
+  font-size: 12.5px;
+  letter-spacing: -.01em;
+}
+
+.toolbar-card.search-toolbar .quick-search > svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
+.toolbar-card.search-toolbar :is(.filter-chip, .toolbar-icon) {
+  height: 32px !important;
+  min-height: 32px !important;
+  font-size: 10.5px;
+}
+
+.order-page .search-toolbar {
+  min-height: 42px;
+  padding: 3px 5px 3px 10px !important;
+  border-radius: 13px !important;
+}
+
+.order-page .search-toolbar .quick-search {
+  min-height: 32px;
+  height: 32px;
+}
+
+.order-page .search-toolbar :is(.filter-chip, .toolbar-icon) {
+  height: 32px !important;
+  min-height: 32px !important;
+}
+
+.order-page .search-toolbar .filter-chip {
+  width: 50px !important;
+}
+
+.order-page .search-toolbar .toolbar-icon {
+  width: 36px !important;
+}
+
+.purchaser-manager-toolbar {
+  gap: 6px;
+}
+
+.purchaser-manager-toolbar > div {
+  min-height: 40px !important;
+  padding-inline: 12px;
+  border-radius: 12px !important;
+}
+
+.purchaser-manager-toolbar input {
+  height: 38px !important;
+  font-size: 12px;
+}
+
+.purchaser-manager-toolbar > button {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+}
+
+.tool-inline-search {
+  min-height: 34px;
+  padding-inline: 10px;
+  border-radius: 11px;
+}
+
+.tool-inline-search input {
+  height: 34px !important;
+  font-size: 11px;
+}
+
+.admin-entry-buyer-search {
+  min-height: 40px !important;
+  padding: 3px 3px 3px 12px;
+  border-radius: 12px !important;
+}
+
+.admin-entry-buyer-search input {
+  height: 32px !important;
+  font-size: 12px;
+}
+
+/*
+ * Order status rail
+ *
+ * One coherent overview surface replaces the row of unrelated mini-cards.
+ * The active segment carries the selected palette; inactive segments stay
+ * quiet and let the counts do the work.
+ */
+.order-page .orders-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  margin: 12px 0 10px;
+  padding: 5px;
+  overflow: visible;
+  border: 1px solid var(--xb-line);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--xb-surface) 94%, transparent);
+  box-shadow: none;
+}
+
+.order-page .orders-status-grid > button {
+  position: relative;
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  padding: 7px 2px;
+  border: 0 !important;
+  border-radius: 15px !important;
+  color: var(--xb-text) !important;
+  background: transparent !important;
+  text-align: center;
+  box-shadow: none !important;
+}
+
+.order-page .orders-status-grid > button .metric-icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 2px;
+  border: 0 !important;
+  border-radius: 9px;
+  color: var(--theme-accent) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.order-page .orders-status-grid > button p {
+  max-width: 100%;
+  margin: 1px 0 0;
+  color: var(--xb-text-secondary) !important;
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.order-page .orders-status-grid > button b {
+  margin: 0;
+  color: var(--xb-text) !important;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  text-align: center;
+}
+
+html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-shadow) {
+  border: 0 !important;
+  color: var(--theme-accent-hover) !important;
+  background: var(--theme-accent-soft) !important;
+}
+
+.order-page .orders-status-grid > button.active .metric-icon {
+  color: var(--theme-on-accent) !important;
+  background: var(--theme-accent) !important;
+}
+
+.order-page .orders-status-grid > button.active :is(p, b) {
+  color: var(--theme-accent-hover) !important;
+}
+
+@media (max-width: 370px) {
+  .order-page .orders-status-grid {
+    gap: 0;
+    padding: 4px;
+  }
+
+  .order-page .orders-status-grid > button {
+    min-height: 70px;
+    border-radius: 13px !important;
+  }
+
+  .order-page .orders-status-grid > button .metric-icon {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Price editor follows the same steady, single-track layout as the read view. */
+.sheet:has(.crud-editor-form-prices) {
+  width: min(100%, 590px);
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.sheet:has(.crud-editor-form-prices) .sheet-content,
+.crud-editor-form-prices,
+.crud-editor-form-prices .form-grid,
+.crud-editor-form-prices .form-grid > label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sheet:has(.crud-editor-form-prices) .sheet-content {
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+}
+
+.crud-editor-form-prices .form-grid {
+  grid-template-columns: minmax(0, 1fr);
+  overflow-x: clip;
+}
+
+.crud-editor-form-prices :is(input:not([type="checkbox"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
