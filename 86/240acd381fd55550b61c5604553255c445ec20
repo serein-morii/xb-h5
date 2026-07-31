@@ -1,0 +1,37 @@
+app/unified-theme.css
+  s_2da62b23b8df16::t_c754788268066f 9403-9405,9409-9413,9417-9419,9422-9427,9429-9431,9435-9437,9441-9442,9446-9455
+  s_2da62b23b8df16::t_86a506b924a343 9341-9394
+  s_2da62b23b8df16::t_9bc5f32bc88aca 7784-7785,9230-9236,9275-9288
+  s_2da62b23b8df16::t_c609bfb11a3565 9395-9402,9406-9408,9414-9416,9420-9421,9428,9432-9434,9438-9440,9443-9445,9456-9596
+  s_2da62b23b8df16::t_281bd227f0fb7b 8992-9191,9201-9229,9237-9274,9289-9339
+  s_4af28b6f44cb26::t_657481c9bff723 7782,7802-7818
+  s_2da62b23b8df16::t_6a65bb1a6b2bd2 9340,9597-9628
+  s_2da62b23b8df16::t_a948f2f70e67e6 9192-9200
+  s_2da62b23b8df16::t_1d5e38f8218e7b 7796-7801,7819
+app/admin/crud.tsx
+  s_2da62b23b8df16::t_6a65bb1a6b2bd2 532
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "86240acd381fd55550b61c5604553255c445ec20",
+  "prompts": {},
+  "sessions": {
+    "s_2da62b23b8df16": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb5a2-f4db-7900-80d6-e995d96a494a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_4af28b6f44cb26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb6c9-2ff6-7693-9a16-c67fb4ab93b2",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
