@@ -1,0 +1,64 @@
+app/components/ThemeSettings.tsx
+  s_2da62b23b8df16::t_33a464e329a6fc 1-110
+app/unified-theme.css
+  s_2da62b23b8df16::t_fb6b2d8919f702 8442-8447
+  s_2da62b23b8df16::t_1f66587164ac62 7780,7784-7785,7789,7796,7806
+  s_2da62b23b8df16::t_4e87012cd59953 8802-8948
+  s_2da62b23b8df16::t_7f3d345ee50ee3 7675-7779,7782-7783,7786-7788,7790-7795,7797-7805,7807-8274,8279-8397,8402,8453-8468,8477,8547-8598
+  s_2da62b23b8df16::t_d03640067439cf 8792,8794-8800
+  s_2da62b23b8df16::t_d9e82722b6c08c 7180-7674
+  s_2da62b23b8df16::t_637055f8b055e3 7781
+  s_2da62b23b8df16::t_39d4471eed6944 8949-8968
+  s_2da62b23b8df16::t_d97036b0205620 8403-8441,8448-8452
+  s_6e013c9d5b93ad::t_6e46b15f116b86 1634-1645
+  s_2da62b23b8df16::t_8e18080dc0d9f4 8398-8401,8469-8476,8478-8546
+  s_2da62b23b8df16::t_767ec6251b0393 8599-8791,8793,8801
+  s_2da62b23b8df16::t_17253e5c19c1ec 8275-8278
+app/tools/purchasers/PurchaserManager.tsx
+  s_6e013c9d5b93ad::t_eb4ad8fe5491ca 7,24,55,267-276,278-305,337-344
+  s_6e013c9d5b93ad::t_5991dd180d7e19 266,277,306,335-336
+  s_6fbdd6c3e2c004::t_2daab5114c5888 345
+src/main.tsx
+  s_2da62b23b8df16::t_33a464e329a6fc 4,24
+app/lib/api.ts
+  s_6e013c9d5b93ad::t_c4e6eced3da33b 62
+app/globals.css
+  s_6e013c9d5b93ad::t_eb4ad8fe5491ca 1825-1829
+app/admin/orders.tsx
+  s_6e013c9d5b93ad::t_34c80b44df6708 512,531
+  s_6e013c9d5b93ad::t_95c9d99b41655f 510-511,515,527-530,532-539
+app/lib/theme.ts
+  s_2da62b23b8df16::t_33a464e329a6fc 3,6,21-31,59-72,77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "b2211b83cdcccf320d3f63ea9ae7515498b7c0a7",
+  "prompts": {},
+  "sessions": {
+    "s_2da62b23b8df16": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb5a2-f4db-7900-80d6-e995d96a494a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_6e013c9d5b93ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faba0-a1e6-77e1-884b-2c3c44038b89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
