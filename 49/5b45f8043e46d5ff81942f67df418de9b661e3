@@ -1,0 +1,23 @@
+app/admin/crud.tsx
+  s_2da62b23b8df16::t_f18422918e0822 532
+app/admin/orders.tsx
+  s_2da62b23b8df16::t_646544335be106 145
+app/unified-theme.css
+  s_2da62b23b8df16::t_ecc7ee7b41ab99 9629-9752
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "495b45f8043e46d5ff81942f67df418de9b661e3",
+  "prompts": {},
+  "sessions": {
+    "s_2da62b23b8df16": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb5a2-f4db-7900-80d6-e995d96a494a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
