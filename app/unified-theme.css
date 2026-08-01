@@ -9626,3 +9626,127 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* Mobile editor safety: compact controls, vertical-only scrolling, reachable actions. */
+.sheet-backdrop {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.sheet,
+.sheet-content,
+.sheet-editor-form,
+.sheet-editor-form .form-grid,
+.sheet-editor-form .form-grid > *,
+.sheet-editor-form label {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+.sheet,
+.sheet-content {
+  touch-action: pan-y;
+}
+
+.sheet-content {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(58px + env(safe-area-inset-bottom));
+}
+
+.sheet-editor-form {
+  gap: 12px;
+}
+
+.sheet-editor-form .form-grid {
+  gap: 10px;
+}
+
+.sheet-editor-form label > span:first-child {
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.sheet-editor-form :is(input:not([type="checkbox"]), select) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.25;
+  box-sizing: border-box;
+}
+
+.sheet-editor-form textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 66px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.sheet-editor-form > button[type="submit"]:last-child {
+  position: sticky;
+  z-index: 4;
+  bottom: 0;
+  width: 100%;
+  min-height: 42px;
+  flex: none;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* Custom dialogs use the same short-screen and keyboard safeguards. */
+:is(
+  .purchaser-create-modal,
+  .purchaser-sheet,
+  .purchaser-order-editor-modal,
+  .batch-order-confirm-modal,
+  .batch-order-detail-modal,
+  .link-query-dialog,
+  .freight-company-dialog,
+  .theme-settings-panel,
+  .confirm-card
+) {
+  max-width: 100%;
+  max-height: calc(100dvh - 20px);
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-padding-bottom: calc(58px + env(safe-area-inset-bottom));
+}
+
+.purchaser-create-modal > .purchaser-create-submit:last-child {
+  position: sticky;
+  z-index: 3;
+  bottom: 0;
+}
+
+/* Keep confirmation icons and labels centered on one baseline. */
+:is(
+  .button,
+  .filter-reset,
+  .filter-apply,
+  .purchaser-create-action,
+  .purchaser-create-submit,
+  .purchaser-captcha-submit,
+  .purchaser-success-primary,
+  .purchaser-success-secondary,
+  .purchaser-missing-close,
+  .batch-order-confirm-ok,
+  .batch-order-confirm-cancel
+) {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+}
