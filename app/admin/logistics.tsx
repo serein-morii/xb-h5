@@ -3,7 +3,6 @@ import {
   LoaderCircle,
   Pencil,
   ShieldCheck,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -324,11 +323,20 @@ export function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; 
         <div className="sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !saving && setEditing(null)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label="编辑店铺额度">
             <header className="sheet-header">
-              <h2>编辑店铺额度</h2>
-              <button className="sheet-close" type="button" onClick={() => setEditing(null)} aria-label="关闭"><X size={18} /></button>
+              <div><span className="eyebrow">XB MOBILE</span><h2>编辑店铺额度</h2></div>
+              <div className="sheet-header-actions">
+                <button className="sheet-header-cancel" type="button" onClick={() => setEditing(null)} disabled={saving}>
+                  关闭
+                </button>
+                <button className="sheet-header-save" type="submit" form="logistics-store-quota-form" disabled={saving}>
+                  {saving ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}
+                  {saving ? "保存中" : "保存"}
+                </button>
+              </div>
             </header>
             <form
-              className="mobile-form"
+              id="logistics-store-quota-form"
+              className="mobile-form sheet-content"
               onSubmit={(event) => { event.preventDefault(); saveEdit(); }}
             >
               <label>
@@ -356,27 +364,29 @@ export function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; 
                   <input value={editRemark} onChange={(e) => setEditRemark(e.target.value)} maxLength={120} placeholder="可选" />
                 </div>
               </label>
-              <div className="form-actions">
-                <button className="button button-ghost" type="button" onClick={() => setEditing(null)} disabled={saving}>取消</button>
-                <button className="button button-primary" type="submit" disabled={saving}>
-                  {saving ? <LoaderCircle className="spin" size={16} /> : <ShieldCheck size={16} />}保存
-                </button>
-              </div>
             </form>
           </div>
         </div>
       ) : null}
 
-      {/* admin 编辑全局弹窗 */}
       {globalEditing ? (
         <div className="sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !globalSaving && setGlobalEditing(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label="编辑全局额度">
             <header className="sheet-header">
-              <h2>编辑全局额度</h2>
-              <button className="sheet-close" type="button" onClick={() => setGlobalEditing(false)} aria-label="关闭"><X size={18} /></button>
+              <div><span className="eyebrow">XB MOBILE</span><h2>编辑全局额度</h2></div>
+              <div className="sheet-header-actions">
+                <button className="sheet-header-cancel" type="button" onClick={() => setGlobalEditing(false)} disabled={globalSaving}>
+                  关闭
+                </button>
+                <button className="sheet-header-save" type="submit" form="logistics-global-quota-form" disabled={globalSaving}>
+                  {globalSaving ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}
+                  {globalSaving ? "保存中" : "保存"}
+                </button>
+              </div>
             </header>
             <form
-              className="mobile-form"
+              id="logistics-global-quota-form"
+              className="mobile-form sheet-content"
               onSubmit={(event) => { event.preventDefault(); saveGlobalEdit(); }}
             >
               <p className="card-sub" style={{ margin: "0 0 4px" }}>
@@ -403,12 +413,6 @@ export function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; 
                   <input value={globalRemark} onChange={(e) => setGlobalRemark(e.target.value)} maxLength={120} placeholder="可选" />
                 </div>
               </label>
-              <div className="form-actions">
-                <button className="button button-ghost" type="button" onClick={() => setGlobalEditing(false)} disabled={globalSaving}>取消</button>
-                <button className="button button-primary" type="submit" disabled={globalSaving}>
-                  {globalSaving ? <LoaderCircle className="spin" size={16} /> : <ShieldCheck size={16} />}保存
-                </button>
-              </div>
             </form>
           </div>
         </div>

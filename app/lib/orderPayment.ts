@@ -1,20 +1,22 @@
-export type OrderPaymentStatus = 0 | 1 | 2;
+export type OrderPaymentStatus = 0 | 1 | 2 | 3;
 
 type OrderData = Record<string, unknown>;
 
 const PAID_VALUES = new Set(["1", "true", "paid", "已付款"]);
 const REFUNDED_VALUES = new Set(["2", "refunded", "refund", "已退款"]);
+const CONFIRMING_VALUES = new Set(["3", "confirming", "pending_confirm", "待确认"]);
 const UNPAID_VALUES = new Set(["0", "false", "unpaid", "未付款"]);
 
 export function normalizeOrderPaymentStatus(value: unknown): OrderPaymentStatus | undefined {
   if (typeof value === "boolean") return value ? 1 : 0;
   if (typeof value === "number") {
-    return value === 0 || value === 1 || value === 2 ? value : undefined;
+    return value === 0 || value === 1 || value === 2 || value === 3 ? value : undefined;
   }
 
   const normalized = String(value ?? "").trim().toLocaleLowerCase();
   if (PAID_VALUES.has(normalized)) return 1;
   if (REFUNDED_VALUES.has(normalized)) return 2;
+  if (CONFIRMING_VALUES.has(normalized)) return 3;
   if (UNPAID_VALUES.has(normalized)) return 0;
   return undefined;
 }

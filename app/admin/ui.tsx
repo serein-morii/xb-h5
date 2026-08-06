@@ -85,7 +85,12 @@ export function Sheet({
         <div className="sheet-grabber" />
         <header className="sheet-header">
           <div><span className="eyebrow">XB MOBILE</span><h2>{title}</h2></div>
-          <div className="sheet-header-actions">{headerAction}<button className="icon-button" type="button" onClick={onClose} aria-label="关闭"><X size={20} /></button></div>
+          <div className="sheet-header-actions">
+            <button className="sheet-header-cancel" type="button" onClick={onClose}>
+              关闭
+            </button>
+            {headerAction}
+          </div>
         </header>
         <div className="sheet-content">{children}</div>
       </section>

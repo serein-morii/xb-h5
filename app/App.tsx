@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./lib/api";
+import PeachHome from "./site/PeachHome";
 
 const MobileAdmin = lazy(() => import("./MobileAdmin"));
 const PublicOrder = lazy(() => import("./order/PublicOrder"));
@@ -13,6 +14,7 @@ const PurchaserOrderPage = lazy(() => import("./tools/place-order/PurchaserOrder
 const PurchaserManager = lazy(() => import("./tools/purchasers/PurchaserManager"));
 const StoreQuery = lazy(() => import("./tools/store-query/StoreQuery"));
 const StoreQueryList = lazy(() => import("./tools/store-query/StoreQueryList"));
+const CustomerAuthPage = lazy(() => import("./customer/CustomerAuthPage"));
 
 type RouteConfig = {
   title: string;
@@ -23,9 +25,29 @@ type RouteConfig = {
 
 const routes: Record<string, RouteConfig> = {
   "/": {
+    title: "炎陵黄桃｜高山鲜果，当季采摘",
+    description: "来自湖南炎陵高山果园的当季黄桃，客户可注册进入专属页面下单并查看订单物流。",
+    content: <PeachHome />,
+  },
+  "/manage": {
     title: "喜八移动订单管理",
-    description: "专为手机端设计的喜八订单、账单、快递、价格和店铺管理工作台。",
+    description: "喜八订单、账单、快递、商品和店铺管理工作台。",
     content: <MobileAdmin />,
+  },
+  "/customer/login": {
+    title: "客户登录｜炎陵黄桃",
+    description: "登录炎陵黄桃客户中心。",
+    content: <CustomerAuthPage mode="login" />,
+  },
+  "/customer/register": {
+    title: "客户注册｜炎陵黄桃",
+    description: "注册炎陵黄桃客户账号，可选绑定已有专属下单码。",
+    content: <CustomerAuthPage mode="register" />,
+  },
+  "/customer/reset": {
+    title: "找回密码｜炎陵黄桃",
+    description: "通过邮箱验证码找回客户账号密码。",
+    content: <CustomerAuthPage mode="reset" />,
   },
   "/order": {
     title: "订单查询｜喜八",
@@ -99,7 +121,8 @@ function NotFound() {
       <span>404</span>
       <h1>页面不存在</h1>
       <p>链接可能已经失效，或者页面地址有误。</p>
-      <a href="/">返回管理首页</a>
+      <a href="/">返回品牌主页</a>
+      <a href="/manage">打开管理端</a>
       <a href="/tools">打开工具箱</a>
     </main>
   );

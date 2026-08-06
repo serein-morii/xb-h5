@@ -119,6 +119,7 @@ test("preserves and normalizes payment status when opening an order detail", () 
   assert.equal(normalizeOrderPaymentStatus(true), 1);
   assert.equal(normalizeOrderPaymentStatus("1"), 1);
   assert.equal(normalizeOrderPaymentStatus("PAID"), 1);
+  assert.equal(normalizeOrderPaymentStatus("待确认"), 3);
   assert.equal(normalizeOrderPaymentStatus(false), 0);
   assert.equal(normalizeOrderPaymentStatus("unpaid"), 0);
   assert.equal(normalizeOrderPaymentStatus("已退款"), 2);
@@ -327,6 +328,33 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
   assert.match(orderPage, /\/search\/order/);
   assert.doesNotMatch(orderPage, /storeCode: linkKey/);
   assert.doesNotMatch(orderPage, /buyer/i);
+});
+
+test("keeps historical purchaser links working before customer auth APIs are deployed", async () => {
+  const orderPage = await source("app/tools/place-order/PurchaserOrderPage.tsx");
+  assert.match(orderPage, /cause instanceof ApiError && cause\.code === 404/);
+  assert.match(orderPage, /legacyBackend = true/);
+  assert.match(orderPage, /const authenticated = legacyBackend \|\|/);
+  assert.match(orderPage, /return \{ data: \[\] \}/);
+  assert.match(orderPage, /costPriceUnlocked\?: boolean/);
+  assert.match(orderPage, /legacyUnlocked/);
+});
+
+test("keeps theme settings behind admin login and allows registration without a short id", async () => {
+  const main = await source("src/main.tsx");
+  const adminShell = await source("app/admin/shell.tsx");
+  const authPage = await source("app/customer/CustomerAuthPage.tsx");
+  assert.doesNotMatch(main, /<ThemeSettings\s*\/>/);
+  assert.match(adminShell, /<ThemeSettings\s*\/>/);
+  assert.match(authPage, /专属下单码（选填）/);
+  assert.match(authPage, /customer-captcha-row/);
+  assert.match(authPage, /\/captchaImage/);
+  assert.match(authPage, /captchaCode\.trim\(\)/);
+  assert.match(authPage, /uuid: captchaUuid/);
+  assert.match(authPage, /isSelfRegistration/);
+  assert.match(authPage, /\/customer\/auth\/register-preview/);
+  assert.match(authPage, /customer-register-confirm/);
+  assert.match(authPage, /confirmExisting: confirmExisting \? "1" : "0"/);
 });
 
 test("keeps the original public HTML capabilities in the integrated project", async () => {

@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "../app/App";
-import ThemeSettings from "../app/components/ThemeSettings";
 import { initializeTheme } from "../app/lib/theme";
 import { installViewportZoomLock } from "../app/lib/viewport";
 import "../app/globals.css";
@@ -21,6 +20,5 @@ if (import.meta.hot) {
 createRoot(root).render(
   <StrictMode>
     <App />
-    <ThemeSettings />
   </StrictMode>,
 );

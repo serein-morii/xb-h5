@@ -42,6 +42,28 @@ export function clearStoredToken() {
   window.localStorage.removeItem("xb-mobile-token");
 }
 
+const CUSTOMER_TOKEN_KEY = "xb-customer-token";
+
+export function getCustomerToken() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(CUSTOMER_TOKEN_KEY) || "";
+}
+
+export function setCustomerToken(token: string) {
+  window.localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+}
+
+export function clearCustomerToken() {
+  window.localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+}
+
+export function customerHeaders(headers?: HeadersInit) {
+  const result = new Headers(headers);
+  const token = getCustomerToken();
+  if (token) result.set("X-Customer-Token", token);
+  return result;
+}
+
 export function toQuery(params: Record<string, unknown> = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -130,7 +152,8 @@ export async function apiRequest<T = Record<string, unknown>>(
   );
 
   if (response.status === 401) {
-    handleSessionExpired();
+    if (auth) handleSessionExpired();
+    throw new ApiError("登录凭证已失效，请重新登录", 401);
   }
   if (!response.ok) {
     throw new ApiError(`请求失败（${response.status}）`, response.status);
@@ -140,7 +163,8 @@ export async function apiRequest<T = Record<string, unknown>>(
   // 业务层 401：Spring Security 在 body 里返回 {code:401,msg:"请求访问：/xxx，认证失败"}，
   // 与 HTTP 401 等价 —— 视为登录过期，提示并跳登录页。
   if (code === 401) {
-    handleSessionExpired();
+    if (auth) handleSessionExpired();
+    throw new ApiError(String(result.msg || "登录凭证已失效，请重新登录"), 401);
   }
   if (code !== 200) {
     throw new ApiError(String(result.msg || "接口返回异常"), code);

@@ -71,6 +71,14 @@ function formatCost(value?: number) {
   return Number(value).toFixed(2);
 }
 
+function payStatusMeta(status: unknown) {
+  const value = Number(status);
+  if (value === 1) return { key: "paid", label: "已付款" };
+  if (value === 2) return { key: "refunded", label: "已退款" };
+  if (value === 3) return { key: "confirming", label: "待确认" };
+  return { key: "unpaid", label: "未付款" };
+}
+
 export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh, collapseExtras = false, enableCostSelection = false }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean; enableCostSelection?: boolean }) {
   const [active, setActive] = useState("ALL");
   const [activePay, setActivePay] = useState("ALL");
@@ -114,15 +122,20 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
     return Array.from(map.entries()).sort(([left], [right]) => (ORDER_STATUS_META[left]?.order ?? 99) - (ORDER_STATUS_META[right]?.order ?? 99));
   }, [orders]);
   const payBuckets = useMemo(() => {
-    let paid = 0, unpaid = 0;
-    orders.forEach((o) => { if (Number(o.payStatus) === 1) paid += 1; else unpaid += 1; });
-    return { paid, unpaid };
+    let paid = 0, unpaid = 0, confirming = 0;
+    orders.forEach((o) => {
+      if (Number(o.payStatus) === 1) paid += 1;
+      else if (Number(o.payStatus) === 3) confirming += 1;
+      else unpaid += 1;
+    });
+    return { paid, unpaid, confirming };
   }, [orders]);
   const normalizedKeyword = keyword.trim().toLowerCase();
   const visible = orders.filter((order) => {
     if (active !== "ALL" && order.orderStatus !== active) return false;
     if (activePay === "PAID" && Number(order.payStatus) !== 1) return false;
-    if (activePay === "UNPAID" && Number(order.payStatus) === 1) return false;
+    if (activePay === "CONFIRMING" && Number(order.payStatus) !== 3) return false;
+    if (activePay === "UNPAID" && [1, 3].includes(Number(order.payStatus))) return false;
     if (!normalizedKeyword) return true;
     return [order.orderCode, order.customer, order.phone, order.address, order.expCode, order.store, order.storeName, order.purchaser, order.createBy].some((value) => String(value || "").toLowerCase().includes(normalizedKeyword));
   });
@@ -145,18 +158,19 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
   return <>
     <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-result-head-right"><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div>{onRefresh ? <button type="button" className="tool-result-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="刷新订单列表"><RefreshCw className={refreshing ? "spin" : ""} size={16} /></button> : null}</div></section>
     <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips tool-order-status-filter" role="listbox" aria-label="订单状态筛选"><button type="button" className={active === "ALL" ? "active" : ""} aria-selected={active === "ALL"} onClick={() => setActive("ALL")}><span>全部</span><b>{orders.length}</b></button>{statuses.map(([key, item]) => <button type="button" className={active === key ? "active" : ""} aria-selected={active === key} onClick={() => setActive(key)} key={key}><span>{item.label}</span><b>{item.count}</b></button>)}</div></div>
-    {collapseExtras ? <details className="tool-advanced-filter"><summary><span>更多筛选</span><small>{activePay === "PAID" ? "已付款" : activePay === "UNPAID" ? "未付款" : "付款状态"}</small><ChevronDown size={15} /></summary><div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div></details> : <div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div>}</div>
+    {collapseExtras ? <details className="tool-advanced-filter"><summary><span>更多筛选</span><small>{activePay === "PAID" ? "已付款" : activePay === "CONFIRMING" ? "待确认" : activePay === "UNPAID" ? "未付款" : "付款状态"}</small><ChevronDown size={15} /></summary><div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div></details> : <div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div>}</div>
     <section className="tool-order-results soft-list">{visible.map((order) => {
       const isOpen = expanded.has(order.id);
       const tracking = order.expInfoList || [];
       const tone = statusTone(order.orderStatus);
       const isPending = order.orderStatus === "DSH";
+      const payMeta = payStatusMeta(order.payStatus);
       return <article key={order.id} className="soft-card">
-        <header><div className="tool-order-header-left"><div><small>订单编号</small><span className="tool-order-num-line"><b>{order.orderCode || "--"}</b><button type="button" className="tool-copy-icon" onClick={() => copyOrder(order)} aria-label="复制订单"><Copy size={14} /></button></span></div></div><div className="tool-order-pills"><span className={`pill tool-order-status-${tone}`}>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</span><span className={`pill tool-order-pay-${Number(order.payStatus) === 1 ? "paid" : Number(order.payStatus) === 2 ? "refunded" : "unpaid"}`}><CreditCard size={11} />{Number(order.payStatus) === 1 ? "已付款" : Number(order.payStatus) === 2 ? "已退款" : "未付款"}</span></div></header>
+        <header><div className="tool-order-header-left"><div><small>订单编号</small><span className="tool-order-num-line"><b>{order.orderCode || "--"}</b><button type="button" className="tool-copy-icon" onClick={() => copyOrder(order)} aria-label="复制订单"><Copy size={14} /></button></span></div></div><div className="tool-order-pills"><span className={`pill tool-order-status-${tone}`}>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</span><span className={`pill tool-order-pay-${payMeta.key}`}><CreditCard size={11} />{payMeta.label}</span></div></header>
         <div className="tool-order-product"><b>{order.orderNameDesc || "未命名商品"}</b><span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span><time>{String(order.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</time></div>
         <div className="tool-order-address"><p><User size={14} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={14} />{order.address || "暂无地址"}</p></div>
         <div className="tool-order-exp"><Truck size={14} /><span><b>{order.expComDesc || "暂无快递"}</b><small>{order.expCode && order.expCode !== "无" ? order.expCode : "暂无快递单号"}</small></span></div>
-        {Number(order.payStatus) === 1 && order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} />付款时间：{String(order.paidTime).replace("T", " ").slice(0, 16)}{order.paidAmount ? <b> · 实付 ¥{Number(order.paidAmount).toFixed(2)}</b> : null}</div> : null}
+        {[1, 3].includes(Number(order.payStatus)) && order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} />{Number(order.payStatus) === 3 ? "提交确认时间" : "付款时间"}：{String(order.paidTime).replace("T", " ").slice(0, 16)}{order.paidAmount ? <b> · 金额 ¥{Number(order.paidAmount).toFixed(2)}</b> : null}</div> : null}
         {order.totalPrice !== undefined && order.totalPrice !== null ? <div className="tool-order-cost-row"><div className="tool-order-cost-head"><span><Wallet size={13} /><b className="tool-order-cost-title">成本明细</b></span>{enableCostSelection ? <button type="button" className={`tool-order-cost-select${selectedCostOrders.has(order.id) ? " active" : ""}`} onClick={() => toggleCostOrder(order)}>{selectedCostOrders.has(order.id) ? <><Check size={12} />已选择</> : "选择订单"}</button> : null}</div><div className="tool-order-cost-grid">{order.goodsPrice !== undefined && order.goodsPrice !== null ? <span>商品 <b>¥{formatCost(order.goodsPrice)}</b></span> : null}{order.packagePrice !== undefined && order.packagePrice !== null ? <span>包装 <b>¥{formatCost(order.packagePrice)}</b></span> : null}{order.expPrice !== undefined && order.expPrice !== null ? <span>快递 <b>¥{formatCost(order.expPrice)}</b></span> : null}<span>合计 <b>¥{formatCost(order.totalPrice)}</b></span></div></div> : null}
         {(order.storeName || order.store || order.purchaser || order.createBy) ? <div className="tool-order-meta-row">{(order.storeName || order.store) ? <span><Store size={13} />店铺：{order.storeName || order.store}</span> : null}{order.purchaser || order.createBy ? <span><User size={13} />下单人：{order.purchaser || order.createBy}</span> : null}</div> : null}
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}

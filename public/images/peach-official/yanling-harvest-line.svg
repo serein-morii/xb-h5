@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1067" fill="none">
+  <title>Yanling peach harvest contour line illustration</title>
+  <rect width="1600" height="1067" fill="#f6f7f2"/>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M83 812C224 768 361 746 496 756C643 767 733 821 879 832C1059 845 1194 782 1345 762C1441 749 1518 756 1590 788" stroke="#dbe7dc" stroke-width="4"/>
+    <path d="M220 889C451 836 654 840 830 898C1018 960 1212 954 1408 891" stroke="#dbe7dc" stroke-width="4"/>
+    <path d="M75 925C254 893 434 894 615 928C835 970 1046 972 1274 919C1380 894 1482 897 1550 919" stroke="#e3ece2" stroke-width="3"/>
+  </g>
+
+  <g stroke="#244d3d" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M456 558C572 513 800 493 985 528C1083 546 1151 584 1170 636C1198 709 1135 803 1005 852C872 903 633 907 491 857C349 807 312 628 456 558Z" fill="#f5d7ac" fill-opacity=".16" stroke-width="8"/>
+    <path d="M395 626C541 678 727 698 933 681C1048 671 1124 650 1168 624" stroke-opacity=".45" stroke-width="6"/>
+    <path d="M444 724C601 774 787 787 997 754C1070 743 1125 727 1155 706" stroke-opacity=".34" stroke-width="5"/>
+    <path d="M506 587C487 662 501 768 544 849" stroke-opacity=".23" stroke-width="4.5"/>
+    <path d="M673 532C647 638 657 756 701 879" stroke-opacity=".2" stroke-width="4"/>
+    <path d="M861 524C884 638 881 752 850 874" stroke-opacity=".18" stroke-width="4"/>
+    <path d="M1098 592C1095 688 1071 772 1019 850" stroke-opacity=".24" stroke-width="5"/>
+
+    <path d="M590 418C644 380 721 390 764 445C808 502 798 579 741 624C684 668 604 653 562 596C521 541 530 459 590 418Z" fill="#f5d7ac" fill-opacity=".2" stroke-width="6"/>
+    <path d="M621 430C608 490 624 550 664 593" stroke-opacity=".34" stroke-width="3.5"/>
+    <path d="M829 394C890 353 975 365 1023 425C1074 489 1061 581 995 631C929 680 839 665 792 599C745 535 760 439 829 394Z" fill="#f5d7ac" fill-opacity=".18" stroke-width="6"/>
+    <path d="M868 405C849 478 866 554 916 605" stroke-opacity=".34" stroke-width="3.5"/>
+    <path d="M449 452C497 420 568 431 607 482C644 532 633 600 584 640C534 681 462 669 423 616C384 565 393 489 449 452Z" fill="#f5d7ac" fill-opacity=".14" stroke-opacity=".58" stroke-width="6"/>
+    <path d="M478 464C466 522 480 577 516 612" stroke-opacity=".26" stroke-width="3"/>
+    <path d="M1035 452C1086 421 1154 434 1192 488C1230 541 1215 612 1161 652" stroke-opacity=".35" stroke-width="5"/>
+
+    <path d="M1009 256C1094 279 1162 338 1208 430" stroke-width="8"/>
+    <path d="M1038 254C1027 207 1049 164 1095 139C1142 114 1200 114 1243 141C1209 190 1161 221 1102 228C1070 232 1049 241 1038 254Z" fill="#bed3bd" fill-opacity=".24" stroke-width="6"/>
+    <path d="M1086 154C1110 172 1129 197 1142 224" stroke-opacity=".3" stroke-width="3"/>
+
+    <path d="M268 553C302 456 385 394 486 378" stroke-opacity=".38" stroke-width="6"/>
+    <path d="M285 552C325 528 360 525 392 542" stroke-opacity=".32" stroke-width="5"/>
+    <path d="M306 595C353 579 396 583 430 607" stroke-opacity=".18" stroke-width="3"/>
+    <path d="M1263 550C1227 462 1160 408 1074 388" stroke-opacity=".32" stroke-width="6"/>
+    <path d="M1238 581C1194 548 1148 535 1100 545" stroke-opacity=".18" stroke-width="3"/>
+  </g>
+</svg>

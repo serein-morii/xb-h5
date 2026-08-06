@@ -7,6 +7,7 @@ import {
   Link2,
   SearchCheck,
   ShoppingBag,
+  PackageOpen,
   Store as StoreIcon,
   Truck,
   User,
@@ -25,6 +26,7 @@ export type MenuKey =
   | "bills"
   | "express"
   | "prices"
+  | "products"
   | "stores"
   | "orderLink"
   | "purchasers"
@@ -33,7 +35,7 @@ export type MenuKey =
   | "shortLinks";
 
 export const ALL_MENU_KEYS: MenuKey[] = [
-  "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices",
+  "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "products",
   "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks",
 ];
 
@@ -80,6 +82,14 @@ export type Dictionaries = {
 export const EMPTY_DICTIONARIES: Dictionaries = {
   products: [], sizes: [], yesNo: [], expressCompanies: [], provinces: [], platforms: [], orderStatuses: [],
 };
+
+export const ORDER_TYPE_FALLBACK_OPTIONS: DictOption[] = [
+  { value: "in5", label: "湖南省内 · 5斤" },
+  { value: "in10", label: "湖南省内 · 10斤" },
+  { value: "out5", label: "湖南省外 · 5斤" },
+  { value: "out10", label: "湖南省外 · 10斤" },
+];
+
 const DICTIONARY_TYPES: Record<keyof Dictionaries, string> = {
   products: "sys_order_name",
   sizes: "sys_order_type",
@@ -110,14 +120,31 @@ export async function fetchDictionaries(): Promise<Dictionaries> {
     const options = data
       .filter((item) => String(item.status ?? "0") === "0")
       .map((item) => ({ value: String(item.dictValue), label: String(item.dictLabel) }));
-    return [key, options] as const;
+    return [key, appendFallbackOptions(key as keyof Dictionaries, options)] as const;
   }));
   return Object.fromEntries(entries) as Dictionaries;
 }
 
 export function optionLabel(value: unknown, options?: Array<{ value: string | number; label: string }>) {
   if (value === null || value === undefined || value === "") return "--";
-  return options?.find((item) => String(item.value) === String(value))?.label || String(value);
+  return options?.find((item) => String(item.value) === String(value))?.label || fallbackOrderTypeLabel(value) || String(value);
+}
+
+export function orderTypeLabel(value: unknown, options?: Array<{ value: string | number; label: string }>, desc?: unknown) {
+  const fallback = optionLabel(value, options);
+  const text = desc === null || desc === undefined || desc === "" ? "" : String(desc);
+  if (!text || text === "--" || text === String(value)) return fallback;
+  return text;
+}
+
+function appendFallbackOptions(key: keyof Dictionaries, options: DictOption[]) {
+  if (key !== "sizes") return options;
+  const exists = new Set(options.map((item) => String(item.value)));
+  return [...options, ...ORDER_TYPE_FALLBACK_OPTIONS.filter((item) => !exists.has(item.value))];
+}
+
+function fallbackOrderTypeLabel(value: unknown) {
+  return ORDER_TYPE_FALLBACK_OPTIONS.find((item) => String(item.value) === String(value))?.label;
 }
 
 export function shortDate(value: unknown, withTime = false) {
@@ -157,6 +184,7 @@ export const NAV_ITEMS: Array<{
   { key: "bills", label: "账单管理", description: "成本与盈利核算", icon: ReceiptText },
   { key: "express", label: "快递管理", description: "物流节点维护", icon: Truck },
   { key: "prices", label: "价格管理", description: "商品与快递计价", icon: BadgeDollarSign },
+  { key: "products", label: "商品管理", description: "客户商品与多规格售价", icon: PackageOpen },
   { key: "stores", label: "店铺管理", description: "店铺与通知配置", icon: StoreIcon },
   { key: "orderLink", label: "生成链接", description: "买家专属下单链接", icon: ShoppingBag },
   { key: "batchOrder", label: "批量录单", description: "Excel 粘贴批量下单", icon: FileSpreadsheet },

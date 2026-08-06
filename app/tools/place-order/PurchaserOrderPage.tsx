@@ -1,21 +1,27 @@
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { apiRequest } from "../../lib/api";
+import { ApiError, apiRequest, clearCustomerToken, customerHeaders, setCustomerToken } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
 
 type Row = Record<string, unknown>;
-type Option = { value: string; label: string; icon?: string };
-type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; addressVerifyEnabled?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwdExpire?: string };
+type ApiRequestOptions = Parameters<typeof apiRequest>[1];
+type Option = { value: string; label: string; icon?: string; skuId?: number; productId?: number; billOrderType?: string; salePrice?: number };
+type CatalogSku = { id: number; skuCode: string; displayName: string; specValues?: string; billOrderType?: string; salePrice: number; status?: number };
+type CatalogProduct = { id: number; productCode: string; name: string; subtitle?: string; description?: string; skus?: CatalogSku[] };
+type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; addressVerifyEnabled?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwdExpire?: string; accountRequired?: number; quickLoginEnabled?: number; customerRegistered?: boolean; passwordAvailable?: boolean; phoneCompletionRequired?: boolean; paymentRequired?: number; authenticated?: boolean; loginRequired?: boolean; maskedEmail?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
-type PurchaserPage = "home" | "create" | "orders";
+type PurchaserPage = "home" | "create" | "orders" | "mine";
 type OrderEditor = "product" | "address" | "delivery";
-type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
+type ProfileEditor = "phone" | "email" | null;
+type CustomerProfile = { purchaserName?: string; purchaserShortId?: string; maskedPhone?: string; maskedEmail?: string; registered?: boolean; quickLoginEnabled?: number; authMode?: string };
+type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; productId?: number; skuId?: number; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
 type PurchaserAddressRecord = { id: number; receiverName: string; receiverPhone: string; address: string; isDefault?: number; useCount?: number; lastUsedTime?: string };
 type AddressDraft = { id?: number; receiverName: string; receiverPhone: string; address: string; isDefault: boolean };
 type AddressBookView = "auth" | "list" | "edit" | "delete";
-const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
+type OrderLoadResult = { orders: PublicOrderRecord[]; costPriceUnlocked: boolean };
+const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", skuId: undefined, orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
 const EMPTY_ADDRESS_DRAFT: AddressDraft = { receiverName: "", receiverPhone: "", address: "", isDefault: false };
 const COST_ACCESS_STORAGE_PREFIX = "xb:cost-access:";
 // 指定快递：买家仅可从这三家中选（值与 sys_exp_com 字典一致）
@@ -24,6 +30,50 @@ const COURIER_OPTIONS: Option[] = [
   { value: "JDL", label: "京东", icon: "https://cdn.kuaidi100.com/images/all/144/jd.png" },
   { value: "EMS", label: "邮政", icon: "https://cdn.kuaidi100.com/images/all/144/ems.png" },
 ];
+
+type PaymentCode = { image: string; label: string };
+const PAYMENT_CODES: Record<string, PaymentCode> = {
+  "HT:HN-5": { image: "/images/payments/wechat-ht-hn-5.jpg", label: "湖南省内 · 黄桃 5斤" },
+  "HT:HN-10": { image: "/images/payments/wechat-ht-hn-10.jpg", label: "湖南省内 · 黄桃 10斤" },
+  "HT:OUT-5": { image: "/images/payments/wechat-ht-out-5.jpg", label: "湖南省外 · 黄桃 5斤" },
+  "HT:OUT-10": { image: "/images/payments/wechat-ht-out-10.jpg", label: "湖南省外 · 黄桃 10斤" },
+  "HT:XJ-5": { image: "/images/payments/wechat-ht-xj-5.jpg", label: "新疆 · 黄桃 5斤" },
+  "HT:XJ-10": { image: "/images/payments/wechat-ht-xj-10.jpg", label: "新疆 · 黄桃 10斤" },
+  "NL:5": { image: "/images/payments/wechat-nl-5.jpg", label: "奈李 5斤" },
+  "NL:10": { image: "/images/payments/wechat-nl-10.jpg", label: "奈李 10斤" },
+};
+
+function paymentCodeFor(productCode: unknown, skuCode: unknown) {
+  return PAYMENT_CODES[`${String(productCode || "")}:${String(skuCode || "")}`];
+}
+
+function normalizeSpecText(value: unknown) {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/[路·・]/g, "")
+    .toLowerCase();
+}
+
+function inferOrderRegion(order: PublicOrderRecord) {
+  const source = [order.orderType, order.orderTypeDesc, order.address].filter(Boolean).join(" ");
+  if (/新疆/i.test(source)) return "新疆";
+  if (/湖南省内|省内|湖南/i.test(source)) return "湖南省内";
+  if (/湖南省外|省外|外省|out/i.test(source)) return "湖南省外";
+  return "";
+}
+
+function inferOrderWeight(order: PublicOrderRecord) {
+  const source = [order.orderType, order.orderTypeDesc].filter(Boolean).join(" ");
+  if (/(^|[^0-9])10([^0-9]|$)|十斤/i.test(source)) return "10斤";
+  if (/(^|[^0-9])5([^0-9]|$)|五斤/i.test(source)) return "5斤";
+  return "";
+}
+
+function isCustomerTokenError(error: unknown) {
+  if (!(error instanceof ApiError)) return false;
+  const message = error.message || "";
+  return error.code === 401 || /登录凭证|登录状态|重新登录|无权访问/.test(message);
+}
 
 function parseShortId() {
   const match = window.location.pathname.match(/^\/tools\/order\/([2-9a-hj-km-np-z]{6})$/);
@@ -34,7 +84,8 @@ export default function PurchaserOrderPage() {
   const [linkContext, setLinkContext] = useState<LinkContext | null>(null);
   const [linkKey, setLinkKey] = useState({ purchaserId: "" });
   const [products, setProducts] = useState<Option[]>([]);
-  const [sizes, setSizes] = useState<Option[]>([]);
+  const [legacySizes, setLegacySizes] = useState<Option[]>([]);
+  const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
   const [couriers] = useState<Option[]>(COURIER_OPTIONS);
   const [orders, setOrders] = useState<PublicOrderRecord[]>([]);
   const [tab, setTab] = useState<PurchaserPage>("home");
@@ -91,6 +142,14 @@ export default function PurchaserOrderPage() {
   const [saveAddress, setSaveAddress] = useState(true);
   const [orderEditor, setOrderEditor] = useState<OrderEditor | null>(null);
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
+  const [paymentConfirmBusy, setPaymentConfirmBusy] = useState(false);
+  const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileEditor, setProfileEditor] = useState<ProfileEditor>(null);
+  const [profileError, setProfileError] = useState("");
+  const [phoneDraft, setPhoneDraft] = useState({ phone: "", code: "" });
+  const [emailDraft, setEmailDraft] = useState({ email: "", currentCode: "", newCode: "" });
 
   useEffect(() => {
     if (!promptToast) return;
@@ -102,12 +161,107 @@ export default function PurchaserOrderPage() {
     setPromptToast({ message });
   }
 
-  const loadOrders = useCallback(async (purchaserId: string, password?: string) => {
-    const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search/purchaser/orders", { auth: false, query: { id: purchaserId, ...(password ? { costPricePwd: password } : {}) } });
+  const refreshCustomerToken = useCallback(async (purchaserId: string) => {
+    if (!purchaserId) return false;
+    clearCustomerToken();
+    const result = await apiRequest<{ data?: LinkContext & { token?: string; registered?: boolean; phoneRequired?: boolean } }>("/customer/auth/short-id", {
+      auth: false,
+      method: "POST",
+      body: { shortId: purchaserId },
+    });
+    if (result.data?.token) setCustomerToken(result.data.token);
+    setLinkContext((current) => current ? {
+      ...current,
+      ...result.data,
+      customerRegistered: result.data?.registered ?? current.customerRegistered,
+      phoneCompletionRequired: result.data?.phoneRequired ?? current.phoneCompletionRequired,
+      authenticated: Boolean(result.data?.authenticated),
+    } : current);
+    return Boolean(result.data?.authenticated && result.data?.token);
+  }, []);
+
+  const customerApiRequest = useCallback(async <T,>(path: string, options: ApiRequestOptions = {}, purchaserId: string): Promise<T> => {
+    const request = () => apiRequest<T>(path, { ...options, auth: false, headers: customerHeaders(options.headers) });
+    try {
+      return await request();
+    } catch (cause) {
+      if (!isCustomerTokenError(cause) || !(await refreshCustomerToken(purchaserId))) throw cause;
+      return request();
+    }
+  }, [refreshCustomerToken]);
+
+  const loadOrders = useCallback(async (purchaserId: string, password?: string): Promise<OrderLoadResult> => {
+    const result = await customerApiRequest<{ data?: PublicOrderRecord[]; costPriceUnlocked?: boolean }>("/search/purchaser/orders", { query: { id: purchaserId, ...(password ? { costPricePwd: password } : {}) } }, purchaserId);
     const data = Array.isArray(result.data) ? result.data : [];
     setOrders(data);
-    return data;
-  }, []);
+    const legacyUnlocked = Boolean(password) && data.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
+    return { orders: data, costPriceUnlocked: Boolean(result.costPriceUnlocked) || legacyUnlocked };
+  }, [customerApiRequest]);
+
+  const loadCustomerProfile = useCallback(async () => {
+    setProfileLoading(true); setProfileError("");
+    try {
+      const result = await customerApiRequest<{ data?: CustomerProfile }>("/customer/auth/profile", {}, linkKey.purchaserId);
+      setCustomerProfile(result.data || null);
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "用户信息加载失败");
+    } finally { setProfileLoading(false); }
+  }, [customerApiRequest, linkKey.purchaserId]);
+
+  useEffect(() => {
+    if (tab !== "mine" || !linkContext?.authenticated) return;
+    void loadCustomerProfile();
+  }, [linkContext?.authenticated, loadCustomerProfile, tab]);
+
+  async function toggleCustomerQuickLogin() {
+    if (!customerProfile?.registered || profileBusy) return;
+    const enabled = customerProfile.quickLoginEnabled === 1 ? 0 : 1;
+    setProfileBusy(true); setProfileError("");
+    try {
+      const result = await customerApiRequest<{ data?: CustomerProfile }>("/customer/auth/quick-login", { method: "PUT", body: { enabled } }, linkKey.purchaserId);
+      setCustomerProfile(result.data || { ...customerProfile, quickLoginEnabled: enabled });
+      setLinkContext((current) => current ? { ...current, quickLoginEnabled: enabled } : current);
+      if (enabled === 0) {
+        showPromptToast("快捷登录已关闭，请重新验证身份");
+        clearCustomerToken();
+        window.setTimeout(() => { window.location.href = `/customer/login?shortId=${linkKey.purchaserId}`; }, 700);
+      } else showPromptToast("快捷登录已开启");
+    } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "快捷登录设置失败"); }
+    finally { setProfileBusy(false); }
+  }
+
+  async function sendCustomerProfileCode(action: "current" | "new-email") {
+    if (profileBusy) return;
+    if (action === "new-email" && !emailDraft.email.trim()) return setProfileError("请先输入新邮箱");
+    setProfileBusy(true); setProfileError("");
+    try {
+      await customerApiRequest("/customer/auth/profile-code", { method: "POST", body: { action, ...(action === "new-email" ? { newEmail: emailDraft.email.trim() } : {}) } }, linkKey.purchaserId);
+      showPromptToast(action === "current" ? "验证码已发送到当前邮箱" : "验证码已发送到新邮箱");
+    } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "验证码发送失败"); }
+    finally { setProfileBusy(false); }
+  }
+
+  async function saveCustomerPhone() {
+    if (!/^1\d{10}$/.test(phoneDraft.phone)) return setProfileError("请输入11位手机号");
+    if (!/^\d{6}$/.test(phoneDraft.code)) return setProfileError("请输入6位邮箱验证码");
+    setProfileBusy(true); setProfileError("");
+    try {
+      const result = await customerApiRequest<{ data?: CustomerProfile }>("/customer/auth/profile", { method: "PUT", body: { action: "phone", phone: phoneDraft.phone, currentCode: phoneDraft.code } }, linkKey.purchaserId);
+      setCustomerProfile(result.data || customerProfile); setProfileEditor(null); setPhoneDraft({ phone: "", code: "" }); showPromptToast("手机号已更新");
+    } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "手机号修改失败"); }
+    finally { setProfileBusy(false); }
+  }
+
+  async function saveCustomerEmail() {
+    if (!emailDraft.email.includes("@")) return setProfileError("请输入正确的新邮箱");
+    if (!/^\d{6}$/.test(emailDraft.currentCode) || !/^\d{6}$/.test(emailDraft.newCode)) return setProfileError("请输入当前邮箱和新邮箱的6位验证码");
+    setProfileBusy(true); setProfileError("");
+    try {
+      const result = await customerApiRequest<{ data?: CustomerProfile }>("/customer/auth/profile", { method: "PUT", body: { action: "email", newEmail: emailDraft.email.trim(), currentCode: emailDraft.currentCode, newCode: emailDraft.newCode } }, linkKey.purchaserId);
+      setCustomerProfile(result.data || customerProfile); setProfileEditor(null); setEmailDraft({ email: "", currentCode: "", newCode: "" }); showPromptToast("绑定邮箱已更新");
+    } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "邮箱修改失败"); }
+    finally { setProfileBusy(false); }
+  }
 
   const reloadOrders = useCallback(() => {
     const password = costPriceUnlocked && costAccessExpiresAt > Date.now() ? costAccessPassword : undefined;
@@ -120,16 +274,48 @@ export default function PurchaserOrderPage() {
       setError("下单链接无效，请向店铺重新索取专属链接"); setLoading(false); return;
     }
     try {
-      const [contextResult, optionsResult] = await Promise.all([
+      type SessionData = LinkContext & { token?: string; registered?: boolean; phoneRequired?: boolean };
+      let sessionResult: { data?: SessionData } | null = null;
+      let legacyBackend = false;
+      try {
+        sessionResult = await apiRequest<{ data?: SessionData }>("/customer/auth/short-id", {
+          auth: false,
+          headers: customerHeaders(),
+          method: "POST",
+          body: { shortId: parsed.purchaserId },
+        });
+      } catch (cause) {
+        // 线上后端尚未发布买家 Token 接口时，必须保留历史专属链接的免登录体验。
+        // 仅对“接口不存在”降级，其他业务错误继续抛出，避免掩盖真实账号问题。
+        if (cause instanceof ApiError && cause.code === 404) legacyBackend = true;
+        else throw cause;
+      }
+      if (sessionResult?.data?.token) setCustomerToken(sessionResult.data.token);
+      const [contextResult, optionsResult, catalogResult] = await Promise.all([
         apiRequest<{ data?: LinkContext }>("/search/order-link", { auth: false, query: parsed }),
         apiRequest<{ data?: { products?: Option[]; sizes?: Option[] } }>("/search/order-options", { auth: false }),
+        apiRequest<{ data?: CatalogProduct[] }>("/customer/products", { auth: false }).catch((cause) => {
+          if (cause instanceof ApiError && cause.code === 404) return { data: [] };
+          throw cause;
+        }),
       ]);
       if (!contextResult.data) throw new Error("链接信息不存在");
-      setLinkContext(contextResult.data);
-      const productRows = optionsResult.data?.products || []; const sizeRows = optionsResult.data?.sizes || [];
-      setProducts(productRows); setSizes(sizeRows);
+      const authenticated = legacyBackend || Boolean(sessionResult?.data?.authenticated);
+      const mergedContext: LinkContext = {
+        ...contextResult.data,
+        ...sessionResult?.data,
+        customerRegistered: sessionResult?.data?.registered ?? contextResult.data.customerRegistered,
+        phoneCompletionRequired: sessionResult?.data?.phoneRequired ?? contextResult.data.phoneCompletionRequired,
+        authenticated,
+      };
+      setLinkContext(mergedContext);
+      const catalogRows = Array.isArray(catalogResult.data) ? catalogResult.data : [];
+      setCatalog(catalogRows);
+      const productRows = catalogRows.length ? catalogRows.map((item) => ({ value: item.productCode, label: item.name, productId: item.id })) : (optionsResult.data?.products || []);
+      const sizeRows = optionsResult.data?.sizes || [];
+      setProducts(productRows); setLegacySizes(sizeRows);
       // 订单查询被拦时不开单（不论哪种展示模式都不需要加载订单列表），避免错误冒到下单页面顶部
-      if (contextResult.data.blockQuery !== 1) {
+      if (contextResult.data.blockQuery !== 1 && authenticated) {
         let restoredPassword = "";
         try {
           const saved = JSON.parse(window.sessionStorage.getItem(`${COST_ACCESS_STORAGE_PREFIX}${parsed.purchaserId}`) || "null") as { password?: string; expiresAt?: number } | null;
@@ -145,7 +331,7 @@ export default function PurchaserOrderPage() {
           restoredPassword = "";
         }
         const restoredOrders = await loadOrders(parsed.purchaserId, restoredPassword || undefined);
-        if (restoredPassword && !restoredOrders.some((order) => order.totalPrice !== undefined && order.totalPrice !== null)) {
+        if (restoredPassword && !restoredOrders.costPriceUnlocked) {
           setCostPriceUnlocked(false);
           setCostAccessPassword("");
           setCostAccessExpiresAt(0);
@@ -175,7 +361,46 @@ export default function PurchaserOrderPage() {
   }, [linkContext, tab]);
 
   const selectedProduct = useMemo(() => products.find((item) => item.value === form.orderName), [products, form.orderName]);
+  const optionsForProduct = useCallback((productCode: string): Option[] => {
+    const product = catalog.find((item) => item.productCode === productCode);
+    if (!product) return legacySizes;
+    return (product.skus || []).filter((sku) => sku.status !== 0).map((sku) => ({ value: sku.skuCode, label: sku.displayName, productId: product.id, skuId: sku.id, billOrderType: sku.billOrderType, salePrice: Number(sku.salePrice) }));
+  }, [catalog, legacySizes]);
+  const sizes = useMemo<Option[]>(() => optionsForProduct(form.orderName), [form.orderName, optionsForProduct]);
+  const editSizes = useMemo<Option[]>(() => optionsForProduct(editForm.orderName), [editForm.orderName, optionsForProduct]);
+  const findProductForOrder = useCallback((order: PublicOrderRecord) => {
+    const productId = Number((order as Row).productId);
+    return catalog.find((item) => Number.isFinite(productId) && item.id === productId)
+      || catalog.find((item) => item.productCode === String((order as Row).orderName || ""))
+      || catalog.find((item) => normalizeSpecText(item.name) === normalizeSpecText(order.orderNameDesc))
+      || null;
+  }, [catalog]);
+  const findSizeForOrder = useCallback((order: PublicOrderRecord, productCode: string) => {
+    const options = optionsForProduct(productCode);
+    const skuId = Number((order as Row).skuId);
+    if (Number.isFinite(skuId) && skuId > 0) {
+      const exact = options.find((item) => Number(item.skuId) === skuId);
+      if (exact) return exact;
+    }
+    const exactCode = options.find((item) => item.value === String((order as Row).orderType || ""));
+    if (exactCode) return exactCode;
+    const exactLabel = options.find((item) => normalizeSpecText(item.label) === normalizeSpecText(order.orderTypeDesc));
+    if (exactLabel) return exactLabel;
+    const region = inferOrderRegion(order);
+    const weight = inferOrderWeight(order);
+    if (region && weight) {
+      const regionWeight = options.find((item) => normalizeSpecText(item.label).includes(normalizeSpecText(region))
+        && normalizeSpecText(item.label).includes(normalizeSpecText(weight)));
+      if (regionWeight) return regionWeight;
+    }
+    if (weight) {
+      return options.find((item) => normalizeSpecText(item.billOrderType).includes(normalizeSpecText(weight))
+        || normalizeSpecText(item.label).includes(normalizeSpecText(weight)));
+    }
+    return undefined;
+  }, [optionsForProduct]);
   const selectedSize = useMemo(() => sizes.find((item) => item.value === form.orderType), [sizes, form.orderType]);
+  const selectedPaymentCode = useMemo(() => paymentCodeFor(form.orderName, form.orderType), [form.orderName, form.orderType]);
   const selectedProductLabel = form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label;
   const selectedSizeLabel = form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label;
   const selectedCourierLabel = form.expCom ? (couriers.find((item) => item.value === form.expCom)?.label || form.expCom) : "暂不指定";
@@ -227,11 +452,10 @@ export default function PurchaserOrderPage() {
     setAddressBookBusy(true);
     setAddressBookError("");
     try {
-      const result = await apiRequest<{ data?: PurchaserAddressRecord[] }>("/search/purchaser/addresses", {
-        auth: false,
+      const result = await customerApiRequest<{ data?: PurchaserAddressRecord[] }>("/search/purchaser/addresses", {
         query: { id: linkKey.purchaserId },
-        headers: token ? { "X-Address-Token": token } : {},
-      });
+        headers: token ? { "X-Address-Token": token } : undefined,
+      }, linkKey.purchaserId);
       setAddresses(Array.isArray(result.data) ? result.data : []);
       setAddressToken(token);
       setAddressBookView("list");
@@ -296,8 +520,7 @@ export default function PurchaserOrderPage() {
     setAddressBookBusy(true);
     setAddressBookError("");
     try {
-      const result = await apiRequest<{ data?: { token?: string } }>("/search/purchaser/address-session", {
-        auth: false,
+      const result = await customerApiRequest<{ data?: { token?: string } }>("/search/purchaser/address-session", {
         method: "POST",
         body: {
           purchaserShortId: linkKey.purchaserId,
@@ -306,7 +529,7 @@ export default function PurchaserOrderPage() {
           uuid: addressUuid,
           pwd: usePassword ? addressAuthPwd.trim() : undefined,
         },
-      });
+      }, linkKey.purchaserId);
       const token = String(result.data?.token || "");
       if (!token) throw new Error("未获取到地址访问凭证");
       window.sessionStorage.setItem(addressTokenKey(), token);
@@ -352,10 +575,9 @@ export default function PurchaserOrderPage() {
     setAddressBookError("");
     try {
       const isEdit = Boolean(addressDraft.id);
-      await apiRequest(`/search/purchaser/address${isEdit ? `/${addressDraft.id}` : ""}`, {
-        auth: false,
+      await customerApiRequest(`/search/purchaser/address${isEdit ? `/${addressDraft.id}` : ""}`, {
         method: isEdit ? "PUT" : "POST",
-        headers: addressToken ? { "X-Address-Token": addressToken } : {},
+        headers: addressToken ? { "X-Address-Token": addressToken } : undefined,
         body: {
           purchaserShortId: linkKey.purchaserId,
           receiverName: addressDraft.receiverName.trim(),
@@ -363,7 +585,7 @@ export default function PurchaserOrderPage() {
           address: addressDraft.address.trim(),
           isDefault: addressDraft.isDefault ? 1 : 0,
         },
-      });
+      }, linkKey.purchaserId);
       await loadAddresses(addressToken);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "地址保存失败";
@@ -384,12 +606,11 @@ export default function PurchaserOrderPage() {
     setAddressBookBusy(true);
     setAddressBookError("");
     try {
-      await apiRequest(`/search/purchaser/address/${addressDeleteTarget.id}`, {
-        auth: false,
+      await customerApiRequest(`/search/purchaser/address/${addressDeleteTarget.id}`, {
         method: "DELETE",
         query: { purchaserShortId: linkKey.purchaserId },
-        headers: addressToken ? { "X-Address-Token": addressToken } : {},
-      });
+        headers: addressToken ? { "X-Address-Token": addressToken } : undefined,
+      }, linkKey.purchaserId);
       if (selectedAddressId === addressDeleteTarget.id) setSelectedAddressId(null);
       setAddressDeleteTarget(null);
       await loadAddresses(addressToken);
@@ -419,7 +640,10 @@ export default function PurchaserOrderPage() {
     setError("");
     try {
       const result = await apiRequest<Row>("/captchaImage", { auth: false });
-      setUuid(String(result.uuid || "")); setCaptcha(result.img ? `data:image/png;base64,${result.img}` : ""); setCode(""); setCaptchaOpen(true);
+      setUuid(String(result.uuid || ""));
+      setCaptcha(result.img ? `data:image/png;base64,${result.img}` : "");
+      setCode("");
+      setCaptchaOpen(true);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "验证码加载失败"); }
   }
 
@@ -502,32 +726,28 @@ export default function PurchaserOrderPage() {
       setMissingFields(missing);  // 弹窗显示更醒目
       return;
     }
-    // 按店铺/买家开关决定走密码还是验证码
-    if (Number(linkContext?.requirePwd) === 1) {
-      setCode(""); setUuid(""); setPwd(""); setCaptcha(""); setError("");
-      setCaptchaOpen(true);
+    if (Number(linkContext?.accountRequired) === 1 || Number(linkContext?.requirePwd) === 1) {
+      setCode(""); setUuid(""); setPwd(""); setCaptcha(""); setError(""); setCaptchaOpen(true);
     } else {
-      loadCaptcha();
+      void loadCaptcha();
     }
   }
 
   async function submitOrder() {
-    const requirePwd = Number(linkContext?.requirePwd) === 1;
-    if (requirePwd) {
-      if (!/^\d{4,6}$/.test(pwd.trim())) return setError("请输入 4-6 位下单码");
-    } else {
-      if (!code.trim()) return setError("请输入验证码");
-    }
+    const accountMode = Number(linkContext?.accountRequired) === 1;
+    const requirePwd = !accountMode && Number(linkContext?.requirePwd) === 1;
+    if (requirePwd && !/^\d{4,6}$/.test(pwd.trim())) return setError("请输入 4-6 位下单码");
+    if (!accountMode && !requirePwd && !code.trim()) return setError("请输入验证码");
     setSubmitting(true); setError("");
     try {
       const body = { ...form, orderNameDesc: form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label, orderTypeDesc: form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label, purchaserShortId: linkKey.purchaserId, code: code.trim(), uuid, pwd: requirePwd ? pwd.trim() : undefined, addressId: selectedAddressId || undefined, saveAddress: selectedAddressId ? false : saveAddress };
-      const result = await apiRequest<{ data?: Row }>("/search/order", { auth: false, method: "POST", body });
-      setSuccess(result.data || {}); setCaptchaOpen(false); setForm((current) => ({ ...EMPTY_FORM, orderName: current.orderName, orderType: current.orderType })); setPasteText(""); setPwd(""); setSelectedAddressId(null); setSaveAddress(true);
+      const result = await customerApiRequest<{ data?: Row }>("/search/order", { method: "POST", body }, linkKey.purchaserId);
+      setSuccess(result.data || {}); setCaptchaOpen(false); setForm((current) => ({ ...EMPTY_FORM, orderName: current.orderName, productId: current.productId, orderType: current.orderType, skuId: current.skuId })); setPasteText(""); setPwd(""); setSelectedAddressId(null); setSaveAddress(true);
       await reloadOrders();
       if (addressToken) await loadAddresses(addressToken);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "下单失败，请重试");
-      if (!requirePwd) await loadCaptcha();  // 验证码失败刷新，密码失败不刷新
+      if (!accountMode && !requirePwd) await loadCaptcha();
     }
     finally { setSubmitting(false); }
   }
@@ -547,17 +767,33 @@ export default function PurchaserOrderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // 打开编辑：把 label 反查成 value，找不到则落到 "other" + 旧 label 作为自定义
+  async function confirmPayment() {
+    const paymentNo = String(success?.paymentNo || "");
+    if (!paymentNo) return;
+    setPaymentConfirmBusy(true); setError("");
+    try {
+      await customerApiRequest(`/customer/payment/${encodeURIComponent(paymentNo)}/confirm-paid`, { method: "POST" }, linkKey.purchaserId);
+      setSuccess((current) => current ? { ...current, paymentRequired: false, payStatus: 3 } : current);
+      await reloadOrders();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "付款确认提交失败"); }
+    finally { setPaymentConfirmBusy(false); }
+  }
+
+  // 打开编辑：优先按 SKU 快照回显，历史订单再按商品/地区/重量兜底匹配。
   function openEdit(order: PublicOrderRecord) {
     if (order.orderStatus !== "DSH") return;
-    const productValue = products.find((item) => item.label === order.orderNameDesc)?.value || "other";
-    const sizeValue = sizes.find((item) => item.label === order.orderTypeDesc)?.value || "other";
+    const matchedProduct = findProductForOrder(order);
+    const productValue = matchedProduct?.productCode || products.find((item) => item.label === order.orderNameDesc || item.value === String((order as Row).orderName || ""))?.value || "other";
+    const matchedSize = findSizeForOrder(order, productValue);
+    const sizeValue = matchedSize?.value || "other";
     const expComValue = String((order as Row).expCom || "");
     setEditForm({
       orderName: productValue,
       orderNameDesc: productValue === "other" ? (order.orderNameDesc || "") : "",
       orderType: sizeValue,
       orderTypeDesc: sizeValue === "other" ? (order.orderTypeDesc || "") : "",
+      productId: matchedProduct?.id || matchedSize?.productId,
+      skuId: matchedSize?.skuId,
       orderNum: Number(order.orderNum) || 1,
       customer: order.customer || "",
       phone: order.phone || "",
@@ -601,9 +837,9 @@ export default function PurchaserOrderPage() {
       const body = {
         ...editForm,
         orderNameDesc: editForm.orderName === "other" ? editForm.orderNameDesc.trim() : products.find((item) => item.value === editForm.orderName)?.label,
-        orderTypeDesc: editForm.orderType === "other" ? editForm.orderTypeDesc.trim() : sizes.find((item) => item.value === editForm.orderType)?.label,
+        orderTypeDesc: editForm.orderType === "other" ? editForm.orderTypeDesc.trim() : editSizes.find((item) => item.value === editForm.orderType)?.label,
       };
-      await apiRequest(`/search/order/${editingOrder.id}`, { auth: false, method: "PUT", query: { purchaserShortId: linkKey.purchaserId }, body });
+      await customerApiRequest(`/search/order/${editingOrder.id}`, { method: "PUT", query: { purchaserShortId: linkKey.purchaserId }, body }, linkKey.purchaserId);
       setConfirmingEdit(false); setEditingOrder(null); setEditForm(EMPTY_FORM);
       await reloadOrders();
     } catch (cause) {
@@ -622,7 +858,7 @@ export default function PurchaserOrderPage() {
     if (!confirmingDelete) return;
     setDeleteSubmitting(true); setError("");
     try {
-      await apiRequest(`/search/order/${confirmingDelete.id}`, { auth: false, method: "DELETE", query: { purchaserShortId: linkKey.purchaserId } });
+      await customerApiRequest(`/search/order/${confirmingDelete.id}`, { method: "DELETE", query: { purchaserShortId: linkKey.purchaserId } }, linkKey.purchaserId);
       setConfirmingDelete(null);
       await reloadOrders();
     } catch (cause) {
@@ -638,7 +874,7 @@ export default function PurchaserOrderPage() {
     try {
       // 用 loadOrders 的返回值判断（setOrders 是异步的，直接读 orders 拿到的是旧值，会误判）
       const fresh = await loadOrders(linkKey.purchaserId, costPwd.trim());
-      const unlocked = fresh.some((order) => order.totalPrice !== undefined && order.totalPrice !== null);
+      const unlocked = fresh.costPriceUnlocked;
       if (unlocked) {
         setCostPriceUnlocked(true);
         setCostAccessPassword(costPwd.trim());
@@ -677,8 +913,14 @@ export default function PurchaserOrderPage() {
     return () => window.clearTimeout(timer);
   }, [costPriceUnlocked, costAccessExpiresAt, linkKey.purchaserId, loadOrders]);
 
+  const successPaymentCode = success?.paymentRequired
+    ? (paymentCodeFor(success.orderName, success.orderType) || selectedPaymentCode)
+    : undefined;
+  const successPaymentAmount = Number(success?.paymentAmount || 0);
+
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
+  if (linkContext.accountRequired === 1 && !linkContext.authenticated) return <div className="tool-page purchaser-order-page"><section className="purchaser-account-gate"><span><LockKeyhole size={26} /></span><small>客户专属入口</small><h1>{linkContext.customerRegistered ? "登录后继续下单" : "完善资料并开通账号"}</h1><p>{linkContext.customerRegistered ? "该专属链接已关闭快捷登录，请使用密码或邮箱验证码登录。" : `您好，${linkContext.purchaserName || "客户"}。请先完成邮箱验证${linkContext.phoneCompletionRequired ? "并完善真实手机号" : ""}，以后即可安全登录。`}</p><a className="primary" href={linkContext.customerRegistered ? `/customer/login?shortId=${linkKey.purchaserId}` : `/customer/register?shortId=${linkKey.purchaserId}`}>{linkContext.customerRegistered ? "客户登录" : "立即注册"}</a>{linkContext.customerRegistered ? <a href="/customer/reset">忘记密码</a> : null}</section></div>;
 
   const blockOrderOn = linkContext.blockOrder === 1;
   const blockQueryOn = linkContext.blockQuery === 1;
@@ -765,21 +1007,53 @@ export default function PurchaserOrderPage() {
       <>
         <header className="purchaser-subpage-head">
           <button type="button" onClick={() => setTab("home")} aria-label="返回首页"><ArrowLeft size={19} /></button>
-          <div><h1>{tab === "create" ? "选购鲜果" : "我的订单"}</h1><p>{tab === "create" ? "今日可下单商品" : "查询状态与物流进度"}</p></div>
-          {tab === "create" ? <span className="purchaser-head-count">已选 <b>{form.orderName ? form.orderNum : 0}</b> 件</span> : <span><PackageSearch size={20} /></span>}
+          <div><h1>{tab === "create" ? "选购鲜果" : tab === "orders" ? "我的订单" : "我的"}</h1><p>{tab === "create" ? "今日可下单商品" : tab === "orders" ? "查询状态与物流进度" : "账号信息与安全设置"}</p></div>
+          {tab === "create" ? <span className="purchaser-head-count">已选 <b>{form.orderName ? form.orderNum : 0}</b> 件</span> : <span>{tab === "orders" ? <PackageSearch size={20} /> : <User size={20} />}</span>}
         </header>
         {tab === "create" ? <>
           <section className="purchaser-order-page-title"><h1>今天想吃点什么？</h1><p>选好商品，再确认收货信息。</p></section>
           {linkContext.storeNotice ? <section className="purchaser-order-notice-card"><Megaphone size={17} /><span><b>{linkContext.storeName || "店铺"} 温馨提示您：</b><small>{linkContext.storeNotice}</small></span></section> : null}
         </> : null}
         {tab === "orders" && !anyBlocked ? <section className="purchaser-orders-page-title"><h1>查订单</h1><p>按订单号、收件人或状态查看物流进度。</p></section> : null}
-        {showBannerTab ? <div className="purchaser-block-tab" role="status" aria-live="polite">
+        {showBannerTab && tab !== "mine" ? <div className="purchaser-block-tab" role="status" aria-live="polite">
           <div><Ban size={15} /><b>{bannerTabText.title}</b><em>{bannerTabText.sub}</em></div>
         </div> : null}
       </>
     )}
 
-    {tab !== "home" ? ((showBannerTab && bothBlocked) ? <section className="purchaser-fullscreen-block">
+    {tab === "mine" ? <section className="purchaser-mine-page" aria-label="我的账号">
+      {profileLoading && !customerProfile ? <div className="purchaser-mine-loading"><LoaderCircle className="spin" size={22} />正在加载账号信息</div> : null}
+      {customerProfile ? <>
+        <section className="purchaser-mine-profile-card">
+          <header><span>{String(customerProfile.purchaserName || linkContext.purchaserName || "我").slice(0, 1)}</span><div><h2>{customerProfile.purchaserName || linkContext.purchaserName || "客户"}</h2><p>专属 ID {customerProfile.purchaserShortId || linkContext.purchaserShortId}</p></div><em>{customerProfile.registered ? "已注册" : "未注册"}</em></header>
+          <div className="purchaser-mine-info-row"><span><Smartphone size={17} /><span><small>绑定手机号</small><b>{customerProfile.maskedPhone || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor(profileEditor === "phone" ? null : "phone"); setProfileError(""); }}>修改</button></div>
+          <div className="purchaser-mine-info-row"><span><Mail size={17} /><span><small>绑定邮箱</small><b>{customerProfile.maskedEmail || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor(profileEditor === "email" ? null : "email"); setProfileError(""); }}>修改</button></div>
+        </section>
+
+        {profileEditor === "phone" ? <section className="purchaser-profile-editor">
+          <header><div><h3>修改手机号</h3><p>验证码将发送到当前绑定邮箱 {customerProfile.maskedEmail}</p></div><button type="button" onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
+          <label><span>新手机号</span><input inputMode="tel" maxLength={11} value={phoneDraft.phone} onChange={(event) => setPhoneDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入11位手机号" /></label>
+          <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={phoneDraft.code} onChange={(event) => setPhoneDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
+          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerPhone()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认修改</button>
+        </section> : null}
+
+        {profileEditor === "email" ? <section className="purchaser-profile-editor">
+          <header><div><h3>修改绑定邮箱</h3><p>先验证当前邮箱，再验证新邮箱</p></div><button type="button" onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
+          <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.currentCode} onChange={(event) => setEmailDraft((current) => ({ ...current, currentCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至当前邮箱" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
+          <label><span>新邮箱</span><input inputMode="email" value={emailDraft.email} onChange={(event) => setEmailDraft((current) => ({ ...current, email: event.target.value }))} placeholder="请输入新的邮箱地址" /></label>
+          <label><span>新邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.newCode} onChange={(event) => setEmailDraft((current) => ({ ...current, newCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至新邮箱" /><button type="button" disabled={profileBusy || !emailDraft.email.trim()} onClick={() => void sendCustomerProfileCode("new-email")}>获取验证码</button></div></label>
+          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerEmail()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认换绑</button>
+        </section> : null}
+
+        <section className="purchaser-mine-security-card">
+          <header><ShieldCheck size={18} /><div><h3>账号安全</h3><p>控制原专属链接是否可以直接进入</p></div></header>
+          <div className="purchaser-mine-switch-row"><span><b>shortId 快捷登录</b><small>{customerProfile.quickLoginEnabled === 1 ? "已开启，从原链接可以直接进入" : "已关闭，需要密码或邮箱验证码登录"}</small></span><button type="button" className={`purchaser-mine-switch${customerProfile.quickLoginEnabled === 1 ? " on" : ""}`} aria-label="切换快捷登录" aria-pressed={customerProfile.quickLoginEnabled === 1} disabled={!customerProfile.registered || profileBusy} onClick={() => void toggleCustomerQuickLogin()}><span /></button></div>
+        </section>
+      </> : null}
+      {profileError ? <p className="tool-error purchaser-mine-error"><AlertCircle size={14} />{profileError}</p> : null}
+    </section> : null}
+
+    {tab !== "home" && tab !== "mine" ? ((showBannerTab && bothBlocked) ? <section className="purchaser-fullscreen-block">
       <Ban size={42} />
       <h1>专属链接已暂停服务</h1>
       <p>下单和订单查询功能暂时关闭，请联系店铺或客服了解恢复时间。</p>
@@ -869,6 +1143,7 @@ export default function PurchaserOrderPage() {
       <button type="button" className={tab === "home" ? "active" : ""} aria-current={tab === "home" ? "page" : undefined} onClick={() => setTab("home")}><House size={18} /><span>首页</span></button>
       <button type="button" className={tab === "create" ? "active" : ""} aria-current={tab === "create" ? "page" : undefined} disabled={blockOrderOn && blockDisplay !== "confirm"} onClick={() => setTab("create")}><ShoppingBag size={18} /><span>下单</span></button>
       <button type="button" className={tab === "orders" ? "active" : ""} aria-current={tab === "orders" ? "page" : undefined} disabled={blockQueryOn && blockDisplay !== "confirm"} onClick={() => setTab("orders")}><PackageSearch size={18} /><span>订单</span></button>
+      <button type="button" className={tab === "mine" ? "active" : ""} aria-current={tab === "mine" ? "page" : undefined} onClick={() => setTab("mine")}><User size={18} /><span>我的</span></button>
     </nav>
 
     {orderEditor ? <div className="purchaser-order-editor-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setOrderEditor(null)}>
@@ -878,9 +1153,9 @@ export default function PurchaserOrderPage() {
         <h2 id="purchaser-order-editor-title">{orderEditor === "product" ? "选择商品信息" : orderEditor === "address" ? "填写收货信息" : "配送与订单备注"}</h2>
         <p>{orderEditor === "product" ? "选择商品、规格和本次购买数量。" : orderEditor === "address" ? "可以使用常用地址，也可以粘贴后智能识别。" : "指定快递为选填项，备注会同步给店铺。"}</p>
         {orderEditor === "product" ? <div className="purchaser-popup-form">
-          <label><span>商品</span><div className="purchaser-choice-grid purchaser-product-grid">{products.map((item) => <button type="button" className={`purchaser-product-option${form.orderName === item.value ? " active" : ""}`} key={item.value} onClick={() => setField("orderName", item.value)}><span><PackageCheck size={17} /></span><b>{item.label}</b>{form.orderName === item.value ? <CheckCircle2 size={15} /> : <ChevronRight size={15} />}</button>)}</div></label>
+          <label><span>商品</span><div className="purchaser-choice-grid purchaser-product-grid">{products.map((item) => <button type="button" className={`purchaser-product-option${form.orderName === item.value ? " active" : ""}`} key={item.value} onClick={() => setForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }))}><span><PackageCheck size={17} /></span><b>{item.label}</b>{form.orderName === item.value ? <CheckCircle2 className="purchaser-product-selected" size={17} /> : <em className="purchaser-product-select-label">选择</em>}</button>)}</div></label>
           {form.orderName === "other" ? <label><span>商品名称</span><input id="purchaser-custom-name" value={form.orderNameDesc} onChange={(event) => setField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /></label> : null}
-          <label><span>规格</span><div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={form.orderType === item.value ? "active" : ""} key={item.value} onClick={() => setField("orderType", item.value)}>{item.label}</button>)}</div></label>
+          <label><span>规格</span><div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={form.orderType === item.value ? "active" : ""} key={`${item.value}-${item.skuId || "legacy"}`} onClick={() => setForm((current) => ({ ...current, orderType: item.value, productId: item.productId ?? current.productId, skuId: item.skuId }))}><b>{item.label}</b>{item.salePrice !== undefined ? <small>¥{item.salePrice.toFixed(2)}</small> : null}</button>)}</div></label>
           {form.orderType === "other" ? <label><span>规格名称</span><input id="purchaser-custom-spec" value={form.orderTypeDesc} onChange={(event) => setField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /></label> : null}
           <div className="purchaser-quantity"><span><b>购买数量</b><small>每次最多 99 件</small></span><div><button type="button" onClick={() => setField("orderNum", Math.max(1, form.orderNum - 1))} aria-label="减少数量"><Minus size={16} /></button><b>{form.orderNum}</b><button type="button" onClick={() => setField("orderNum", Math.min(99, form.orderNum + 1))} aria-label="增加数量"><Plus size={16} /></button></div></div>
         </div> : orderEditor === "address" ? <div className="purchaser-popup-form">
@@ -901,7 +1176,10 @@ export default function PurchaserOrderPage() {
           <label><span>指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={form.expCom === "" ? "active" : ""} onClick={() => setField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={form.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label>
           <label><span>订单备注</span><textarea rows={4} value={form.orderDesc} onChange={(event) => setField("orderDesc", event.target.value)} placeholder="选填，如：送货前电话联系" /></label>
         </div>}
-        <button className="purchaser-captcha-submit" type="button" onClick={() => setOrderEditor(null)}><CheckCircle2 size={18} />保存并返回</button>
+        <button className="purchaser-captcha-submit" type="button" onClick={() => setOrderEditor(null)}>
+          <CheckCircle2 size={18} />
+          保存并返回
+        </button>
       </section>
     </div> : null}
 
@@ -919,7 +1197,10 @@ export default function PurchaserOrderPage() {
             </>}
           </div>
           {addressBookError ? <p className="tool-error purchaser-address-error"><AlertCircle size={14} />{addressBookError}</p> : null}
-          <button className="purchaser-captcha-submit" type="button" disabled={addressBookBusy} onClick={submitAddressAuth}>{addressBookBusy ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}{addressBookBusy ? "正在验证" : "验证并查看地址"}</button>
+          <button className="purchaser-captcha-submit" type="button" disabled={addressBookBusy} onClick={submitAddressAuth}>
+            {addressBookBusy ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}
+            {addressBookBusy ? "正在验证" : "验证并查看地址"}
+          </button>
         </> : addressBookView === "list" ? <>
           <div className="purchaser-address-list-head"><p>{addresses.length ? `已保存 ${addresses.length} 个地址` : "还没有保存的地址"}</p><button type="button" onClick={() => openAddressEditor()}><Plus size={15} />新增地址</button></div>
           {addressBookBusy ? <div className="purchaser-address-loading"><LoaderCircle className="spin" size={22} />正在读取地址</div> : addresses.length ? <div className="purchaser-address-list">
@@ -949,45 +1230,141 @@ export default function PurchaserOrderPage() {
             <label className="purchaser-address-default"><input type="checkbox" checked={addressDraft.isDefault} onChange={(event) => setAddressDraft((current) => ({ ...current, isDefault: event.target.checked }))} /><span><Star size={15} />设为默认地址</span></label>
           </div>
           {addressBookError ? <p className="tool-error purchaser-address-error"><AlertCircle size={14} />{addressBookError}</p> : null}
-          <div className="purchaser-address-actions"><button type="button" onClick={() => setAddressBookView("list")}>返回列表</button><button type="button" disabled={addressBookBusy} onClick={saveAddressRecord}>{addressBookBusy ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}{addressBookBusy ? "正在保存" : "保存地址"}</button></div>
+          <div className="purchaser-address-actions">
+            <button type="button" onClick={() => setAddressBookView("list")}>返回列表</button>
+            <button type="button" disabled={addressBookBusy} onClick={saveAddressRecord}>
+              {addressBookBusy ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}
+              {addressBookBusy ? "正在保存" : "保存地址"}
+            </button>
+          </div>
         </> : <>
           <div className="purchaser-address-delete-card"><span><Trash2 size={20} /></span><div><b>{addressDeleteTarget?.receiverName} {addressDeleteTarget?.receiverPhone}</b><p>{addressDeleteTarget?.address}</p></div></div>
           <p>删除后无法恢复，但不会影响已经创建的历史订单。</p>
           {addressBookError ? <p className="tool-error purchaser-address-error"><AlertCircle size={14} />{addressBookError}</p> : null}
-          <div className="purchaser-address-actions danger"><button type="button" onClick={() => setAddressBookView("list")}>暂不删除</button><button type="button" disabled={addressBookBusy} onClick={deleteAddressRecord}>{addressBookBusy ? <LoaderCircle className="spin" size={17} /> : <Trash2 size={17} />}{addressBookBusy ? "正在删除" : "确认删除"}</button></div>
+          <div className="purchaser-address-actions danger">
+            <button type="button" onClick={() => setAddressBookView("list")}>暂不删除</button>
+            <button type="button" disabled={addressBookBusy} onClick={deleteAddressRecord}>
+              {addressBookBusy ? <LoaderCircle className="spin" size={17} /> : <Trash2 size={17} />}
+              {addressBookBusy ? "正在删除" : "确认删除"}
+            </button>
+          </div>
         </>}
       </section>
     </div> : null}
 
-    {captchaOpen ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}><section className="purchaser-captcha-modal purchaser-sheet"><button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)}><X size={19} /></button><small>{Number(linkContext?.requirePwd) === 1 ? "下单验证" : "提交确认"}</small><h2>{Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "核对本次订单"}</h2><p>{Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p><div className="purchaser-captcha-summary">
-        <div><span>商品</span><b>{form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
-        <div><span>规格</span><b>{form.orderType === "other" ? form.orderTypeDesc : selectedSize?.label || "--"}</b></div>
-        <div><span>数量</span><b>{form.orderNum} 件</b></div>
-        <div><span>收件人</span><b>{form.customer || "--"}</b></div>
-        <div><span>手机号</span><b>{form.phone || "--"}</b></div>
-        <div><span>收货地址</span><b>{form.address || "--"}</b></div>
-        <div><span>指定快递</span><b>{form.expCom ? (couriers.find((item) => item.value === form.expCom)?.label || form.expCom) : "暂不选择"}</b></div>
-        {form.orderDesc ? <div><span>备注</span><b>{form.orderDesc}</b></div> : null}
-      </div>{Number(linkContext?.requirePwd) === 1 ? <div className="purchaser-captcha-row purchaser-captcha-pwd-row"><input className="purchaser-captcha-pwd" autoFocus inputMode="numeric" maxLength={6} value={pwd} onChange={(event) => setPwd(event.target.value.replace(/\D/g, ""))} placeholder="输入 4-6 位下单码" /></div> : <div className="purchaser-captcha-row"><button className="purchaser-captcha-image" type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button><input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="输入图中验证码" /></div>}{error ? <p className="tool-error">{error}</p> : null}<button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>{submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}{submitting ? "正在创建订单" : (Number(linkContext?.requirePwd) === 1 ? "输入下单码并提交" : "验证并提交订单")}</button></section></div> : null}
-    {success ? <div className="purchaser-success-backdrop" onMouseDown={(event) => event.target === event.currentTarget && continueOrdering()}><section className="purchaser-success-modal purchaser-sheet" role="alertdialog" aria-modal="true">
-      <button className="purchaser-success-close" type="button" onClick={continueOrdering} aria-label="关闭"><X size={18} /></button>
-      <div className="purchaser-success-icon"><CheckCircle2 size={36} /></div>
-      <small>订单已创建</small>
-      <h2>下单成功</h2>
-      <p className="purchaser-success-thanks">已提交 <span className="purchaser-success-product">{String(success.orderNameDesc || selectedProduct?.label || "您的商品")}</span></p>
-      <p>订单已提交到「{linkContext.storeName || "店铺"}」，请耐心等待处理</p>
-      <div className="purchaser-success-info">
-        <div><span>订单号</span><b>{String(success.orderCode || success.id || "已生成")}</b></div>
-        <div><span>商品</span><b>{String(success.orderNameDesc || selectedProduct?.label || "--")} {String(success.orderTypeDesc || selectedSize?.label || "")}</b></div>
-        <div><span>数量</span><b>{String(success.orderNum || form.orderNum || 1)} 件</b></div>
-        <div><span>收件人</span><b>{String(success.customer || form.customer || "--")}</b></div>
-        <div><span>手机号</span><b>{String(success.phone || form.phone || "--")}</b></div>
+    {captchaOpen ? (
+      <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCaptchaOpen(false)}>
+        <section className="purchaser-captcha-modal purchaser-sheet">
+          <button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)} aria-label="关闭"><X size={19} /></button>
+          <small>{Number(linkContext?.accountRequired) === 1 ? "订单确认" : Number(linkContext?.requirePwd) === 1 ? "下单验证" : "提交确认"}</small>
+          <h2>{Number(linkContext?.accountRequired) === 1 ? "核对本次订单" : Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "核对本次订单"}</h2>
+          <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "提交后展示对应收款码，付款后由店铺人工确认。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
+          <div className="purchaser-captcha-summary">
+            <div><span>商品</span><b>{form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
+            <div><span>规格</span><b>{form.orderType === "other" ? form.orderTypeDesc : selectedSize?.label || "--"}</b></div>
+            <div><span>数量</span><b>{form.orderNum} 件</b></div>
+            <div><span>收件人</span><b>{form.customer || "--"}</b></div>
+            <div><span>手机号</span><b>{form.phone || "--"}</b></div>
+            <div><span>收货地址</span><b>{form.address || "--"}</b></div>
+            <div><span>指定快递</span><b>{form.expCom ? (couriers.find((item) => item.value === form.expCom)?.label || form.expCom) : "暂不选择"}</b></div>
+            {form.orderDesc ? <div><span>备注</span><b>{form.orderDesc}</b></div> : null}
+          </div>
+          {Number(linkContext?.accountRequired) === 1 ? null : Number(linkContext?.requirePwd) === 1 ? (
+            <div className="purchaser-captcha-row purchaser-captcha-pwd-row">
+              <input className="purchaser-captcha-pwd" autoFocus inputMode="numeric" maxLength={6} value={pwd} onChange={(event) => setPwd(event.target.value.replace(/\D/g, ""))} placeholder="输入 4-6 位下单码" />
+            </div>
+          ) : (
+            <div className="purchaser-captcha-row">
+              <button className="purchaser-captcha-image" type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button>
+              <input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="输入图中验证码" />
+            </div>
+          )}
+          {error ? <p className="tool-error">{error}</p> : null}
+          <button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>
+            {submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}
+            {submitting ? "正在创建订单" : (Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "提交订单并去支付" : "确认提交订单") : Number(linkContext?.requirePwd) === 1 ? "输入下单码并提交" : "验证并提交订单")}
+          </button>
+        </section>
       </div>
-      <div className="purchaser-success-actions">
-        <button type="button" className="purchaser-success-secondary" onClick={continueOrdering}><Plus size={16} />继续下单</button>
-        <button type="button" className="purchaser-success-primary" onClick={viewOrders}>查询订单<ArrowRight size={16} /></button>
+    ) : null}
+    {success ? (
+      <div
+        className="purchaser-success-backdrop"
+        onMouseDown={(event) => event.target === event.currentTarget && continueOrdering()}
+      >
+        <section className="purchaser-success-modal" role="alertdialog" aria-modal="true" aria-labelledby="purchaser-success-title">
+          <button className="purchaser-success-close" type="button" onClick={continueOrdering} aria-label="关闭">
+            <X size={18} />
+          </button>
+          <header className="purchaser-success-head">
+            <div className="purchaser-success-icon" aria-hidden="true">
+              <CheckCircle2 size={30} strokeWidth={2.2} />
+            </div>
+            <h2 id="purchaser-success-title">下单成功</h2>
+            <p>
+              已提交到「{linkContext.storeName || "店铺"}」
+              {String(success.orderNameDesc || selectedProduct?.label || "")
+                ? ` · ${String(success.orderNameDesc || selectedProduct?.label || "")}`
+                : ""}
+            </p>
+          </header>
+          <dl className="purchaser-success-info">
+            <div>
+              <dt>订单号</dt>
+              <dd>{String(success.orderCode || success.id || "已生成")}</dd>
+            </div>
+            <div>
+              <dt>商品</dt>
+              <dd>
+                {String(success.orderNameDesc || selectedProduct?.label || "--")}
+                {String(success.orderTypeDesc || selectedSize?.label || "")
+                  ? ` · ${String(success.orderTypeDesc || selectedSize?.label || "")}`
+                  : ""}
+              </dd>
+            </div>
+            <div>
+              <dt>数量</dt>
+              <dd>{String(success.orderNum || form.orderNum || 1)} 件</dd>
+            </div>
+            <div>
+              <dt>收件人</dt>
+              <dd>{String(success.customer || form.customer || "--")}</dd>
+            </div>
+            <div>
+              <dt>手机号</dt>
+              <dd>{String(success.phone || form.phone || "--")}</dd>
+            </div>
+          </dl>
+          {success.paymentRequired ? (
+            <div className="purchaser-payment-panel">
+              <div className="purchaser-payment-head">
+                <span><Wallet size={17} />微信收款码</span>
+                <b>¥{successPaymentAmount.toFixed(2)}</b>
+              </div>
+              {successPaymentCode ? (
+                <>
+                  <img className="purchaser-payment-code" src={successPaymentCode.image} alt={`${successPaymentCode.label} 收款码`} />
+                  <p>{successPaymentCode.label}，付款后请点击“已支付”，店铺会人工对账确认。</p>
+                </>
+              ) : (
+                <p className="purchaser-payment-missing">当前规格暂未配置收款码，请联系店铺确认付款方式。</p>
+              )}
+            </div>
+          ) : null}
+          <div className="purchaser-success-actions">
+            <button type="button" className="purchaser-success-secondary" onClick={continueOrdering}>
+              <Plus size={16} />
+              {success.paymentRequired ? "稍后支付" : "继续下单"}
+            </button>
+            {success.paymentRequired && successPaymentCode ? <button type="button" className="purchaser-success-primary purchaser-payment-confirm" disabled={paymentConfirmBusy} onClick={confirmPayment}>{paymentConfirmBusy ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}{paymentConfirmBusy ? "正在提交确认" : "已支付"}</button> : null}
+            <button type="button" className="purchaser-success-primary" onClick={viewOrders}>
+              查询订单
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </section>
       </div>
-    </section></div> : null}
+    ) : null}
     {helpOpen ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setHelpOpen(false)}><section className="purchaser-help-modal purchaser-sheet">
       <button className="purchaser-help-close" type="button" onClick={() => setHelpOpen(false)} aria-label="关闭"><X size={19} /></button>
       <small>下单帮助</small>
@@ -1031,24 +1408,31 @@ export default function PurchaserOrderPage() {
       </div>
       <button className="purchaser-missing-close" type="button" onClick={() => setMissingFields([])}>关闭</button>
     </section></div> : null}
-    {editingOrder ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeEdit()}><section className="purchaser-captcha-modal purchaser-edit-modal purchaser-sheet">
-      <button className="purchaser-captcha-close" type="button" onClick={closeEdit} aria-label="关闭"><X size={19} /></button>
-      <small>编辑订单</small>
-      <h2>修改订单</h2>
-      <p>仅待处理订单可修改，修改后店铺会收到最新信息。</p>
-      <div className="purchaser-captcha-summary">
-        <div><span>订单号</span><b>{editingOrder.orderCode || "--"}</b></div>
-        <div><span>当前状态</span><b>{editingOrder.orderStatusDesc || editingOrder.orderStatus || "待处理"}</b></div>
+    {editingOrder ? (
+      <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeEdit()}>
+        <section className="purchaser-captcha-modal purchaser-edit-modal purchaser-sheet">
+          <button className="purchaser-captcha-close" type="button" onClick={closeEdit} aria-label="关闭"><X size={19} /></button>
+          <small>编辑订单</small>
+          <h2>修改订单</h2>
+          <p>仅待处理订单可修改，修改后店铺会收到最新信息。</p>
+          <div className="purchaser-captcha-summary">
+            <div><span>订单号</span><b>{editingOrder.orderCode || "--"}</b></div>
+            <div><span>当前状态</span><b>{editingOrder.orderStatusDesc || editingOrder.orderStatus || "待处理"}</b></div>
+          </div>
+          <form onSubmit={requestEditSubmit} className="purchaser-edit-form">
+          <section><header><span>1</span><div><h3>商品</h3></div></header><div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={editForm.orderName === item.value ? "active" : ""} key={item.value} onClick={() => setEditForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }))}>{item.label}</button>)}</div>{editForm.orderName === "other" ? <input value={editForm.orderNameDesc} onChange={(event) => setEditField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}<div className="purchaser-choice-grid compact">{editSizes.map((item) => <button type="button" className={editForm.orderType === item.value ? "active" : ""} key={`${item.value}-${item.skuId || "legacy"}`} onClick={() => setEditForm((current) => ({ ...current, orderType: item.value, productId: item.productId ?? current.productId, skuId: item.skuId }))}>{item.label}</button>)}</div>{editForm.orderType === "other" ? <input value={editForm.orderTypeDesc} onChange={(event) => setEditField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}<div className="purchaser-quantity purchaser-quantity-locked"><span>购买数量</span><div><b>{editForm.orderNum}</b><small>件，修改时不可调整</small></div></div></section>
+            <section><header><span>2</span><div><h3>收货信息</h3></div></header><label><span><User size={15} />收件人</span><input value={editForm.customer} onChange={(event) => setEditField("customer", event.target.value)} placeholder="请输入收件人姓名" /></label><label><span><Truck size={15} />手机号</span><input inputMode="tel" maxLength={11} value={editForm.phone} onChange={(event) => setEditField("phone", event.target.value.replace(/\D/g, ""))} placeholder="请输入11位手机号" /></label><label><span><MapPin size={15} />详细地址</span><textarea rows={3} value={editForm.address} onChange={(event) => setEditField("address", event.target.value)} placeholder="省市区 + 街道门牌号" /></label><label><span><Truck size={15} />指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={editForm.expCom === "" ? "active" : ""} onClick={() => setEditField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={editForm.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setEditField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label></section>
+            <section><header><span>3</span><div><h3>订单备注</h3></div></header><textarea rows={3} value={editForm.orderDesc} onChange={(event) => setEditField("orderDesc", event.target.value)} placeholder="如：送货前电话联系" /></section>
+            {missingFields.length > 0 ? <p className="tool-error">请补全 {missingFields.length} 项必填信息</p> : null}
+            {error ? <p className="tool-error">{error}</p> : null}
+            <button className="purchaser-captcha-submit" type="submit" disabled={editSubmitting}>
+              <Edit3 size={18} />
+              保存修改
+            </button>
+          </form>
+        </section>
       </div>
-      <form onSubmit={requestEditSubmit} className="purchaser-edit-form">
-        <section><header><span>1</span><div><h3>商品</h3></div></header><div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={editForm.orderName === item.value ? "active" : ""} key={item.value} onClick={() => setEditField("orderName", item.value)}>{item.label}</button>)}</div>{editForm.orderName === "other" ? <input value={editForm.orderNameDesc} onChange={(event) => setEditField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}<div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={editForm.orderType === item.value ? "active" : ""} key={item.value} onClick={() => setEditField("orderType", item.value)}>{item.label}</button>)}</div>{editForm.orderType === "other" ? <input value={editForm.orderTypeDesc} onChange={(event) => setEditField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}<div className="purchaser-quantity purchaser-quantity-locked"><span>购买数量</span><div><b>{editForm.orderNum}</b><small>件，修改时不可调整</small></div></div></section>
-        <section><header><span>2</span><div><h3>收货信息</h3></div></header><label><span><User size={15} />收件人</span><input value={editForm.customer} onChange={(event) => setEditField("customer", event.target.value)} placeholder="请输入收件人姓名" /></label><label><span><Truck size={15} />手机号</span><input inputMode="tel" maxLength={11} value={editForm.phone} onChange={(event) => setEditField("phone", event.target.value.replace(/\D/g, ""))} placeholder="请输入11位手机号" /></label><label><span><MapPin size={15} />详细地址</span><textarea rows={3} value={editForm.address} onChange={(event) => setEditField("address", event.target.value)} placeholder="省市区 + 街道门牌号" /></label><label><span><Truck size={15} />指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={editForm.expCom === "" ? "active" : ""} onClick={() => setEditField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={editForm.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setEditField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label></section>
-        <section><header><span>3</span><div><h3>订单备注</h3></div></header><textarea rows={3} value={editForm.orderDesc} onChange={(event) => setEditField("orderDesc", event.target.value)} placeholder="如：送货前电话联系" /></section>
-        {missingFields.length > 0 ? <p className="tool-error">请补全 {missingFields.length} 项必填信息</p> : null}
-        {error ? <p className="tool-error">{error}</p> : null}
-        <button className="purchaser-captcha-submit" type="submit" disabled={editSubmitting}><Edit3 size={18} />保存修改</button>
-      </form>
-    </section></div> : null}
+    ) : null}
     {viewingOrder ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setViewingOrder(null)}><section className="purchaser-captcha-modal purchaser-detail-modal purchaser-sheet">
       <button className="purchaser-captcha-close" type="button" onClick={() => setViewingOrder(null)} aria-label="关闭"><X size={19} /></button>
       <small>订单详情</small>
@@ -1077,7 +1461,7 @@ export default function PurchaserOrderPage() {
           <div><span>快递公司</span><b>{viewingOrder.expComDesc || "暂无"}</b></div>
           <div><span>快递单号</span><b>{viewingOrder.expCode && viewingOrder.expCode !== "无" ? viewingOrder.expCode : "暂无"}</b></div>
         </div>
-        {(viewingOrder.expInfoList || []).length ? <div className="tool-mini-timeline tool-full-timeline" style={{ marginTop: 11 }}>{(viewingOrder.expInfoList || []).map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>)}</div> : <p style={{ margin: "7px 0 0", color: "var(--muted)", fontSize: 9 }}>暂无物流轨迹</p>}
+        {(viewingOrder.expInfoList || []).length ? <div className="tool-mini-timeline tool-full-timeline" style={{ marginTop: 11 }}>{(viewingOrder.expInfoList || []).map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>)}</div> : <p className="purchaser-detail-no-tracking">暂无物流轨迹</p>}
       </div>
       {(viewingOrder.store || viewingOrder.purchaser || viewingOrder.createBy) ? <div className="purchaser-detail-section">
         <h3>其他</h3>
@@ -1098,28 +1482,48 @@ export default function PurchaserOrderPage() {
         </div>
       </div> : null}
     </section></div> : null}
-    {confirmingEdit ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !editSubmitting && setConfirmingEdit(false)}><section className="purchaser-captcha-modal purchaser-sheet">
-      <button className="purchaser-captcha-close" type="button" onClick={() => setConfirmingEdit(false)} disabled={editSubmitting} aria-label="关闭"><X size={19} /></button>
-      <div className="purchaser-success-icon"><ShieldCheck size={36} /></div>
-      <small>确认修改</small>
-      <h2>确认修改订单？</h2>
-      <p>订单 <b>{editingOrder?.orderCode || "--"}</b> 将按最新信息保存，店铺会同步收到变更。</p>
-      <div className="purchaser-success-actions">
-        <button type="button" className="purchaser-success-secondary" onClick={() => setConfirmingEdit(false)} disabled={editSubmitting}>再检查一下</button>
-        <button type="button" className="purchaser-success-primary" onClick={submitEdit} disabled={editSubmitting}>{editSubmitting ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}{editSubmitting ? "正在保存" : "确认修改"}</button>
+    {confirmingEdit ? (
+      <div
+        className="purchaser-captcha-backdrop"
+        onMouseDown={(event) => event.target === event.currentTarget && !editSubmitting && setConfirmingEdit(false)}
+      >
+        <section className="purchaser-captcha-modal purchaser-sheet" role="alertdialog" aria-modal="true">
+          <button className="purchaser-captcha-close" type="button" onClick={() => setConfirmingEdit(false)} disabled={editSubmitting} aria-label="关闭"><X size={19} /></button>
+          <div className="purchaser-success-icon"><ShieldCheck size={36} /></div>
+          <small>确认修改</small>
+          <h2>确认修改订单？</h2>
+          <p>订单 <b>{editingOrder?.orderCode || "--"}</b> 将按最新信息保存，店铺会同步收到变更。</p>
+          <div className="purchaser-success-actions">
+            <button type="button" className="purchaser-success-secondary" onClick={() => setConfirmingEdit(false)} disabled={editSubmitting}>再检查一下</button>
+            <button type="button" className="purchaser-success-primary" onClick={submitEdit} disabled={editSubmitting}>
+              {editSubmitting ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}
+              {editSubmitting ? "正在保存" : "确认修改"}
+            </button>
+          </div>
+        </section>
       </div>
-    </section></div> : null}
-    {confirmingDelete ? <div className="purchaser-captcha-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !deleteSubmitting && setConfirmingDelete(null)}><section className="purchaser-captcha-modal purchaser-sheet">
-      <button className="purchaser-captcha-close" type="button" onClick={() => setConfirmingDelete(null)} disabled={deleteSubmitting} aria-label="关闭"><X size={19} /></button>
-      <div className="purchaser-missing-icon"><AlertCircle size={28} /></div>
-      <small>删除订单</small>
-      <h2>确认删除订单？</h2>
-      <p>订单 <b>{confirmingDelete.orderCode || "--"}</b> 删除后将从您的列表移除，店铺会保留记录以便核对，无法恢复。</p>
-      <div className="purchaser-success-actions">
-        <button type="button" className="purchaser-success-secondary" onClick={() => setConfirmingDelete(null)} disabled={deleteSubmitting}>取消</button>
-        <button type="button" className="purchaser-missing-close" onClick={submitDelete} disabled={deleteSubmitting}>{deleteSubmitting ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />}{deleteSubmitting ? "正在删除" : "确认删除"}</button>
+    ) : null}
+    {confirmingDelete ? (
+      <div
+        className="purchaser-captcha-backdrop"
+        onMouseDown={(event) => event.target === event.currentTarget && !deleteSubmitting && setConfirmingDelete(null)}
+      >
+        <section className="purchaser-captcha-modal purchaser-sheet" role="alertdialog" aria-modal="true">
+          <button className="purchaser-captcha-close" type="button" onClick={() => setConfirmingDelete(null)} disabled={deleteSubmitting} aria-label="关闭"><X size={19} /></button>
+          <div className="purchaser-missing-icon"><AlertCircle size={28} /></div>
+          <small>删除订单</small>
+          <h2>确认删除订单？</h2>
+          <p>订单 <b>{confirmingDelete.orderCode || "--"}</b> 删除后将从您的列表移除，店铺会保留记录以便核对，无法恢复。</p>
+          <div className="purchaser-success-actions">
+            <button type="button" className="purchaser-success-secondary" onClick={() => setConfirmingDelete(null)} disabled={deleteSubmitting}>取消</button>
+            <button type="button" className="purchaser-missing-close" onClick={submitDelete} disabled={deleteSubmitting}>
+              {deleteSubmitting ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />}
+              {deleteSubmitting ? "正在删除" : "确认删除"}
+            </button>
+          </div>
+        </section>
       </div>
-    </section></div> : null}
+    ) : null}
     {blockConfirm ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setBlockConfirm(null)}><section className="purchaser-create-modal purchaser-confirm-modal purchaser-sheet">
       <span className="danger"><AlertCircle size={22} /></span>
       <small>链接提示</small>

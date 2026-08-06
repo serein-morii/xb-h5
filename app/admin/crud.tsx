@@ -31,6 +31,7 @@ import type { DataRow, Dictionaries, FieldConfig, MenuKey } from "./core";
 import {
   EXPRESS_STATUS_OPTIONS,
   optionLabel,
+  orderTypeLabel,
   shortDate,
   STORE_STATUS_OPTIONS,
 } from "./core";
@@ -56,19 +57,35 @@ export type CrudConfig = {
   importable?: boolean;
 };
 
-export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks">, CrudConfig> {
+export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products">, CrudConfig> {
   return {
   bills: {
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
-    subtitle: (row) => `${row.orderNameDesc || optionLabel(row.orderName, dictionaries.products)} · ${row.orderTypeDesc || optionLabel(row.orderType, dictionaries.sizes)} · ${row.customer || "暂无收件人"}`,
-    searchFields: [{ key: "orderCode", label: "订单号" }, { key: "createBy", label: "创建人" }],
+    subtitle: (row) => `${row.orderNameDesc || optionLabel(row.orderName, dictionaries.products)} · ${orderTypeLabel(row.orderType, dictionaries.sizes, row.orderTypeDesc)} · ${row.customer || "暂无收件人"}`,
+    searchFields: [
+      { key: "orderCode", label: "订单号" },
+      { key: "orderStatus", label: "订单状态", type: "select", options: dictionaries.orderStatuses },
+      { key: "payStatus", label: "付款状态", type: "select", options: [{ value: 0, label: "未付款" }, { value: 1, label: "已付款" }, { value: 3, label: "待确认" }] },
+      { key: "orderName", label: "商品名称", type: "select", options: dictionaries.products },
+      { key: "orderType", label: "商品规格", type: "select", options: dictionaries.sizes },
+      { key: "customer", label: "收件人" },
+      { key: "phone", label: "手机号" },
+      { key: "purchaser", label: "下单人" },
+      { key: "expCom", label: "快递公司", type: "select", options: dictionaries.expressCompanies },
+      { key: "expCode", label: "快递单号" },
+      { key: "orderTime", label: "下单时间", type: "date" },
+      { key: "orderDesc", label: "备注" },
+      { key: "createBy", label: "创建人" },
+    ],
     fields: [{ key: "orderCode", label: "订单号", required: true }, { key: "goodsPrice", label: "商品成本", type: "number" }, { key: "packagePrice", label: "包装费", type: "number" }, { key: "expPrice", label: "快递费", type: "number" }, { key: "addPrice", label: "附加费", type: "number" }, { key: "totalPrice", label: "总成本", type: "number", readonly: true }, { key: "remark", label: "备注", type: "textarea" }],
     summary: [
       { key: "totalPrice", label: "总成本", money: true, tone: "default" },
+      { key: "salePrice", label: "销售价格", money: true, tone: "default" },
+      { key: "gainPrice", label: "利润", money: true, tone: "success" },
     ],
     display: [
       { key: "orderName", label: "商品名称", options: dictionaries.products },
-      { key: "orderTypeNum", label: "规格×数量", format: (row) => `${optionLabel(row.orderType, dictionaries.sizes) || row.orderTypeDesc || "--"} × ${row.orderNum || 1}` },
+      { key: "orderTypeNum", label: "规格×数量", format: (row) => `${orderTypeLabel(row.orderType, dictionaries.sizes, row.orderTypeDesc)} × ${row.orderNum || 1}` },
       { key: "customer", label: "收件人" }, { key: "phone", label: "手机号" },
       { key: "address", label: "收货地址", fullWidth: true, format: (row) => row.address || "暂无地址" },
     ],
@@ -153,6 +170,71 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
   };
 }
 
+function BillOrderFilter({
+  dictionaries,
+  query,
+  purchasers,
+  onChange,
+}: {
+  dictionaries: Dictionaries;
+  query: DataRow;
+  purchasers: DataRow[];
+  onChange: (key: string, value: unknown) => void;
+}) {
+  return <>
+    <section className="filter-section">
+      <header><h3>订单状态</h3></header>
+      <div className="filter-chips" role="listbox" aria-label="订单状态">
+        <button type="button" className={!query.orderStatus ? "active" : ""} onClick={() => onChange("orderStatus", "")}>全部</button>
+        {dictionaries.orderStatuses.map((item) => <button type="button" key={item.value} className={String(query.orderStatus || "") === String(item.value) ? "active" : ""} onClick={() => onChange("orderStatus", item.value)}>{item.label}</button>)}
+      </div>
+    </section>
+    <section className="filter-section">
+      <header><h3>付款状态</h3></header>
+      <div className="filter-chips" role="listbox" aria-label="付款状态">
+        <button type="button" className={query.payStatus === "" || query.payStatus === null || query.payStatus === undefined ? "active" : ""} onClick={() => onChange("payStatus", "")}>全部</button>
+        <button type="button" className={String(query.payStatus ?? "") === "1" ? "active" : ""} onClick={() => onChange("payStatus", "1")}>已付款</button>
+        <button type="button" className={String(query.payStatus ?? "") === "3" ? "active" : ""} onClick={() => onChange("payStatus", "3")}>待确认</button>
+        <button type="button" className={String(query.payStatus ?? "") === "0" ? "active" : ""} onClick={() => onChange("payStatus", "0")}>未付款</button>
+      </div>
+    </section>
+    <section className="filter-section">
+      <header><h3>商品与规格</h3></header>
+      <div className="filter-field-grid">
+        <label><span>商品</span><select value={query.orderName || ""} onChange={(event) => onChange("orderName", event.target.value)}><option value="">全部商品</option>{dictionaries.products.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+        <label><span>规格</span><select value={query.orderType || ""} onChange={(event) => onChange("orderType", event.target.value)}><option value="">全部规格</option>{dictionaries.sizes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+      </div>
+    </section>
+    <section className="filter-section">
+      <header><h3>收件信息</h3></header>
+      <div className="filter-field-stack">
+        <label><span>订单号</span><input value={query.orderCode || ""} onChange={(event) => onChange("orderCode", event.target.value)} placeholder="输入订单号" /></label>
+        <div className="filter-field-grid">
+          <label><span>收件人</span><input value={query.customer || ""} onChange={(event) => onChange("customer", event.target.value)} placeholder="姓名" /></label>
+          <label><span>手机号</span><input inputMode="tel" value={query.phone || ""} onChange={(event) => onChange("phone", event.target.value)} placeholder="手机号" /></label>
+        </div>
+      </div>
+    </section>
+    <section className="filter-section">
+      <header><h3>物流与人员</h3></header>
+      <div className="filter-field-stack">
+        <div className="filter-field-grid">
+          <label><span>快递公司</span><select value={query.expCom || ""} onChange={(event) => onChange("expCom", event.target.value)}><option value="">全部快递</option>{dictionaries.expressCompanies.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+          <label><span>快递单号</span><input value={query.expCode || ""} onChange={(event) => onChange("expCode", event.target.value)} placeholder="运单号" /></label>
+        </div>
+        <div className="filter-field-grid">
+          <label><span>下单人</span><select value={query.purchaser || ""} onChange={(event) => onChange("purchaser", event.target.value)}><option value="">全部买家</option>{purchasers.map((item) => <option key={String(item.id)} value={String(item.name || "")}>{item.name || "未命名"}{item.phone ? ` · ${item.phone}` : ""}</option>)}</select></label>
+          <label><span>创建人</span><input value={query.createBy || ""} onChange={(event) => onChange("createBy", event.target.value)} placeholder="创建人" /></label>
+        </div>
+        <div className="filter-field-grid">
+          <label><span>下单时间</span><input type="date" value={query.orderTime || ""} onChange={(event) => onChange("orderTime", event.target.value)} /></label>
+          <label><span>备注</span><input value={query.orderDesc || ""} onChange={(event) => onChange("orderDesc", event.target.value)} placeholder="备注关键词" /></label>
+        </div>
+      </div>
+    </section>
+  </>;
+}
+
 export function CrudModule({ config, dictionaries, notify }: { config: CrudConfig; dictionaries: Dictionaries; notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const Icon = config.icon;
   const [rows, setRows] = useState<DataRow[]>([]);
@@ -164,14 +246,23 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   const [pageKeyword, setPageKeyword] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [editor, setEditor] = useState<DataRow | "new" | null>(null);
+  const [editorSaving, setEditorSaving] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
+  const [batchSaving, setBatchSaving] = useState(false);
   const [syncModeOpen, setSyncModeOpen] = useState(false);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
   const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
+  const [filterPurchasers, setFilterPurchasers] = useState<DataRow[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => { setLoading(true); try { const result = await apiRequest<DataRow>(`${config.api}/list`, { query }); setRows(Array.isArray(result.rows) ? result.rows : []); setTotal(Number(result.total || 0)); } catch (error) { notify(error instanceof Error ? error.message : `${config.itemName}加载失败`, "error"); } finally { setLoading(false); } }, [config, notify, query]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setExpanded(new Set()); setPageKeyword(""); }, [config.key]);
+  useEffect(() => {
+    if (config.key !== "bills") return;
+    apiRequest<{ data?: DataRow[] }>("/biz/purchaser/list")
+      .then((result) => setFilterPurchasers(Array.isArray(result.data) ? result.data : []))
+      .catch(() => setFilterPurchasers([]));
+  }, [config.key]);
   const visibleRows = useMemo(() => {
     const keywords = pageKeyword.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
     if (!keywords.length) return rows;
@@ -327,7 +418,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
     return "success";
   }
   return (
-    <div className="module-page">
+    <div className={`module-page crud-page crud-page-${config.key}`}>
       <div className="module-hero compact-hero"><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>共 {total} 条数据，支持手机端快速维护</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
       <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
@@ -382,7 +473,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           }}
         >
           <div className="filter-sheet-body">
-            <section className="filter-section">
+            {config.key === "bills" ? <BillOrderFilter dictionaries={dictionaries} query={query} purchasers={filterPurchasers} onChange={(key, value) => setQuery((current: DataRow) => ({ ...current, [key]: value }))} /> : <section className="filter-section">
               <header><h3>筛选条件</h3></header>
               <div className="filter-field-stack">
                 {config.searchFields.map((field) => (
@@ -392,7 +483,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
                   </label>
                 ))}
               </div>
-            </section>
+            </section>}
           </div>
           <div className="filter-sheet-footer">
             <button type="button" className="filter-reset" onClick={() => setQuery({ pageNum: 1, pageSize: 15 })}>重置</button>
@@ -400,10 +491,57 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           </div>
         </form>
       </Sheet>
-      <Sheet open={editor !== null} title={`${editor === "new" ? "新增" : "修改"}${config.itemName}`} onClose={() => setEditor(null)} wide>{editor !== null ? <CrudEditor config={config} initial={editor === "new" ? null : editor} onClose={() => setEditor(null)} onSaved={load} notify={notify} /> : null}</Sheet>
-      {config.batchAction ? <Sheet open={batchOpen} title={config.batchAction.title} onClose={() => setBatchOpen(false)} wide>
-        <BatchEditor config={config} rows={visibleRows} onSaved={() => { setBatchOpen(false); load(); }} notify={notify} />
-      </Sheet> : null}
+      <Sheet
+        open={editor !== null}
+        title={`${editor === "new" ? "新增" : "修改"}${config.itemName}`}
+        onClose={() => { setEditor(null); setEditorSaving(false); }}
+        wide
+        headerAction={
+          editor !== null ? (
+            <button className="sheet-header-save" type="submit" form={`crud-editor-${config.key}`} disabled={editorSaving}>
+              {editorSaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+              {editorSaving ? "保存中" : "保存"}
+            </button>
+          ) : null
+        }
+      >
+        {editor !== null ? (
+          <CrudEditor
+            config={config}
+            initial={editor === "new" ? null : editor}
+            formId={`crud-editor-${config.key}`}
+            onSavingChange={setEditorSaving}
+            onClose={() => { setEditor(null); setEditorSaving(false); }}
+            onSaved={load}
+            notify={notify}
+          />
+        ) : null}
+      </Sheet>
+      {config.batchAction ? (
+        <Sheet
+          open={batchOpen}
+          title={config.batchAction.title}
+          onClose={() => { setBatchOpen(false); setBatchSaving(false); }}
+          wide
+          headerAction={
+            batchOpen ? (
+              <button className="sheet-header-save" type="submit" form={`crud-batch-${config.key}`} disabled={batchSaving}>
+                {batchSaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+                {batchSaving ? "更新中" : "批量更新"}
+              </button>
+            ) : null
+          }
+        >
+          <BatchEditor
+            config={config}
+            rows={visibleRows}
+            formId={`crud-batch-${config.key}`}
+            onSavingChange={setBatchSaving}
+            onSaved={() => { setBatchOpen(false); setBatchSaving(false); load(); }}
+            notify={notify}
+          />
+        </Sheet>
+      ) : null}
       {config.key === "bills" ? <Sheet open={syncModeOpen} title="选择同步方式" onClose={() => setSyncModeOpen(false)}>
         <BillsSyncModeSheet api={config.api} query={query} onClose={() => setSyncModeOpen(false)} onSync={(allRows, force) => { setSyncModeOpen(false); void syncBillRows(allRows, force); }} />
       </Sheet> : null}
@@ -498,10 +636,26 @@ export function BillsSyncModeSheet({ api, query, onClose, onSync }: { api: strin
   </>;
 }
 
-export function BatchEditor({ config, rows, onSaved, notify }: { config: CrudConfig; rows: DataRow[]; onSaved: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+export function BatchEditor({
+  config,
+  rows,
+  onSaved,
+  notify,
+  formId = "crud-batch-form",
+  onSavingChange,
+}: {
+  config: CrudConfig;
+  rows: DataRow[];
+  onSaved: () => void;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+  formId?: string;
+  onSavingChange?: (saving: boolean) => void;
+}) {
   const action = config.batchAction!;
   const [values, setValues] = useState<DataRow>({});
   const [saving, setSaving] = useState(false);
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
   const ids = rows.map((r) => r.id).filter((id): id is string | number => id !== undefined && id !== null);
   function update(key: string, value: unknown) { setValues((current) => ({ ...current, [key]: value })); }
   async function submit(event: FormEvent) {
@@ -517,17 +671,73 @@ export function BatchEditor({ config, rows, onSaved, notify }: { config: CrudCon
       setSaving(false);
     }
   }
-  return <form className="mobile-form" onSubmit={submit}>
-    <p className="batch-hint">将作用于当前已加载的 <b>{ids.length}</b> 条数据。仅修改下方已填写的字段；总成本（商品+快递+包装）会在改完后自动重算。</p>
-    <div className="form-grid">{action.fields.map((field) => <label key={field.key}><span>{field.label}</span><FieldInput field={field} value={values[field.key]} onChange={(value) => update(field.key, value)} /></label>)}</div>
-    <button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Check size={18} />}批量更新</button>
-  </form>;
+  return (
+    <form id={formId} className="mobile-form sheet-editor-form" onSubmit={submit}>
+      <p className="batch-hint">将作用于当前已加载的 <b>{ids.length}</b> 条数据。仅修改下方已填写的字段；总成本（商品+快递+包装）会在改完后自动重算。</p>
+      <div className="form-grid">{action.fields.map((field) => <label key={field.key}><span>{field.label}</span><FieldInput field={field} value={values[field.key]} onChange={(value) => update(field.key, value)} /></label>)}</div>
+    </form>
+  );
 }
 
-export function CrudEditor({ config, initial, onClose, onSaved, notify }: { config: CrudConfig; initial: DataRow | null; onClose: () => void; onSaved: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+export function CrudEditor({
+  config,
+  initial,
+  onClose,
+  onSaved,
+  notify,
+  formId = "crud-editor-form",
+  onSavingChange,
+}: {
+  config: CrudConfig;
+  initial: DataRow | null;
+  onClose: () => void;
+  onSaved: () => void;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+  formId?: string;
+  onSavingChange?: (saving: boolean) => void;
+}) {
   const [form, setForm] = useState<DataRow>(() => ({ ...(config.key === "stores" ? { isDelete: 1 } : {}), ...(initial || {}) }));
   const [saving, setSaving] = useState(false);
-  function update(key: string, value: unknown) { setForm((current) => { const next = { ...current, [key]: value }; if (config.key === "bills") { const total = Number(next.goodsPrice || 0) + Number(next.packagePrice || 0) + Number(next.expPrice || 0) + Number(next.addPrice || 0); next.totalPrice = total; } if (config.key === "prices") next.totalPrice = Number(next.goodsPrice || 0) + Number(next.expPrice || 0) + Number(next.packagePrice || 0); return next; }); }
-  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { const payload = { ...form }; if (config.key === "express" && typeof payload.expTime === "string") payload.expTime = payload.expTime.replace("T", " "); if (config.key === "stores") payload.isDelete = Number(payload.isDelete || 1); await apiRequest(config.api, { method: form.id ? "PUT" : "POST", body: payload }); notify(form.id ? "修改成功" : "新增成功", "success"); onSaved(); onClose(); } catch (error) { notify(error instanceof Error ? error.message : "保存失败", "error"); } finally { setSaving(false); } }
-  return <form className={`mobile-form sheet-editor-form crud-editor-form crud-editor-form-${config.key}`} onSubmit={submit}><div className="form-grid">{config.fields.map((field) => <label className={field.type === "textarea" ? "span-full" : ""} key={field.key}><span>{field.label}{field.required ? " *" : ""}</span><FieldInput field={field} value={form[field.key]} onChange={(value) => update(field.key, value)} /></label>)}</div><button className="button button-primary button-block" disabled={saving} type="submit">{saving ? <LoaderCircle className="spin" size={18} /> : <Check size={18} />}保存</button></form>;
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
+  function update(key: string, value: unknown) {
+    setForm((current) => {
+      const next = { ...current, [key]: value };
+      if (config.key === "bills") {
+        const total = Number(next.goodsPrice || 0) + Number(next.packagePrice || 0) + Number(next.expPrice || 0) + Number(next.addPrice || 0);
+        next.totalPrice = total;
+      }
+      if (config.key === "prices") next.totalPrice = Number(next.goodsPrice || 0) + Number(next.expPrice || 0) + Number(next.packagePrice || 0);
+      return next;
+    });
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const payload = { ...form };
+      if (config.key === "express" && typeof payload.expTime === "string") payload.expTime = payload.expTime.replace("T", " ");
+      if (config.key === "stores") payload.isDelete = Number(payload.isDelete || 1);
+      await apiRequest(config.api, { method: form.id ? "PUT" : "POST", body: payload });
+      notify(form.id ? "修改成功" : "新增成功", "success");
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "保存失败", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <form id={formId} className={`mobile-form sheet-editor-form crud-editor-form crud-editor-form-${config.key}`} onSubmit={submit}>
+      <div className="form-grid">
+        {config.fields.map((field) => (
+          <label className={field.type === "textarea" ? "span-full" : ""} key={field.key}>
+            <span>{field.label}{field.required ? " *" : ""}</span>
+            <FieldInput field={field} value={form[field.key]} onChange={(value) => update(field.key, value)} />
+          </label>
+        ))}
+      </div>
+    </form>
+  );
 }

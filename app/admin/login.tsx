@@ -203,8 +203,19 @@ export function EmailLoginSheet({
     }
   }
   return (
-    <Sheet open={open} title="邮箱登录" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="邮箱登录"
+      onClose={onClose}
+      headerAction={
+        <button className="sheet-header-save" type="submit" form="email-login-form" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />}
+          {submitting ? "登录中" : "登录"}
+        </button>
+      }
+    >
       <form
+        id="email-login-form"
         className="mobile-form email-auth-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -251,9 +262,6 @@ export function EmailLoginSheet({
             {message.text}
           </p>
         ) : null}
-        <button className="button button-primary button-block" type="submit" disabled={submitting}>
-          {submitting ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}邮箱登录
-        </button>
         <p className="email-auth-tip">未注册邮箱无法登录，请联系管理员开通账号</p>
       </form>
     </Sheet>
@@ -319,8 +327,19 @@ export function ForgotPasswordSheet({ open, onClose }: { open: boolean; onClose:
     }
   }
   return (
-    <Sheet open={open} title="忘记密码" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="忘记密码"
+      onClose={onClose}
+      headerAction={
+        <button className="sheet-header-save" type="submit" form="forgot-password-form" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={15} /> : <LockKeyhole size={15} />}
+          {submitting ? "重置中" : "重置密码"}
+        </button>
+      }
+    >
       <form
+        id="forgot-password-form"
         className="mobile-form email-auth-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -393,9 +412,6 @@ export function ForgotPasswordSheet({ open, onClose }: { open: boolean; onClose:
             {message.text}
           </p>
         ) : null}
-        <button className="button button-primary button-block" type="submit" disabled={submitting}>
-          {submitting ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />}重置密码
-        </button>
       </form>
     </Sheet>
   );
@@ -474,8 +490,19 @@ export function ChangePwdByEmailSheet({
     }
   }
   return (
-    <Sheet open={open} title="修改密码" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="修改密码"
+      onClose={onClose}
+      headerAction={
+        <button className="sheet-header-save" type="submit" form="change-pwd-form" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={15} /> : <LockKeyhole size={15} />}
+          {submitting ? "修改中" : "确认修改"}
+        </button>
+      }
+    >
       <form
+        id="change-pwd-form"
         className="mobile-form email-auth-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -549,9 +576,6 @@ export function ChangePwdByEmailSheet({
             {message.text}
           </p>
         ) : null}
-        <button className="button button-primary button-block" type="submit" disabled={submitting}>
-          {submitting ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />}确认修改
-        </button>
       </form>
     </Sheet>
   );
@@ -617,8 +641,19 @@ export function EditProfileSheet({
     }
   }
   return (
-    <Sheet open={open} title="编辑个人信息" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="编辑个人信息"
+      onClose={onClose}
+      headerAction={
+        <button className="sheet-header-save" type="submit" form="edit-profile-form" disabled={saving}>
+          {saving ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}
+          {saving ? "保存中" : "保存"}
+        </button>
+      }
+    >
       <form
+        id="edit-profile-form"
         className="mobile-form edit-profile-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -673,12 +708,6 @@ export function EditProfileSheet({
             {message.text}
           </p>
         ) : null}
-        <div className="edit-profile-actions">
-          <button type="button" className="button button-ghost" onClick={onClose}>取消</button>
-          <button className="button button-primary" type="submit" disabled={saving}>
-            {saving ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}保存
-          </button>
-        </div>
       </form>
     </Sheet>
   );
@@ -757,8 +786,19 @@ export function BindEmailSheet({
     }
   }
   return (
-    <Sheet open={open} title={currentEmail ? "更换邮箱" : "绑定邮箱"} onClose={onClose}>
+    <Sheet
+      open={open}
+      title={currentEmail ? "更换邮箱" : "绑定邮箱"}
+      onClose={onClose}
+      headerAction={
+        <button className="sheet-header-save" type="submit" form="bind-email-form" disabled={submitting}>
+          {submitting ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}
+          {submitting ? "提交中" : currentEmail ? "确认更换" : "确认绑定"}
+        </button>
+      }
+    >
       <form
+        id="bind-email-form"
         className="mobile-form email-auth-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -808,9 +848,6 @@ export function BindEmailSheet({
             {message.text}
           </p>
         ) : null}
-        <button className="button button-primary button-block" type="submit" disabled={submitting}>
-          {submitting ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}{currentEmail ? "确认更换" : "确认绑定"}
-        </button>
       </form>
     </Sheet>
   );

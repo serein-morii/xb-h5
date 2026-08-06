@@ -1,10 +1,10 @@
 
-import { Ban, CheckCircle2, Copy, CreditCard, KeyRound, Link2, LoaderCircle, Monitor, Pencil, Phone, Plus, RefreshCw, Search, ShieldCheck, Store, Trash2, Unlink, User, UserPlus, Users, X } from "lucide-react";
+import { Ban, CheckCircle2, Copy, CreditCard, KeyRound, Link2, LoaderCircle, Monitor, Pencil, Phone, Plus, RefreshCw, Search, ShieldCheck, Store, Trash2, Unlink, User, UserPlus, Users, Wallet, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard, getStoredToken } from "../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../order-link/format";
 
-type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; addressVerifyEnabled?: number; queryExpRefreshEnabled?: number; queryExpRefreshIntervalMinutes?: number; lastQueryExpRefreshTime?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; createTime?: string; updateTime?: string };
+type Purchaser = { id: number; name?: string; phone?: string; shortId?: string; storeId?: number; storeCode?: string; storeName?: string; requirePwd?: number; orderCodePwd?: string; orderCodePwdExpire?: string; addressVerifyEnabled?: number; queryExpRefreshEnabled?: number; queryExpRefreshIntervalMinutes?: number; lastQueryExpRefreshTime?: string; remark?: string; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwd?: string; costPricePwdExpire?: string; accountRequired?: number; quickLoginEnabled?: number; paymentRequired?: number; customerRegistered?: boolean; createTime?: string; updateTime?: string };
 type BlockDisplay = "banner" | "fullscreen" | "confirm";
 const BLOCK_DISPLAY_OPTIONS: { value: BlockDisplay; label: string; hint: string }[] = [
   { value: "banner", label: "顶部 tab", hint: "禁用哪个，整个页面不展示，tab 没有选项，只显示一个占满整行" },
@@ -315,7 +315,20 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     finally { setBlockBusyId(null); }
   }
 
-  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>查看、绑定或解绑买家的所属店铺。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>店铺绑定属于管理操作，登录后才可以查看和修改。</p><a href="/">前往管理登录</a></section></div>;
+  async function updateCustomerSetting(item: Purchaser, field: "accountRequired" | "paymentRequired", next: 0 | 1) {
+    if (blockBusyId === item.id) return;
+    const accountRequired = field === "accountRequired" ? next : (item.accountRequired === 1 ? 1 : 0);
+    const paymentRequired = field === "paymentRequired" ? next : (item.paymentRequired === 1 ? 1 : 0);
+    setBlockBusyId(item.id); setError("");
+    try {
+      await apiRequest(`/biz/purchaser/${item.id}/customer-settings`, { method: "PUT", body: { accountRequired, paymentRequired } });
+      setNotice(field === "accountRequired" ? (next ? "已要求客户注册登录，并关闭历史快捷登录" : "已关闭强制注册") : (next ? "已开启下单支付" : "已关闭下单支付"));
+      await load(); window.setTimeout(() => setNotice(""), 1800);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "客户设置保存失败"); }
+    finally { setBlockBusyId(null); }
+  }
+
+  if (!authenticated && !embedded) return <div className="tool-page"><section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>查看、绑定或解绑买家的所属店铺。</p></div></section><section className="order-link-login"><User size={28} /><h2>请先登录</h2><p>店铺绑定属于管理操作，登录后才可以查看和修改。</p><a href="/manage">前往管理登录</a></section></div>;
 
   return <div className={`${embedded ? "admin-tool-module" : "tool-page"} purchaser-manager-page`}>
     <section className="tool-hero"><span><Users size={25} /></span><div><small>PURCHASER MANAGEMENT</small><h1>买家管理</h1><p>一个买家绑定一个店铺；解绑后对应短链接立即失效。</p></div></section>
@@ -381,6 +394,16 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
           <div className="purchaser-block-toggle">
             <button type="button" className="purchaser-order-code-btn" onClick={() => openCostPriceConfig(item)}>配置</button>
           </div>
+        </div>
+        <div className="purchaser-block-row">
+          <User size={15} />
+          <div className="purchaser-block-info"><small>转换为注册客户</small><b>{item.accountRequired === 1 ? `已开启 · ${item.customerRegistered ? "账号已注册" : "等待客户完善"}` : "默认关闭，沿用免注册短链"}</b></div>
+          <div className="purchaser-block-toggle">{blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.accountRequired === 1 ? "on" : "off"}`} aria-label="切换客户注册" onClick={() => updateCustomerSetting(item, "accountRequired", item.accountRequired === 1 ? 0 : 1)}><span /></button>}</div>
+        </div>
+        <div className="purchaser-block-row">
+          <Wallet size={15} />
+          <div className="purchaser-block-info"><small>客户下单支付</small><b>{item.paymentRequired === 1 ? "已开启，展示收款码并人工确认" : "默认关闭，下单后无需支付"}</b></div>
+          <div className="purchaser-block-toggle">{blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.paymentRequired === 1 ? "on" : "off"}`} aria-label="切换下单支付" onClick={() => updateCustomerSetting(item, "paymentRequired", item.paymentRequired === 1 ? 0 : 1)}><span /></button>}</div>
         </div>
       </div>
       <div className="card-actions"><button type="button" onClick={() => openEdit(item)}><Pencil size={16} />修改</button><button type="button" className="danger-text" disabled={busyId === item.id} onClick={() => requestDelete(item)}><Trash2 size={16} />删除</button></div></article>)}</section>}

@@ -24,6 +24,7 @@ import {
   getStoredToken,
   setStoredToken,
 } from "../lib/api";
+import ThemeSettings from "../components/ThemeSettings";
 import {
   OnboardingOverlay,
   OnboardingProvider,
@@ -59,6 +60,7 @@ const PurchaserManager = lazy(() => import("../tools/purchasers/PurchaserManager
 const ShortLinkManager = lazy(() => import("../tools/short-links/ShortLinkManager"));
 const LogisticsPage = lazy(() => import("./logistics").then((module) => ({ default: module.LogisticsPage })));
 const OrdersPage = lazy(() => import("./orders").then((module) => ({ default: module.OrdersPage })));
+const ProductsPage = lazy(() => import("./products"));
 
 export function TrackingPage() {
   const services = [{ name: "快递100", desc: "支持多家快递公司查询", url: "https://m.kuaidi100.com/", color: "orange" },{ name: "顺丰速运", desc: "顺丰官方运单跟踪", url: "https://www.sf-express.com/we/ow/chn/sc/waybill/list", color: "green" },{ name: "EMS", desc: "中国邮政 EMS 邮件查询", url: "https://www.ems.com.cn/queryList", color: "blue" }];
@@ -166,7 +168,7 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
   </>;
   return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}><button className={`menu-public-tools menu-home-entry ${active === "home" ? "active" : ""}`} type="button" onClick={() => { onSelect("home"); onClose(); }}><House size={20} /><span><b>工作台</b><small>订单、买家与物流动态总览</small></span><ChevronRight size={17} /></button><div className="menu-groups">
     <section className="menu-group" data-onboard="menu-group-orders"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "batchOrder", "express"])}</div></section>
-    <section className="menu-group" data-onboard="menu-group-manage"><div className="menu-group-title"><b>经营管理</b><small>账单、价格、店铺、物流额度及短链</small></div><div className="menu-grid">{renderItems(["bills", "prices", "stores", "logistics", "shortLinks"])}</div></section>
+    <section className="menu-group" data-onboard="menu-group-manage"><div className="menu-group-title"><b>经营管理</b><small>账单、商品、价格、店铺、物流额度及短链</small></div><div className="menu-grid">{renderItems(["bills", "products", "prices", "stores", "logistics", "shortLinks"])}</div></section>
     <section className="menu-group" data-onboard="menu-group-buyer"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
     <section className="menu-group" data-onboard="menu-group-tracking"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
   </div><a className="menu-public-tools" data-onboard="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
@@ -286,6 +288,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : active === "batchOrder" ? <BatchOrderEntry />
     : active === "orderLink" ? <OrderLinkGenerator embedded />
     : active === "purchasers" ? <PurchaserManager embedded />
+    : active === "products" ? <ProductsPage notify={notify} />
     : active === "tracking" ? <TrackingPage />
     : active === "logistics" ? <LogisticsPage userInfo={userInfo} notify={notify} />
     : active === "shortLinks" ? <ShortLinkManager embedded />
@@ -321,6 +324,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
         }}
         notify={notify}
       />
+      <ThemeSettings />
       <Toast toast={toast} />
     </div>
   </DictionaryContext.Provider>;
