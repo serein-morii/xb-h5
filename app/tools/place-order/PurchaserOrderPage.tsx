@@ -1,9 +1,9 @@
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, apiRequest, clearCustomerToken, customerHeaders, setCustomerToken } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
-import { StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
+import { StatusFilter, computeOrderStats } from "../OrderStatsCards";
 
 type Row = Record<string, unknown>;
 type ApiRequestOptions = Parameters<typeof apiRequest>[1];
@@ -215,6 +215,10 @@ export default function PurchaserOrderPage() {
 
   async function toggleCustomerQuickLogin() {
     if (!customerProfile?.registered || profileBusy) return;
+    if (Number(linkContext?.accountRequired) !== 1) {
+      setProfileError("管理端开启客户登录后，shortId 快捷登录开关才会生效");
+      return;
+    }
     const enabled = customerProfile.quickLoginEnabled === 1 ? 0 : 1;
     setProfileBusy(true); setProfileError("");
     try {
@@ -261,6 +265,23 @@ export default function PurchaserOrderPage() {
       setCustomerProfile(result.data || customerProfile); setProfileEditor(null); setEmailDraft({ email: "", currentCode: "", newCode: "" }); showPromptToast("绑定邮箱已更新");
     } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "邮箱修改失败"); }
     finally { setProfileBusy(false); }
+  }
+
+  function logoutCustomer() {
+    clearCustomerToken();
+    try {
+      window.sessionStorage.removeItem(addressTokenKey());
+      window.sessionStorage.removeItem(`${COST_ACCESS_STORAGE_PREFIX}${linkKey.purchaserId}`);
+    } catch { /* ignore storage errors */ }
+    setCustomerProfile(null);
+    setProfileEditor(null);
+    setProfileError("");
+    setOrders([]);
+    setLinkContext((current) => current ? { ...current, authenticated: false } : current);
+    showPromptToast("已退出登录");
+    window.setTimeout(() => {
+      window.location.href = `/customer/login?shortId=${linkKey.purchaserId}`;
+    }, 350);
   }
 
   const reloadOrders = useCallback(() => {
@@ -410,7 +431,6 @@ export default function PurchaserOrderPage() {
   const stats = useMemo(() => computeOrderStats(orders), [orders]);
 
   // 按顶部看板筛选：基于全量 orders 客户端过滤，零网络请求
-  const filteredOrders = useMemo(() => filterOrdersByStatus(orders, statusFilter), [orders, statusFilter]);
   const latestOrder = orders[0];
 
   function applyFilter(key: StatusFilter) {
@@ -913,8 +933,10 @@ export default function PurchaserOrderPage() {
     return () => window.clearTimeout(timer);
   }, [costPriceUnlocked, costAccessExpiresAt, linkKey.purchaserId, loadOrders]);
 
-  const successPaymentCode = success?.paymentRequired
-    ? (paymentCodeFor(success.orderName, success.orderType) || selectedPaymentCode)
+  const successPaymentConfirmed = Number(success?.payStatus) === 3;
+  const successNeedsPayment = Boolean(success?.paymentRequired) && !successPaymentConfirmed;
+  const successPaymentCode = successNeedsPayment
+    ? (paymentCodeFor(success?.orderName, success?.orderType) || selectedPaymentCode)
     : undefined;
   const successPaymentAmount = Number(success?.paymentAmount || 0);
 
@@ -989,7 +1011,7 @@ export default function PurchaserOrderPage() {
         </div> : null}
 
         {!blockQueryOn ? <section className="purchaser-home-overview" aria-label="订单概况">
-          <header><h2>订单概况</h2><button type="button" onClick={() => setTab("orders")}>全部订单<ChevronRight size={15} /></button></header>
+          <header><h2>订单概况</h2><button type="button" onClick={() => { setStatusFilter(null); setTab("orders"); }}>全部订单<ChevronRight size={15} /></button></header>
           <div>
             <button type="button" onClick={() => applyFilter("pending")}><b>{stats.pending}</b><small>待发货</small></button>
             <button type="button" onClick={() => applyFilter("shipped")}><b>{stats.shipped}</b><small>运输中</small></button>
@@ -1026,32 +1048,36 @@ export default function PurchaserOrderPage() {
       {customerProfile ? <>
         <section className="purchaser-mine-profile-card">
           <header><span>{String(customerProfile.purchaserName || linkContext.purchaserName || "我").slice(0, 1)}</span><div><h2>{customerProfile.purchaserName || linkContext.purchaserName || "客户"}</h2><p>专属 ID {customerProfile.purchaserShortId || linkContext.purchaserShortId}</p></div><em>{customerProfile.registered ? "已注册" : "未注册"}</em></header>
-          <div className="purchaser-mine-info-row"><span><Smartphone size={17} /><span><small>绑定手机号</small><b>{customerProfile.maskedPhone || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor(profileEditor === "phone" ? null : "phone"); setProfileError(""); }}>修改</button></div>
-          <div className="purchaser-mine-info-row"><span><Mail size={17} /><span><small>绑定邮箱</small><b>{customerProfile.maskedEmail || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor(profileEditor === "email" ? null : "email"); setProfileError(""); }}>修改</button></div>
+          <div className="purchaser-mine-info-row"><span><Smartphone size={17} /><span><small>绑定手机号</small><b>{customerProfile.maskedPhone || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor("phone"); setProfileError(""); }}>修改</button></div>
+          <div className="purchaser-mine-info-row"><span><Mail size={17} /><span><small>绑定邮箱</small><b>{customerProfile.maskedEmail || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor("email"); setProfileError(""); }}>修改</button></div>
         </section>
-
-        {profileEditor === "phone" ? <section className="purchaser-profile-editor">
-          <header><div><h3>修改手机号</h3><p>验证码将发送到当前绑定邮箱 {customerProfile.maskedEmail}</p></div><button type="button" onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
-          <label><span>新手机号</span><input inputMode="tel" maxLength={11} value={phoneDraft.phone} onChange={(event) => setPhoneDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入11位手机号" /></label>
-          <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={phoneDraft.code} onChange={(event) => setPhoneDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
-          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerPhone()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认修改</button>
-        </section> : null}
-
-        {profileEditor === "email" ? <section className="purchaser-profile-editor">
-          <header><div><h3>修改绑定邮箱</h3><p>先验证当前邮箱，再验证新邮箱</p></div><button type="button" onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
-          <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.currentCode} onChange={(event) => setEmailDraft((current) => ({ ...current, currentCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至当前邮箱" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
-          <label><span>新邮箱</span><input inputMode="email" value={emailDraft.email} onChange={(event) => setEmailDraft((current) => ({ ...current, email: event.target.value }))} placeholder="请输入新的邮箱地址" /></label>
-          <label><span>新邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.newCode} onChange={(event) => setEmailDraft((current) => ({ ...current, newCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至新邮箱" /><button type="button" disabled={profileBusy || !emailDraft.email.trim()} onClick={() => void sendCustomerProfileCode("new-email")}>获取验证码</button></div></label>
-          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerEmail()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认换绑</button>
-        </section> : null}
 
         <section className="purchaser-mine-security-card">
           <header><ShieldCheck size={18} /><div><h3>账号安全</h3><p>控制原专属链接是否可以直接进入</p></div></header>
-          <div className="purchaser-mine-switch-row"><span><b>shortId 快捷登录</b><small>{customerProfile.quickLoginEnabled === 1 ? "已开启，从原链接可以直接进入" : "已关闭，需要密码或邮箱验证码登录"}</small></span><button type="button" className={`purchaser-mine-switch${customerProfile.quickLoginEnabled === 1 ? " on" : ""}`} aria-label="切换快捷登录" aria-pressed={customerProfile.quickLoginEnabled === 1} disabled={!customerProfile.registered || profileBusy} onClick={() => void toggleCustomerQuickLogin()}><span /></button></div>
+          <div className="purchaser-mine-switch-row"><span><b>shortId 快捷登录</b><small>{Number(linkContext.accountRequired) !== 1 ? "当前管理端未要求客户登录，专属链接默认可进入；开启客户登录后此开关才生效" : customerProfile.quickLoginEnabled === 1 ? "已开启，从原链接可以直接进入" : "已关闭，需要密码或邮箱验证码登录"}</small></span><button type="button" className={`purchaser-mine-switch${customerProfile.quickLoginEnabled === 1 ? " on" : ""}`} aria-label="切换快捷登录" aria-pressed={customerProfile.quickLoginEnabled === 1} disabled={Number(linkContext.accountRequired) !== 1 || !customerProfile.registered || profileBusy} onClick={() => void toggleCustomerQuickLogin()}><span /></button></div>
         </section>
+        <button className="purchaser-mine-logout" type="button" onClick={logoutCustomer}><LogOut size={16} />退出登录</button>
       </> : null}
-      {profileError ? <p className="tool-error purchaser-mine-error"><AlertCircle size={14} />{profileError}</p> : null}
+      {profileError && !profileEditor ? <p className="tool-error purchaser-mine-error"><AlertCircle size={14} />{profileError}</p> : null}
     </section> : null}
+
+    {customerProfile && profileEditor ? <div className="purchaser-profile-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !profileBusy) setProfileEditor(null); }}>
+      <section className="purchaser-profile-editor" role="dialog" aria-modal="true" aria-labelledby="purchaser-profile-editor-title">
+        {profileEditor === "phone" ? <>
+          <header><div><h3 id="purchaser-profile-editor-title">修改手机号</h3><p>验证码将发送到当前绑定邮箱 {customerProfile.maskedEmail || "未绑定"}</p></div><button type="button" disabled={profileBusy} onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
+          <label><span>新手机号</span><input autoFocus inputMode="tel" maxLength={11} value={phoneDraft.phone} onChange={(event) => setPhoneDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入11位手机号" /></label>
+          <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={phoneDraft.code} onChange={(event) => setPhoneDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
+          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerPhone()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认修改</button>
+        </> : <>
+          <header><div><h3 id="purchaser-profile-editor-title">修改绑定邮箱</h3><p>先验证当前邮箱，再验证新邮箱</p></div><button type="button" disabled={profileBusy} onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
+          <label><span>当前邮箱验证码</span><div><input autoFocus inputMode="numeric" maxLength={6} value={emailDraft.currentCode} onChange={(event) => setEmailDraft((current) => ({ ...current, currentCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至当前邮箱" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
+          <label><span>新邮箱</span><input inputMode="email" value={emailDraft.email} onChange={(event) => setEmailDraft((current) => ({ ...current, email: event.target.value }))} placeholder="请输入新的邮箱地址" /></label>
+          <label><span>新邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.newCode} onChange={(event) => setEmailDraft((current) => ({ ...current, newCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至新邮箱" /><button type="button" disabled={profileBusy || !emailDraft.email.trim()} onClick={() => void sendCustomerProfileCode("new-email")}>获取验证码</button></div></label>
+          <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerEmail()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认换绑</button>
+        </>}
+        {profileError ? <p className="tool-error purchaser-mine-error"><AlertCircle size={14} />{profileError}</p> : null}
+      </section>
+    </div> : null}
 
     {tab !== "home" && tab !== "mine" ? ((showBannerTab && bothBlocked) ? <section className="purchaser-fullscreen-block">
       <Ban size={42} />
@@ -1136,7 +1162,7 @@ export default function PurchaserOrderPage() {
         <div className="purchaser-cost-unlocked-main"><span className="purchaser-cost-unlocked-icon"><Wallet size={17} /></span><span><b>成本价已解锁</b><small>商品、包装、快递和总成本 · 本次有效 30 分钟</small></span></div>
         <button type="button" onClick={lockCostPrice}><Lock size={13} />立即锁定</button>
       </section> : null}
-      <OrderList orders={filteredOrders} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} collapseExtras enableCostSelection={costPriceUnlocked} />
+      <OrderList orders={orders} initialStatusFilter={statusFilter} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} collapseExtras enableCostSelection={costPriceUnlocked} />
     </section>) : null}
 
     <nav className="purchaser-bottom-nav" aria-label="专属下单导航">
@@ -1258,7 +1284,7 @@ export default function PurchaserOrderPage() {
           <button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)} aria-label="关闭"><X size={19} /></button>
           <small>{Number(linkContext?.accountRequired) === 1 ? "订单确认" : Number(linkContext?.requirePwd) === 1 ? "下单验证" : "提交确认"}</small>
           <h2>{Number(linkContext?.accountRequired) === 1 ? "核对本次订单" : Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "核对本次订单"}</h2>
-          <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "提交后展示对应收款码，付款后由店铺人工确认。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
+          <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "先创建订单，不改变付款状态；付款后需手动点击“我已付款”。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
           <div className="purchaser-captcha-summary">
             <div><span>商品</span><b>{form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
             <div><span>规格</span><b>{form.orderType === "other" ? form.orderTypeDesc : selectedSize?.label || "--"}</b></div>
@@ -1282,7 +1308,7 @@ export default function PurchaserOrderPage() {
           {error ? <p className="tool-error">{error}</p> : null}
           <button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>
             {submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}
-            {submitting ? "正在创建订单" : (Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "提交订单并去支付" : "确认提交订单") : Number(linkContext?.requirePwd) === 1 ? "输入下单码并提交" : "验证并提交订单")}
+            {submitting ? "正在创建订单" : (Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "确认创建订单" : "确认提交订单") : Number(linkContext?.requirePwd) === 1 ? "输入下单码并提交" : "验证并提交订单")}
           </button>
         </section>
       </div>
@@ -1292,7 +1318,7 @@ export default function PurchaserOrderPage() {
         className="purchaser-success-backdrop"
         onMouseDown={(event) => event.target === event.currentTarget && continueOrdering()}
       >
-        <section className="purchaser-success-modal" role="alertdialog" aria-modal="true" aria-labelledby="purchaser-success-title">
+        <section className={`purchaser-success-modal${successNeedsPayment ? " payment-flow" : ""}`} role="alertdialog" aria-modal="true" aria-labelledby="purchaser-success-title">
           <button className="purchaser-success-close" type="button" onClick={continueOrdering} aria-label="关闭">
             <X size={18} />
           </button>
@@ -1300,64 +1326,78 @@ export default function PurchaserOrderPage() {
             <div className="purchaser-success-icon" aria-hidden="true">
               <CheckCircle2 size={30} strokeWidth={2.2} />
             </div>
-            <h2 id="purchaser-success-title">下单成功</h2>
+            <h2 id="purchaser-success-title">{successNeedsPayment ? "订单已创建，待付款" : successPaymentConfirmed ? "付款确认已提交" : "下单成功"}</h2>
             <p>
-              已提交到「{linkContext.storeName || "店铺"}」
+              {successNeedsPayment ? "请扫码付款，付款后再点击下方按钮通知店铺确认。" : successPaymentConfirmed ? "店铺会人工对账确认，您可以在订单列表查看进度。" : `已提交到「${linkContext.storeName || "店铺"}」`}
               {String(success.orderNameDesc || selectedProduct?.label || "")
                 ? ` · ${String(success.orderNameDesc || selectedProduct?.label || "")}`
                 : ""}
             </p>
           </header>
-          <dl className="purchaser-success-info">
-            <div>
-              <dt>订单号</dt>
-              <dd>{String(success.orderCode || success.id || "已生成")}</dd>
+          {successNeedsPayment ? (
+            <div className="purchaser-payment-order-strip">
+              <span><small>订单号</small><b>{String(success.orderCode || success.id || "已生成")}</b></span>
+              <span><small>商品</small><b>{String(success.orderNameDesc || selectedProduct?.label || "--")}{String(success.orderTypeDesc || selectedSize?.label || "") ? ` · ${String(success.orderTypeDesc || selectedSize?.label || "")}` : ""} × {String(success.orderNum || form.orderNum || 1)}</b></span>
             </div>
-            <div>
-              <dt>商品</dt>
-              <dd>
-                {String(success.orderNameDesc || selectedProduct?.label || "--")}
-                {String(success.orderTypeDesc || selectedSize?.label || "")
-                  ? ` · ${String(success.orderTypeDesc || selectedSize?.label || "")}`
-                  : ""}
-              </dd>
-            </div>
-            <div>
-              <dt>数量</dt>
-              <dd>{String(success.orderNum || form.orderNum || 1)} 件</dd>
-            </div>
-            <div>
-              <dt>收件人</dt>
-              <dd>{String(success.customer || form.customer || "--")}</dd>
-            </div>
-            <div>
-              <dt>手机号</dt>
-              <dd>{String(success.phone || form.phone || "--")}</dd>
-            </div>
-          </dl>
-          {success.paymentRequired ? (
+          ) : (
+            <dl className="purchaser-success-info">
+              <div>
+                <dt>订单号</dt>
+                <dd>{String(success.orderCode || success.id || "已生成")}</dd>
+              </div>
+              <div>
+                <dt>商品</dt>
+                <dd>
+                  {String(success.orderNameDesc || selectedProduct?.label || "--")}
+                  {String(success.orderTypeDesc || selectedSize?.label || "")
+                    ? ` · ${String(success.orderTypeDesc || selectedSize?.label || "")}`
+                    : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>数量</dt>
+                <dd>{String(success.orderNum || form.orderNum || 1)} 件</dd>
+              </div>
+              <div>
+                <dt>收件人</dt>
+                <dd>{String(success.customer || form.customer || "--")}</dd>
+              </div>
+              <div>
+                <dt>手机号</dt>
+                <dd>{String(success.phone || form.phone || "--")}</dd>
+              </div>
+            </dl>
+          )}
+          {successNeedsPayment ? (
             <div className="purchaser-payment-panel">
               <div className="purchaser-payment-head">
-                <span><Wallet size={17} />微信收款码</span>
+                <span><Wallet size={17} />待支付金额</span>
                 <b>¥{successPaymentAmount.toFixed(2)}</b>
               </div>
               {successPaymentCode ? (
                 <>
-                  <img className="purchaser-payment-code" src={successPaymentCode.image} alt={`${successPaymentCode.label} 收款码`} />
-                  <p>{successPaymentCode.label}，付款后请点击“已支付”，店铺会人工对账确认。</p>
+                  <div className="purchaser-payment-code-wrap">
+                    <img className="purchaser-payment-code" src={successPaymentCode.image} alt={`${successPaymentCode.label} 收款码`} />
+                  </div>
+                  <p className="purchaser-payment-inline-tip">{successPaymentCode.label}。长按识别或保存二维码付款，点“我已付款”前不会更改付款状态。</p>
                 </>
               ) : (
                 <p className="purchaser-payment-missing">当前规格暂未配置收款码，请联系店铺确认付款方式。</p>
               )}
             </div>
+          ) : successPaymentConfirmed ? (
+            <div className="purchaser-payment-done" role="status">
+              <CheckCircle2 size={18} />
+              <span><b>已通知店铺确认付款</b><small>当前付款状态为待确认，最终结果以店铺对账为准。</small></span>
+            </div>
           ) : null}
-          <div className="purchaser-success-actions">
+          <div className={`purchaser-success-actions${successNeedsPayment && successPaymentCode ? " payment-mode" : ""}`}>
+            {successNeedsPayment && successPaymentCode ? <button type="button" className="purchaser-success-primary purchaser-payment-confirm" disabled={paymentConfirmBusy} onClick={confirmPayment}>{paymentConfirmBusy ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}{paymentConfirmBusy ? "正在通知店铺" : "我已付款，通知店铺确认"}</button> : null}
             <button type="button" className="purchaser-success-secondary" onClick={continueOrdering}>
               <Plus size={16} />
-              {success.paymentRequired ? "稍后支付" : "继续下单"}
+              {successNeedsPayment ? "稍后支付" : "继续下单"}
             </button>
-            {success.paymentRequired && successPaymentCode ? <button type="button" className="purchaser-success-primary purchaser-payment-confirm" disabled={paymentConfirmBusy} onClick={confirmPayment}>{paymentConfirmBusy ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}{paymentConfirmBusy ? "正在提交确认" : "已支付"}</button> : null}
-            <button type="button" className="purchaser-success-primary" onClick={viewOrders}>
+            <button type="button" className="purchaser-success-primary purchaser-success-query" onClick={viewOrders}>
               查询订单
               <ArrowRight size={16} />
             </button>

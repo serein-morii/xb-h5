@@ -12070,7 +12070,41 @@ html.theme-dark .purchaser-order-page #purchaser-history-section > :is(
 .purchaser-mine-switch.on > span { transform: translateX(18px); }
 .purchaser-mine-switch:disabled { opacity: .5; }
 
-.purchaser-profile-editor { display: grid; padding-bottom: 15px; }
+.purchaser-mine-logout {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(218, 79, 79, .22);
+  border-radius: 14px;
+  color: #c33f3f;
+  background: rgba(255, 245, 245, .92);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.purchaser-profile-backdrop {
+  position: fixed;
+  z-index: 96;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+  background: rgba(13, 29, 45, .42);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
+  animation: fade-in .16s ease-out;
+}
+
+.purchaser-profile-editor {
+  display: grid;
+  width: min(100%, 430px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding-bottom: 15px;
+  animation: dialog-up .22s ease-out;
+}
 .purchaser-profile-editor > label { display: grid; gap: 7px; padding: 12px 16px 0; }
 .purchaser-profile-editor > label > span { color: var(--xb-text-secondary); font-size: 9px; font-weight: 700; }
 .purchaser-profile-editor input { width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--xb-line); border-radius: 11px; color: var(--xb-text); background: var(--xb-surface-muted); font: inherit; font-size: 12px; outline: none; }
@@ -12092,6 +12126,23 @@ html.theme-dark .purchaser-profile-editor input {
   background: var(--purchaser-calm-surface);
 }
 
+html.theme-dark .purchaser-mine-logout {
+  border-color: rgba(255, 110, 110, .26);
+  color: #ff9d9d;
+  background: rgba(255, 110, 110, .1);
+}
+
+@media (min-width: 600px) {
+  .purchaser-profile-backdrop {
+    place-items: center;
+    padding: 24px;
+  }
+
+  .purchaser-profile-editor {
+    border-radius: 18px;
+  }
+}
+
 @media (max-width: 360px) {
   .purchaser-profile-editor > label > div { grid-template-columns: minmax(0, 1fr) 84px; }
   .purchaser-profile-editor > label,
@@ -12101,5 +12152,7 @@ html.theme-dark .purchaser-profile-editor input {
 
 @media (prefers-reduced-motion: reduce) {
   .purchaser-mine-switch,
-  .purchaser-mine-switch > span { transition: none; }
+  .purchaser-mine-switch > span,
+  .purchaser-profile-backdrop,
+  .purchaser-profile-editor { animation: none; transition: none; }
 }

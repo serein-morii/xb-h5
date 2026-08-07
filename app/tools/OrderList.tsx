@@ -1,5 +1,5 @@
 import { Check, CheckCircle2, ChevronDown, Clock3, Copy, CreditCard, Edit3, Eye, Inbox, MapPin, RefreshCw, Search, Store, Trash2, Truck, User, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { copyToClipboard } from "../lib/api";
 
 export type TrackingItem = {
@@ -79,8 +79,33 @@ function payStatusMeta(status: unknown) {
   return { key: "unpaid", label: "未付款" };
 }
 
-export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh, collapseExtras = false, enableCostSelection = false }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean; enableCostSelection?: boolean }) {
+type EntryStatusFilter = "all" | "pending" | "shipped" | "done" | "month";
+
+function entryStatusLabel(filter?: EntryStatusFilter | null) {
+  if (filter === "pending") return "待发货";
+  if (filter === "shipped") return "运输中";
+  if (filter === "done") return "已完成";
+  if (filter === "month") return "本月";
+  return "";
+}
+
+function matchEntryStatus(order: PublicOrderRecord, filter?: EntryStatusFilter | null) {
+  if (!filter || filter === "all") return true;
+  if (filter === "month") {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const time = order.orderTime ? new Date(String(order.orderTime).replace(/-/g, "/")) : null;
+    return time ? time >= monthStart : false;
+  }
+  const status = String(order.orderStatus || "");
+  if (filter === "pending") return status === "DSH" || status === "DFH";
+  if (filter === "shipped") return status === "YFH" || status === "YSJ" || status === "YSZ" || status === "YSD";
+  if (filter === "done") return status === "YWC";
+  return true;
+}
+
+export default function OrderList({ orders, contact, onEdit, onDelete, onView, onRefresh, collapseExtras = false, enableCostSelection = false, initialStatusFilter = null }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean; enableCostSelection?: boolean; initialStatusFilter?: EntryStatusFilter | null }) {
   const [active, setActive] = useState("ALL");
+  const [entryFilter, setEntryFilter] = useState<EntryStatusFilter | null>(initialStatusFilter && initialStatusFilter !== "all" ? initialStatusFilter : null);
   const [activePay, setActivePay] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -88,6 +113,11 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCostOrders, setSelectedCostOrders] = useState<Set<number>>(new Set());
   async function handleRefresh() { if (!onRefresh || refreshing) return; setRefreshing(true); try { await onRefresh(); } finally { setRefreshing(false); } }
+
+  useEffect(() => {
+    setEntryFilter(initialStatusFilter && initialStatusFilter !== "all" ? initialStatusFilter : null);
+    setActive("ALL");
+  }, [initialStatusFilter]);
 
   const selectedCostRows = useMemo(() => orders.filter((order) => selectedCostOrders.has(order.id) && order.totalPrice !== undefined && order.totalPrice !== null), [orders, selectedCostOrders]);
   const selectableCostRows = useMemo(() => orders.filter((order) => order.totalPrice !== undefined && order.totalPrice !== null), [orders]);
@@ -131,7 +161,9 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
     return { paid, unpaid, confirming };
   }, [orders]);
   const normalizedKeyword = keyword.trim().toLowerCase();
+  const entryFilterLabel = entryStatusLabel(entryFilter);
   const visible = orders.filter((order) => {
+    if (entryFilter && !matchEntryStatus(order, entryFilter)) return false;
     if (active !== "ALL" && order.orderStatus !== active) return false;
     if (activePay === "PAID" && Number(order.payStatus) !== 1) return false;
     if (activePay === "CONFIRMING" && Number(order.payStatus) !== 3) return false;
@@ -156,8 +188,8 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
   }
 
   return <>
-    <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-result-head-right"><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div>{onRefresh ? <button type="button" className="tool-result-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="刷新订单列表"><RefreshCw className={refreshing ? "spin" : ""} size={16} /></button> : null}</div></section>
-    <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips tool-order-status-filter" role="listbox" aria-label="订单状态筛选"><button type="button" className={active === "ALL" ? "active" : ""} aria-selected={active === "ALL"} onClick={() => setActive("ALL")}><span>全部</span><b>{orders.length}</b></button>{statuses.map(([key, item]) => <button type="button" className={active === key ? "active" : ""} aria-selected={active === key} onClick={() => setActive(key)} key={key}><span>{item.label}</span><b>{item.count}</b></button>)}</div></div>
+    <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{entryFilterLabel ? ` · 当前 ${entryFilterLabel} ${visible.length} 个` : ""}{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-result-head-right"><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div>{onRefresh ? <button type="button" className="tool-result-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="刷新订单列表"><RefreshCw className={refreshing ? "spin" : ""} size={16} /></button> : null}</div></section>
+    <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips tool-order-status-filter" role="listbox" aria-label="订单状态筛选"><button type="button" className={active === "ALL" && !entryFilter ? "active" : ""} aria-selected={active === "ALL" && !entryFilter} onClick={() => { setActive("ALL"); setEntryFilter(null); }}><span>全部</span><b>{orders.length}</b></button>{entryFilterLabel ? <button type="button" className="active" aria-selected="true" onClick={() => { setActive("ALL"); setEntryFilter(null); }}><span>{entryFilterLabel}</span><b>{visible.length}</b></button> : null}{statuses.map(([key, item]) => <button type="button" className={active === key && !entryFilter ? "active" : ""} aria-selected={active === key && !entryFilter} onClick={() => { setEntryFilter(null); setActive(key); }} key={key}><span>{item.label}</span><b>{item.count}</b></button>)}</div></div>
     {collapseExtras ? <details className="tool-advanced-filter"><summary><span>更多筛选</span><small>{activePay === "PAID" ? "已付款" : activePay === "CONFIRMING" ? "待确认" : activePay === "UNPAID" ? "未付款" : "付款状态"}</small><ChevronDown size={15} /></summary><div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div></details> : <div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div>}</div>
     <section className="tool-order-results soft-list">{visible.map((order) => {
       const isOpen = expanded.has(order.id);

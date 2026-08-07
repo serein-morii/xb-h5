@@ -36,7 +36,27 @@ import {
   STORE_STATUS_OPTIONS,
 } from "./core";
 import { StatusBadge } from "./logistics";
+import PurchaserFilterSearch from "./PurchaserFilterSearch";
 import { ConfirmDialog, EmptyState, FieldInput, Sheet, StoreStatusBadge } from "./ui";
+
+const BILL_PAY_STATUS_OPTIONS = [
+  { value: 0, label: "未付款" },
+  { value: 1, label: "已付款" },
+  { value: 2, label: "已退款" },
+  { value: 3, label: "待确认" },
+];
+
+function billOrderStatusLabel(row: DataRow, dictionaries: Dictionaries) {
+  const desc = String(row.orderStatusDesc || "").trim();
+  if (desc && desc !== String(row.orderStatus || "")) return desc;
+  return optionLabel(row.orderStatus, dictionaries.orderStatuses);
+}
+
+function billPayStatusLabel(row: DataRow) {
+  const desc = String(row.payStatusDesc || "").trim();
+  if (desc && desc !== String(row.payStatus ?? "")) return desc;
+  return optionLabel(row.payStatus, BILL_PAY_STATUS_OPTIONS);
+}
 
 export type CrudConfig = {
   key: MenuKey;
@@ -65,7 +85,7 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
     searchFields: [
       { key: "orderCode", label: "订单号" },
       { key: "orderStatus", label: "订单状态", type: "select", options: dictionaries.orderStatuses },
-      { key: "payStatus", label: "付款状态", type: "select", options: [{ value: 0, label: "未付款" }, { value: 1, label: "已付款" }, { value: 3, label: "待确认" }] },
+      { key: "payStatus", label: "付款状态", type: "select", options: BILL_PAY_STATUS_OPTIONS },
       { key: "orderName", label: "商品名称", type: "select", options: dictionaries.products },
       { key: "orderType", label: "商品规格", type: "select", options: dictionaries.sizes },
       { key: "customer", label: "收件人" },
@@ -86,6 +106,8 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
     display: [
       { key: "orderName", label: "商品名称", options: dictionaries.products },
       { key: "orderTypeNum", label: "规格×数量", format: (row) => `${orderTypeLabel(row.orderType, dictionaries.sizes, row.orderTypeDesc)} × ${row.orderNum || 1}` },
+      { key: "orderStatus", label: "订单状态", format: (row) => billOrderStatusLabel(row, dictionaries) },
+      { key: "payStatus", label: "付款状态", format: (row) => billPayStatusLabel(row) },
       { key: "customer", label: "收件人" }, { key: "phone", label: "手机号" },
       { key: "address", label: "收货地址", fullWidth: true, format: (row) => row.address || "暂无地址" },
     ],
@@ -107,7 +129,7 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
           path: () => `/biz/bill/forceSync/${row.id}`,
           method: "PATCH",
           danger: true,
-          confirm: `该账单关联订单状态为「${row.orderStatusDesc || status}」，已发货/已产生物流的价格通常不应再被覆盖。\n\n确认要强制刷新吗？（会重算成本）`,
+          confirm: `该账单关联订单状态为「${billOrderStatusLabel(row, dictionaries)}」，已发货/已产生物流的价格通常不应再被覆盖。\n\n确认要强制刷新吗？（会重算成本）`,
         };
       }
       return { label: "同步价格", path: () => `/biz/bill/${row.id}`, method: "PATCH" };
@@ -223,7 +245,7 @@ function BillOrderFilter({
           <label><span>快递单号</span><input value={query.expCode || ""} onChange={(event) => onChange("expCode", event.target.value)} placeholder="运单号" /></label>
         </div>
         <div className="filter-field-grid">
-          <label><span>下单人</span><select value={query.purchaser || ""} onChange={(event) => onChange("purchaser", event.target.value)}><option value="">全部买家</option>{purchasers.map((item) => <option key={String(item.id)} value={String(item.name || "")}>{item.name || "未命名"}{item.phone ? ` · ${item.phone}` : ""}</option>)}</select></label>
+          <label className="filter-purchaser-field"><span>下单人</span><PurchaserFilterSearch value={query.purchaser} purchasers={purchasers} onChange={(value) => onChange("purchaser", value)} /></label>
           <label><span>创建人</span><input value={query.createBy || ""} onChange={(event) => onChange("createBy", event.target.value)} placeholder="创建人" /></label>
         </div>
         <div className="filter-field-grid">
@@ -446,7 +468,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           const isOpen = expanded.has(row.id as string | number);
           const hasExpand = !!expand?.length;
           return <article className={`data-card data-card-${config.key}`} key={String(row.id)}>
-            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = row.orderStatusDesc || status; return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
+            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = billOrderStatusLabel(row, dictionaries); return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
             {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
             <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
             {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}

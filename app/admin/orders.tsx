@@ -60,6 +60,7 @@ import {
   readOrderStatusView,
 } from "./dashboard";
 import { StatusBadge } from "./logistics";
+import PurchaserFilterSearch from "./PurchaserFilterSearch";
 import { ConfirmDialog, EmptyState, Sheet } from "./ui";
 
 function formatSalePrice(value: unknown): string {
@@ -1051,7 +1052,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
                   <input value={filters.orderCode || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, orderCode: e.target.value }))} placeholder="输入订单号" />
                 </label>
                 <div className="filter-field-grid">
-                  <label>
+                  <label className="filter-purchaser-field">
                     <span>收件人</span>
                     <input value={filters.customer || ""} onChange={(e) => setFilters((current: DataRow) => ({ ...current, customer: e.target.value }))} placeholder="姓名" />
                   </label>
@@ -1082,7 +1083,16 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
                 <div className="filter-field-grid">
                   <label>
                     <span>下单人</span>
-                    <select value={filters.purchaser || ""} onChange={(e) => setFilters((current: DataRow) => { const next: DataRow = { ...current }; if (e.target.value) next.purchaser = e.target.value; else delete next.purchaser; return next; })}><option value="">全部买家</option>{purchasers.map((p) => <option key={String(p.id)} value={String(p.name || "")}>{p.name || "未命名"}{p.phone ? ` · ${p.phone}` : ""}</option>)}</select>
+                    <PurchaserFilterSearch
+                      value={filters.purchaser}
+                      purchasers={purchasers}
+                      onChange={(value) => setFilters((current: DataRow) => {
+                        const next: DataRow = { ...current };
+                        if (value) next.purchaser = value;
+                        else delete next.purchaser;
+                        return next;
+                      })}
+                    />
                   </label>
                   <label>
                     <span>创建人</span>
