@@ -1,0 +1,67 @@
+app/tools/place-order/PurchaserOrderPage.tsx
+  s_9f981c1de18f63::t_6cd5ce6c5ec916 1321,1329,1331,1337-1340,1342-1371,1374,1379-1382
+  s_9f981c1de18f63::t_654a46ff84f883 1394-1395,1398,1400
+  s_9f981c1de18f63::t_a956addebc4bb2 2,6,218-221,270-286,936-939,1014,1051-1052,1057,1059,1061,1064-1081,1165,1287,1311,1388-1392
+app/admin/PurchaserFilterSearch.tsx
+  s_9f981c1de18f63::t_204f52ed4ddad7 1-117
+app/admin/orders.tsx
+  s_9f981c1de18f63::t_a3a3eec7754e31 63,1086-1095
+  s_9f981c1de18f63::t_5e24dd56c2a400 1055
+app/globals.css
+  s_9f981c1de18f63::t_9a3d1dde6bbfdf 1955-1956,1959-1961,1974,1979,1983-1990,1992-1993,1996-1998,2002,2004,2007-2008,2018,2027
+  s_9f981c1de18f63::t_e33dcf645de0a9 2053,2061,2085-2089
+  s_9f981c1de18f63::t_25eb3fa1996e37 2017,2019,2028-2029,2041,2096-2097,2099,2127-2135
+  s_9f981c1de18f63::t_332ace791a6dae 1952,2009,2020,2022,2030,2032,2034,2036-2039,2044,2049,2054,2059,2062,2076,2080,2084,9033-9148
+  s_9f981c1de18f63::t_4f485a3713252e 1778-1783,1804-1811,1820-1827,1839-1848,1862-1866,1875-1884,1924-1951,2024,2047
+  s_9f981c1de18f63::t_676a80caa96af2 2063-2075,2079
+  s_9f981c1de18f63::t_696f9ff160a184 2098,2105,2108-2109,2139,2146-2182
+  s_9f981c1de18f63::t_66c1d425c4d932 8984-8986
+  s_9f981c1de18f63::t_3b9e22d36526d5 2021
+  s_9f981c1de18f63::t_488834be27a975 2023
+  s_9f981c1de18f63::t_88a1c0f40f1f69 2025-2026
+  s_9f981c1de18f63::t_1d42a57b61a4cb 2031
+  s_9f981c1de18f63::t_4c7a15a6c10e90 2033
+  s_9f981c1de18f63::t_9326aed4968bc1 2035
+  s_9f981c1de18f63::t_38a17fa3d385b7 2040
+  s_9f981c1de18f63::t_2dd1f530dd8bb2 2042-2043
+  s_9f981c1de18f63::t_a3d067660874e6 2045-2046
+  s_9f981c1de18f63::t_cd0d230cde9214 2048
+  s_9f981c1de18f63::t_c7e72c68185a37 2050-2052
+  s_9f981c1de18f63::t_440ba2da8d509f 2055-2058
+  s_9f981c1de18f63::t_e5f8db684f461e 2060
+  s_9f981c1de18f63::t_50c35cd73ea126 2077-2078
+  s_9f981c1de18f63::t_6d3dcde1c8b2b9 2081-2083
+  s_9f981c1de18f63::t_2faf50f026e5e7 8987
+app/admin/crud.tsx
+  s_9f981c1de18f63::t_e5fce577a826e8 248
+  s_9f981c1de18f63::t_48d305a71a05f6 39
+  s_9f981c1de18f63::t_9261956b7fcd9a 42-60,88,109-110,132,471
+app/tools/OrderList.tsx
+  s_6fbdd6c3e2c004::t_4027c055366b8a 2,82-106,108,117-121,164,166,191-192
+app/unified-theme.css
+  s_6fbdd6c3e2c004::t_ad699446c53f82 12073-12107,12129-12145,12155-12157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "554f948c19ad7472dd9062dff15ba8ef2a19fa5c",
+  "prompts": {},
+  "sessions": {
+    "s_6fbdd6c3e2c004": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa143-9eb7-77e0-9fd6-9121c691dbc5",
+        "model": "unknown"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_9f981c1de18f63": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8f1e-d4fb-7f31-8d83-48af4321114c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
