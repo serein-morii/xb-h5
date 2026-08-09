@@ -1,5 +1,5 @@
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, apiRequest, clearCustomerToken, customerHeaders, setCustomerToken } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
@@ -7,7 +7,7 @@ import { StatusFilter, computeOrderStats } from "../OrderStatsCards";
 
 type Row = Record<string, unknown>;
 type ApiRequestOptions = Parameters<typeof apiRequest>[1];
-type Option = { value: string; label: string; icon?: string; skuId?: number; productId?: number; billOrderType?: string; salePrice?: number };
+type Option = { value: string; label: string; icon?: string; skuId?: number; productId?: number; billOrderType?: string; salePrice?: number; specValues?: string };
 type CatalogSku = { id: number; skuCode: string; displayName: string; specValues?: string; billOrderType?: string; salePrice: number; status?: number };
 type CatalogProduct = { id: number; productCode: string; name: string; subtitle?: string; description?: string; skus?: CatalogSku[] };
 type LinkContext = { purchaserShortId?: string; purchaserName?: string; purchaserPhone?: string; storeCode?: string; storeName?: string; storeNotice?: string; requirePwd?: number; addressVerifyEnabled?: number; blockOrder?: number; blockQuery?: number; blockDisplayType?: string; viewCostPrice?: number; costPricePwdExpire?: string; accountRequired?: number; quickLoginEnabled?: number; customerRegistered?: boolean; passwordAvailable?: boolean; phoneCompletionRequired?: boolean; paymentRequired?: number; authenticated?: boolean; loginRequired?: boolean; maskedEmail?: string };
@@ -16,6 +16,9 @@ type PurchaserPage = "home" | "create" | "orders" | "mine";
 type OrderEditor = "product" | "address" | "delivery";
 type ProfileEditor = "phone" | "email" | null;
 type CustomerProfile = { purchaserName?: string; purchaserShortId?: string; maskedPhone?: string; maskedEmail?: string; registered?: boolean; quickLoginEnabled?: number; authMode?: string };
+type CustomerAuthData = { token?: string; purchaserShortId?: string; purchaserName?: string; email?: string };
+type RegisterPreview = { confirmRequired?: boolean; matchType?: string; registered?: boolean; purchaserName?: string; maskedEmail?: string; maskedPhone?: string; message?: string };
+type MineRegisterDraft = { name: string; phone: string; email: string; code: string; password: string; confirmPassword: string };
 type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; productId?: number; skuId?: number; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
 type PurchaserAddressRecord = { id: number; receiverName: string; receiverPhone: string; address: string; isDefault?: number; useCount?: number; lastUsedTime?: string };
 type AddressDraft = { id?: number; receiverName: string; receiverPhone: string; address: string; isDefault: boolean };
@@ -23,6 +26,7 @@ type AddressBookView = "auth" | "list" | "edit" | "delete";
 type OrderLoadResult = { orders: PublicOrderRecord[]; costPriceUnlocked: boolean };
 const EMPTY_FORM: OrderForm = { orderName: "", orderNameDesc: "", orderType: "", orderTypeDesc: "", skuId: undefined, orderNum: 1, customer: "", phone: "", address: "", orderDesc: "", expCom: "" };
 const EMPTY_ADDRESS_DRAFT: AddressDraft = { receiverName: "", receiverPhone: "", address: "", isDefault: false };
+const EMPTY_MINE_REGISTER_DRAFT: MineRegisterDraft = { name: "", phone: "", email: "", code: "", password: "", confirmPassword: "" };
 const COST_ACCESS_STORAGE_PREFIX = "xb:cost-access:";
 // 指定快递：买家仅可从这三家中选（值与 sys_exp_com 字典一致）
 const COURIER_OPTIONS: Option[] = [
@@ -37,8 +41,8 @@ const PAYMENT_CODES: Record<string, PaymentCode> = {
   "HT:HN-10": { image: "/images/payments/wechat-ht-hn-10.jpg", label: "湖南省内 · 黄桃 10斤" },
   "HT:OUT-5": { image: "/images/payments/wechat-ht-out-5.jpg", label: "湖南省外 · 黄桃 5斤" },
   "HT:OUT-10": { image: "/images/payments/wechat-ht-out-10.jpg", label: "湖南省外 · 黄桃 10斤" },
-  "HT:XJ-5": { image: "/images/payments/wechat-ht-xj-5.jpg", label: "新疆 · 黄桃 5斤" },
-  "HT:XJ-10": { image: "/images/payments/wechat-ht-xj-10.jpg", label: "新疆 · 黄桃 10斤" },
+  "HT:XJ-5": { image: "/images/payments/wechat-ht-xj-5.jpg", label: "新疆西藏 · 黄桃 5斤" },
+  "HT:XJ-10": { image: "/images/payments/wechat-ht-xj-10.jpg", label: "新疆西藏 · 黄桃 10斤" },
   "NL:5": { image: "/images/payments/wechat-nl-5.jpg", label: "奈李 5斤" },
   "NL:10": { image: "/images/payments/wechat-nl-10.jpg", label: "奈李 10斤" },
 };
@@ -54,9 +58,62 @@ function normalizeSpecText(value: unknown) {
     .toLowerCase();
 }
 
+function parseSpecValues(value: unknown) {
+  if (!value) return {} as Record<string, string>;
+  if (typeof value === "object") return value as Record<string, string>;
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function specValueByKeys(option: Option, keys: string[]) {
+  const values = parseSpecValues(option.specValues);
+  const normalized = keys.map(normalizeSpecText);
+  const matched = Object.entries(values).find(([key, value]) => value && normalized.includes(normalizeSpecText(key)));
+  return matched ? String(matched[1]) : "";
+}
+
+function skuRegionLabel(option?: Option) {
+  if (!option) return "";
+  const fromSpec = specValueByKeys(option, ["地区", "区域", "配送区域", "收货区域"]);
+  if (fromSpec) return fromSpec;
+  const source = [option.value, option.label].filter(Boolean).join(" ");
+  if (/新疆|西藏|(?:^|[-_:])(?:xj|xz)(?:[-_:]|$)/i.test(source)) return "新疆西藏";
+  if (/湖南省内|省内|(?:^|[-_:])hn(?:[-_:]|$)/i.test(source)) return "湖南省内";
+  if (/湖南省外|省外|外省|(?:^|[-_:])out(?:[-_:]|$)/i.test(source)) return "湖南省外";
+  return "";
+}
+
+function skuSpecLabel(option?: Option) {
+  if (!option) return "";
+  const fromSpec = specValueByKeys(option, ["规格", "重量", "斤数", "净重", "份量"]);
+  if (fromSpec) return fromSpec;
+  const source = [option.billOrderType, option.label, option.value].filter(Boolean).join(" ");
+  const weight = source.match(/(\d+(?:\.\d+)?)\s*斤/i);
+  if (weight) return `${weight[1]}斤`;
+  return String(option.label || option.value || "")
+    .replace(/湖南省内|湖南省外|省内|省外|外省|新疆西藏|新疆|西藏/gi, "")
+    .replace(/[·|｜/\\_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isNaiLiProduct(product?: Option | null, productCode?: string) {
+  const source = [product?.value, product?.label, productCode].filter(Boolean).join(" ");
+  return /奈李|(?:^|[-_:])nl(?:[-_:]|$)/i.test(source);
+}
+
+function priceText(value: unknown) {
+  const price = Number(value);
+  return Number.isFinite(price) ? `¥${price.toFixed(2)}` : "";
+}
+
 function inferOrderRegion(order: PublicOrderRecord) {
   const source = [order.orderType, order.orderTypeDesc, order.address].filter(Boolean).join(" ");
-  if (/新疆/i.test(source)) return "新疆";
+  if (/新疆|西藏/i.test(source)) return "新疆西藏";
   if (/湖南省内|省内|湖南/i.test(source)) return "湖南省内";
   if (/湖南省外|省外|外省|out/i.test(source)) return "湖南省外";
   return "";
@@ -141,6 +198,8 @@ export default function PurchaserOrderPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [saveAddress, setSaveAddress] = useState(true);
   const [orderEditor, setOrderEditor] = useState<OrderEditor | null>(null);
+  const [specDraft, setSpecDraft] = useState("");
+  const [editSpecDraft, setEditSpecDraft] = useState("");
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
   const [paymentConfirmBusy, setPaymentConfirmBusy] = useState(false);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
@@ -150,12 +209,30 @@ export default function PurchaserOrderPage() {
   const [profileError, setProfileError] = useState("");
   const [phoneDraft, setPhoneDraft] = useState({ phone: "", code: "" });
   const [emailDraft, setEmailDraft] = useState({ email: "", currentCode: "", newCode: "" });
+  const [mineRegisterOpen, setMineRegisterOpen] = useState(false);
+  const [mineRegisterDraft, setMineRegisterDraft] = useState<MineRegisterDraft>(EMPTY_MINE_REGISTER_DRAFT);
+  const [mineRegisterBusy, setMineRegisterBusy] = useState(false);
+  const [mineRegisterSending, setMineRegisterSending] = useState(false);
+  const [mineRegisterCountdown, setMineRegisterCountdown] = useState(0);
+  const [mineRegisterPreview, setMineRegisterPreview] = useState<RegisterPreview | null>(null);
+  const [mineRegisterConfirmExisting, setMineRegisterConfirmExisting] = useState(false);
 
   useEffect(() => {
     if (!promptToast) return;
     const timer = window.setTimeout(() => setPromptToast(null), 2200);
     return () => window.clearTimeout(timer);
   }, [promptToast]);
+
+  useEffect(() => {
+    if (mineRegisterCountdown <= 0) return;
+    const timer = window.setTimeout(() => setMineRegisterCountdown((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [mineRegisterCountdown]);
+
+  useEffect(() => {
+    setMineRegisterPreview(null);
+    setMineRegisterConfirmExisting(false);
+  }, [mineRegisterDraft.email, mineRegisterDraft.name, mineRegisterDraft.phone]);
 
   function showPromptToast(message: string) {
     setPromptToast({ message });
@@ -265,6 +342,99 @@ export default function PurchaserOrderPage() {
       setCustomerProfile(result.data || customerProfile); setProfileEditor(null); setEmailDraft({ email: "", currentCode: "", newCode: "" }); showPromptToast("绑定邮箱已更新");
     } catch (cause) { setProfileError(cause instanceof Error ? cause.message : "邮箱修改失败"); }
     finally { setProfileBusy(false); }
+  }
+
+  function openMineRegister() {
+    setMineRegisterDraft({
+      ...EMPTY_MINE_REGISTER_DRAFT,
+      name: customerProfile?.purchaserName || linkContext?.purchaserName || "",
+    });
+    setMineRegisterPreview(null);
+    setMineRegisterConfirmExisting(false);
+    setProfileError("");
+    setMineRegisterOpen(true);
+  }
+
+  async function ensureMineRegisterConfirmation() {
+    const draft = mineRegisterDraft;
+    if (!draft.name.trim()) { setProfileError("请输入姓名"); return false; }
+    if (!/^1\d{10}$/.test(draft.phone.trim())) { setProfileError("请输入真实的11位手机号"); return false; }
+    if (!draft.email.trim()) { setProfileError("请输入邮箱"); return false; }
+    if (mineRegisterConfirmExisting) return true;
+    try {
+      const result = await apiRequest<{ data?: RegisterPreview }>("/customer/auth/register-preview", {
+        auth: false,
+        method: "POST",
+        body: { shortId: linkKey.purchaserId, name: draft.name.trim(), email: draft.email.trim(), phone: draft.phone.trim() },
+      });
+      const preview = result.data || null;
+      if (!preview?.confirmRequired) return true;
+      setMineRegisterPreview(preview);
+      setProfileError("");
+      return false;
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "注册信息校验失败");
+      return false;
+    }
+  }
+
+  async function sendMineRegisterCode() {
+    if (mineRegisterSending || mineRegisterBusy) return;
+    if (!(await ensureMineRegisterConfirmation())) return;
+    setMineRegisterSending(true);
+    setProfileError("");
+    try {
+      await apiRequest("/customer/auth/code", {
+        auth: false,
+        method: "POST",
+        body: { shortId: linkKey.purchaserId, email: mineRegisterDraft.email.trim(), type: "register" },
+      });
+      setMineRegisterCountdown(60);
+      showPromptToast("验证码已发送到邮箱");
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "验证码发送失败");
+    } finally {
+      setMineRegisterSending(false);
+    }
+  }
+
+  async function submitMineRegister(event: FormEvent) {
+    event.preventDefault();
+    const draft = mineRegisterDraft;
+    setProfileError("");
+    if (!(await ensureMineRegisterConfirmation())) return;
+    if (!/^\d{6}$/.test(draft.code.trim())) return setProfileError("请输入6位邮箱验证码");
+    if (draft.password.length < 8 || draft.password.length > 64) return setProfileError("密码需为8-64位");
+    if (draft.password !== draft.confirmPassword) return setProfileError("两次输入的密码不一致");
+
+    setMineRegisterBusy(true);
+    try {
+      const result = await apiRequest<{ data?: CustomerAuthData }>("/customer/auth/register", {
+        auth: false,
+        method: "POST",
+        body: {
+          shortId: linkKey.purchaserId,
+          name: draft.name.trim(),
+          email: draft.email.trim(),
+          phone: draft.phone.trim(),
+          code: draft.code.trim(),
+          password: draft.password,
+          confirmExisting: mineRegisterConfirmExisting ? "1" : "0",
+        },
+      });
+      if (result.data?.token) setCustomerToken(result.data.token);
+      setMineRegisterOpen(false);
+      setMineRegisterDraft(EMPTY_MINE_REGISTER_DRAFT);
+      setMineRegisterPreview(null);
+      setMineRegisterConfirmExisting(false);
+      setLinkContext((current) => current ? { ...current, authenticated: true, customerRegistered: true } : current);
+      await loadCustomerProfile();
+      showPromptToast("注册成功，已进入客户账号");
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "注册失败，请重试");
+    } finally {
+      setMineRegisterBusy(false);
+    }
   }
 
   function logoutCustomer() {
@@ -383,9 +553,10 @@ export default function PurchaserOrderPage() {
 
   const selectedProduct = useMemo(() => products.find((item) => item.value === form.orderName), [products, form.orderName]);
   const optionsForProduct = useCallback((productCode: string): Option[] => {
+    if (!productCode) return [];
     const product = catalog.find((item) => item.productCode === productCode);
     if (!product) return legacySizes;
-    return (product.skus || []).filter((sku) => sku.status !== 0).map((sku) => ({ value: sku.skuCode, label: sku.displayName, productId: product.id, skuId: sku.id, billOrderType: sku.billOrderType, salePrice: Number(sku.salePrice) }));
+    return (product.skus || []).filter((sku) => sku.status !== 0).map((sku) => ({ value: sku.skuCode, label: sku.displayName, productId: product.id, skuId: sku.id, billOrderType: sku.billOrderType, salePrice: Number(sku.salePrice), specValues: sku.specValues }));
   }, [catalog, legacySizes]);
   const sizes = useMemo<Option[]>(() => optionsForProduct(form.orderName), [form.orderName, optionsForProduct]);
   const editSizes = useMemo<Option[]>(() => optionsForProduct(editForm.orderName), [editForm.orderName, optionsForProduct]);
@@ -423,9 +594,82 @@ export default function PurchaserOrderPage() {
   const selectedSize = useMemo(() => sizes.find((item) => item.value === form.orderType), [sizes, form.orderType]);
   const selectedPaymentCode = useMemo(() => paymentCodeFor(form.orderName, form.orderType), [form.orderName, form.orderType]);
   const selectedProductLabel = form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label;
+  const selectedSkuSpecLabel = form.orderType === "other" ? form.orderTypeDesc.trim() : skuSpecLabel(selectedSize);
+  const selectedSkuRegionLabel = skuRegionLabel(selectedSize);
   const selectedSizeLabel = form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label;
+  const selectedDisplaySpec = specDraft || selectedSkuSpecLabel;
+  const selectedDisplayTypeLabel = [selectedSkuRegionLabel, selectedSkuSpecLabel].filter(Boolean).join(" · ") || selectedSizeLabel;
+  const selectedUnitPrice = selectedSize?.salePrice;
+  const selectedTotalPrice = selectedUnitPrice !== undefined ? Number(selectedUnitPrice) * Math.max(1, Number(form.orderNum || 1)) : undefined;
+  const productNeedsRegion = Boolean(form.orderName && form.orderName !== "other" && !isNaiLiProduct(selectedProduct, form.orderName) && sizes.some((item) => skuRegionLabel(item)));
+  const specChoices = useMemo(() => {
+    const seen = new Set<string>();
+    return sizes.reduce<Array<{ label: string; option: Option }>>((rows, option) => {
+      const label = skuSpecLabel(option) || option.label;
+      const key = normalizeSpecText(label);
+      if (!key || seen.has(key)) return rows;
+      seen.add(key);
+      rows.push({ label, option });
+      return rows;
+    }, []);
+  }, [sizes]);
+  const regionChoices = useMemo(() => {
+    if (!productNeedsRegion || !selectedDisplaySpec) return [];
+    const seen = new Set<string>();
+    const order = ["湖南省内", "湖南省外", "新疆西藏"];
+    return sizes
+      .filter((item) => normalizeSpecText(skuSpecLabel(item)) === normalizeSpecText(selectedDisplaySpec))
+      .map((item) => ({ label: skuRegionLabel(item), option: item }))
+      .filter((item) => item.label)
+      .sort((a, b) => {
+        const left = order.indexOf(a.label);
+        const right = order.indexOf(b.label);
+        return (left === -1 ? 99 : left) - (right === -1 ? 99 : right);
+      })
+      .filter((item) => {
+        const key = normalizeSpecText(item.label);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [productNeedsRegion, selectedDisplaySpec, sizes]);
   const selectedCourierLabel = form.expCom ? (couriers.find((item) => item.value === form.expCom)?.label || form.expCom) : "暂不指定";
   const addressRequiresVerify = Number(linkContext?.addressVerifyEnabled) === 1;
+  const selectedEditProduct = useMemo(() => products.find((item) => item.value === editForm.orderName), [editForm.orderName, products]);
+  const selectedEditSize = useMemo(() => editSizes.find((item) => item.value === editForm.orderType), [editSizes, editForm.orderType]);
+  const editProductNeedsRegion = Boolean(editForm.orderName && editForm.orderName !== "other" && !isNaiLiProduct(selectedEditProduct, editForm.orderName) && editSizes.some((item) => skuRegionLabel(item)));
+  const selectedEditSpecLabel = editSpecDraft || (editForm.orderType === "other" ? editForm.orderTypeDesc.trim() : skuSpecLabel(selectedEditSize));
+  const editSpecChoices = useMemo(() => {
+    const seen = new Set<string>();
+    return editSizes.reduce<Array<{ label: string; option: Option }>>((rows, option) => {
+      const label = skuSpecLabel(option) || option.label;
+      const key = normalizeSpecText(label);
+      if (!key || seen.has(key)) return rows;
+      seen.add(key);
+      rows.push({ label, option });
+      return rows;
+    }, []);
+  }, [editSizes]);
+  const editRegionChoices = useMemo(() => {
+    if (!editProductNeedsRegion || !selectedEditSpecLabel) return [];
+    const seen = new Set<string>();
+    const order = ["湖南省内", "湖南省外", "新疆西藏"];
+    return editSizes
+      .filter((item) => normalizeSpecText(skuSpecLabel(item)) === normalizeSpecText(selectedEditSpecLabel))
+      .map((item) => ({ label: skuRegionLabel(item), option: item }))
+      .filter((item) => item.label)
+      .sort((a, b) => {
+        const left = order.indexOf(a.label);
+        const right = order.indexOf(b.label);
+        return (left === -1 ? 99 : left) - (right === -1 ? 99 : right);
+      })
+      .filter((item) => {
+        const key = normalizeSpecText(item.label);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [editProductNeedsRegion, editSizes, selectedEditSpecLabel]);
 
   // 顶部看板：用已加载的历史订单算统计
   const stats = useMemo(() => computeOrderStats(orders), [orders]);
@@ -442,6 +686,48 @@ export default function PurchaserOrderPage() {
   }
 
   function setField<K extends keyof OrderForm>(key: K, value: OrderForm[K]) { setForm((current) => ({ ...current, [key]: value })); }
+
+  function chooseProduct(item: Option) {
+    setSpecDraft("");
+    setForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }));
+  }
+
+  function chooseSpec(label: string) {
+    setSpecDraft(label);
+    const matching = sizes.filter((item) => normalizeSpecText(skuSpecLabel(item)) === normalizeSpecText(label));
+    if (!productNeedsRegion) {
+      const sku = matching[0];
+      if (sku) setForm((current) => ({ ...current, orderType: sku.value, productId: sku.productId ?? current.productId, skuId: sku.skuId }));
+      return;
+    }
+    if (selectedSize && normalizeSpecText(skuSpecLabel(selectedSize)) === normalizeSpecText(label)) return;
+    setForm((current) => ({ ...current, orderType: "", skuId: undefined }));
+  }
+
+  function chooseRegion(option: Option) {
+    setForm((current) => ({ ...current, orderType: option.value, productId: option.productId ?? current.productId, skuId: option.skuId }));
+  }
+
+  function chooseEditProduct(item: Option) {
+    setEditSpecDraft("");
+    setEditForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }));
+  }
+
+  function chooseEditSpec(label: string) {
+    setEditSpecDraft(label);
+    const matching = editSizes.filter((item) => normalizeSpecText(skuSpecLabel(item)) === normalizeSpecText(label));
+    if (!editProductNeedsRegion) {
+      const sku = matching[0];
+      if (sku) setEditForm((current) => ({ ...current, orderType: sku.value, productId: sku.productId ?? current.productId, skuId: sku.skuId }));
+      return;
+    }
+    if (selectedEditSize && normalizeSpecText(skuSpecLabel(selectedEditSize)) === normalizeSpecText(label)) return;
+    setEditForm((current) => ({ ...current, orderType: "", skuId: undefined }));
+  }
+
+  function chooseEditRegion(option: Option) {
+    setEditForm((current) => ({ ...current, orderType: option.value, productId: option.productId ?? current.productId, skuId: option.skuId }));
+  }
 
   function setManualAddressField(key: "customer" | "phone" | "address", value: string) {
     setSelectedAddressId(null);
@@ -677,6 +963,7 @@ export default function PurchaserOrderPage() {
   const FIELD_TO_SECTION: Record<string, string> = {
     "商品": "purchaser-section-product",
     "规格": "purchaser-section-product",
+    "地区": "purchaser-section-product",
     "自定义商品名称": "purchaser-section-product",
     "自定义规格": "purchaser-section-product",
     "收件人": "purchaser-section-address",
@@ -736,7 +1023,7 @@ export default function PurchaserOrderPage() {
     }
     const missing: string[] = [];
     if (!form.orderName) missing.push("商品");
-    if (!form.orderType) missing.push("规格");
+    if (!form.orderType) missing.push(productNeedsRegion && selectedDisplaySpec ? "地区" : "规格");
     if (form.orderName === "other" && !form.orderNameDesc.trim()) missing.push("自定义商品名称");
     if (form.orderType === "other" && !form.orderTypeDesc.trim()) missing.push("自定义规格");
     if (!form.customer.trim()) missing.push("收件人");
@@ -807,6 +1094,7 @@ export default function PurchaserOrderPage() {
     const matchedSize = findSizeForOrder(order, productValue);
     const sizeValue = matchedSize?.value || "other";
     const expComValue = String((order as Row).expCom || "");
+    setEditSpecDraft(matchedSize ? skuSpecLabel(matchedSize) : "");
     setEditForm({
       orderName: productValue,
       orderNameDesc: productValue === "other" ? (order.orderNameDesc || "") : "",
@@ -829,6 +1117,7 @@ export default function PurchaserOrderPage() {
     setEditingOrder(null);
     setConfirmingEdit(false);
     setEditForm(EMPTY_FORM);
+    setEditSpecDraft("");
     setError(""); setErrorFieldId(null); setMissingFields([]);
   }
 
@@ -840,7 +1129,7 @@ export default function PurchaserOrderPage() {
     event.preventDefault(); setError(""); setErrorFieldId(null);
     const missing: string[] = [];
     if (!editForm.orderName) missing.push("商品");
-    if (!editForm.orderType) missing.push("规格");
+    if (!editForm.orderType) missing.push(editProductNeedsRegion && selectedEditSpecLabel ? "地区" : "规格");
     if (editForm.orderName === "other" && !editForm.orderNameDesc.trim()) missing.push("自定义商品名称");
     if (editForm.orderType === "other" && !editForm.orderTypeDesc.trim()) missing.push("自定义规格");
     if (!editForm.customer.trim()) missing.push("收件人");
@@ -942,7 +1231,7 @@ export default function PurchaserOrderPage() {
 
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
-  if (linkContext.accountRequired === 1 && !linkContext.authenticated) return <div className="tool-page purchaser-order-page"><section className="purchaser-account-gate"><span><LockKeyhole size={26} /></span><small>客户专属入口</small><h1>{linkContext.customerRegistered ? "登录后继续下单" : "完善资料并开通账号"}</h1><p>{linkContext.customerRegistered ? "该专属链接已关闭快捷登录，请使用密码或邮箱验证码登录。" : `您好，${linkContext.purchaserName || "客户"}。请先完成邮箱验证${linkContext.phoneCompletionRequired ? "并完善真实手机号" : ""}，以后即可安全登录。`}</p><a className="primary" href={linkContext.customerRegistered ? `/customer/login?shortId=${linkKey.purchaserId}` : `/customer/register?shortId=${linkKey.purchaserId}`}>{linkContext.customerRegistered ? "客户登录" : "立即注册"}</a>{linkContext.customerRegistered ? <a href="/customer/reset">忘记密码</a> : null}</section></div>;
+  if (linkContext.accountRequired === 1 && !linkContext.authenticated) return <div className="tool-page purchaser-order-page"><section className="purchaser-account-gate"><span><LockKeyhole size={26} /></span><small>客户专属入口</small><h1>{linkContext.customerRegistered ? "登录后继续下单" : "完善资料并开通账号"}</h1><p>{linkContext.customerRegistered ? "该专属链接已关闭快捷登录，请使用密码或邮箱验证码登录。" : `您好，${linkContext.purchaserName || "客户"}。请先完成邮箱验证${linkContext.phoneCompletionRequired ? "并完善真实手机号" : ""}，以后即可安全登录。`}</p><a className="primary" href={linkContext.customerRegistered ? `/customer/login?shortId=${linkKey.purchaserId}` : `/customer/register?shortId=${linkKey.purchaserId}`}><LogIn size={17} />{linkContext.customerRegistered ? "立即登录下单" : "立即注册并下单"}</a>{linkContext.customerRegistered ? <a href="/customer/reset">忘记密码</a> : null}</section></div>;
 
   const blockOrderOn = linkContext.blockOrder === 1;
   const blockQueryOn = linkContext.blockQuery === 1;
@@ -1050,6 +1339,12 @@ export default function PurchaserOrderPage() {
           <header><span>{String(customerProfile.purchaserName || linkContext.purchaserName || "我").slice(0, 1)}</span><div><h2>{customerProfile.purchaserName || linkContext.purchaserName || "客户"}</h2><p>专属 ID {customerProfile.purchaserShortId || linkContext.purchaserShortId}</p></div><em>{customerProfile.registered ? "已注册" : "未注册"}</em></header>
           <div className="purchaser-mine-info-row"><span><Smartphone size={17} /><span><small>绑定手机号</small><b>{customerProfile.maskedPhone || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor("phone"); setProfileError(""); }}>修改</button></div>
           <div className="purchaser-mine-info-row"><span><Mail size={17} /><span><small>绑定邮箱</small><b>{customerProfile.maskedEmail || "尚未绑定"}</b></span></span><button type="button" disabled={!customerProfile.registered} onClick={() => { setProfileEditor("email"); setProfileError(""); }}>修改</button></div>
+          {!customerProfile.registered ? (
+            <div className="purchaser-mine-register-row">
+              <span><KeyRound size={17} /><span><small>开通客户账号</small><b>注册后可用邮箱登录、管理资料与安全设置</b></span></span>
+              <button type="button" onClick={openMineRegister}>立即注册</button>
+            </div>
+          ) : null}
         </section>
 
         <section className="purchaser-mine-security-card">
@@ -1079,6 +1374,30 @@ export default function PurchaserOrderPage() {
       </section>
     </div> : null}
 
+    {customerProfile && mineRegisterOpen ? <div className="purchaser-profile-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !mineRegisterBusy) setMineRegisterOpen(false); }}>
+      <form className="purchaser-profile-editor purchaser-mine-register-modal" role="dialog" aria-modal="true" aria-labelledby="purchaser-mine-register-title" onSubmit={submitMineRegister}>
+        <header><div><h3 id="purchaser-mine-register-title">开通客户账号</h3><p>注册后可继续使用当前专属下单页，也能用邮箱和密码登录。</p></div><button type="button" disabled={mineRegisterBusy} onClick={() => setMineRegisterOpen(false)}><X size={17} /></button></header>
+        <label><span>姓名</span><input autoFocus autoComplete="name" maxLength={30} value={mineRegisterDraft.name} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, name: event.target.value }))} placeholder="用于收货与订单识别" /></label>
+        <label><span>真实手机号</span><input inputMode="tel" autoComplete="tel" maxLength={11} value={mineRegisterDraft.phone} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入11位手机号" /></label>
+        <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder="用于登录和找回密码" /></label>
+        {mineRegisterPreview?.confirmRequired ? (
+          <section className="purchaser-mine-register-confirm">
+            <b>{mineRegisterPreview.registered && mineRegisterPreview.matchType === "phone" ? "该手机号已绑定账号" : "发现已有买家档案"}</b>
+            <p>{mineRegisterPreview.message || "确认后继续绑定原档案。"}</p>
+            <small>{[mineRegisterPreview.purchaserName, mineRegisterPreview.maskedPhone, mineRegisterPreview.maskedEmail].filter(Boolean).join(" · ")}</small>
+            {mineRegisterPreview.registered && mineRegisterPreview.matchType === "phone"
+              ? <button type="button" onClick={() => { window.location.href = `/customer/login?shortId=${linkKey.purchaserId}`; }}>去登录</button>
+              : <button type="button" onClick={() => { setMineRegisterConfirmExisting(true); setMineRegisterPreview(null); setProfileError(""); }}>确认并继续</button>}
+          </section>
+        ) : null}
+        <label><span>邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={mineRegisterDraft.code} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={mineRegisterSending || mineRegisterBusy || mineRegisterCountdown > 0} onClick={() => void sendMineRegisterCode()}>{mineRegisterCountdown > 0 ? `${mineRegisterCountdown}s` : mineRegisterSending ? "发送中" : "获取验证码"}</button></div></label>
+        <label><span>登录密码</span><input type="password" autoComplete="new-password" value={mineRegisterDraft.password} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, password: event.target.value }))} placeholder="8-64位，需包含字母和数字" /></label>
+        <label><span>确认密码</span><input type="password" autoComplete="new-password" value={mineRegisterDraft.confirmPassword} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, confirmPassword: event.target.value }))} placeholder="再次输入密码" /></label>
+        {profileError ? <p className="tool-error purchaser-mine-error"><AlertCircle size={14} />{profileError}</p> : null}
+        <button className="purchaser-profile-save" type="submit" disabled={mineRegisterBusy}>{mineRegisterBusy ? <LoaderCircle className="spin" size={16} /> : null}完成注册</button>
+      </form>
+    </div> : null}
+
     {tab !== "home" && tab !== "mine" ? ((showBannerTab && bothBlocked) ? <section className="purchaser-fullscreen-block">
       <Ban size={42} />
       <h1>专属链接已暂停服务</h1>
@@ -1104,7 +1423,7 @@ export default function PurchaserOrderPage() {
                 <span className="purchaser-design-summary-icon"><PackageCheck size={20} /></span>
                 <span className="purchaser-design-summary-copy">
                   <b>{selectedProductLabel || "商品规格"}</b>
-                  <small>{selectedProductLabel && selectedSizeLabel ? `${selectedSizeLabel}，${form.orderNum} 件` : "点击选择商品、规格和数量"}</small>
+                  <small>{selectedProductLabel && selectedDisplayTypeLabel ? `${selectedDisplayTypeLabel}，${form.orderNum} 件` : "点击选择商品、规格、地区和数量"}</small>
                 </span>
                 <em>{selectedProductLabel ? "修改" : "选择"}</em>
                 <ChevronRight size={15} />
@@ -1135,7 +1454,7 @@ export default function PurchaserOrderPage() {
 
           {error && !captchaOpen ? <p className="tool-error purchaser-order-error">{error}</p> : null}
           <section className="purchaser-design-checkout">
-            <span><small>本次下单</small><b>{selectedProductLabel ? `${selectedProductLabel} × ${form.orderNum}` : "请选择商品"}</b></span>
+            <span><small>本次下单</small><b>{selectedProductLabel ? `${selectedProductLabel}${selectedDisplayTypeLabel ? ` · ${selectedDisplayTypeLabel}` : ""} × ${form.orderNum}` : "请选择商品"}</b>{selectedUnitPrice !== undefined ? <em>{priceText(selectedUnitPrice)} / 件 · 小计 {priceText(selectedTotalPrice)}</em> : null}</span>
             <button className="purchaser-submit" type="submit" disabled={submitDisabled}>{blockOrderOn ? "已暂停下单" : "确认下单"}</button>
           </section>
           <p className="purchaser-submit-tip"><ShieldCheck size={13} />核对订单后完成验证即可提交</p>
@@ -1177,12 +1496,14 @@ export default function PurchaserOrderPage() {
         <button className="purchaser-captcha-close" type="button" onClick={() => setOrderEditor(null)} aria-label="关闭"><X size={19} /></button>
         <small>填写订单</small>
         <h2 id="purchaser-order-editor-title">{orderEditor === "product" ? "选择商品信息" : orderEditor === "address" ? "填写收货信息" : "配送与订单备注"}</h2>
-        <p>{orderEditor === "product" ? "选择商品、规格和本次购买数量。" : orderEditor === "address" ? "可以使用常用地址，也可以粘贴后智能识别。" : "指定快递为选填项，备注会同步给店铺。"}</p>
+        <p>{orderEditor === "product" ? "先选商品，再选规格；需要地区的商品最后选择省内或省外。" : orderEditor === "address" ? "可以使用常用地址，也可以粘贴后智能识别。" : "指定快递为选填项，备注会同步给店铺。"}</p>
         {orderEditor === "product" ? <div className="purchaser-popup-form">
-          <label><span>商品</span><div className="purchaser-choice-grid purchaser-product-grid">{products.map((item) => <button type="button" className={`purchaser-product-option${form.orderName === item.value ? " active" : ""}`} key={item.value} onClick={() => setForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }))}><span><PackageCheck size={17} /></span><b>{item.label}</b>{form.orderName === item.value ? <CheckCircle2 className="purchaser-product-selected" size={17} /> : <em className="purchaser-product-select-label">选择</em>}</button>)}</div></label>
+          <label><span>1. 商品</span><div className="purchaser-choice-grid purchaser-product-grid">{products.map((item) => <button type="button" className={`purchaser-product-option${form.orderName === item.value ? " active" : ""}`} key={item.value} onClick={() => chooseProduct(item)}><span><PackageCheck size={17} /></span><b>{item.label}</b>{form.orderName === item.value ? <CheckCircle2 className="purchaser-product-selected" size={17} /> : <em className="purchaser-product-select-label">选择</em>}</button>)}</div></label>
           {form.orderName === "other" ? <label><span>商品名称</span><input id="purchaser-custom-name" value={form.orderNameDesc} onChange={(event) => setField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /></label> : null}
-          <label><span>规格</span><div className="purchaser-choice-grid compact">{sizes.map((item) => <button type="button" className={form.orderType === item.value ? "active" : ""} key={`${item.value}-${item.skuId || "legacy"}`} onClick={() => setForm((current) => ({ ...current, orderType: item.value, productId: item.productId ?? current.productId, skuId: item.skuId }))}><b>{item.label}</b>{item.salePrice !== undefined ? <small>¥{item.salePrice.toFixed(2)}</small> : null}</button>)}</div></label>
+          <label><span>2. 规格</span><div className="purchaser-choice-grid compact">{specChoices.map((item) => <button type="button" className={normalizeSpecText(selectedDisplaySpec) === normalizeSpecText(item.label) ? "active" : ""} key={item.label} onClick={() => chooseSpec(item.label)}><b>{item.label}</b></button>)}</div></label>
           {form.orderType === "other" ? <label><span>规格名称</span><input id="purchaser-custom-spec" value={form.orderTypeDesc} onChange={(event) => setField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /></label> : null}
+          {productNeedsRegion ? <label><span>3. 地区</span><div className="purchaser-choice-grid compact purchaser-region-grid">{regionChoices.map((item) => <button type="button" className={normalizeSpecText(selectedSkuRegionLabel) === normalizeSpecText(item.label) ? "active" : ""} key={item.label} disabled={!selectedDisplaySpec} onClick={() => chooseRegion(item.option)}><b>{item.label}</b></button>)}</div>{selectedDisplaySpec ? null : <small className="purchaser-step-hint">请先选择规格</small>}</label> : null}
+          {selectedSize && selectedUnitPrice !== undefined ? <div className="purchaser-price-preview"><span><Wallet size={16} /><b>本项价格</b></span><strong>{priceText(selectedUnitPrice)}</strong><small>{selectedProductLabel}{selectedDisplayTypeLabel ? ` · ${selectedDisplayTypeLabel}` : ""}</small></div> : null}
           <div className="purchaser-quantity"><span><b>购买数量</b><small>每次最多 99 件</small></span><div><button type="button" onClick={() => setField("orderNum", Math.max(1, form.orderNum - 1))} aria-label="减少数量"><Minus size={16} /></button><b>{form.orderNum}</b><button type="button" onClick={() => setField("orderNum", Math.min(99, form.orderNum + 1))} aria-label="增加数量"><Plus size={16} /></button></div></div>
         </div> : orderEditor === "address" ? <div className="purchaser-popup-form">
           <button type="button" className="purchaser-address-book-trigger" onClick={openAddressBook}>
@@ -1287,8 +1608,10 @@ export default function PurchaserOrderPage() {
           <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "先创建订单，不改变付款状态；付款后需手动点击“我已付款”。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
           <div className="purchaser-captcha-summary">
             <div><span>商品</span><b>{form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
-            <div><span>规格</span><b>{form.orderType === "other" ? form.orderTypeDesc : selectedSize?.label || "--"}</b></div>
+            <div><span>规格</span><b>{selectedSkuSpecLabel || "--"}</b></div>
+            {selectedSkuRegionLabel ? <div><span>地区</span><b>{selectedSkuRegionLabel}</b></div> : null}
             <div><span>数量</span><b>{form.orderNum} 件</b></div>
+            {selectedUnitPrice !== undefined ? <div><span>价格</span><b>{priceText(selectedUnitPrice)} / 件</b></div> : null}
             <div><span>收件人</span><b>{form.customer || "--"}</b></div>
             <div><span>手机号</span><b>{form.phone || "--"}</b></div>
             <div><span>收货地址</span><b>{form.address || "--"}</b></div>
@@ -1460,7 +1783,20 @@ export default function PurchaserOrderPage() {
             <div><span>当前状态</span><b>{editingOrder.orderStatusDesc || editingOrder.orderStatus || "待处理"}</b></div>
           </div>
           <form onSubmit={requestEditSubmit} className="purchaser-edit-form">
-          <section><header><span>1</span><div><h3>商品</h3></div></header><div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={editForm.orderName === item.value ? "active" : ""} key={item.value} onClick={() => setEditForm((current) => ({ ...current, orderName: item.value, productId: item.productId, orderType: "", skuId: undefined }))}>{item.label}</button>)}</div>{editForm.orderName === "other" ? <input value={editForm.orderNameDesc} onChange={(event) => setEditField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}<div className="purchaser-choice-grid compact">{editSizes.map((item) => <button type="button" className={editForm.orderType === item.value ? "active" : ""} key={`${item.value}-${item.skuId || "legacy"}`} onClick={() => setEditForm((current) => ({ ...current, orderType: item.value, productId: item.productId ?? current.productId, skuId: item.skuId }))}>{item.label}</button>)}</div>{editForm.orderType === "other" ? <input value={editForm.orderTypeDesc} onChange={(event) => setEditField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}<div className="purchaser-quantity purchaser-quantity-locked"><span>购买数量</span><div><b>{editForm.orderNum}</b><small>件，修改时不可调整</small></div></div></section>
+          <section>
+            <header><span>1</span><div><h3>商品</h3></div></header>
+            <div className="purchaser-choice-grid">{products.map((item) => <button type="button" className={editForm.orderName === item.value ? "active" : ""} key={item.value} onClick={() => chooseEditProduct(item)}>{item.label}</button>)}</div>
+            {editForm.orderName === "other" ? <input value={editForm.orderNameDesc} onChange={(event) => setEditField("orderNameDesc", event.target.value)} placeholder="请输入商品名称" /> : null}
+            <h4 className="purchaser-edit-step-title">规格</h4>
+            <div className="purchaser-choice-grid compact">{editSpecChoices.map((item) => <button type="button" className={normalizeSpecText(selectedEditSpecLabel) === normalizeSpecText(item.label) ? "active" : ""} key={item.label} onClick={() => chooseEditSpec(item.label)}>{item.label}</button>)}</div>
+            {editForm.orderType === "other" ? <input value={editForm.orderTypeDesc} onChange={(event) => setEditField("orderTypeDesc", event.target.value)} placeholder="请输入规格" /> : null}
+            {editProductNeedsRegion ? <>
+              <h4 className="purchaser-edit-step-title">地区</h4>
+              <div className="purchaser-choice-grid compact purchaser-region-grid">{editRegionChoices.map((item) => <button type="button" className={normalizeSpecText(skuRegionLabel(selectedEditSize)) === normalizeSpecText(item.label) ? "active" : ""} key={item.label} disabled={!selectedEditSpecLabel} onClick={() => chooseEditRegion(item.option)}>{item.label}</button>)}</div>
+            </> : null}
+            {selectedEditSize?.salePrice !== undefined ? <div className="purchaser-price-preview"><span><Wallet size={16} /><b>本项价格</b></span><strong>{priceText(selectedEditSize.salePrice)}</strong><small>{[selectedEditProduct?.label, skuRegionLabel(selectedEditSize), skuSpecLabel(selectedEditSize)].filter(Boolean).join(" · ")}</small></div> : null}
+            <div className="purchaser-quantity purchaser-quantity-locked"><span>购买数量</span><div><b>{editForm.orderNum}</b><small>件，修改时不可调整</small></div></div>
+          </section>
             <section><header><span>2</span><div><h3>收货信息</h3></div></header><label><span><User size={15} />收件人</span><input value={editForm.customer} onChange={(event) => setEditField("customer", event.target.value)} placeholder="请输入收件人姓名" /></label><label><span><Truck size={15} />手机号</span><input inputMode="tel" maxLength={11} value={editForm.phone} onChange={(event) => setEditField("phone", event.target.value.replace(/\D/g, ""))} placeholder="请输入11位手机号" /></label><label><span><MapPin size={15} />详细地址</span><textarea rows={3} value={editForm.address} onChange={(event) => setEditField("address", event.target.value)} placeholder="省市区 + 街道门牌号" /></label><label><span><Truck size={15} />指定快递</span><div className="purchaser-choice-grid four-cols"><button type="button" className={editForm.expCom === "" ? "active" : ""} onClick={() => setEditField("expCom", "")}>暂不选择</button>{couriers.map((item) => <button type="button" className={editForm.expCom === item.value ? "active" : ""} key={item.value} onClick={() => setEditField("expCom", item.value)}>{item.icon ? <img src={item.icon} alt="" loading="lazy" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} /> : null}{item.label}</button>)}</div></label></section>
             <section><header><span>3</span><div><h3>订单备注</h3></div></header><textarea rows={3} value={editForm.orderDesc} onChange={(event) => setEditField("orderDesc", event.target.value)} placeholder="如：送货前电话联系" /></section>
             {missingFields.length > 0 ? <p className="tool-error">请补全 {missingFields.length} 项必填信息</p> : null}

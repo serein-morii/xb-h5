@@ -14,6 +14,35 @@ const sourceMany = async (...paths) => {
   return parts.join("\n");
 };
 
+test("opens menus through the normalized capability manifest", async () => {
+  const access = await source("app/admin/access.tsx");
+  assert.match(access, /home: "nav\.home"/);
+  assert.match(access, /orders: "nav\.orders"/);
+  assert.match(access, /systemCenter: "nav\.systemCenter"/);
+  assert.match(access, /operationsCenter: "nav\.operationsCenter"/);
+  assert.match(access, /return access\.has\(MENU_CAPABILITIES\[key\]\)/);
+});
+
+test("super admin bypasses capability checks and shell guards cached pages", async () => {
+  const [access, shell] = await Promise.all([
+    source("app/admin/access.tsx"),
+    source("app/admin/shell.tsx"),
+  ]);
+  assert.match(access, /manifest\.superAdmin \|\| granted\.has\(capability\)/);
+  assert.match(shell, /!canOpenMenu\(access, active\).*setActive\("home"\)/);
+  assert.match(shell, /visibleActive = access\.ready && canOpenMenu\(access, active\) \? active : "home"/);
+});
+
+test("keeps permission management focused on members roles and features", async () => {
+  const management = await source("app/admin/system-management.tsx");
+  assert.match(management, /title: "成员"/);
+  assert.match(management, /title: "角色"/);
+  assert.match(management, /可用功能/);
+  assert.match(management, /roleKey: `role_\$\{Date\.now\(\)\.toString\(36\)\}`/);
+  assert.doesNotMatch(management, /\{ key: "roleKey", label: "权限字符"/);
+  assert.doesNotMatch(management, /\{ key: "roleSort", label: "显示顺序"/);
+});
+
 test("reads a real xlsx workbook through the shared Excel adapter", async () => {
   const imported = await import("exceljs");
   const ExcelJS = imported.default ?? imported;

@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, LoaderCircle, Phone, RefreshCw, Search, Store as StoreIcon } from "lucide-react";
+import { ArrowLeft, Ban, CheckCircle2, LoaderCircle, Phone, RefreshCw, Search, Store as StoreIcon } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest, listPublicStores, PublicStoreRow } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
@@ -98,9 +98,11 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
 
   const stats = useMemo(() => computeOrderStats(orders), [orders]);
   const filteredOrders = useMemo(() => filterOrdersByStatus(orders, statusFilter), [orders, statusFilter]);
+  const queryBlocked = Number(store?.blockQuery) === 1;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (queryBlocked) return setError("该店铺已暂停订单查询，请联系店铺或客服了解恢复时间");
     if (!phone.trim() || !code.trim()) return setError("请输入手机号和验证码");
     if (!storeCode) return setError("缺少店铺编码");
     setLoading(true); setError(""); setOrders([]); setStatusFilter(null);
@@ -145,6 +147,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
       </div>
     </section>
     {storeNotice ? <p className="store-query-notice">{storeNotice}</p> : null}
+    {queryBlocked ? <p className="tool-error store-query-blocked"><Ban size={14} />该店铺已暂停订单查询，请联系店铺或客服了解恢复时间。</p> : null}
     {storeError ? <p className="tool-error">{storeError}</p> : null}
     <form className="tool-form-card" onSubmit={submit}>
       <label>
@@ -156,6 +159,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             placeholder="请输入收件手机号"
+            disabled={queryBlocked}
           />
         </div>
       </label>
@@ -168,17 +172,18 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
               value={code}
               onChange={(event) => setCode(event.target.value)}
               placeholder="请输入验证码"
+              disabled={queryBlocked}
             />
           </div>
-          <button type="button" onClick={loadCaptcha}>
+          <button type="button" onClick={loadCaptcha} disabled={queryBlocked}>
             {captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={18} />}
           </button>
         </div>
       </label>
       {error ? <p className="tool-error">{error}</p> : null}
-      <button className="tool-primary" disabled={loading} type="submit">
+      <button className="tool-primary" disabled={loading || queryBlocked} type="submit">
         {loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}
-        {loading ? "正在查询" : "查询该店铺订单"}
+        {queryBlocked ? "该店铺已暂停查单" : loading ? "正在查询" : "查询该店铺订单"}
       </button>
     </form>
     {orders.length ? <div ref={resultsRef}>

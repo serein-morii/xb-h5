@@ -1,12 +1,17 @@
-import { Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { AlertCircle, Edit3, Layers3, LoaderCircle, PackageCheck, Plus, RefreshCw, Save, Tags, Trash2, X } from "lucide-react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../lib/api";
 import { DictionaryContext } from "./core";
+import { ConfirmDialog } from "./ui";
+import { useAccess } from "./access";
 
 type Sku = { id?: number; skuCode: string; displayName: string; specValues: string; billOrderType?: string; salePrice: number | string; stock?: number | null; status: number; sortNum: number };
 type Product = { id?: number; productCode: string; name: string; subtitle: string; description: string; coverUrl: string; specSchema: string; status: number; sortNum: number; skus: Sku[] };
 type SpecGroup = { name: string; values: string[] };
-const EMPTY_PRODUCT: Product = { productCode: "", name: "", subtitle: "", description: "", coverUrl: "", specSchema: "[]", status: 1, sortNum: 0, skus: [{ skuCode: "", displayName: "", specValues: "{}", billOrderType: "", salePrice: "", stock: null, status: 1, sortNum: 0 }] };
+type AlertState = { title: string; message: string; danger?: boolean } | null;
+
+const emptySku = (index = 0): Sku => ({ skuCode: "", displayName: "", specValues: "{}", billOrderType: "", salePrice: "", stock: null, status: 1, sortNum: index });
+const EMPTY_PRODUCT: Product = { productCode: "", name: "", subtitle: "", description: "", coverUrl: "", specSchema: "[]", status: 1, sortNum: 0, skus: [emptySku()] };
 
 function parseSpecGroups(value: string): SpecGroup[] {
   try {
@@ -15,10 +20,23 @@ function parseSpecGroups(value: string): SpecGroup[] {
     return parsed.filter((item): item is SpecGroup => Boolean(item && typeof item === "object" && "name" in item && "values" in item && Array.isArray((item as SpecGroup).values)));
   } catch { return []; }
 }
+
 function parseSpecValues(value: string): Record<string, string> {
-  try { const parsed = JSON.parse(value || "{}"); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; }
-  catch { return {}; }
+  try {
+    const parsed = JSON.parse(value || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch { return {}; }
 }
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function money(value: unknown) {
+  const price = Number(value);
+  return Number.isFinite(price) ? `¥${price.toFixed(2)}` : "--";
+}
+
 function inferBillOrderType(sku: Sku) {
   const values = parseSpecValues(sku.specValues);
   const source = [sku.billOrderType, values["重量"], sku.displayName, sku.skuCode].filter(Boolean).join(" ");
@@ -28,95 +46,297 @@ function inferBillOrderType(sku: Sku) {
   return suffix ? `${suffix[1]}斤` : "";
 }
 
+function cloneProduct(product?: Product): Product {
+  const base = product ? JSON.parse(JSON.stringify(product)) as Product : JSON.parse(JSON.stringify(EMPTY_PRODUCT)) as Product;
+  return { ...base, skus: base.skus?.length ? base.skus : [emptySku()] };
+}
+
+function AlertDialog({ state, onClose }: { state: AlertState; onClose: () => void }) {
+  if (!state) return null;
+  return (
+    <div className="confirm-backdrop product-alert-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="confirm-card product-alert-card" role="alertdialog" aria-modal="true">
+        <div className={`confirm-icon ${state.danger ? "danger" : ""}`}>
+          <AlertCircle size={22} />
+        </div>
+        <h3>{state.title}</h3>
+        <p>{state.message}</p>
+        <div className="confirm-actions single">
+          <button className={state.danger ? "button button-danger" : "button button-primary"} type="button" onClick={onClose}>知道了</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage({ notify }: { notify: (message: string, type?: "success" | "error" | "info") => void }) {
+  const access = useAccess();
   const dictionaries = useContext(DictionaryContext);
   const [rows, setRows] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [alert, setAlert] = useState<AlertState>(null);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true); setError("");
+    setLoading(true);
     try {
       const result = await apiRequest<{ data?: Product[] }>("/biz/product/list");
       setRows(Array.isArray(result.data) ? result.data : []);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "商品加载失败"); }
-    finally { setLoading(false); }
+    } catch (cause) {
+      setAlert({ title: "商品加载失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+    } finally { setLoading(false); }
   }, []);
+
   useEffect(() => { load(); }, [load]);
 
+  const specGroups = useMemo(() => editing ? parseSpecGroups(editing.specSchema) : [], [editing]);
+  const activeProducts = rows.filter((product) => product.status === 1).length;
+  const activeSkus = rows.reduce((total, product) => total + (product.skus || []).filter((sku) => sku.status === 1).length, 0);
+
   function edit(product?: Product) {
-    setError("");
-    setEditing(product ? JSON.parse(JSON.stringify(product)) as Product : JSON.parse(JSON.stringify(EMPTY_PRODUCT)) as Product);
+    setAlert(null);
+    setEditing(cloneProduct(product));
   }
-  function setField<K extends keyof Product>(key: K, value: Product[K]) { setEditing((current) => current ? { ...current, [key]: value } : current); }
-  function setSku(index: number, key: keyof Sku, value: unknown) { setEditing((current) => current ? { ...current, skus: current.skus.map((sku, i) => i === index ? { ...sku, [key]: value } : sku) } : current); }
-  const specGroups = editing ? parseSpecGroups(editing.specSchema) : [];
+
+  function setField<K extends keyof Product>(key: K, value: Product[K]) {
+    setEditing((current) => current ? { ...current, [key]: value } : current);
+  }
+
+  function setSku(index: number, key: keyof Sku, value: unknown) {
+    setEditing((current) => current ? { ...current, skus: current.skus.map((sku, i) => i === index ? { ...sku, [key]: value } : sku) } : current);
+  }
+
   function updateSpecGroup(index: number, next: Partial<SpecGroup>) {
     if (!editing) return;
     const groups = parseSpecGroups(editing.specSchema);
     const oldName = groups[index]?.name || "";
-    groups[index] = { ...groups[index], ...next };
-    const nextName = groups[index].name;
-    setEditing({ ...editing, specSchema: JSON.stringify(groups), skus: oldName && nextName !== oldName ? editing.skus.map((sku) => {
-      const values = parseSpecValues(sku.specValues);
-      if (Object.prototype.hasOwnProperty.call(values, oldName)) { values[nextName] = values[oldName]; delete values[oldName]; }
-      return { ...sku, specValues: JSON.stringify(values) };
-    }) : editing.skus });
+    const nextGroup = { ...groups[index], ...next };
+    if (next.values) nextGroup.values = uniqueValues(next.values);
+    groups[index] = nextGroup;
+    const nextName = nextGroup.name;
+    setEditing({
+      ...editing,
+      specSchema: JSON.stringify(groups),
+      skus: oldName && nextName !== oldName ? editing.skus.map((sku) => {
+        const values = parseSpecValues(sku.specValues);
+        if (Object.prototype.hasOwnProperty.call(values, oldName)) {
+          values[nextName] = values[oldName];
+          delete values[oldName];
+        }
+        return { ...sku, specValues: JSON.stringify(values) };
+      }) : editing.skus,
+    });
   }
+
   function addSpecGroup() {
     if (!editing) return;
     setField("specSchema", JSON.stringify([...specGroups, { name: `规格类目${specGroups.length + 1}`, values: [] }]));
   }
+
   function removeSpecGroup(index: number) {
     if (!editing) return;
     const removedName = specGroups[index]?.name;
-    setEditing({ ...editing, specSchema: JSON.stringify(specGroups.filter((_, i) => i !== index)), skus: editing.skus.map((sku) => {
-      const values = parseSpecValues(sku.specValues); delete values[removedName];
-      return { ...sku, specValues: JSON.stringify(values) };
-    }) });
+    setEditing({
+      ...editing,
+      specSchema: JSON.stringify(specGroups.filter((_, i) => i !== index)),
+      skus: editing.skus.map((sku) => {
+        const values = parseSpecValues(sku.specValues);
+        delete values[removedName];
+        return { ...sku, specValues: JSON.stringify(values) };
+      }),
+    });
   }
+
   function setSkuSpec(index: number, name: string, value: string) {
-    const values = parseSpecValues(editing?.skus[index]?.specValues || "{}"); values[name] = value;
+    const values = parseSpecValues(editing?.skus[index]?.specValues || "{}");
+    values[name] = value;
     setSku(index, "specValues", JSON.stringify(values));
+  }
+
+  function validationMessages(product: Product) {
+    const messages: string[] = [];
+    const code = product.productCode.trim();
+    if (!code || !/^[A-Z0-9_-]{2,32}$/.test(code)) messages.push("商品编码请使用 2-32 位大写字母、数字、- 或 _");
+    if (!product.name.trim()) messages.push("请填写商品名称");
+    if (!Number.isFinite(Number(product.sortNum)) || Number(product.sortNum) < 0) messages.push("排序必须是非负数字");
+
+    const groupNames = specGroups.map((group) => group.name.trim()).filter(Boolean);
+    if (new Set(groupNames).size !== groupNames.length) messages.push("规格类目名称不能重复");
+    specGroups.forEach((group, index) => {
+      const name = group.name.trim() || `第 ${index + 1} 个规格类目`;
+      const values = uniqueValues(group.values);
+      if (!group.name.trim()) messages.push(`${name}：请填写类目名称`);
+      if (!values.length) messages.push(`${name}：请至少填写一个可选值`);
+      if (values.length !== group.values.map((value) => value.trim()).filter(Boolean).length) messages.push(`${name}：可选值不能重复`);
+    });
+
+    if (!product.skus.length) messages.push("至少配置一个 SKU");
+    const skuCodes = product.skus.map((sku) => sku.skuCode.trim()).filter(Boolean);
+    if (new Set(skuCodes).size !== skuCodes.length) messages.push("SKU 编码不能重复");
+    product.skus.forEach((sku, index) => {
+      const label = `第 ${index + 1} 个 SKU`;
+      const values = parseSpecValues(sku.specValues);
+      const price = Number(sku.salePrice);
+      if (!sku.skuCode.trim()) messages.push(`${label}：请填写 SKU 编码`);
+      if (!sku.displayName.trim()) messages.push(`${label}：请填写展示名称`);
+      if (sku.salePrice === "" || !Number.isFinite(price) || price < 0) messages.push(`${label}：销售价必须是大于等于 0 的数字`);
+      specGroups.forEach((group) => {
+        if (!values[group.name]) messages.push(`${label}：请选择${group.name}`);
+        else if (!group.values.includes(values[group.name])) messages.push(`${label}：${group.name}的值不在可选范围内`);
+      });
+    });
+    return messages;
   }
 
   async function save() {
     if (!editing) return;
-    if (!editing.productCode.trim() || !editing.name.trim()) return setError("请填写商品编码和名称");
-    if (!editing.skus.length || editing.skus.some((sku) => !sku.skuCode.trim() || !sku.displayName.trim() || sku.salePrice === "")) return setError("请完整填写每个 SKU 的编码、名称和售价");
-    if (specGroups.some((group) => !group.name.trim() || !group.values.length)) return setError("请完整填写规格类目和可选值");
-    if (editing.skus.some((sku) => specGroups.some((group) => !parseSpecValues(sku.specValues)[group.name]))) return setError("请为每个 SKU 选择完整的规格值");
-    try { JSON.parse(editing.specSchema || "[]"); editing.skus.forEach((sku) => JSON.parse(sku.specValues || "{}")); }
-    catch { return setError("规格类目或规格值必须是有效 JSON"); }
-    setBusy(true); setError("");
-    try {
-      await apiRequest(editing.id ? `/biz/product/${editing.id}` : "/biz/product", { method: editing.id ? "PUT" : "POST", body: { ...editing, skus: editing.skus.map((sku, index) => ({ ...sku, billOrderType: sku.billOrderType || inferBillOrderType(sku), salePrice: Number(sku.salePrice), sortNum: index })) } });
-      setEditing(null); notify("商品与规格已保存", "success"); await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "保存失败"); }
-    finally { setBusy(false); }
-  }
-
-  async function remove(product: Product) {
-    if (!product.id) return;
+    const messages = validationMessages(editing);
+    if (messages.length) {
+      setAlert({ title: "商品信息还没填完整", message: messages.slice(0, 8).join("\n"), danger: true });
+      return;
+    }
     setBusy(true);
-    try { await apiRequest(`/biz/product/${product.id}`, { method: "DELETE" }); notify("商品已下架并移除", "success"); await load(); }
-    catch (cause) { notify(cause instanceof Error ? cause.message : "删除失败", "error"); }
-    finally { setBusy(false); }
+    try {
+      const payload = {
+        ...editing,
+        productCode: editing.productCode.trim().toUpperCase(),
+        name: editing.name.trim(),
+        skus: editing.skus.map((sku, index) => ({
+          ...sku,
+          skuCode: sku.skuCode.trim(),
+          displayName: sku.displayName.trim(),
+          billOrderType: sku.billOrderType || inferBillOrderType(sku),
+          salePrice: Number(sku.salePrice),
+          sortNum: index,
+        })),
+      };
+      await apiRequest(editing.id ? `/biz/product/${editing.id}` : "/biz/product", { method: editing.id ? "PUT" : "POST", body: payload });
+      setEditing(null);
+      notify("商品与规格已保存", "success");
+      await load();
+    } catch (cause) {
+      setAlert({ title: "保存失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+    } finally { setBusy(false); }
   }
 
-  return <div className="module-page product-manager-page"><div className="module-hero compact-hero"><div><span className="eyebrow">经营管理</span><h1>商品管理</h1><p>管理客户下单页的商品、多规格组合与销售价格</p></div></div>
-    <div className="product-manager-toolbar"><button type="button" onClick={() => edit()}><Plus size={17} />新增商品</button><button type="button" onClick={load}><RefreshCw className={loading ? "spin" : ""} size={17} />刷新</button></div>
-    {error && !editing ? <p className="tool-error">{error}</p> : null}
-    {loading ? <div className="product-manager-empty">正在加载商品</div> : <section className="product-manager-list">{rows.map((product) => <article key={product.id}><header><div><small>{product.productCode}</small><h2>{product.name}</h2><p>{product.subtitle || "暂无副标题"}</p></div><span className={product.status === 1 ? "on" : "off"}>{product.status === 1 ? "上架" : "下架"}</span></header><div className="product-sku-summary">{(product.skus || []).map((sku) => <span key={sku.id || sku.skuCode}><b>{sku.displayName}</b><em>¥{Number(sku.salePrice).toFixed(2)}</em></span>)}</div><footer><button type="button" onClick={() => edit(product)}>编辑商品</button><button type="button" className="danger-text" disabled={busy} onClick={() => remove(product)}><Trash2 size={15} />删除</button></footer></article>)}</section>}
-    {!loading && !rows.length ? <div className="product-manager-empty">还没有商品，先创建一个客户可选的商品</div> : null}
+  function requestRemove(product: Product) {
+    if (!product.id) return;
+    setConfirm({
+      title: "删除商品",
+      message: `确认删除「${product.name}」？删除后客户下单页将不再展示该商品。`,
+      danger: true,
+      action: async () => {
+        try {
+          await apiRequest(`/biz/product/${product.id}`, { method: "DELETE" });
+          notify("商品已下架并移除", "success");
+          await load();
+        } catch (cause) {
+          setAlert({ title: "删除失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+        }
+      },
+    });
+  }
 
-    {editing ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !busy && setEditing(null)}><section className="purchaser-create-modal product-editor-modal"><button type="button" onClick={() => setEditing(null)}><X size={18} /></button><small>PRODUCT &amp; SKU</small><h2>{editing.id ? "编辑商品" : "新增商品"}</h2><p>规格类目可自定义多个维度。每个 SKU 保存一份规格 JSON 快照，后续接支付时价格直接沿用。</p>
-      <div className="product-editor-grid"><label><em>商品编码</em><input value={editing.productCode} onChange={(event) => setField("productCode", event.target.value.toUpperCase())} placeholder="如 HT" /></label><label><em>商品名称</em><input value={editing.name} onChange={(event) => setField("name", event.target.value)} placeholder="如 炎陵黄桃" /></label><label className="wide"><em>商品副标题</em><input value={editing.subtitle || ""} onChange={(event) => setField("subtitle", event.target.value)} placeholder="一句话说明商品特点" /></label><label className="wide"><em>商品说明</em><textarea rows={2} value={editing.description || ""} onChange={(event) => setField("description", event.target.value)} /></label><label><em>上架状态</em><select value={editing.status} onChange={(event) => setField("status", Number(event.target.value))}><option value={1}>上架</option><option value={0}>下架</option></select></label><label><em>排序</em><input type="number" value={editing.sortNum} onChange={(event) => setField("sortNum", Number(event.target.value))} /></label></div>
-      <div className="product-spec-builder"><header><div><b>规格类目</b><small>可添加重量、产区、等级、包装等多个维度</small></div><button type="button" onClick={addSpecGroup}><Plus size={15} />添加类目</button></header>{specGroups.length ? specGroups.map((group, index) => <article key={index}><label><em>类目名称</em><input value={group.name} onChange={(event) => updateSpecGroup(index, { name: event.target.value })} placeholder="如 重量" /></label><label><em>可选值</em><input value={group.values.join("、")} onChange={(event) => updateSpecGroup(index, { values: event.target.value.split(/[、,，]/).map((value) => value.trim()).filter(Boolean) })} placeholder="如 5斤、10斤" /><small>使用顿号或逗号分隔</small></label><button type="button" onClick={() => removeSpecGroup(index)} aria-label={`删除${group.name || "规格类目"}`}><Trash2 size={15} /></button></article>) : <p>暂未添加规格类目。单一价格商品也可以直接配置 SKU。</p>}</div>
-      <div className="product-sku-editor"><header><div><b>SKU 组合</b><small>每一种规格组合可配置独立售价</small></div><button type="button" onClick={() => setField("skus", [...editing.skus, { skuCode: "", displayName: "", specValues: "{}", billOrderType: "", salePrice: "", stock: null, status: 1, sortNum: editing.skus.length }])}><Plus size={15} />添加规格</button></header>{editing.skus.map((sku, index) => <article key={index}><div><label><em>SKU 编码</em><input value={sku.skuCode} onChange={(event) => setSku(index, "skuCode", event.target.value)} /></label><label><em>展示名称</em><input value={sku.displayName} onChange={(event) => setSku(index, "displayName", event.target.value)} placeholder="如 湖南省内 · 10斤" /></label><label><em>销售价</em><input type="number" min="0" step="0.01" value={sku.salePrice} onChange={(event) => setSku(index, "salePrice", event.target.value)} /></label><label><em>账单计价规格</em><select value={sku.billOrderType || inferBillOrderType(sku)} onChange={(event) => setSku(index, "billOrderType", event.target.value)}><option value="">自动识别</option>{dictionaries.sizes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label><em>状态</em><select value={sku.status} onChange={(event) => setSku(index, "status", Number(event.target.value))}><option value={1}>可售</option><option value={0}>停用</option></select></label>{specGroups.length ? <div className="product-sku-spec-fields">{specGroups.map((group) => <label key={group.name}><em>{group.name || "未命名类目"}</em><select value={parseSpecValues(sku.specValues)[group.name] || ""} onChange={(event) => setSkuSpec(index, group.name, event.target.value)}><option value="">请选择</option>{group.values.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>)}</div> : null}</div><button type="button" disabled={editing.skus.length === 1} onClick={() => setField("skus", editing.skus.filter((_, i) => i !== index))}><Trash2 size={15} /></button></article>)}</div>
-      {error ? <p className="tool-error">{error}</p> : null}<button className="purchaser-create-submit" type="button" disabled={busy} onClick={save}><Save size={17} />{busy ? "正在保存" : "保存商品"}</button>
-    </section></div> : null}
-  </div>;
+  return (
+    <div className="module-page product-manager-page">
+      <div className="module-hero compact-hero product-manager-hero">
+        <div><span className="eyebrow">经营管理</span><h1>商品管理</h1><p>维护客户下单页的商品、规格、地区和销售价格。</p></div>
+      </div>
+
+      <section className="product-manager-stats" aria-label="商品概览">
+        <span><b>{rows.length}</b><small>商品总数</small></span>
+        <span><b>{activeProducts}</b><small>上架商品</small></span>
+        <span><b>{activeSkus}</b><small>可售规格</small></span>
+      </section>
+
+      <div className="product-manager-toolbar">
+        {access.has("products.create") ? <button type="button" className="primary" onClick={() => edit()}><Plus size={17} />新增商品</button> : null}
+        <button type="button" onClick={load}><RefreshCw className={loading ? "spin" : ""} size={17} />刷新</button>
+      </div>
+
+      {loading ? <div className="product-manager-empty"><LoaderCircle className="spin" size={24} />正在加载商品</div> : rows.length ? (
+        <section className="product-manager-list">
+          {rows.map((product) => (
+            <article key={product.id}>
+              <header>
+                <div><small>{product.productCode}</small><h2>{product.name}</h2><p>{product.subtitle || product.description || "暂无说明"}</p></div>
+                <span className={product.status === 1 ? "on" : "off"}>{product.status === 1 ? "上架" : "下架"}</span>
+              </header>
+              <div className="product-sku-summary">
+                {(product.skus || []).map((sku) => <span key={sku.id || sku.skuCode} className={sku.status === 1 ? "" : "off"}><b>{sku.displayName}</b><em>{money(sku.salePrice)}</em></span>)}
+              </div>
+              <footer>
+                {access.has("products.edit") ? <button type="button" onClick={() => edit(product)}><Edit3 size={15} />编辑</button> : null}
+                {access.has("products.delete") ? <button type="button" className="danger-text" disabled={busy} onClick={() => requestRemove(product)}><Trash2 size={15} />删除</button> : null}
+              </footer>
+            </article>
+          ))}
+        </section>
+      ) : <div className="product-manager-empty"><PackageCheck size={28} />还没有商品，先创建一个客户可选的商品</div>}
+
+      {editing && access.has(editing.id ? "products.edit" : "products.create") ? (
+        <div className="purchaser-create-backdrop product-editor-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !busy && setEditing(null)}>
+          <section className="purchaser-create-modal product-editor-modal product-editor-modern">
+            <button type="button" onClick={() => setEditing(null)} aria-label="关闭"><X size={18} /></button>
+            <small>PRODUCT &amp; SKU</small>
+            <h2>{editing.id ? "编辑商品" : "新增商品"}</h2>
+            <p>客户下单页会按商品、规格、地区逐步展示；每个 SKU 单独配置价格。</p>
+
+            <section className="product-editor-section">
+              <header><span><PackageCheck size={17} /></span><div><b>基础信息</b><small>商品编码保存后用于下单和收款码匹配</small></div></header>
+              <div className="product-editor-grid">
+                <label><em>商品编码</em><input value={editing.productCode} onChange={(event) => setField("productCode", event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="如 HT" /></label>
+                <label><em>商品名称</em><input value={editing.name} onChange={(event) => setField("name", event.target.value)} placeholder="如 炎陵黄桃" /></label>
+                <label className="wide"><em>商品副标题</em><input value={editing.subtitle || ""} onChange={(event) => setField("subtitle", event.target.value)} placeholder="一句话说明商品特点" /></label>
+                <label className="wide"><em>商品说明</em><textarea rows={2} value={editing.description || ""} onChange={(event) => setField("description", event.target.value)} placeholder="选填，展示给运营人员参考" /></label>
+                <label><em>上架状态</em><select value={editing.status} onChange={(event) => setField("status", Number(event.target.value))}><option value={1}>上架</option><option value={0}>下架</option></select></label>
+                <label><em>排序</em><input type="number" min={0} value={editing.sortNum} onChange={(event) => setField("sortNum", Number(event.target.value))} /></label>
+              </div>
+            </section>
+
+            <section className="product-editor-section product-spec-builder">
+              <header><span><Layers3 size={17} /></span><div><b>规格类目</b><small>例如重量、配送区域。新疆西藏可以作为一个地区值。</small></div><button type="button" onClick={addSpecGroup}><Plus size={15} />添加类目</button></header>
+              {specGroups.length ? specGroups.map((group, index) => (
+                <article key={index}>
+                  <label><em>类目名称</em><input value={group.name} onChange={(event) => updateSpecGroup(index, { name: event.target.value })} placeholder="如 重量" /></label>
+                  <label><em>可选值</em><input value={group.values.join("、")} onChange={(event) => updateSpecGroup(index, { values: event.target.value.split(/[、,，]/) })} placeholder="如 湖南省内、湖南省外、新疆西藏" /><small>使用顿号或逗号分隔</small></label>
+                  <button type="button" onClick={() => removeSpecGroup(index)} aria-label={`删除${group.name || "规格类目"}`}><Trash2 size={15} /></button>
+                </article>
+              )) : <p>单一价格商品可以不添加类目；多规格商品建议至少配置“重量”。</p>}
+            </section>
+
+            <section className="product-editor-section product-sku-editor">
+              <header><span><Tags size={17} /></span><div><b>SKU 组合</b><small>每一行是一种可售组合，价格不要写进展示名称里</small></div><button type="button" onClick={() => setField("skus", [...editing.skus, emptySku(editing.skus.length)])}><Plus size={15} />添加规格</button></header>
+              {editing.skus.map((sku, index) => {
+                const values = parseSpecValues(sku.specValues);
+                return (
+                  <article key={index}>
+                    <div>
+                      <label><em>SKU 编码</em><input value={sku.skuCode} onChange={(event) => setSku(index, "skuCode", event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="如 XJ-5" /></label>
+                      <label><em>展示名称</em><input value={sku.displayName} onChange={(event) => setSku(index, "displayName", event.target.value)} placeholder="如 新疆西藏 · 5斤" /></label>
+                      <label><em>销售价</em><input type="number" min="0" step="0.01" value={sku.salePrice} onChange={(event) => setSku(index, "salePrice", event.target.value)} placeholder="0.00" /></label>
+                      <label><em>账单计价规格</em><select value={sku.billOrderType || inferBillOrderType(sku)} onChange={(event) => setSku(index, "billOrderType", event.target.value)}><option value="">自动识别</option>{dictionaries.sizes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+                      <label><em>状态</em><select value={sku.status} onChange={(event) => setSku(index, "status", Number(event.target.value))}><option value={1}>可售</option><option value={0}>停用</option></select></label>
+                      {specGroups.length ? <div className="product-sku-spec-fields">{specGroups.map((group) => <label key={group.name}><em>{group.name || "未命名类目"}</em><select value={values[group.name] || ""} onChange={(event) => setSkuSpec(index, group.name, event.target.value)}><option value="">请选择</option>{group.values.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>)}</div> : null}
+                    </div>
+                    <button type="button" disabled={editing.skus.length === 1} onClick={() => setField("skus", editing.skus.filter((_, i) => i !== index))} aria-label="删除 SKU"><Trash2 size={15} /></button>
+                  </article>
+                );
+              })}
+            </section>
+
+            <div className="product-editor-actions">
+              <button type="button" onClick={() => setEditing(null)} disabled={busy}>取消</button>
+              <button className="purchaser-create-submit" type="button" disabled={busy} onClick={save}>{busy ? <LoaderCircle className="spin" size={17} /> : <Save size={17} />}{busy ? "正在保存" : "保存商品"}</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <AlertDialog state={alert} onClose={() => setAlert(null)} />
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+    </div>
+  );
 }

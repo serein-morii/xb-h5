@@ -4,6 +4,7 @@ import {
   FileSpreadsheet,
   Gauge,
   House,
+  Activity,
   Link2,
   SearchCheck,
   ShoppingBag,
@@ -12,6 +13,7 @@ import {
   Truck,
   User,
   ReceiptText,
+  Settings2,
 } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
@@ -32,11 +34,14 @@ export type MenuKey =
   | "purchasers"
   | "tracking"
   | "logistics"
-  | "shortLinks";
+  | "shortLinks"
+  | "systemCenter"
+  | "operationsCenter";
 
 export const ALL_MENU_KEYS: MenuKey[] = [
   "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "products",
   "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks",
+  "systemCenter", "operationsCenter",
 ];
 
 const ACTIVE_PAGE_CACHE_KEY = "xb-h5-active-page";
@@ -47,10 +52,12 @@ export function readCachedActivePage(): MenuKey {
   try {
     const params = new URLSearchParams(window.location.search);
     const fromQuery = params.get("page");
+    if (fromQuery === "operationsCenter") return "systemCenter";
     if (fromQuery && (ALL_MENU_KEYS as string[]).includes(fromQuery)) {
       return fromQuery as MenuKey;
     }
     const raw = window.localStorage.getItem(ACTIVE_PAGE_CACHE_KEY);
+    if (raw === "operationsCenter") return "systemCenter";
     if (raw && (ALL_MENU_KEYS as string[]).includes(raw)) return raw as MenuKey;
   } catch { /* 读不到就当首次访问 */ }
   return "home";
@@ -192,6 +199,8 @@ export const NAV_ITEMS: Array<{
   { key: "tracking", label: "快递查询", description: "快递100、顺丰、EMS", icon: SearchCheck },
   { key: "logistics", label: "物流用量", description: "额度、开关与用量记录", icon: Gauge },
   { key: "shortLinks", label: "短链管理", description: "自定义域名短链接跳转", icon: Link2 },
+  { key: "systemCenter", label: "系统运行", description: "账号权限、监控日志与开发工具", icon: Settings2 },
+  { key: "operationsCenter", label: "系统运行", description: "账号权限、监控日志与开发工具", icon: Activity },
 ];
 
 export type FieldConfig = {

@@ -455,6 +455,9 @@ export type PublicStoreRow = {
   text?: string;
   notice?: string;
   defPurchaser?: string;
+  blockOrder?: number;
+  blockQuery?: number;
+  blockDisplayType?: string;
 };
 
 /**

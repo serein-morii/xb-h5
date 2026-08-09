@@ -14,6 +14,7 @@ import {
   updateShortLink,
 } from "../../lib/api";
 import { copyToClipboard } from "../../lib/api";
+import { useAccess } from "../../admin/access";
 
 type EditForm = { path: string; targetType: ShortLinkType; target: string; remark: string; expireTime: string };
 const EMPTY_FORM: EditForm = { path: "", targetType: "internal", target: "", remark: "", expireTime: "" };
@@ -96,6 +97,7 @@ function validateForm(form: EditForm, isEdit: boolean): string {
 }
 
 export default function ShortLinkManager({ embedded = false }: { embedded?: boolean }) {
+  const access = useAccess();
   const [rows, setRows] = useState<ShortLinkRow[]>([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
@@ -209,7 +211,7 @@ export default function ShortLinkManager({ embedded = false }: { embedded?: bool
 
       <section className="purchaser-manager-toolbar">
         <div><Search size={16} /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="按 path / 目标 / 备注 / 创建人筛选" /></div>
-        <button type="button" title="新建短链" onClick={startCreate}><Plus size={18} /></button>
+        {access.has("shortLinks.create") ? <button type="button" title="新建短链" onClick={startCreate}><Plus size={18} /></button> : null}
         <button type="button" title="刷新" onClick={load}><RefreshCw className={loading ? "spin" : ""} size={17} /></button>
       </section>
 
@@ -253,8 +255,8 @@ export default function ShortLinkManager({ embedded = false }: { embedded?: bool
                 <div className="short-link-card-actions">
                   <button type="button" onClick={() => copyLink(row)}><Copy size={13} />复制短链</button>
                   <button type="button" onClick={() => openVisits(row)}><History size={13} />访问记录</button>
-                  <button type="button" onClick={() => startEdit(row)}><Pencil size={13} />编辑</button>
-                  <button type="button" className="danger-text" onClick={() => { setConfirmingDelete(row); setError(""); }}><Trash2 size={13} />删除</button>
+                  {access.has("shortLinks.edit") ? <button type="button" onClick={() => startEdit(row)}><Pencil size={13} />编辑</button> : null}
+                  {access.has("shortLinks.delete") ? <button type="button" className="danger-text" onClick={() => { setConfirmingDelete(row); setError(""); }}><Trash2 size={13} />删除</button> : null}
                 </div>
               </footer>
             </article>
@@ -263,7 +265,7 @@ export default function ShortLinkManager({ embedded = false }: { embedded?: bool
         </section>
       )}
 
-      {(creating || editing) ? <ShortLinkForm
+      {((creating && access.has("shortLinks.create")) || (editing && access.has("shortLinks.edit"))) ? <ShortLinkForm
         title={editing ? "编辑短链" : "新建短链"}
         form={editing ? editing.form : creating!}
         isEdit={!!editing}
@@ -277,7 +279,7 @@ export default function ShortLinkManager({ embedded = false }: { embedded?: bool
         onClose={closeForm}
       /> : null}
 
-      {confirmingDelete ? <div className="batch-order-confirm-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setConfirmingDelete(null)}>
+      {confirmingDelete && access.has("shortLinks.delete") ? <div className="batch-order-confirm-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setConfirmingDelete(null)}>
         <section className="batch-order-confirm-modal" role="alertdialog" aria-modal="true">
           <div className="batch-order-confirm-icon" style={{ color: "#c44a1f" }}><Trash2 size={26} /></div>
           <h2>确认删除短链</h2>

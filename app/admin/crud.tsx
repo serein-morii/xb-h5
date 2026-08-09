@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   BadgeDollarSign,
+  Ban,
   Bell,
   Check,
   ChevronDown,
@@ -17,6 +18,7 @@ import {
   ReceiptText,
   RefreshCw,
   Search,
+  SearchX,
   SlidersHorizontal,
   Sparkles,
   Store as StoreIcon,
@@ -44,6 +46,12 @@ const BILL_PAY_STATUS_OPTIONS = [
   { value: 1, label: "已付款" },
   { value: 2, label: "已退款" },
   { value: 3, label: "待确认" },
+];
+
+const STORE_BLOCK_DISPLAY_OPTIONS = [
+  { value: "banner", label: "顶部提示" },
+  { value: "fullscreen", label: "整页拦截" },
+  { value: "confirm", label: "确认弹窗" },
 ];
 
 function billOrderStatusLabel(row: DataRow, dictionaries: Dictionaries) {
@@ -77,7 +85,7 @@ export type CrudConfig = {
   importable?: boolean;
 };
 
-export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products">, CrudConfig> {
+export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products" | "systemCenter" | "operationsCenter">, CrudConfig> {
   return {
   bills: {
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
@@ -183,10 +191,12 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
     summary: [
       { key: "isDelete", label: "营业状态", tone: "default", valueFormat: (row) => Number(row.isDelete) === 1 ? "营业中" : Number(row.isDelete) === 2 ? "已暂停" : "未知" },
       { key: "orderCodeRequirePwd", label: "下单码", tone: "default", valueFormat: (row) => Number(row.orderCodeRequirePwd) === 1 ? (row.orderCodePwd ? "需要 · 密码已设" : "需要 · 密码未设") : "免下单码" },
+      { key: "blockOrder", label: "下单拦截", tone: "danger", valueFormat: (row) => Number(row.blockOrder) === 1 ? "已禁止" : "未拦截" },
+      { key: "blockQuery", label: "查单拦截", tone: "danger", valueFormat: (row) => Number(row.blockQuery) === 1 ? "已禁止" : "未拦截" },
     ],
     searchFields: [{ key: "code", label: "店铺编码" }, { key: "name", label: "店铺名称" }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", type: "date" }],
-    fields: [{ key: "code", label: "店铺编码", required: true }, { key: "name", label: "店铺名称", required: true }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS, required: true }, { key: "notice", label: "店铺通知", type: "textarea" }, { key: "orderCodeRequirePwd", label: "需要下单码", type: "select", options: [{ value: "0", label: "否" }, { value: "1", label: "是" }] }, { key: "orderCodePwd", label: "店铺下单码", placeholder: "4-6 位数字，留空则买家单独配置" }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", type: "select", options: dictionaries.platforms }, { key: "noticeUrl", label: "通知地址", type: "textarea" }],
-    display: [{ key: "isDelete", label: "营业状态", options: STORE_STATUS_OPTIONS }, { key: "code", label: "店铺编码" }, { key: "orderCodeRequirePwd", label: "下单码", format: (row) => Number(row.orderCodeRequirePwd) === 1 ? "需要" : "不需要" }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", options: dictionaries.platforms }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime) }, { key: "updateTime", label: "更新时间", format: (row) => shortDate(row.updateTime) }],
+    fields: [{ key: "code", label: "店铺编码", required: true }, { key: "name", label: "店铺名称", required: true }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS, required: true }, { key: "notice", label: "店铺通知", type: "textarea" }, { key: "orderCodeRequirePwd", label: "需要下单码", type: "select", options: [{ value: "0", label: "否" }, { value: "1", label: "是" }] }, { key: "orderCodePwd", label: "店铺下单码", placeholder: "4-6 位数字，留空则买家单独配置" }, { key: "blockOrder", label: "禁止下单", type: "select", options: [{ value: "0", label: "未拦截" }, { value: "1", label: "禁止下单" }] }, { key: "blockQuery", label: "禁止查单", type: "select", options: [{ value: "0", label: "未拦截" }, { value: "1", label: "禁止查询订单" }] }, { key: "blockDisplayType", label: "拦截展示形式", type: "select", options: STORE_BLOCK_DISPLAY_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", type: "select", options: dictionaries.platforms }, { key: "noticeUrl", label: "通知地址", type: "textarea" }],
+    display: [{ key: "isDelete", label: "营业状态", options: STORE_STATUS_OPTIONS }, { key: "code", label: "店铺编码" }, { key: "orderCodeRequirePwd", label: "下单码", format: (row) => Number(row.orderCodeRequirePwd) === 1 ? "需要" : "不需要" }, { key: "blockOrder", label: "禁止下单", format: (row) => Number(row.blockOrder) === 1 ? "已禁止" : "未拦截" }, { key: "blockQuery", label: "禁止查单", format: (row) => Number(row.blockQuery) === 1 ? "已禁止" : "未拦截" }, { key: "blockDisplayType", label: "拦截展示", options: STORE_BLOCK_DISPLAY_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", options: dictionaries.platforms }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime) }, { key: "updateTime", label: "更新时间", format: (row) => shortDate(row.updateTime) }],
     note: (row) => [row.notice, row.noticeUrl].filter(Boolean).join(" · "),
   },
   };
@@ -415,6 +425,31 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
       },
     });
   }
+  async function toggleStoreBlock(row: DataRow, field: "blockOrder" | "blockQuery") {
+    const isBlocked = Number(row[field]) === 1;
+    const nextValue = isBlocked ? 0 : 1;
+    const isOrder = field === "blockOrder";
+    const label = isOrder ? "下单" : "查单";
+    const storeName = String(row.name || row.code || "该店铺");
+    setConfirm({
+      title: isBlocked ? `恢复${label}` : `禁止${label}`,
+      message: isBlocked
+        ? `恢复后「${storeName}」的客户将重新可以${label === "下单" ? "提交订单" : "查询订单"}，确认？`
+        : `开启后「${storeName}」下所有买家都会被拦截，优先级高于买家管理里的开关，确认？`,
+      danger: !isBlocked,
+      action: async () => {
+        try {
+          await apiRequest(`${config.api}/${row.id}/block`, { method: "PUT", body: { [field]: nextValue } });
+          notify(isBlocked ? `已恢复${label}` : `已禁止${label}`, "success");
+          setConfirm(null);
+          load();
+        } catch (error) {
+          notify(error instanceof Error ? error.message : "切换店铺拦截失败", "error");
+          setConfirm(null);
+        }
+      },
+    });
+  }
   function displayValue(row: DataRow, item: CrudConfig["display"][number]) {
     if (item.format) return item.format(row);
     const value = row[item.key];
@@ -479,7 +514,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
               {row.noticeUrl ? <div className="store-extra-line"><span><ExternalLink size={13} />通知地址</span><b className="store-notice-url">{row.noticeUrl}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.noticeUrl), "通知地址已复制")}><Copy size={12} />复制</button></div> : null}
               {row.orderCodeRequirePwd && row.orderCodePwd ? <div className="store-extra-line"><span><LockKeyhole size={13} />店铺下单码</span><b>{row.orderCodePwd}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.orderCodePwd), "下单码已复制")}><Copy size={12} />复制</button></div> : null}
             </div> : null}
-            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <button type="button" className="primary-action" onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button> : null}{(() => { const action = resolveExtra(row); if (!action) return null; return <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => extra(row)}><RefreshCw size={16} />{action.label}</button>; })()}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
+            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <><button type="button" className={Number(row.blockOrder) === 1 ? "primary-action" : "primary-action danger-action"} onClick={() => toggleStoreBlock(row, "blockOrder")}><Ban size={16} />{Number(row.blockOrder) === 1 ? "恢复下单" : "禁下单"}</button><button type="button" className={Number(row.blockQuery) === 1 ? "primary-action" : "primary-action danger-action"} onClick={() => toggleStoreBlock(row, "blockQuery")}><SearchX size={16} />{Number(row.blockQuery) === 1 ? "恢复查单" : "禁查单"}</button><button type="button" className={Number(row.isDelete) === 1 ? "primary-action danger-action" : "primary-action"} onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button></> : null}{(() => { const action = resolveExtra(row); if (!action) return null; return <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => extra(row)}><RefreshCw size={16} />{action.label}</button>; })()}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
           </article>;
         })}
       </div>

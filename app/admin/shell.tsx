@@ -6,16 +6,14 @@ import {
   LockKeyhole,
   LogOut,
   LoaderCircle,
-  Menu,
   Pencil,
-  Plus,
-  ReceiptText,
+  Search,
   SearchCheck,
   Send,
-  ShoppingBag,
   Sparkles,
   Truck,
   Copy,
+  X,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -42,16 +40,23 @@ import {
   fetchDictionaries,
   maskEmail,
   maskPhone,
-  NAV_ITEMS,
   readCachedActivePage,
   sexLabel,
   shortDate,
   writeCachedActivePage,
 } from "./core";
+import {
+  fetchMobileMenuConfig,
+  getMobileMenuConfig,
+  MOBILE_MENU_ALL_KEY,
+  resolveMobileMenu,
+  type MobileMenuConfig,
+} from "./mobileMenu.config";
 import { createCrudConfigs, CrudModule } from "./crud";
 import { DashboardPage } from "./dashboard";
 import { BindEmailSheet, ChangePwdByEmailSheet, EditProfileSheet, LoginScreen } from "./login";
 import { Sheet, Toast } from "./ui";
+import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest, useAccess } from "./access";
 
 const AdminOrderEntry = lazy(() => import("../AdminOrderEntry"));
 const BatchOrderEntry = lazy(() => import("../tools/batch-order/BatchOrderEntry"));
@@ -61,25 +66,37 @@ const ShortLinkManager = lazy(() => import("../tools/short-links/ShortLinkManage
 const LogisticsPage = lazy(() => import("./logistics").then((module) => ({ default: module.LogisticsPage })));
 const OrdersPage = lazy(() => import("./orders").then((module) => ({ default: module.OrdersPage })));
 const ProductsPage = lazy(() => import("./products"));
+const SystemRuntimeCenter = lazy(() => import("./system-runtime").then((module) => ({ default: module.SystemRuntimeCenter })));
 
 export function TrackingPage() {
   const services = [{ name: "快递100", desc: "支持多家快递公司查询", url: "https://m.kuaidi100.com/", color: "orange" },{ name: "顺丰速运", desc: "顺丰官方运单跟踪", url: "https://www.sf-express.com/we/ow/chn/sc/waybill/list", color: "green" },{ name: "EMS", desc: "中国邮政 EMS 邮件查询", url: "https://www.ems.com.cn/queryList", color: "blue" }];
   return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.name}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
-export function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout, onUserInfoChanged, onReplayTour, notify }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+export function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig }) {
+  const access = useAccess();
   const [view, setView] = useState<"menu" | "profile" | "settings">("menu");
+  const [menuQuery, setMenuQuery] = useState("");
   const [changePwdOpen, setChangePwdOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
   // 标记修改密码流程是否需要"先绑定邮箱再改密"
   const [pendingChangePwd, setPendingChangePwd] = useState(false);
-  useEffect(() => { if (!open) { setView("menu"); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPendingChangePwd(false); } }, [open]);
-  const renderItems = (keys: MenuKey[]) => keys.map((key) => {
-    const item = NAV_ITEMS.find((entry) => entry.key === key)!;
-    const Icon = item.icon;
-    return <button className={active === item.key ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}><span><Icon size={21} /></span><b>{item.label}</b><small>{item.description}</small></button>;
-  });
+  const mobileMenu = useMemo(
+    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
+    [access, menuConfig],
+  );
+  useEffect(() => { if (!open) { setView("menu"); setMenuQuery(""); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPendingChangePwd(false); } }, [open]);
+  const filteredGroups = useMemo(() => {
+    const keyword = menuQuery.trim().toLowerCase();
+    if (!keyword) return mobileMenu.groups;
+    return mobileMenu.groups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(keyword)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [menuQuery, mobileMenu.groups]);
   const displayName = String(userInfo?.nickName || userInfo?.userName || username);
   const avatarChar = String(userInfo?.avatar || displayName).slice(0, 1).toUpperCase();
   const dept = userInfo?.dept;
@@ -166,12 +183,62 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
       notify={notify}
     />
   </>;
-  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}><button className={`menu-public-tools menu-home-entry ${active === "home" ? "active" : ""}`} type="button" onClick={() => { onSelect("home"); onClose(); }}><House size={20} /><span><b>工作台</b><small>订单、买家与物流动态总览</small></span><ChevronRight size={17} /></button><div className="menu-groups">
-    <section className="menu-group" data-onboard="menu-group-orders"><div className="menu-group-title"><b>订单处理</b><small>订单与物流日常操作</small></div><div className="menu-grid">{renderItems(["orders", "orderEntry", "batchOrder", "express"])}</div></section>
-    <section className="menu-group" data-onboard="menu-group-manage"><div className="menu-group-title"><b>经营管理</b><small>账单、商品、价格、店铺、物流额度及短链</small></div><div className="menu-grid">{renderItems(["bills", "products", "prices", "stores", "logistics", "shortLinks"])}</div></section>
-    <section className="menu-group" data-onboard="menu-group-buyer"><div className="menu-group-title"><b>买家服务</b><small>管理买家及专属下单入口</small></div><div className="menu-grid">{renderItems(["orderLink", "purchasers"])}</div></section>
-    <section className="menu-group" data-onboard="menu-group-tracking"><div className="menu-group-title"><b>查询工具</b><small>常用物流查询入口</small></div><div className="menu-grid">{renderItems(["tracking"])}</div></section>
-  </div><a className="menu-public-tools" data-onboard="menu-public-tools" href="/tools"><Sparkles size={20} /><span><b>工具箱</b><small>订单查询、链接查询与运费工具</small></span><ChevronRight size={17} /></a><a className="icp-link menu-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></Sheet>;
+  const extras = mobileMenu.extras;
+  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}>
+    <div className="toolbar-card search-toolbar menu-search-toolbar">
+      <label className="quick-search">
+        <Search size={15} strokeWidth={2.2} />
+        <input
+          value={menuQuery}
+          onChange={(event) => setMenuQuery(event.target.value)}
+          placeholder="搜索功能"
+          autoComplete="off"
+          enterKeyHint="search"
+          aria-label="搜索功能"
+        />
+        {menuQuery ? (
+          <button className="search-clear" type="button" onClick={() => setMenuQuery("")} aria-label="清空搜索">
+            <X size={14} />
+          </button>
+        ) : null}
+      </label>
+    </div>
+    {!menuQuery && extras.showHomeEntry ? (
+      <button className={`menu-public-tools menu-home-entry ${active === "home" ? "active" : ""}`} type="button" onClick={() => { onSelect("home"); onClose(); }}>
+        <House size={20} />
+        <span><b>{extras.homeLabel}</b><small>{extras.homeDescription}</small></span>
+        <ChevronRight size={17} />
+      </button>
+    ) : null}
+    <div className={`menu-groups${menuQuery ? " searching" : ""}`}>
+      {filteredGroups.map((group) => (
+        <section className="menu-group" data-onboard={group.onboard} key={group.key}>
+          <div className="menu-group-title"><b>{group.title}</b>{group.description ? <small>{group.description}</small> : null}</div>
+          <div className="menu-grid">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button className={active === item.key || (item.key === "systemCenter" && active === "operationsCenter") ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}>
+                  <span><Icon size={21} /></span>
+                  <b>{item.label}</b>
+                  <small>{item.description}</small>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+      {menuQuery && !filteredGroups.length ? <div className="empty-state" style={{ minHeight: 160 }}><Search size={24} /><h3>没有匹配功能</h3><p>试试其他关键词</p></div> : null}
+    </div>
+    {extras.showToolboxEntry ? (
+      <a className="menu-public-tools" data-onboard="menu-public-tools" href={extras.toolboxHref}>
+        <Sparkles size={20} />
+        <span><b>{extras.toolboxLabel}</b><small>{extras.toolboxDescription}</small></span>
+        <ChevronRight size={17} />
+      </a>
+    ) : null}
+    <a className="icp-link menu-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
+  </Sheet>;
 }
 
 export function AdminShell({ username, onLogout }: { username: string; onLogout: () => void }) {
@@ -182,6 +249,8 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   const [toast, setToast] = useState<ToastState>(null);
   const [dictionaries, setDictionaries] = useState<Dictionaries>(EMPTY_DICTIONARIES);
   const [userInfo, setUserInfo] = useState<DataRow | null>(null);
+  const [access, setAccess] = useState(EMPTY_ACCESS);
+  const [menuConfig, setMenuConfig] = useState<MobileMenuConfig>(getMobileMenuConfig);
   // 登录后若邮箱为空，自动弹"绑定邮箱"页（不再用 Toast 提示）。
   // 用户可关闭；下次登录仍会再弹，直到真正去绑定邮箱。
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
@@ -189,13 +258,22 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   // 邮箱关掉/绑好 → 解除门控 → 引导才出来。
   const [tourGatedByEmail, setTourGatedByEmail] = useState(false);
   const notify = useCallback((message: string, type: "success" | "error" | "info" = "info") => { setToast({ message, type }); window.setTimeout(() => setToast(null), 2600); }, []);
+  const refreshAccess = useCallback(async () => {
+    try {
+      setAccess(createAccessState(await fetchAccessManifest()));
+    } catch {
+      setAccess(createAccessState({ schemaVersion: 1, revision: "unavailable", superAdmin: false, roles: [], capabilities: ["nav.home", "nav.tracking"] }));
+      notify("权限清单加载失败，已进入受限模式", "error");
+    }
+  }, [notify]);
   const refreshUserInfo = useCallback(() => {
     // 静默重新拉取 /getInfo，用于"绑定邮箱 / 编辑信息"后让 userInfo 同步最新值
     apiRequest<DataRow>("/getInfo").then((result) => {
       const info = (result.user as DataRow) || result;
       setUserInfo(info);
     }).catch(() => { /* 静默失败，不打扰用户 */ });
-  }, []);
+    void refreshAccess();
+  }, [refreshAccess]);
   // 引导：注册打开/关闭菜单命令；首次进入触发系统引导；切换 active 触发单步介绍
   const onboardingFull = useOnboarding();
   const onboardingTriggers = useOnboardingTriggers();
@@ -223,6 +301,40 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     fetchDictionaries().then((result) => { if (mounted) setDictionaries(result); }).catch(() => notify("系统字典加载失败，列表将显示原始编码", "error"));
     return () => { mounted = false; };
   }, [notify]);
+  useEffect(() => {
+    if (!access.ready) return;
+    let mounted = true;
+    const loadMenu = () => {
+      fetchMobileMenuConfig(apiRequest).then((config) => {
+        if (mounted) setMenuConfig(config);
+      }).catch(() => { /* 本地默认兜底 */ });
+    };
+    loadMenu();
+    window.addEventListener("xb-mobile-menu-changed", loadMenu);
+    return () => {
+      mounted = false;
+      window.removeEventListener("xb-mobile-menu-changed", loadMenu);
+    };
+  }, [access.ready]);
+
+  useEffect(() => {
+    void refreshAccess();
+    const refresh = () => void refreshAccess();
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("focus", refresh);
+    window.addEventListener("xb-access-changed", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("xb-access-changed", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(timer);
+    };
+  }, [refreshAccess]);
+  useEffect(() => {
+    if (access.ready && !canOpenMenu(access, active)) setActive("home");
+  }, [access, active]);
   useEffect(() => {
     let mounted = true;
     // 拉一次 /getInfo，失败时静默降级到 username；仅在已登录后由 AdminShell 持有 token 时调用
@@ -282,19 +394,31 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     return () => window.clearTimeout(t);
   }, [active, onboardingTriggers]);
   const configs = useMemo(() => createCrudConfigs(dictionaries), [dictionaries]);
-  const renderPage = active === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={setActive} notify={notify} />
-    : active === "orders" ? <OrdersPage notify={notify} onNavigate={setActive} />
-    : active === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
-    : active === "batchOrder" ? <BatchOrderEntry />
-    : active === "orderLink" ? <OrderLinkGenerator embedded />
-    : active === "purchasers" ? <PurchaserManager embedded />
-    : active === "products" ? <ProductsPage notify={notify} />
-    : active === "tracking" ? <TrackingPage />
-    : active === "logistics" ? <LogisticsPage userInfo={userInfo} notify={notify} />
-    : active === "shortLinks" ? <ShortLinkManager embedded />
-    : <CrudModule config={configs[active as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
+  const mobileMenu = useMemo(
+    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
+    [access, menuConfig],
+  );
+  const navigate = useCallback((key: MenuKey) => {
+    if (canOpenMenu(access, key)) setActive(key);
+    else notify("当前角色没有此功能权限", "error");
+  }, [access, notify]);
+  const visibleActive = access.ready && canOpenMenu(access, active) ? active : "home";
+  const renderPage = visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} />
+    : visibleActive === "orders" ? <OrdersPage notify={notify} onNavigate={navigate} />
+    : visibleActive === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
+    : visibleActive === "batchOrder" ? <BatchOrderEntry />
+    : visibleActive === "orderLink" ? <OrderLinkGenerator embedded />
+    : visibleActive === "purchasers" ? <PurchaserManager embedded />
+    : visibleActive === "products" ? <ProductsPage notify={notify} />
+    : visibleActive === "tracking" ? <TrackingPage />
+    : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
+    : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
+    : visibleActive === "systemCenter" || visibleActive === "operationsCenter" ? <SystemRuntimeCenter notify={notify} />
+    : <CrudModule config={configs[visibleActive as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
-  return <DictionaryContext.Provider value={dictionaries}>
+  if (!access.ready) return <div className="app-loading"><LoaderCircle className="spin" size={28} /><p>正在同步权限</p></div>;
+
+  return <AccessContext.Provider value={access}><DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
       <main className="product-main" data-onboard={`page-${active}`}>
         <Suspense fallback={<div className="home-empty"><LoaderCircle className="spin" size={22} />正在加载模块</div>}>
@@ -302,13 +426,35 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
         </Suspense>
       </main>
       <nav className="workspace-dock" aria-label="主要功能">
-        <button className={active === "home" ? "active" : ""} data-onboard="dock-home" onClick={() => setActive("home")}><House size={21} /><span>首页</span></button>
-        <button className={active === "orders" ? "active" : ""} data-onboard="dock-orders" onClick={() => setActive("orders")}><ShoppingBag size={21} /><span>订单</span></button>
-        <button className={`dock-create${active === "orderEntry" ? " active" : ""}`} data-onboard="dock-create" type="button" onClick={() => setActive("orderEntry")} aria-label="录单"><span className="dock-create-glyph" aria-hidden="true"><Plus size={22} strokeWidth={2.4} /></span><span>录单</span></button>
-        <button className={active === "bills" ? "active" : ""} data-onboard="dock-bills" onClick={() => setActive("bills")}><ReceiptText size={21} /><span>账单</span></button>
-        <button className={!["home", "orders", "orderEntry", "bills"].includes(active) ? "active" : ""} data-onboard="dock-menu" onClick={handleDockMenuClick}><Menu size={21} /><span>全部</span></button>
+        {mobileMenu.dock.map((item) => {
+          const Icon = item.icon;
+          if (item.key === MOBILE_MENU_ALL_KEY) {
+            const dockKeys = mobileMenu.dock.map((entry) => entry.key).filter((key) => key !== MOBILE_MENU_ALL_KEY);
+            const isActive = !dockKeys.includes(active);
+            return (
+              <button className={isActive ? "active" : ""} data-onboard="dock-menu" key={item.key} onClick={handleDockMenuClick}>
+                <Icon size={21} /><span>{item.label}</span>
+              </button>
+            );
+          }
+          const pageKey = item.key;
+          const isActive = active === pageKey || (pageKey === "systemCenter" && active === "operationsCenter");
+          if (item.emphasis) {
+            return (
+              <button className={`dock-create${isActive ? " active" : ""}`} data-onboard={`dock-${pageKey}`} key={pageKey} type="button" onClick={() => navigate(pageKey)} aria-label={item.label}>
+                <span className="dock-create-glyph" aria-hidden="true"><Icon size={22} strokeWidth={2.4} /></span>
+                <span>{item.label}</span>
+              </button>
+            );
+          }
+          return (
+            <button className={isActive ? "active" : ""} data-onboard={`dock-${pageKey}`} key={pageKey} onClick={() => pageKey === "home" ? setActive("home") : navigate(pageKey)}>
+              <Icon size={21} /><span>{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
-      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={setActive} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} />
+      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={navigate} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} menuConfig={menuConfig} />
       <BindEmailSheet
         open={bindEmailOpen}
         currentEmail={String(userInfo?.email || "")}
@@ -327,7 +473,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
       <ThemeSettings />
       <Toast toast={toast} />
     </div>
-  </DictionaryContext.Provider>;
+  </DictionaryContext.Provider></AccessContext.Provider>;
 }
 
 export default function MobileAdmin() {

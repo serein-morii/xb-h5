@@ -4,7 +4,7 @@ import {
   Pencil,
   ShieldCheck,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   adminUpdateLogisticsGlobalQuota,
   adminUpdateLogisticsQuota,
@@ -21,6 +21,7 @@ import {
 import type { DataRow } from "./core";
 import { shortDate } from "./core";
 import { EmptyState } from "./ui";
+import { useAccess } from "./access";
 
 export function StatusBadge({ row }: { row: DataRow }) {
   const text = String(row.orderStatusDesc || row.expStatusDesc || row.statusDesc || row.orderStatus || "未知");
@@ -34,14 +35,10 @@ export function StatusBadge({ row }: { row: DataRow }) {
  * - 非 admin：列出可见店铺的额度卡（额度 + 3 类分开关 + 今日用量 + 用量记录）
  * - admin：列出所有店铺，可编辑总额度 / 总开关 / 备注
  */
-export function LogisticsPage({ userInfo, notify }: { userInfo: DataRow | null; notify: (message: string, type?: "success" | "error" | "info") => void }) {
-  const isAdmin = Number(userInfo?.userId) === 1;
-  // 「全局额度」模块只对 admin / pengchenghui 这两个账户开放；
-  // 其他个人维度账户直接隐藏整个模块（连数据都不拉）。
-  const canViewGlobalQuota = useMemo(() => {
-    const u = String(userInfo?.userName || "");
-    return u === "admin" || u === "pengchenghui";
-  }, [userInfo?.userName]);
+export function LogisticsPage({ notify }: { notify: (message: string, type?: "success" | "error" | "info") => void }) {
+  const access = useAccess();
+  const isAdmin = access.has("logistics.configure");
+  const canViewGlobalQuota = isAdmin;
   const [stores, setStores] = useState<LogisticsQuotaStatus[]>([]);
   const [global, setGlobal] = useState<LogisticsGlobalQuotaStatus | null>(null);
   const [usage, setUsage] = useState<{ rows: LogisticsUsageRow[]; total: number }>({ rows: [], total: 0 });
