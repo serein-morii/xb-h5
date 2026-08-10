@@ -21,7 +21,7 @@ import {
   updateProfile,
 } from "../lib/api";
 import type { DataRow } from "./core";
-import { AlertDialog, AppLogo, Sheet } from "./ui";
+import { AppLogo, Sheet, Toast } from "./ui";
 import { SliderCaptcha } from "../components/SliderCaptcha";
 
 export function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) => void }) {
@@ -45,6 +45,12 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
       window.sessionStorage.removeItem("xb-mobile-flash");
     }
   }, []);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), 3200);
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("xb-mobile-username");
@@ -120,7 +126,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         }}
       />
       <ForgotPasswordSheet open={forgotOpen} onClose={() => setForgotOpen(false)} />
-      <AlertDialog open={Boolean(message)} title="登录未成功" message={message} onClose={() => setMessage("")} />
+      <Toast toast={message ? { message, type: "error" } : null} />
     </main>
   );
 }

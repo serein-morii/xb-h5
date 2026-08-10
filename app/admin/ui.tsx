@@ -48,8 +48,8 @@ export function AppLogo({ compact = false }: { compact?: boolean }) {
 export function Toast({ toast }: { toast: ToastState }) {
   if (!toast) return null;
   return (
-    <div className={`toast toast-${toast.type}`} role="status">
-      {toast.type === "success" ? <Check size={17} /> : toast.type === "error" ? <X size={17} /> : <Sparkles size={17} />}
+    <div className={`toast toast-${toast.type}`} role={toast.type === "error" ? "alert" : "status"}>
+      {toast.type === "success" ? <Check size={17} /> : toast.type === "error" ? <CircleAlert size={17} /> : <Sparkles size={17} />}
       {toast.message}
     </div>
   );
@@ -152,38 +152,6 @@ export function ConfirmDialog({
               try { await state.action(); onClose(); } finally { setBusy(false); }
             }}
           >{busy ? <LoaderCircle className="spin" size={17} /> : null}确认</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function AlertDialog({
-  open,
-  title,
-  message,
-  onClose,
-}: {
-  open: boolean;
-  title: string;
-  message: string;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const handler = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose, open]);
-  if (!open) return null;
-  return (
-    <div className="confirm-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="confirm-card login-error-dialog" role="alertdialog" aria-modal="true" aria-label={title}>
-        <div className="confirm-icon danger"><CircleAlert size={22} /></div>
-        <h3>{title}</h3>
-        <p>{message}</p>
-        <div className="confirm-actions login-error-dialog-actions">
-          <button className="button button-primary" type="button" onClick={onClose} autoFocus>我知道了</button>
         </div>
       </div>
     </div>
