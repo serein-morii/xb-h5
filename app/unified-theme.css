@@ -7481,10 +7481,11 @@ html.theme-dark .purchaser-order-page :is(
   }
 }
 
-/* 专属订单页复制反馈固定在底部导航上方，避免被导航遮挡。 */
+/* 专属订单页复制反馈与管理端一致：顶部居中。 */
 .purchaser-order-page .public-copy-toast {
-  z-index: 60;
-  bottom: calc(78px + env(safe-area-inset-bottom));
+  z-index: 160;
+  top: calc(18px + env(safe-area-inset-top));
+  bottom: auto;
   max-width: calc(100% - 32px);
   justify-content: center;
   white-space: nowrap;
@@ -7793,12 +7794,12 @@ html.theme-dark .purchaser-order-page .purchaser-history-section .tool-copy-icon
   font-size: 11px;
 }
 
-/* 专属下单页全部短反馈统一为底部 Toast。 */
+/* 专属下单页短反馈统一为顶部 Toast，与管理端方向一致。 */
 .purchaser-order-page :is(.public-copy-toast, .purchaser-prompt-toast) {
   position: fixed;
   z-index: 160;
-  top: auto !important;
-  bottom: calc(78px + env(safe-area-inset-bottom));
+  top: calc(18px + env(safe-area-inset-top)) !important;
+  bottom: auto !important;
   left: 50%;
   display: flex;
   width: max-content;
@@ -7831,7 +7832,11 @@ html.theme-dark .purchaser-order-page .purchaser-history-section .tool-copy-icon
 @keyframes purchaser-toast-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 8px);
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }
 
@@ -14675,4 +14680,17 @@ html.theme-dark .purchaser-mine-logout {
   .mobile-menu-directory-children {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+
+/* ===== Global toast direction: always top-center ===== */
+:is(.toast, .public-copy-toast, .purchaser-prompt-toast, .sysm-toast, .opsc-toast) {
+  top: calc(18px + env(safe-area-inset-top)) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+html.theme-dark :is(.sysm-toast, .opsc-toast) {
+  background: linear-gradient(110deg, #0f6a46, #1b8f5d);
 }
