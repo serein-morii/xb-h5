@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   Bell,
   BookKey,
   BriefcaseBusiness,
@@ -38,7 +37,7 @@ import {
 } from "react";
 import { apiRequest, downloadFile, uploadFile } from "../lib/api";
 import { useAccess } from "./access";
-import { ConfirmDialog, EmptyState, Sheet } from "./ui";
+import { ConfirmDialog, EmptyState, MobileBackButton, Sheet } from "./ui";
 
 type DataRow = Record<string, any>;
 type ModuleKey =
@@ -688,12 +687,15 @@ function ResourceModule({
   config,
   dictType,
   onBack,
+  backLabel = "返回",
   onOpenDictData,
   notify,
 }: {
   config: ModuleConfig;
   dictType: string;
   onBack: () => void;
+  /** 上级名称，如「系统中心」；组件会自动加 chevron */
+  backLabel?: string;
   onOpenDictData: (type: string) => void;
   notify: Notify;
 }) {
@@ -1064,7 +1066,7 @@ function ResourceModule({
     <div className="module-page sysm-center">
       <div className="module-hero compact-hero">
         <div>
-          <button className="module-back-link" type="button" onClick={onBack}><ArrowLeft size={15} />返回</button>
+          <MobileBackButton label={backLabel} onClick={onBack} />
           <span className="eyebrow">系统管理</span>
           <h1>{config.title}</h1>
           <p>{config.description}</p>
@@ -1347,7 +1349,7 @@ const HUB_GROUPS: Array<{ key: "account" | "config"; title: string; description:
   { key: "config", title: "系统配置", description: "菜单、字典、参数与公告" },
 ];
 
-export function SystemManagementCenter({ notify: externalNotify, initialModule = null, onExit }: { notify?: Notify; initialModule?: ModuleKey | null; onExit?: () => void } = {}) {
+export function SystemManagementCenter({ notify: externalNotify, initialModule = null, onExit, exitLabel = "工作台" }: { notify?: Notify; initialModule?: ModuleKey | null; onExit?: () => void; exitLabel?: string } = {}) {
   const access = useAccess();
   const [active, setActive] = useState<ModuleKey | null>(initialModule);
   const [activeDictType, setActiveDictType] = useState("");
@@ -1395,6 +1397,7 @@ export function SystemManagementCenter({ notify: externalNotify, initialModule =
           config={config}
           dictType={activeDictType}
           notify={notify}
+          backLabel={active === "dictData" ? "字典类型" : (onExit && initialModule ? exitLabel : "系统管理")}
           onBack={() => {
             if (active === "dictData") setActive("dictTypes");
             else if (onExit && initialModule) onExit();

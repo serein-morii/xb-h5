@@ -1,6 +1,6 @@
-import { RefreshCw } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { apiRequest, clearCustomerToken, getCustomerToken, setCustomerToken } from "../lib/api";
+import { SliderCaptcha } from "../components/SliderCaptcha";
 
 type Mode = "login" | "register" | "reset";
 type LoginMethod = "password" | "code";
@@ -30,8 +30,8 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
   const [code, setCode] = useState("");
   const [captchaCode, setCaptchaCode] = useState("");
   const [captchaUuid, setCaptchaUuid] = useState("");
-  const [captcha, setCaptcha] = useState("");
   const [captchaOn, setCaptchaOn] = useState(true);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,20 +42,6 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
   const [confirmExisting, setConfirmExisting] = useState(false);
 
   const isSelfRegistration = mode === "register" && shortId.length === 0;
-
-  const loadCaptcha = useCallback(async () => {
-    if (mode !== "login") return;
-    try {
-      const result = await apiRequest<{ img?: string; uuid?: string; captchaOnOff?: boolean }>("/captchaImage", { auth: false });
-      const enabled = result.captchaOnOff === undefined ? true : Boolean(result.captchaOnOff);
-      setCaptchaOn(enabled);
-      setCaptchaUuid(String(result.uuid || ""));
-      setCaptcha(enabled && result.img ? `data:image/png;base64,${result.img}` : "");
-      setCaptchaCode("");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "图形验证码加载失败");
-    }
-  }, [mode]);
 
   useEffect(() => {
     if (mode === "reset" || !SHORT_ID_PATTERN.test(shortId)) {
@@ -74,10 +60,6 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
         if (mode !== "login") setError(cause instanceof Error ? cause.message : "专属下单码无效");
       });
   }, [mode, shortId]);
-
-  useEffect(() => {
-    if (mode === "login") void loadCaptcha();
-  }, [mode, loadCaptcha]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -132,7 +114,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
     try {
       if (mode === "login") {
         const endpoint = loginMethod === "code" ? "/customer/auth/login-code" : "/customer/auth/login";
-        if (loginMethod === "password" && captchaOn && !captchaCode.trim()) return setError("请输入图形验证码");
+        if (loginMethod === "password" && captchaOn && !captchaCode.trim()) return setError("请先完成滑块验证");
         const result = await apiRequest<{ data?: AuthData }>(endpoint, {
           auth: false,
           method: "POST",
@@ -157,7 +139,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "操作失败，请重试");
-      if (mode === "login" && loginMethod === "password") await loadCaptcha();
+      if (mode === "login" && loginMethod === "password") setCaptchaReset((value) => value + 1);
     } finally {
       setBusy(false);
     }
@@ -250,20 +232,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
             <label><span>{mode === "reset" ? "新密码" : "登录密码"}</span><input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8-64位，需包含字母和数字" /></label>
           ) : null}
           {mode === "login" && loginMethod === "password" && captchaOn ? (
-            <label>
-              <span>图形验证码</span>
-              <div className="customer-captcha-row">
-                <input
-                  value={captchaCode}
-                  autoComplete="off"
-                  onChange={(event) => setCaptchaCode(event.target.value)}
-                  placeholder="输入右侧字符"
-                />
-                <button type="button" onClick={loadCaptcha} aria-label="刷新图形验证码" title="点击刷新">
-                  {captcha ? <img src={captcha} alt="图形验证码" /> : <RefreshCw size={18} />}
-                </button>
-              </div>
-            </label>
+            <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={busy} onEnabledChange={setCaptchaOn} onVerified={(value) => { setCaptchaUuid(value.uuid); setCaptchaCode(value.token); }} /></label>
           ) : null}
           {mode !== "login" ? <label><span>确认密码</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="再次输入密码" /></label> : null}
           {error ? <p className="customer-auth-error">{error}</p> : null}

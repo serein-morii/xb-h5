@@ -88,8 +88,8 @@ export default function StoreQueryList() {
               <a className="store-query-list-card" href={code ? `/tools/store-query/${encodeURIComponent(code)}` : "#"}>
                 <span className="store-query-list-card-icon"><StoreIcon size={20} /></span>
                 <div className="store-query-list-card-body">
-                  <h2>{name}</h2>
-                  {notice ? <p>{notice}</p> : <p>仅查询该店铺的订单</p>}
+                  <h2 title={name}>{name}</h2>
+                  {notice ? <p title={notice}>{notice}</p> : <p>仅查询该店铺的订单</p>}
                 </div>
                 <ArrowRight size={17} />
               </a>

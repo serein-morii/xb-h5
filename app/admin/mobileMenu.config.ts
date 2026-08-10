@@ -24,6 +24,7 @@ import {
   ExternalLink,
   FileClock,
   FileSpreadsheet,
+  FolderTree,
   Gauge,
   HardDrive,
   History,
@@ -57,6 +58,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { MenuKey } from "./core";
+import {
+  DEFAULT_MOBILE_ENTRY_PROMOTIONS,
+  mergeMobileEntryPromotions,
+  resolveMobileMenuHierarchy,
+  type MobileEntryPromotionsConfig,
+  type MobileMenuDirectoryKey,
+} from "./mobileEntryPromotions.config";
 
 /** Dock 特殊键：打开全部功能 */
 export const MOBILE_MENU_ALL_KEY = "__all__" as const;
@@ -103,6 +111,7 @@ export type MobileMenuConfig = {
     toolboxDescription: string;
     toolboxHref: string;
   };
+  hierarchy?: MobileEntryPromotionsConfig;
 };
 
 /** 页面注册表：功能 key → 默认展示信息（开发维护，配置只引用 key） */
@@ -282,6 +291,8 @@ export const DEFAULT_MOBILE_MENU_CONFIG: MobileMenuConfig = {
       title: "系统运行",
       description: "账号权限、监控日志与开发工具",
       items: [
+        { key: "systemCenter" },
+        { key: "operationsCenter" },
         { key: "sysUsers" },
         { key: "sysRoles" },
         { key: "sysDepts" },
@@ -322,13 +333,15 @@ export const DEFAULT_MOBILE_MENU_CONFIG: MobileMenuConfig = {
     toolboxDescription: "订单查询、链接查询与运费工具",
     toolboxHref: "/tools",
   },
+  hierarchy: DEFAULT_MOBILE_ENTRY_PROMOTIONS,
 };
 
 export type ResolvedMobileMenuItem = {
-  key: MenuKey;
+  key: MobileMenuDirectoryKey;
   label: string;
   description: string;
   icon: LucideIcon;
+  directory?: boolean;
 };
 
 export type ResolvedMobileDockItem = {
@@ -351,6 +364,8 @@ export type ResolvedMobileMenu = {
   dock: ResolvedMobileDockItem[];
   groups: ResolvedMobileMenuGroup[];
   extras: MobileMenuConfig["extras"];
+  directoryChildren: Partial<Record<MobileMenuDirectoryKey, ResolvedMobileMenuItem[]>>;
+  parentByChild: Partial<Record<MenuKey, MobileMenuDirectoryKey>>;
 };
 
 const GROUP_ONBOARD: Record<string, string> = {
@@ -372,14 +387,40 @@ function resolveItem(item: MobileMenuItemConfig): ResolvedMobileMenuItem | null 
   };
 }
 
-/**
- * 将配置 + 权限 解析为可渲染结构。
- * canOpen(key) 为 false 的项会被过滤（pinned Dock 除外）。
- */
+/** 将配置、权限与两级父子关系解析为可渲染菜单。 */
 export function resolveMobileMenu(
   config: MobileMenuConfig,
   canOpen: (key: MenuKey) => boolean,
+  hierarchyConfig: MobileEntryPromotionsConfig = DEFAULT_MOBILE_ENTRY_PROMOTIONS,
 ): ResolvedMobileMenu {
+  const hierarchy = resolveMobileMenuHierarchy(hierarchyConfig);
+  const configuredItems = new Map<MenuKey, MobileMenuItemConfig>();
+  for (const group of config.groups) {
+    for (const item of group.items) {
+      if (!configuredItems.has(item.key)) configuredItems.set(item.key, item);
+    }
+  }
+
+  const resolveKey = (key: MenuKey): ResolvedMobileMenuItem | null => {
+    const configured = configuredItems.get(key) || { key };
+    return resolveItem(configured);
+  };
+
+  const directoryChildren: Partial<Record<MobileMenuDirectoryKey, ResolvedMobileMenuItem[]>> = {};
+  const parentByChild: Partial<Record<MenuKey, MobileMenuDirectoryKey>> = {};
+  const directoryKeys: MobileMenuDirectoryKey[] = [
+    ...(Object.keys(MOBILE_PAGE_REGISTRY) as MenuKey[]),
+    ...hierarchyConfig.directories.map((item) => item.key),
+  ];
+  for (const parentKey of directoryKeys) {
+    const children = hierarchy.childrenOf(parentKey)
+      .map((key) => resolveKey(key))
+      .filter((item): item is ResolvedMobileMenuItem => !!item && canOpen(item.key as MenuKey));
+    if (!children.length) continue;
+    directoryChildren[parentKey] = children;
+    for (const child of children) parentByChild[child.key as MenuKey] = parentKey;
+  }
+
   const dock: ResolvedMobileDockItem[] = [];
   for (const item of config.dock) {
     if (item.key === MOBILE_MENU_ALL_KEY) {
@@ -395,9 +436,12 @@ export function resolveMobileMenu(
     const pageKey = item.key as MenuKey;
     const reg = MOBILE_PAGE_REGISTRY[pageKey];
     if (!reg) continue;
-    if (!item.pinned && !canOpen(pageKey)) continue;
+    const isConfiguredDirectory = hierarchy.isDirectory(pageKey);
+    const isVisibleDirectory = !!directoryChildren[pageKey]?.length;
+    if (isConfiguredDirectory && !isVisibleDirectory) continue;
+    if (!isConfiguredDirectory && !item.pinned && !canOpen(pageKey)) continue;
     // pinned 但无权限：首页仍显示；其他 pinned 业务键若无权限则跳过
-    if (item.pinned && pageKey !== "home" && !canOpen(pageKey)) continue;
+    if (!isConfiguredDirectory && item.pinned && pageKey !== "home" && !canOpen(pageKey)) continue;
     dock.push({
       key: pageKey,
       label: item.label || reg.label,
@@ -409,9 +453,29 @@ export function resolveMobileMenu(
 
   const groups: ResolvedMobileMenuGroup[] = [];
   for (const group of config.groups) {
-    const items = group.items
-      .map(resolveItem)
-      .filter((entry): entry is ResolvedMobileMenuItem => !!entry && canOpen(entry.key));
+    const items: ResolvedMobileMenuItem[] = [];
+    for (const configured of group.items) {
+      if (hierarchy.parentOf(configured.key)) continue;
+      const entry = resolveItem(configured);
+      if (!entry) continue;
+      const children = directoryChildren[entry.key] || [];
+      if (hierarchy.isDirectory(entry.key)) {
+        if (children.length) items.push({ ...entry, directory: true });
+      } else if (canOpen(entry.key as MenuKey)) items.push(entry);
+    }
+    for (const directory of hierarchyConfig.directories) {
+      const targetGroup = directory.groupKey || config.groups[0]?.key;
+      if (targetGroup !== group.key) continue;
+      const children = directoryChildren[directory.key] || [];
+      if (!children.length) continue;
+      items.push({
+        key: directory.key,
+        label: directory.label,
+        description: directory.description || `${children.length} 个功能`,
+        icon: resolveMobileIcon(directory.icon, FolderTree),
+        directory: true,
+      });
+    }
     if (!items.length) continue;
     groups.push({
       key: group.key,
@@ -426,6 +490,8 @@ export function resolveMobileMenu(
     dock,
     groups,
     extras: config.extras,
+    directoryChildren,
+    parentByChild,
   };
 }
 
@@ -433,22 +499,56 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-/** 后端配置做宽松合并：缺字段时用本地默认兜底，避免后台半份 JSON 把 H5 打挂 */
+/**
+ * 后端配置做宽松合并：缺字段时用本地默认兜底，避免后台半份 JSON 把 H5 打挂。
+ *
+ * 同时**追加**（不是替换）本地默认里新增的项 —— 后端历史回滚到旧版本时，
+ * 那些在 DEFAULT 里但 raw 里没有的 item 会被自动补回来，不会让运营方丢掉新功能入口。
+ */
 export function mergeMobileMenuConfig(raw: unknown): MobileMenuConfig {
   const base = JSON.parse(JSON.stringify(DEFAULT_MOBILE_MENU_CONFIG)) as MobileMenuConfig;
   if (!isRecord(raw)) return base;
 
   if (Array.isArray(raw.dock) && raw.dock.length) {
-    base.dock = raw.dock as MobileMenuConfig["dock"];
+    // Dock 也追加新默认项（保证新加的菜单 key 也能进 Dock 默认位）
+    const rawDockKeys = new Set(raw.dock.map((item) => item.key));
+    base.dock = [
+      ...(raw.dock as MobileMenuConfig["dock"]),
+      ...DEFAULT_MOBILE_MENU_CONFIG.dock.filter((item) => !rawDockKeys.has(item.key)),
+    ];
   }
   if (Array.isArray(raw.groups)) {
-    base.groups = raw.groups as MobileMenuConfig["groups"];
+    const rawGroups = raw.groups as MobileMenuGroupConfig[];
+    // 对每个默认分组：取 raw 中同 key 的组，items 合并（raw.items 优先 + 追加 DEFAULT 里有但 raw 没有的）
+    base.groups = base.groups.map((baseGroup) => {
+      const rawGroup = rawGroups.find((g) => g.key === baseGroup.key);
+      if (!rawGroup) return baseGroup;
+      const rawItemKeys = new Set(rawGroup.items.map((i) => i.key));
+      const mergedItems: MobileMenuItemConfig[] = [
+        ...rawGroup.items,
+        ...baseGroup.items.filter((i) => !rawItemKeys.has(i.key)),
+      ];
+      return {
+        ...baseGroup,
+        ...rawGroup,
+        items: mergedItems,
+      };
+    });
+    // raw 里独有的分组也保留
+    for (const rawGroup of rawGroups) {
+      if (!base.groups.find((g) => g.key === rawGroup.key)) {
+        base.groups.push(rawGroup as MobileMenuGroupConfig);
+      }
+    }
   }
   if (isRecord(raw.extras)) {
     base.extras = {
       ...base.extras,
       ...(raw.extras as MobileMenuConfig["extras"]),
     };
+  }
+  if (isRecord(raw.hierarchy)) {
+    base.hierarchy = mergeMobileEntryPromotions(raw.hierarchy);
   }
   if (raw.version === 1) base.version = 1;
   return base;

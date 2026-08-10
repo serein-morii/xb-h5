@@ -1,10 +1,11 @@
 
-import { CheckCircle2, LoaderCircle, PackageSearch, Phone, RefreshCw, Search } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LoaderCircle, PackageSearch, Phone, Search } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { OrderStatsCards, StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
 import PeachTip from "../../components/PeachTip";
+import { SliderCaptcha } from "../../components/SliderCaptcha";
 
 type Row = Record<string, unknown>;
 
@@ -12,20 +13,13 @@ export default function OrderSearch() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [uuid, setUuid] = useState("");
-  const [captcha, setCaptcha] = useState("");
+  const [captchaOn, setCaptchaOn] = useState(true);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [orders, setOrders] = useState<PublicOrderRecord[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const resultsRef = useRef<HTMLDivElement | null>(null);
-
-  const loadCaptcha = useCallback(async () => {
-    try {
-      const result = await apiRequest<Row>("/captchaImage", { auth: false });
-      setUuid(String(result.uuid || "")); setCaptcha(result.img ? `data:image/png;base64,${result.img}` : ""); setCode("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "验证码加载失败"); }
-  }, []);
-  useEffect(() => { loadCaptcha(); }, [loadCaptcha]);
 
   useEffect(() => {
     if (!orders.length) return;
@@ -43,18 +37,19 @@ export default function OrderSearch() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!phone.trim() || !code.trim()) return setError("请输入手机号和验证码");
+    if (!phone.trim()) return setError("请输入手机号");
+    if (captchaOn && !code.trim()) return setError("请先完成滑块验证");
     setLoading(true); setError(""); setOrders([]); setStatusFilter(null);
     try {
       const result = await apiRequest<{ data?: PublicOrderRecord[] }>("/search", { auth: false, method: "POST", body: { searchKey: phone.trim(), code: code.trim(), uuid } });
       const data = Array.isArray(result.data) ? result.data : [];
       setOrders(data); if (!data.length) setError("暂无订单记录");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "查询失败，请稍后重试"); await loadCaptcha(); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "查询失败，请稍后重试"); setCaptchaReset((value) => value + 1); }
     finally { setLoading(false); }
   }
 
   return <div className="tool-page order-search-tool"><section className="tool-hero"><span><PackageSearch size={25} /></span><div><small>PUBLIC ORDER SEARCH</small><h1>订单查询</h1><p>输入收件手机号和验证码查询订单。</p></div></section>
-    <form className="tool-form-card" onSubmit={submit}><label><span>手机号</span><div className="tool-input"><Phone size={17} /><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="请输入收件手机号" /></div></label><label><span>验证码</span><div className="tool-captcha"><div className="tool-input"><CheckCircle2 size={17} /><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="请输入验证码" /></div><button type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={18} />}</button></div></label>{error ? <p className="tool-error">{error}</p> : null}<button className="tool-primary" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}{loading ? "正在查询" : "查询订单"}</button></form>
+    <form className="tool-form-card" onSubmit={submit}><label><span>手机号</span><div className="tool-input"><Phone size={17} /><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="请输入收件手机号" /></div></label>{captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}{error ? <p className="tool-error">{error}</p> : null}<button className="tool-primary" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}{loading ? "正在查询" : "查询订单"}</button></form>
     <PeachTip />
     {orders.length ? <div ref={resultsRef}>
       <OrderStatsCards stats={stats} filter={statusFilter} onSelect={setStatusFilter} label="查询结果概览" />

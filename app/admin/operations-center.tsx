@@ -1,6 +1,5 @@
 import {
   Activity,
-  ArrowLeft,
   BookOpen,
   Braces,
   ChevronLeft,
@@ -44,7 +43,7 @@ import {
 } from "react";
 import { API_BASE, apiRequest, getStoredToken, toQuery } from "../lib/api";
 import { useAccess } from "./access";
-import { ConfirmDialog, EmptyState, Sheet } from "./ui";
+import { ConfirmDialog, EmptyState, MobileBackButton, Sheet } from "./ui";
 import { fetchOpsHome, getOpsHome, resolveOpsHome, type OpsHomeConfig } from "./operationsCenterHome.config";
 
 type DataRow = Record<string, unknown>;
@@ -101,6 +100,7 @@ type ResourceListProps = {
   searchFields: SearchField[];
   notify: Notify;
   onBack: () => void;
+  backLabel?: string;
   cleanEndpoint?: string;
   cleanLabel?: string;
   renderActions?: (row: DataRow, reload: () => Promise<void>) => ReactNode;
@@ -161,10 +161,11 @@ function iconFor(view: ViewKey) {
   return icons[view];
 }
 
-function PageHeader({ title, description, onBack, actions, icon }: {
+function PageHeader({ title, description, onBack, backLabel = "返回", actions, icon }: {
   title: string;
   description: string;
   onBack: () => void;
+  backLabel?: string;
   actions?: ReactNode;
   icon?: ReactNode;
 }) {
@@ -172,9 +173,7 @@ function PageHeader({ title, description, onBack, actions, icon }: {
     <>
       <div className="module-hero compact-hero">
         <div>
-          <button className="module-back-link" type="button" onClick={onBack} aria-label="返回">
-            <ArrowLeft size={15} />返回
-          </button>
+          <MobileBackButton label={backLabel} onClick={onBack} />
           <span className="eyebrow">运行中心</span>
           <h1>{title}</h1>
           <p>{description}</p>
@@ -195,6 +194,7 @@ function ResourceList({
   searchFields,
   notify,
   onBack,
+  backLabel = "返回",
   cleanEndpoint,
   cleanLabel = "清空记录",
   renderActions,
@@ -266,6 +266,7 @@ function ResourceList({
         title={title}
         description={description}
         onBack={onBack}
+        backLabel={backLabel}
         icon={<FileText size={27} />}
         actions={
           <>
@@ -389,7 +390,7 @@ function ResourceList({
   );
 }
 
-function OnlinePage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function OnlinePage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const access = useAccess();
   return (
     <ResourceList
@@ -398,7 +399,7 @@ function OnlinePage({ notify, onBack }: { notify: Notify; onBack: () => void }) 
       endpoint="/monitor/online/list"
       rowKey="tokenId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       searchFields={[{ key: "userName", label: "用户" }, { key: "ipaddr", label: "IP 地址" }]}
       columns={[
         { key: "tokenId", label: "会话编号", render: (row) => <code className="opsc-code">{shortToken(row.tokenId)}</code> },
@@ -426,7 +427,7 @@ function OnlinePage({ notify, onBack }: { notify: Notify; onBack: () => void }) 
   );
 }
 
-function JobsPage({ notify, onBack, openLogs }: { notify: Notify; onBack: () => void; openLogs: () => void }) {
+function JobsPage({ notify, onBack, backLabel, openLogs }: { notify: Notify; onBack: () => void; backLabel?: string; openLogs: () => void }) {
   const access = useAccess();
   const [editing, setEditing] = useState<DataRow | "new" | null>(null);
   const [form, setForm] = useState<DataRow>({});
@@ -464,7 +465,7 @@ function JobsPage({ notify, onBack, openLogs }: { notify: Notify; onBack: () => 
       endpoint="/monitor/job/list"
       rowKey="jobId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       searchFields={[
         { key: "jobName", label: "任务名称" },
         { key: "jobGroup", label: "任务分组" },
@@ -522,7 +523,7 @@ function JobsPage({ notify, onBack, openLogs }: { notify: Notify; onBack: () => 
   </>;
 }
 
-function JobLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function JobLogsPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const access = useAccess();
   return (
     <ResourceList
@@ -531,7 +532,7 @@ function JobLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void })
       endpoint="/monitor/jobLog/list"
       rowKey="jobLogId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       cleanEndpoint={access.has("operations.jobs.delete") ? "/monitor/jobLog/clean" : undefined}
       cleanLabel="清空调度日志"
       searchFields={[
@@ -553,7 +554,7 @@ function JobLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void })
   );
 }
 
-function OperLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function OperLogsPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const access = useAccess();
   return (
     <ResourceList
@@ -562,7 +563,7 @@ function OperLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void }
       endpoint="/monitor/operlog/list"
       rowKey="operId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       cleanEndpoint={access.has("operations.operLogs.delete") ? "/monitor/operlog/clean" : undefined}
       cleanLabel="清空操作日志"
       searchFields={[
@@ -585,7 +586,7 @@ function OperLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void }
   );
 }
 
-function LoginLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function LoginLogsPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const access = useAccess();
   return (
     <ResourceList
@@ -594,7 +595,7 @@ function LoginLogsPage({ notify, onBack }: { notify: Notify; onBack: () => void 
       endpoint="/monitor/logininfor/list"
       rowKey="infoId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       cleanEndpoint={access.has("operations.loginLogs.delete") ? "/monitor/logininfor/clean" : undefined}
       cleanLabel="清空登录日志"
       searchFields={[
@@ -638,7 +639,7 @@ function Metric({ label, value, suffix = "" }: { label: string; value: unknown; 
   return <article className="opsc-metric"><span>{label}</span><strong>{textValue(value)}{value !== undefined && value !== null && value !== "" ? suffix : ""}</strong></article>;
 }
 
-function ServerPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function ServerPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const [data, setData] = useState<DataRow>({});
   const [loading, setLoading] = useState(true);
 
@@ -665,7 +666,7 @@ function ServerPage({ notify, onBack }: { notify: Notify; onBack: () => void }) 
 
   return (
     <div className="module-page opsc-page">
-      <PageHeader title="服务监控" description="服务器、JVM 与磁盘实时运行状态" onBack={onBack} icon={<Server size={27} />} actions={<button type="button" onClick={() => void load()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} size={16} />刷新</button>} />
+      <PageHeader title="服务监控" description="服务器、JVM 与磁盘实时运行状态" onBack={onBack} backLabel={backLabel} icon={<Server size={27} />} actions={<button type="button" onClick={() => void load()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} size={16} />刷新</button>} />
       <div className="opsc-metrics">
         <Metric label="CPU 使用率" value={cpu.used} suffix="%" />
         <Metric label="系统内存" value={mem.usage} suffix="%" />
@@ -684,7 +685,7 @@ function ServerPage({ notify, onBack }: { notify: Notify; onBack: () => void }) 
   );
 }
 
-function CachePage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function CachePage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const [overview, setOverview] = useState<DataRow>({});
   const [names, setNames] = useState<DataRow[]>([]);
   const [keys, setKeys] = useState<string[]>([]);
@@ -747,7 +748,7 @@ function CachePage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
 
   return (
     <div className="module-page opsc-page">
-      <PageHeader title="缓存监控" description="Redis 状态、缓存空间和键值检查" onBack={onBack} icon={<Database size={27} />} actions={<><button type="button" onClick={() => void load()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} size={16} />刷新</button><button className="button button-ghost danger-text" type="button" onClick={() => void clear("/monitor/cache/clearCacheAll", "清空全部缓存", () => { setKeys([]); setValue(null); })}><Trash2 size={16} />清空全部</button></>} />
+      <PageHeader title="缓存监控" description="Redis 状态、缓存空间和键值检查" onBack={onBack} backLabel={backLabel} icon={<Database size={27} />} actions={<><button type="button" onClick={() => void load()} disabled={loading}><RefreshCw className={loading ? "spin" : ""} size={16} />刷新</button><button className="button button-ghost danger-text" type="button" onClick={() => void clear("/monitor/cache/clearCacheAll", "清空全部缓存", () => { setKeys([]); setValue(null); })}><Trash2 size={16} />清空全部</button></>} />
       <div className="opsc-metrics">
         <Metric label="Redis 版本" value={info.redis_version} />
         <Metric label="运行模式" value={info.redis_mode} />
@@ -781,7 +782,7 @@ async function downloadGeneratedCode(tableNames: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function GeneratorPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function GeneratorPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   const access = useAccess();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [previewFiles, setPreviewFiles] = useState<Record<string, string> | null>(null);
@@ -861,7 +862,7 @@ function GeneratorPage({ notify, onBack }: { notify: Notify; onBack: () => void 
       endpoint="/tool/gen/list"
       rowKey="tableId"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       searchFields={[{ key: "tableName", label: "表名称" }, { key: "tableComment", label: "表描述" }]}
       columns={[
         { key: "_select", label: "选择", render: (row) => { const name = textValue(row.tableName, ""); return <input className="opsc-checkbox" type="checkbox" checked={selected.has(name)} onChange={() => setSelected((current) => { const next = new Set(current); if (next.has(name)) next.delete(name); else next.add(name); return next; })} aria-label={`选择 ${name}`} />; } },
@@ -910,7 +911,7 @@ function GeneratorPage({ notify, onBack }: { notify: Notify; onBack: () => void 
   </>;
 }
 
-function MessagesPage({ notify, onBack }: { notify: Notify; onBack: () => void }) {
+function MessagesPage({ notify, onBack, backLabel }: { notify: Notify; onBack: () => void; backLabel?: string }) {
   return (
     <ResourceList
       title="开发消息"
@@ -918,7 +919,7 @@ function MessagesPage({ notify, onBack }: { notify: Notify; onBack: () => void }
       endpoint="/dev/msg/list"
       rowKey="id"
       notify={notify}
-      onBack={onBack}
+      onBack={onBack} backLabel={backLabel}
       searchFields={[{ key: "title", label: "标题" }, { key: "content", label: "内容" }]}
       columns={[
         { key: "id", label: "ID" },
@@ -931,7 +932,7 @@ function MessagesPage({ notify, onBack }: { notify: Notify; onBack: () => void }
   );
 }
 
-function ExternalEntry({ kind, onBack }: { kind: "druid" | "swagger"; onBack: () => void }) {
+function ExternalEntry({ kind, onBack, backLabel }: { kind: "druid" | "swagger"; onBack: () => void; backLabel?: string }) {
   const isDruid = kind === "druid";
   const title = isDruid ? "数据源监控" : "接口文档";
   const description = isDruid ? "进入 Druid 查看连接池、SQL 与数据源状态" : "打开 Swagger UI 调试和查阅后端接口";
@@ -939,7 +940,7 @@ function ExternalEntry({ kind, onBack }: { kind: "druid" | "swagger"; onBack: ()
   const Icon = isDruid ? HardDrive : BookOpen;
   return (
     <div className="module-page opsc-page">
-      <PageHeader title={title} description={description} onBack={onBack} icon={<Icon size={27} />} />
+      <PageHeader title={title} description={description} onBack={onBack} backLabel={backLabel} icon={<Icon size={27} />} />
       <article className="tracking-card tracking-green">
         <span className="tracking-logo"><Icon size={28} /></span>
         <div><h2>{title}</h2><p>{isDruid ? "该页面由后端 Druid 控制台提供，需要当前账号具备监控权限。" : "文档与当前后端版本同步，可直接查看模型、参数和响应结构。"}</p></div>
@@ -965,7 +966,7 @@ const VIEW_DEFAULTS: Record<ViewKey, { title: string; description: string }> = {
   home: { title: "运行中心", description: "服务状态、调度审计和开发工具集中入口" },
 };
 
-function HomePage({ open, onExit, opsHomeConfig }: { open: (view: ViewKey) => void; onExit?: () => void; opsHomeConfig: OpsHomeConfig }) {
+function HomePage({ open, onExit, exitLabel = "工作台", opsHomeConfig }: { open: (view: ViewKey) => void; onExit?: () => void; exitLabel?: string; opsHomeConfig: OpsHomeConfig }) {
   const access = useAccess();
   // 每个 ViewKey 的兜底元数据，注入到 resolver
   const defaultsByKey = useMemo(() => {
@@ -987,7 +988,7 @@ function HomePage({ open, onExit, opsHomeConfig }: { open: (view: ViewKey) => vo
     <div className="module-page opsc-home">
       <div className="module-hero compact-hero">
         <div>
-          {onExit ? <button className="module-back-link" type="button" onClick={onExit}><ArrowLeft size={15} />返回系统运行</button> : null}
+          {onExit ? <MobileBackButton label={exitLabel} onClick={onExit} /> : null}
           <span className="eyebrow">系统运行</span>
           <h1>运行监控</h1>
           <p>服务状态、调度审计和开发工具集中入口</p>
@@ -1021,9 +1022,10 @@ export type OperationsCenterPageProps = {
   notify?: Notify;
   initialView?: ViewKey;
   onClose?: () => void;
+  exitLabel?: string;
 };
 
-export function OperationsCenterPage({ notify: externalNotify, initialView = "home", onClose }: OperationsCenterPageProps) {
+export function OperationsCenterPage({ notify: externalNotify, initialView = "home", onClose, exitLabel = "工作台" }: OperationsCenterPageProps) {
   const access = useAccess();
   const [view, setView] = useState<ViewKey>(initialView);
   const [notice, setNotice] = useState<{ message: string; type: NoticeType } | null>(null);
@@ -1056,20 +1058,22 @@ export function OperationsCenterPage({ notify: externalNotify, initialView = "ho
   useEffect(() => {
     if (view !== "home" && !access.has(VIEW_CAPABILITY[view])) setView("home");
   }, [access, view]);
+  // 从二级目录直达子页时，返回文案跟随父目录；中心内部互跳仍显示“运行中心”。
+  const backLabel = initialView !== "home" && onClose ? exitLabel : "运行中心";
   const page = useMemo(() => {
-    if (view === "online") return <OnlinePage notify={notify} onBack={goHome} />;
-    if (view === "jobs") return <JobsPage notify={notify} onBack={goHome} openLogs={() => setView("jobLogs")} />;
-    if (view === "jobLogs") return <JobLogsPage notify={notify} onBack={goHome} />;
-    if (view === "operLogs") return <OperLogsPage notify={notify} onBack={goHome} />;
-    if (view === "loginLogs") return <LoginLogsPage notify={notify} onBack={goHome} />;
-    if (view === "server") return <ServerPage notify={notify} onBack={goHome} />;
-    if (view === "cache") return <CachePage notify={notify} onBack={goHome} />;
-    if (view === "druid") return <ExternalEntry kind="druid" onBack={goHome} />;
-    if (view === "generator") return <GeneratorPage notify={notify} onBack={goHome} />;
-    if (view === "swagger") return <ExternalEntry kind="swagger" onBack={goHome} />;
-    if (view === "messages") return <MessagesPage notify={notify} onBack={goHome} />;
-    return <HomePage open={openView} onExit={onClose} opsHomeConfig={opsHomeConfig} />;
-  }, [goHome, notify, openView, view]);
+    if (view === "online") return <OnlinePage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "jobs") return <JobsPage notify={notify} onBack={goHome} backLabel={backLabel} openLogs={() => setView("jobLogs")} />;
+    if (view === "jobLogs") return <JobLogsPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "operLogs") return <OperLogsPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "loginLogs") return <LoginLogsPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "server") return <ServerPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "cache") return <CachePage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "druid") return <ExternalEntry kind="druid" onBack={goHome} backLabel={backLabel} />;
+    if (view === "generator") return <GeneratorPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    if (view === "swagger") return <ExternalEntry kind="swagger" onBack={goHome} backLabel={backLabel} />;
+    if (view === "messages") return <MessagesPage notify={notify} onBack={goHome} backLabel={backLabel} />;
+    return <HomePage open={openView} onExit={onClose} exitLabel={exitLabel} opsHomeConfig={opsHomeConfig} />;
+  }, [backLabel, exitLabel, goHome, notify, onClose, openView, opsHomeConfig, view]);
 
   return (
     <div className="opsc-root">

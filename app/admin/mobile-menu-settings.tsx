@@ -2,15 +2,21 @@ import {
   ArrowDown,
   ArrowUp,
   Braces,
+  CornerDownRight,
   Download,
+  FolderTree,
+  GitBranch,
   History,
+  LayoutGrid,
   LoaderCircle,
   Plus,
   RefreshCw,
   RotateCcw,
   Save,
+  SlidersHorizontal,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../lib/api";
@@ -25,7 +31,16 @@ import {
   type MobileMenuGroupConfig,
   type MobileMenuItemConfig,
 } from "./mobileMenu.config";
+import {
+  getMobileEntryPromotions,
+  mergeMobileEntryPromotions,
+  normalizeMobileMenuHierarchy,
+  type MobileEntryPromotionsConfig,
+  type MobileMenuCustomDirectoryKey,
+  type MobileMenuDirectoryKey,
+} from "./mobileEntryPromotions.config";
 import type { MenuKey } from "./core";
+import { MobileBackButton } from "./ui";
 
 type Notify = (message: string, type?: "success" | "error" | "info") => void;
 
@@ -110,16 +125,34 @@ export function validateMobileMenuConfig(config: MobileMenuConfig): string | nul
   return null;
 }
 
-export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
+export function MobileMenuSettingsPage({
+  notify,
+  onBack,
+  backLabel = "工作台",
+}: {
+  notify: Notify;
+  onBack?: () => void;
+  backLabel?: string;
+}) {
   const access = useAccess();
   const canEdit = access.has("system.mobileMenu.edit");
   const canQuery = access.has("system.mobileMenu.view") || canEdit;
   const [config, setConfig] = useState<MobileMenuConfig>(() => cloneConfig(DEFAULT_MOBILE_MENU_CONFIG));
+  const [hierarchy, setHierarchy] = useState<MobileEntryPromotionsConfig>(getMobileEntryPromotions);
+  const [savedConfigJson, setSavedConfigJson] = useState("");
+  const [savedHierarchyJson, setSavedHierarchyJson] = useState("");
+  const [directoryDraft, setDirectoryDraft] = useState<MobileMenuDirectoryKey | "">("");
+  const [childDraft, setChildDraft] = useState<MenuKey | "">("");
+  const [newDirectoryOpen, setNewDirectoryOpen] = useState(false);
+  const [newDirectoryLabel, setNewDirectoryLabel] = useState("");
+  const [newDirectoryDescription, setNewDirectoryDescription] = useState("");
+  const [newDirectoryGroup, setNewDirectoryGroup] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [meta, setMeta] = useState<{ updateBy?: string; updateTime?: string; remark?: string; revision?: number }>({});
   const [activeGroup, setActiveGroup] = useState(0);
   const [showJson, setShowJson] = useState(false);
+  const [activeEditorSection, setActiveEditorSection] = useState<"layout" | "hierarchy" | "history">("layout");
   const [jsonText, setJsonText] = useState("");
   const [histories, setHistories] = useState<HistoryRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -144,12 +177,16 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      let loadedMenuConfig: MobileMenuConfig;
       try {
         const result = await apiRequest<Record<string, unknown>>("/system/mobile-menu");
         const data = (result.data || result) as Record<string, unknown>;
-        const merged = mergeMobileMenuConfig(data.config ?? data);
+        const rawConfig = data.config ?? data;
+        const merged = mergeMobileMenuConfig(rawConfig);
+        loadedMenuConfig = merged;
         setConfig(cloneConfig(merged));
         setJsonText(JSON.stringify(merged, null, 2));
+        setSavedConfigJson(JSON.stringify(merged));
         setMeta({
           updateBy: data.updateBy ? String(data.updateBy) : undefined,
           updateTime: data.updateTime ? String(data.updateTime) : undefined,
@@ -160,16 +197,22 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         const result = await apiRequest<Record<string, unknown>>("/system/mobile-menu/config");
         const payload = (result.data ?? result) as unknown;
         const merged = mergeMobileMenuConfig(payload);
+        loadedMenuConfig = merged;
         setConfig(cloneConfig(merged));
         setJsonText(JSON.stringify(merged, null, 2));
+        setSavedConfigJson(JSON.stringify(merged));
         setMeta({});
       }
       await loadHistory();
+      const loadedHierarchy = mergeMobileEntryPromotions(loadedMenuConfig.hierarchy ?? getMobileEntryPromotions());
+      setHierarchy(loadedHierarchy);
+      setSavedHierarchyJson(JSON.stringify(loadedHierarchy));
     } catch (error) {
       notify(error instanceof Error ? error.message : "移动菜单加载失败", "error");
       const fallback = cloneConfig(DEFAULT_MOBILE_MENU_CONFIG);
       setConfig(fallback);
       setJsonText(JSON.stringify(fallback, null, 2));
+      setSavedConfigJson(JSON.stringify(fallback));
     } finally {
       setLoading(false);
     }
@@ -184,6 +227,40 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
   }, [config.groups]);
 
   const localError = useMemo(() => validateMobileMenuConfig(config), [config]);
+  const hierarchyParentByKey = useMemo(
+    () => new Map(hierarchy.entries.map((entry) => [entry.key, entry.parentKey])),
+    [hierarchy.entries],
+  );
+  const hierarchyChildCount = useMemo(() => {
+    const counts = new Map<MobileMenuDirectoryKey, number>();
+    hierarchy.entries.forEach((entry) => counts.set(entry.parentKey, (counts.get(entry.parentKey) || 0) + 1));
+    return counts;
+  }, [hierarchy.entries]);
+  const configDirty = savedConfigJson !== "" && JSON.stringify(config) !== savedConfigJson;
+  const hierarchyDirty = savedHierarchyJson !== "" && JSON.stringify(hierarchy) !== savedHierarchyJson;
+  const hasUnsavedChanges = configDirty || hierarchyDirty;
+  const hierarchyDirectories = useMemo(
+    () => [
+      ...PAGE_OPTIONS.filter((item) => hierarchyChildCount.has(item.key)),
+      ...hierarchy.directories,
+    ],
+    [hierarchy.directories, hierarchyChildCount],
+  );
+  const hierarchyFirstLevelMenus = useMemo(
+    () => PAGE_OPTIONS.filter((item) => !hierarchyParentByKey.has(item.key) && !hierarchyChildCount.has(item.key)),
+    [hierarchyChildCount, hierarchyParentByKey],
+  );
+  const hierarchyParentOptions = useMemo(
+    () => [
+      ...PAGE_OPTIONS.filter((item) => !hierarchyParentByKey.has(item.key)),
+      ...hierarchy.directories,
+    ],
+    [hierarchy.directories, hierarchyParentByKey],
+  );
+  const hierarchyChildOptions = useMemo(
+    () => PAGE_OPTIONS.filter((item) => item.key !== directoryDraft && !hierarchyChildCount.has(item.key)),
+    [directoryDraft, hierarchyChildCount],
+  );
 
   function syncJson(next: MobileMenuConfig) {
     setJsonText(JSON.stringify(next, null, 2));
@@ -239,51 +316,120 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
     }
   }
 
-  async function save(remark?: string) {
+  function setHierarchyParent(key: MenuKey, parentKey?: MobileMenuDirectoryKey) {
+    setHierarchy((current) => {
+      let entries = current.entries.filter((entry) => entry.key !== key);
+      if (parentKey) {
+        // 被选作父级的菜单必须回到第一层；有子项后它会自动变成目录。
+        if (!parentKey.startsWith("directory:")) entries = entries.filter((entry) => entry.key !== parentKey);
+        entries.push({ key, parentKey });
+      }
+      const directoryKeys = new Set(current.directories.map((item) => item.key));
+      return { version: 3, entries: normalizeMobileMenuHierarchy(entries, ALLOWED_PAGE_KEYS, directoryKeys), directories: current.directories };
+    });
+  }
+
+  function createCustomDirectory() {
+    const label = newDirectoryLabel.trim();
+    if (!label) return notify("请填写目录名称", "error");
+    const key = `directory:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}` as MobileMenuCustomDirectoryKey;
+    setHierarchy((current) => ({
+      ...current,
+      version: 3,
+      directories: [...current.directories, {
+        key,
+        label: label.slice(0, 24),
+        description: newDirectoryDescription.trim().slice(0, 60) || undefined,
+        icon: "folder",
+        groupKey: newDirectoryGroup || config.groups[0]?.key,
+      }],
+    }));
+    setDirectoryDraft(key);
+    setChildDraft("");
+    setNewDirectoryLabel("");
+    setNewDirectoryDescription("");
+    setNewDirectoryGroup("");
+    setNewDirectoryOpen(false);
+    notify(`已创建「${label}」，接下来选择要挂入的功能`, "info");
+  }
+
+  function attachHierarchyChild() {
+    if (!directoryDraft || !childDraft) return;
+    setHierarchyParent(childDraft, directoryDraft);
+    setChildDraft("");
+  }
+
+  function dissolveHierarchyDirectory(parentKey: MobileMenuDirectoryKey) {
+    const customDirectory = hierarchy.directories.find((item) => item.key === parentKey);
+    const label = customDirectory?.label || MOBILE_PAGE_REGISTRY[parentKey as MenuKey]?.label || parentKey;
+    const action = customDirectory ? "删除" : "解散";
+    if (!window.confirm(`确认${action}「${label}」目录？其中的二级菜单会全部回到第一层，保存前可以撤销。`)) return;
+    setHierarchy((current) => ({
+      version: 3,
+      entries: current.entries.filter((entry) => entry.parentKey !== parentKey),
+      directories: current.directories.filter((item) => item.key !== parentKey),
+    }));
+    if (directoryDraft === parentKey) {
+      setDirectoryDraft("");
+      setChildDraft("");
+    }
+  }
+
+  async function saveAll(remark?: string) {
     if (!canEdit) return notify("当前角色不能编辑移动菜单", "error");
     const error = validateMobileMenuConfig(config);
     if (error) return notify(error, "error");
+    if (!hasUnsavedChanges) return notify("当前没有需要保存的修改", "info");
     setSaving(true);
     try {
+      const combinedConfig: MobileMenuConfig = { ...config, hierarchy };
       const result = await apiRequest<Record<string, unknown>>("/system/mobile-menu", {
         method: "PUT",
-        body: { config, remark: remark || "后台保存" },
+        body: { config: combinedConfig, remark: remark || "移动菜单布局与层级调整" },
       });
       const data = (result.data || result) as Record<string, unknown>;
-      if (data.config) applyConfig(data.config as MobileMenuConfig, data.revision !== undefined ? Number(data.revision) : undefined, {
+      const savedConfig = mergeMobileMenuConfig(data.config ?? combinedConfig);
+      applyConfig(savedConfig, data.revision !== undefined ? Number(data.revision) : undefined, {
         updateBy: data.updateBy ? String(data.updateBy) : undefined,
         updateTime: data.updateTime ? String(data.updateTime) : undefined,
       });
-      notify("移动菜单已保存", "success");
+      const savedHierarchy = mergeMobileEntryPromotions(savedConfig.hierarchy ?? hierarchy);
+      setHierarchy(savedHierarchy);
+      setSavedConfigJson(JSON.stringify(savedConfig));
+      setSavedHierarchyJson(JSON.stringify(savedHierarchy));
       window.dispatchEvent(new Event("xb-mobile-menu-changed"));
+      window.dispatchEvent(new Event("xb-mobile-entry-promotions-changed"));
       await loadHistory();
+      notify("全部修改已保存并生效", "success");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "保存失败", "error");
+      notify(error instanceof Error ? error.message : "保存失败，请刷新确认当前状态", "error");
     } finally {
       setSaving(false);
     }
   }
 
-  async function resetDefault() {
+  function resetDefault() {
     if (!canEdit) return notify("当前角色不能编辑移动菜单", "error");
-    if (!window.confirm("确认恢复内置默认移动菜单？当前配置将写入历史后被覆盖。")) return;
-    setSaving(true);
-    try {
-      const result = await apiRequest<Record<string, unknown>>("/system/mobile-menu/reset", { method: "DELETE" });
-      const payload = (result.data ?? result) as unknown;
-      applyConfig(mergeMobileMenuConfig(payload));
-      notify("已恢复默认配置", "success");
-      window.dispatchEvent(new Event("xb-mobile-menu-changed"));
-      await load();
-    } catch (error) {
-      notify(error instanceof Error ? error.message : "重置失败", "error");
-    } finally {
-      setSaving(false);
-    }
+    if (!window.confirm("恢复为内置默认布局和层级？这一步只修改当前预览，点击「保存更改」后才会生效。")) return;
+    const nextConfig = cloneConfig(DEFAULT_MOBILE_MENU_CONFIG);
+    const nextHierarchy = getMobileEntryPromotions();
+    setConfig(nextConfig);
+    syncJson(nextConfig);
+    setHierarchy(nextHierarchy);
+    setDirectoryDraft("");
+    setChildDraft("");
+    notify("已载入默认预览，确认后请保存更改", "info");
+  }
+
+  async function reload() {
+    if (hasUnsavedChanges && !window.confirm("当前有未保存的修改，刷新后会丢失。仍要继续吗？")) return;
+    setDirectoryDraft("");
+    setChildDraft("");
+    await load();
   }
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json;charset=utf-8" });
+    const blob = new Blob([JSON.stringify({ version: 3, config: { ...config, hierarchy }, hierarchy }, null, 2)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -299,23 +445,17 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
       const text = await file.text();
       const parsed = JSON.parse(text) as unknown;
       const merged = mergeMobileMenuConfig((parsed as { config?: unknown })?.config ?? parsed);
+      const importedHierarchy = (parsed as { hierarchy?: unknown })?.hierarchy
+        ? mergeMobileEntryPromotions((parsed as { hierarchy?: unknown }).hierarchy)
+        : mergeMobileEntryPromotions(merged.hierarchy ?? hierarchy);
       const error = validateMobileMenuConfig(merged);
       if (error) return notify(`导入校验失败：${error}`, "error");
-      setSaving(true);
-      const result = await apiRequest<Record<string, unknown>>("/system/mobile-menu/import", {
-        method: "POST",
-        body: { config: merged, remark: `导入文件 ${file.name}` },
-      });
-      const data = (result.data || result) as Record<string, unknown>;
-      if (data.config) applyConfig(data.config as MobileMenuConfig, data.revision !== undefined ? Number(data.revision) : undefined);
-      else applyConfig(merged);
-      notify("导入成功", "success");
-      window.dispatchEvent(new Event("xb-mobile-menu-changed"));
-      await loadHistory();
+      applyConfig(merged);
+      setHierarchy(importedHierarchy);
+      notify(`已导入 ${file.name}，检查后点击保存更改`, "info");
     } catch (error) {
       notify(error instanceof Error ? error.message : "导入失败", "error");
     } finally {
-      setSaving(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -371,32 +511,36 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
   const group = config.groups[activeGroup];
 
   return (
-    <div className="module-page">
-      <div className="module-hero compact-hero">
+    <div className="module-page mobile-menu-settings-page">
+      <div className="module-hero compact-hero mobile-menu-console-hero">
         <div>
+          {onBack ? <MobileBackButton label={backLabel} onClick={onBack} /> : null}
           <span className="eyebrow">系统运行</span>
           <h1>移动菜单</h1>
-          <p>一步到位：可视化编辑 + JSON 导入导出 + 历史回滚。与 PC 菜单管理分离。</p>
+          <p>配置全部功能、底部 Dock 与两级目录结构</p>
         </div>
+        <span className="hero-tool-icon"><SlidersHorizontal size={27} /></span>
       </div>
 
-      <div className="secondary-actions">
-        <button type="button" onClick={() => void load()}><RefreshCw size={16} />刷新</button>
-        <button type="button" onClick={exportJson}><Download size={16} />导出 JSON</button>
+      <div className="secondary-actions mobile-menu-command-bar">
+        <div className="mobile-menu-command-tools">
+          <button type="button" onClick={() => void reload()}><RefreshCw size={16} /><span>刷新</span></button>
+          <button type="button" onClick={exportJson}><Download size={16} /><span>导出</span></button>
+          {canEdit ? <button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} /><span>导入</span></button> : null}
+          <button type="button" className={showJson ? "active" : ""} onClick={() => { setActiveEditorSection("layout"); setShowJson((v) => !v); }}><Braces size={16} /><span>JSON</span></button>
+        </div>
         {canEdit ? (
-          <>
-            <button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入 JSON</button>
+          <div className="mobile-menu-command-commit">
             <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void importFile(file);
             }} />
-            <button type="button" onClick={() => void resetDefault()}><RotateCcw size={16} />恢复默认</button>
-            <button type="button" className={showJson ? "active" : ""} onClick={() => setShowJson((v) => !v)}><Braces size={16} />JSON</button>
-            <button type="button" className="button button-primary" disabled={saving || !!localError} onClick={() => void save()}>
+            <button type="button" className="mobile-menu-command-reset" onClick={resetDefault}><RotateCcw size={16} /><span>恢复默认</span></button>
+            <button type="button" className="button button-primary mobile-menu-command-save" disabled={saving || !!localError || !hasUnsavedChanges} onClick={() => void saveAll()}>
               {saving ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
-              保存
+              <span>{saving ? "保存中" : hasUnsavedChanges ? "保存更改" : "已是最新"}</span>
             </button>
-          </>
+          </div>
         ) : null}
       </div>
 
@@ -408,6 +552,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
             {meta.updateBy ? ` · ${meta.updateBy}` : ""}
             {meta.updateTime ? ` · ${meta.updateTime}` : ""}
           </span>
+          {hasUnsavedChanges ? <em className="mobile-menu-unsaved-badge">未保存</em> : null}
         </div>
       </div>
 
@@ -429,7 +574,13 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         </div>
       ) : null}
 
-      {showJson ? (
+      <nav className="mobile-menu-editor-tabs" aria-label="移动菜单配置分区">
+        <button type="button" className={activeEditorSection === "layout" ? "active" : ""} onClick={() => setActiveEditorSection("layout")}><LayoutGrid size={16} /><span>布局配置</span></button>
+        <button type="button" className={activeEditorSection === "hierarchy" ? "active" : ""} onClick={() => setActiveEditorSection("hierarchy")}><GitBranch size={16} /><span>层级目录</span></button>
+        <button type="button" className={activeEditorSection === "history" ? "active" : ""} onClick={() => setActiveEditorSection("history")}><History size={16} /><span>布局历史</span></button>
+      </nav>
+
+      {showJson && activeEditorSection === "layout" ? (
         <section className="data-card" style={{ marginBottom: 12 }}>
           <div className="data-card-head">
             <div><b>JSON 编辑</b><small>可直接改 JSON，点「应用到编辑器」后再保存</small></div>
@@ -446,7 +597,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         </section>
       ) : null}
 
-      <section className="data-card" style={{ marginBottom: 12 }}>
+      <section className={`data-card mobile-menu-editor-section${activeEditorSection === "layout" ? "" : " mobile-menu-editor-section-hidden"}`} style={{ marginBottom: 12 }}>
         <div className="data-card-head">
           <div><b>底部 Dock</b><small>建议 4~5 项，必须保留「全部」；最多 1 个强调按钮</small></div>
           {canEdit ? (
@@ -466,7 +617,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         </div>
         <div className="mobile-menu-editor-list">
           {config.dock.map((item, index) => (
-            <div className="mobile-menu-editor-row" key={`dock-${index}-${item.key}`}>
+            <div className="mobile-menu-editor-row mobile-menu-dock-row" key={`dock-${index}-${item.key}`}>
               <select
                 value={item.key}
                 disabled={!canEdit || item.key === MOBILE_MENU_ALL_KEY}
@@ -502,7 +653,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         </div>
       </section>
 
-      <section className="data-card" style={{ marginBottom: 12 }}>
+      <section className={`data-card mobile-menu-editor-section${activeEditorSection === "layout" ? "" : " mobile-menu-editor-section-hidden"}`} style={{ marginBottom: 12 }}>
         <div className="data-card-head">
           <div><b>全部功能分组</b><small>未知 page key 会被后端拒绝；无权限项运行时自动隐藏</small></div>
           {canEdit ? (
@@ -534,7 +685,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
 
         {group ? (
           <div className="mobile-menu-group-editor">
-            <div className="mobile-menu-editor-row">
+            <div className="mobile-menu-editor-row mobile-menu-group-meta-row">
               <input value={group.title} disabled={!canEdit} placeholder="分组标题" onChange={(event) => patchGroup(activeGroup, { title: event.target.value })} />
               <input value={group.description || ""} disabled={!canEdit} placeholder="分组描述" onChange={(event) => patchGroup(activeGroup, { description: event.target.value })} />
               <div className="mobile-menu-row-actions">
@@ -556,20 +707,23 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
             <div className="list-heading" style={{ marginTop: 8 }}>
               <div><h2>功能项</h2><span>{group.items.length} 个</span></div>
               {canEdit ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextPage = PAGE_OPTIONS.find((option) => !usedKeys.has(option.key)) || PAGE_OPTIONS[0];
-                    if (!nextPage) return;
-                    patchGroup(activeGroup, { items: [...group.items, { key: nextPage.key }] });
-                  }}
-                ><Plus size={15} />添加功能</button>
+                <div className="mobile-menu-feature-actions">
+                  <button type="button" onClick={() => { setNewDirectoryGroup(group.key); setNewDirectoryOpen(true); setActiveEditorSection("hierarchy"); }}><FolderTree size={14} />新建目录</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextPage = PAGE_OPTIONS.find((option) => !usedKeys.has(option.key)) || PAGE_OPTIONS[0];
+                      if (!nextPage) return;
+                      patchGroup(activeGroup, { items: [...group.items, { key: nextPage.key }] });
+                    }}
+                  ><Plus size={15} />添加功能</button>
+                </div>
               ) : null}
             </div>
 
             <div className="mobile-menu-editor-list">
               {group.items.map((item, itemIndex) => (
-                <div className="mobile-menu-editor-row" key={`${group.key}-${itemIndex}-${item.key}`}>
+                <div className="mobile-menu-editor-row mobile-menu-item-row" key={`${group.key}-${itemIndex}-${item.key}`}>
                   <select
                     value={item.key}
                     disabled={!canEdit}
@@ -592,7 +746,7 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         ) : null}
       </section>
 
-      <section className="data-card" style={{ marginBottom: 12 }}>
+      <section className={`data-card mobile-menu-editor-section${activeEditorSection === "layout" ? "" : " mobile-menu-editor-section-hidden"}`} style={{ marginBottom: 12 }}>
         <div className="data-card-head"><div><b>顶部附加入口</b><small>全部功能页顶部的工作台 / 工具箱</small></div></div>
         <div className="mobile-menu-editor-list">
           <label className="mobile-menu-check">
@@ -603,11 +757,11 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
             <input type="checkbox" disabled={!canEdit} checked={config.extras.showToolboxEntry} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, showToolboxEntry: event.target.checked } }; syncJson(next); return next; })} />
             显示工具箱入口
           </label>
-          <div className="mobile-menu-editor-row">
+          <div className="mobile-menu-editor-row mobile-menu-extra-row">
             <input disabled={!canEdit} value={config.extras.homeLabel} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, homeLabel: event.target.value } }; syncJson(next); return next; })} placeholder="工作台标题" />
             <input disabled={!canEdit} value={config.extras.homeDescription} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, homeDescription: event.target.value } }; syncJson(next); return next; })} placeholder="工作台描述" />
           </div>
-          <div className="mobile-menu-editor-row">
+          <div className="mobile-menu-editor-row mobile-menu-extra-row">
             <input disabled={!canEdit} value={config.extras.toolboxLabel} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, toolboxLabel: event.target.value } }; syncJson(next); return next; })} placeholder="工具箱标题" />
             <input disabled={!canEdit} value={config.extras.toolboxDescription} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, toolboxDescription: event.target.value } }; syncJson(next); return next; })} placeholder="工具箱描述" />
             <input disabled={!canEdit} value={config.extras.toolboxHref} onChange={(event) => setConfig((c) => { const next = { ...c, extras: { ...c.extras, toolboxHref: event.target.value } }; syncJson(next); return next; })} placeholder="/tools" />
@@ -615,9 +769,109 @@ export function MobileMenuSettingsPage({ notify }: { notify: Notify }) {
         </div>
       </section>
 
-      <section className="data-card">
+      <section className={`data-card mobile-menu-editor-section${activeEditorSection === "hierarchy" ? "" : " mobile-menu-editor-section-hidden"}`}>
         <div className="data-card-head">
-          <div><b><History size={16} style={{ verticalAlign: "-2px", marginRight: 6 }} />历史版本</b><small>最近 20 条；回滚会生成新历史，不会丢当前版</small></div>
+          <div><b>菜单层级</b><small>选择一个一级菜单，再把需要的功能挂到它下面</small></div>
+          <div className="mobile-menu-hierarchy-head-actions">
+            {canEdit ? <button type="button" className="button button-soft" onClick={() => setNewDirectoryOpen((open) => !open)}><Plus size={13} />新建目录</button> : null}
+            <span className={`mobile-menu-sync-state${hierarchyDirty ? " dirty" : ""}`}>{hierarchyDirty ? "待保存" : "已同步"}</span>
+          </div>
+        </div>
+        {canEdit && newDirectoryOpen ? (
+          <div className="mobile-menu-custom-directory-form">
+            <div><FolderTree size={16} /><span><b>新建自定义目录</b><small>目录只负责展示二级菜单，不绑定任何功能页面</small></span></div>
+            <input aria-label="自定义目录名称" value={newDirectoryLabel} maxLength={24} placeholder="目录名称，例如：订单工具" onChange={(event) => setNewDirectoryLabel(event.target.value)} />
+            <input aria-label="自定义目录说明" value={newDirectoryDescription} maxLength={60} placeholder="目录说明（可选）" onChange={(event) => setNewDirectoryDescription(event.target.value)} />
+            <select aria-label="自定义目录显示分组" value={newDirectoryGroup} onChange={(event) => setNewDirectoryGroup(event.target.value)}>
+              <option value="">显示在「{config.groups[0]?.title || "全部功能"}」</option>
+              {config.groups.map((group) => <option value={group.key} key={group.key}>显示在「{group.title}」</option>)}
+            </select>
+            <div><button type="button" onClick={() => setNewDirectoryOpen(false)}>取消</button><button type="button" className="button button-primary" disabled={!newDirectoryLabel.trim()} onClick={createCustomDirectory}>创建目录</button></div>
+          </div>
+        ) : null}
+        {canEdit ? (
+          <div className="mobile-menu-hierarchy-builder">
+            <div className="mobile-menu-builder-title">
+              <FolderTree size={16} />
+              <div><b>添加二级菜单</b><small>挂入第一个功能后，一级菜单会自动变成目录</small></div>
+            </div>
+            <label>
+              <span><i>1</i>选择一级菜单</span>
+              <select aria-label="选择一级目录" value={directoryDraft} onChange={(event) => { setDirectoryDraft(event.target.value as MobileMenuDirectoryKey); setChildDraft(""); }}>
+                <option value="">选择后作为目录</option>
+                {hierarchyParentOptions.map((option) => (
+                  <option value={option.key} key={option.key}>{option.label}{hierarchyChildCount.has(option.key) ? "（现有目录）" : ""}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span><i>2</i>选择二级菜单</span>
+              <select aria-label="选择二级菜单" value={childDraft} disabled={!directoryDraft} onChange={(event) => setChildDraft(event.target.value as MenuKey)}>
+                <option value="">选择要挂入的功能</option>
+                {hierarchyChildOptions.map((option) => {
+                  const currentParent = hierarchyParentByKey.get(option.key);
+                  const currentParentLabel = currentParent
+                    ? hierarchy.directories.find((item) => item.key === currentParent)?.label || MOBILE_PAGE_REGISTRY[currentParent as MenuKey]?.label
+                    : "";
+                  return <option value={option.key} key={option.key}>{option.label}{currentParentLabel ? `（当前在${currentParentLabel}）` : ""}</option>;
+                })}
+              </select>
+            </label>
+            <button type="button" className="button button-primary" disabled={!directoryDraft || !childDraft || hierarchyParentByKey.get(childDraft as MenuKey) === directoryDraft} onClick={attachHierarchyChild}>
+              <CornerDownRight size={15} />挂到目录
+            </button>
+          </div>
+        ) : null}
+
+        <div className="mobile-menu-directory-overview">
+          <div className="mobile-menu-overview-heading">
+            <div><b>一级目录</b><small>{hierarchyDirectories.length} 个目录 · {hierarchy.entries.length} 个二级菜单</small></div>
+          </div>
+          <div className="mobile-menu-directory-editor-list">
+            {hierarchyDirectories.map((directory) => {
+              const children = hierarchy.entries.filter((entry) => entry.parentKey === directory.key);
+              return (
+                <article className="mobile-menu-directory-editor" key={directory.key}>
+                  <header>
+                    <span><FolderTree size={15} /></span>
+                    <div><b>{directory.label}</b><small>一级目录 · {children.length} 项</small></div>
+                    {canEdit ? <button type="button" onClick={() => dissolveHierarchyDirectory(directory.key)}>{directory.key.startsWith("directory:") ? "删除目录" : "解散目录"}</button> : null}
+                  </header>
+                  <div className="mobile-menu-directory-children">
+                    {children.map((entry) => {
+                      const item = MOBILE_PAGE_REGISTRY[entry.key];
+                      return (
+                        <div key={entry.key}>
+                          <CornerDownRight size={13} />
+                          <span><b>{item.label}</b><small>{item.description}</small></span>
+                          {canEdit ? <button type="button" aria-label={`将${item.label}移回第一层`} title="移回第一层" onClick={() => setHierarchyParent(entry.key)}><X size={13} /></button> : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </article>
+              );
+            })}
+            {!hierarchyDirectories.length ? <p className="sysm-empty-note">还没有目录，请从上方选择一级菜单和二级菜单建立关系。</p> : null}
+          </div>
+        </div>
+
+        <details className="mobile-menu-first-level-summary">
+          <summary>普通一级菜单 <span>{hierarchyFirstLevelMenus.length} 项</span></summary>
+          <div>{hierarchyFirstLevelMenus.map((item) => <span key={item.key}>{item.label}</span>)}</div>
+        </details>
+
+        {canEdit && hasUnsavedChanges ? (
+          <div className="mobile-menu-editor-save-strip">
+            <span>修改仍在预览中</span>
+            <button type="button" className="button button-primary" disabled={saving || !!localError} onClick={() => void saveAll()}>{saving ? <LoaderCircle className="spin" size={14} /> : <Save size={14} />}保存全部更改</button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className={`data-card mobile-menu-editor-section${activeEditorSection === "history" ? "" : " mobile-menu-editor-section-hidden"}`}>
+        <div className="data-card-head">
+          <div><b><History size={16} style={{ verticalAlign: "-2px", marginRight: 6 }} />布局历史</b><small>记录 Dock 与全部功能布局；回滚不会改变层级目录</small></div>
           <button type="button" className="button button-soft" onClick={() => void loadHistory()} disabled={historyLoading}>
             {historyLoading ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}
             刷新历史

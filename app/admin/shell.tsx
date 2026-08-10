@@ -49,14 +49,20 @@ import {
   resolveMobileIcon,
   resolveMobileMenu,
   type MobileMenuConfig,
+  type ResolvedMobileMenuItem,
 } from "./mobileMenu.config";
 import { createCrudConfigs, CrudModule } from "./crud";
 import { fetchCrudOverrides, getCrudOverrides, type CrudOverridesConfig } from "./crudConfigs.config";
 import { fetchTrackingServices, getTrackingServices, resolveTrackingServices } from "./trackingServices.config";
 import { fetchProfileActions, getProfileActions, type ProfileActionsConfig } from "./profileActions.config";
+import {
+  getMobileEntryPromotions,
+  type MobileEntryPromotionsConfig,
+  type MobileMenuDirectoryKey,
+} from "./mobileEntryPromotions.config";
 import { DashboardPage } from "./dashboard";
 import { BindEmailSheet, ChangePwdByEmailSheet, EditProfileSheet, LoginScreen } from "./login";
-import { Sheet, Toast } from "./ui";
+import { MobileBackButton, Sheet, Toast } from "./ui";
 import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest, useAccess } from "./access";
 
 const AdminOrderEntry = lazy(() => import("../AdminOrderEntry"));
@@ -82,7 +88,36 @@ export function TrackingPage() {
   return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.key}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
-export function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig }) {
+function MenuDirectoryPage({ directory, children, onSelect, onOpenAll }: { directory: ResolvedMobileMenuItem; children: ResolvedMobileMenuItem[]; onSelect: (key: MenuKey) => void; onOpenAll: () => void }) {
+  const DirectoryIcon = directory.icon;
+  return (
+    <div className="module-page mobile-directory-page">
+      <div className="module-hero compact-hero">
+        <div>
+          <MobileBackButton label="全部功能" onClick={onOpenAll} />
+          <span className="eyebrow">功能目录</span>
+          <h1>{directory.label}</h1>
+          <p>{children.length} 个可用菜单</p>
+        </div>
+        <span className="hero-tool-icon"><DirectoryIcon size={27} /></span>
+      </div>
+      <div className="mobile-directory-grid">
+        {children.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button type="button" key={item.key} onClick={() => onSelect(item.key as MenuKey)}>
+              <span><Icon size={22} /></span>
+              <div><b>{item.label}</b><small>{item.description}</small></div>
+              <ChevronRight size={17} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function MenuSheet({ open, active, activeDirectory, username, userInfo, onClose, onSelect, onOpenDirectory, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig, hierarchyConfig }: { open: boolean; active: MenuKey; activeDirectory: MobileMenuDirectoryKey | null; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onOpenDirectory: (key: MobileMenuDirectoryKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig; hierarchyConfig: MobileEntryPromotionsConfig }) {
   const access = useAccess();
   const [view, setView] = useState<"menu" | "profile" | "settings">("menu");
   const [menuQuery, setMenuQuery] = useState("");
@@ -100,8 +135,8 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
     return () => { mounted = false; window.removeEventListener("xb-profile-actions-changed", reload); };
   }, []);
   const mobileMenu = useMemo(
-    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
-    [access, menuConfig],
+    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key), hierarchyConfig),
+    [access, menuConfig, hierarchyConfig],
   );
   useEffect(() => { if (!open) { setView("menu"); setMenuQuery(""); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPendingChangePwd(false); } }, [open]);
   const filteredGroups = useMemo(() => {
@@ -110,7 +145,11 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
     return mobileMenu.groups
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(keyword)),
+        items: group.items.filter((item) => {
+          const children = mobileMenu.directoryChildren[item.key] || [];
+          const searchable = [item.label, item.description, ...children.flatMap((child) => [child.label, child.description])].join(" ").toLowerCase();
+          return searchable.includes(keyword);
+        }),
       }))
       .filter((group) => group.items.length > 0);
   }, [menuQuery, mobileMenu.groups]);
@@ -240,10 +279,10 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
             {group.items.map((item) => {
               const Icon = item.icon;
               return (
-                <button className={active === item.key || (item.key === "systemCenter" && (active === "operationsCenter" || active.startsWith("sys") || active === "mobileMenu")) || (item.key === "operationsCenter" && active.startsWith("ops")) ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}>
+                <button className={activeDirectory === item.key || active === item.key || mobileMenu.parentByChild[active] === item.key ? "active" : ""} key={item.key} onClick={() => { if (item.directory) onOpenDirectory(item.key); else onSelect(item.key as MenuKey); onClose(); }}>
                   <span><Icon size={21} /></span>
                   <b>{item.label}</b>
-                  <small>{item.description}</small>
+                  <small>{item.directory ? `${mobileMenu.directoryChildren[item.key]?.length || 0} 个子菜单` : item.description}</small>
                 </button>
               );
             })}
@@ -266,6 +305,7 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
 export function AdminShell({ username, onLogout }: { username: string; onLogout: () => void }) {
   // 当前访问页：先从 localStorage 缓存里取，刷新/下拉刷新后自动停留在上次的页面
   const [active, setActive] = useState<MenuKey>(readCachedActivePage);
+  const [activeDirectory, setActiveDirectory] = useState<MobileMenuDirectoryKey | null>(null);
   useEffect(() => { writeCachedActivePage(active); }, [active]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
@@ -273,6 +313,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   const [userInfo, setUserInfo] = useState<DataRow | null>(null);
   const [access, setAccess] = useState(EMPTY_ACCESS);
   const [menuConfig, setMenuConfig] = useState<MobileMenuConfig>(getMobileMenuConfig);
+  const [entryPromotions, setEntryPromotions] = useState<MobileEntryPromotionsConfig>(() => getMobileMenuConfig().hierarchy || getMobileEntryPromotions());
   const [crudOverrides, setCrudOverrides] = useState<CrudOverridesConfig>(getCrudOverrides);
   useEffect(() => {
     let mounted = true;
@@ -310,6 +351,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   const replaySystemTour = useCallback(() => {
     onboardingTriggers.replaySystemTour(getSystemTourSteps());
     setMenuOpen(false);
+    setActiveDirectory(null);
     setActive("home");
   }, [onboardingTriggers]);
   // 「全部」按钮的点击：触发菜单打开 + 若当前在 awaitClick 步骤则推进引导
@@ -336,14 +378,19 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     let mounted = true;
     const loadMenu = () => {
       fetchMobileMenuConfig(apiRequest).then((config) => {
-        if (mounted) setMenuConfig(config);
+        if (mounted) {
+          setMenuConfig(config);
+          setEntryPromotions(config.hierarchy || getMobileEntryPromotions());
+        }
       }).catch(() => { /* 本地默认兜底 */ });
     };
     loadMenu();
     window.addEventListener("xb-mobile-menu-changed", loadMenu);
+    window.addEventListener("xb-mobile-entry-promotions-changed", loadMenu);
     return () => {
       mounted = false;
       window.removeEventListener("xb-mobile-menu-changed", loadMenu);
+      window.removeEventListener("xb-mobile-entry-promotions-changed", loadMenu);
     };
   }, [access.ready]);
 
@@ -362,9 +409,6 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
       window.clearInterval(timer);
     };
   }, [refreshAccess]);
-  useEffect(() => {
-    if (access.ready && !canOpenMenu(access, active)) setActive("home");
-  }, [access, active]);
   useEffect(() => {
     let mounted = true;
     // 拉一次 /getInfo，失败时静默降级到 username；仅在已登录后由 AdminShell 持有 token 时调用
@@ -425,22 +469,54 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   }, [active, onboardingTriggers]);
   const configs = useMemo(() => createCrudConfigs(dictionaries, crudOverrides), [dictionaries, crudOverrides]);
   const mobileMenu = useMemo(
-    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
-    [access, menuConfig],
+    () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key), entryPromotions),
+    [access, menuConfig, entryPromotions],
   );
+  useEffect(() => {
+    if (access.ready && !mobileMenu.directoryChildren[active]?.length && !canOpenMenu(access, active)) setActive("home");
+  }, [access, active, mobileMenu.directoryChildren]);
   const navigate = useCallback((key: MenuKey) => {
-    if (canOpenMenu(access, key)) setActive(key);
-    else notify("当前角色没有此功能权限", "error");
-  }, [access, notify]);
+    if (mobileMenu.directoryChildren[key]?.length) {
+      setActiveDirectory(key);
+    } else if (canOpenMenu(access, key)) {
+      setActiveDirectory(null);
+      setActive(key);
+    } else notify("当前角色没有此功能权限", "error");
+  }, [access, mobileMenu.directoryChildren, notify]);
+  const openDirectory = useCallback((key: MobileMenuDirectoryKey) => {
+    if (mobileMenu.directoryChildren[key]?.length) setActiveDirectory(key);
+    else notify("该目录下暂无可用功能", "info");
+  }, [mobileMenu.directoryChildren, notify]);
   const visibleActive = access.ready && canOpenMenu(access, active) ? active : "home";
-  const exitToHome = useCallback(() => setActive("home"), []);
+  const findDirectoryItem = useCallback((key: MobileMenuDirectoryKey | null | undefined) => {
+    if (!key) return undefined;
+    return mobileMenu.groups.flatMap((group) => group.items).find((item) => item.key === key);
+  }, [mobileMenu.groups]);
+  // 从二级目录点进子页后，返回应回到该目录，而不是直接甩回工作台。
+  const exitToParentOrHome = useCallback(() => {
+    const parent = mobileMenu.parentByChild[active];
+    if (parent && mobileMenu.directoryChildren[parent]?.length) {
+      setActiveDirectory(parent);
+      return;
+    }
+    setActiveDirectory(null);
+    setActive("home");
+  }, [active, mobileMenu.directoryChildren, mobileMenu.parentByChild]);
   const SYSTEM_HUB_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>([
     "systemCenter", "operationsCenter", "mobileMenu",
     "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
     "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
     "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
   ]), []);
-  const renderPage = visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} />
+  const activeDirectoryChildren = activeDirectory ? mobileMenu.directoryChildren[activeDirectory] : undefined;
+  const activeDirectoryItem = findDirectoryItem(activeDirectory);
+  const parentDirectoryKey = !activeDirectoryChildren?.length ? mobileMenu.parentByChild[visibleActive] : undefined;
+  const parentDirectoryItem = findDirectoryItem(parentDirectoryKey);
+  const exitLabel = parentDirectoryItem?.label || "工作台";
+  // 系统/运行中心子页自带返回；其余挂在目录下的业务页由 shell 统一补返回条。
+  const showShellDirectoryBack = !!parentDirectoryKey && !SYSTEM_HUB_KEYS.has(visibleActive);
+  const renderPage = activeDirectoryChildren?.length && activeDirectoryItem ? <MenuDirectoryPage directory={activeDirectoryItem} children={activeDirectoryChildren} onSelect={navigate} onOpenAll={() => { setActiveDirectory(null); setMenuOpen(true); }} />
+    : visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} />
     : visibleActive === "orders" ? <OrdersPage notify={notify} onNavigate={navigate} />
     : visibleActive === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
     : visibleActive === "batchOrder" ? <BatchOrderEntry />
@@ -450,7 +526,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : visibleActive === "tracking" ? <TrackingPage />
     : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
     : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
-    : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToHome} />
+    : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToParentOrHome} exitLabel={exitLabel} />
     : <CrudModule config={configs[visibleActive as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
   if (!access.ready) return <div className="app-loading"><LoaderCircle className="spin" size={28} /><p>正在同步权限</p></div>;
@@ -458,16 +534,22 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   return <AccessContext.Provider value={access}><DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
       <main className="product-main" data-onboard={`page-${active}`}>
+        {showShellDirectoryBack ? (
+          <div className="product-main-back-row">
+            <MobileBackButton label={exitLabel} onClick={exitToParentOrHome} />
+          </div>
+        ) : null}
         <Suspense fallback={<div className="home-empty"><LoaderCircle className="spin" size={22} />正在加载模块</div>}>
           {renderPage}
         </Suspense>
       </main>
-      <nav className="workspace-dock" aria-label="主要功能">
+      <nav className="workspace-dock" data-items={mobileMenu.dock.length} aria-label="主要功能">
         {mobileMenu.dock.map((item) => {
           const Icon = item.icon;
           if (item.key === MOBILE_MENU_ALL_KEY) {
             const dockKeys = mobileMenu.dock.map((entry) => entry.key).filter((key) => key !== MOBILE_MENU_ALL_KEY);
-            const isActive = !dockKeys.includes(active);
+            const activeRoot = activeDirectory || mobileMenu.parentByChild[active] || active;
+            const isActive = !dockKeys.some((key) => key === activeRoot);
             return (
               <button className={isActive ? "active" : ""} data-onboard="dock-menu" key={item.key} onClick={handleDockMenuClick}>
                 <Icon size={21} /><span>{item.label}</span>
@@ -475,23 +557,23 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
             );
           }
           const pageKey = item.key;
-          const isActive = active === pageKey || (pageKey === "systemCenter" && active === "operationsCenter");
+          const isActive = activeDirectory === pageKey || active === pageKey || mobileMenu.parentByChild[active] === pageKey;
           if (item.emphasis) {
             return (
-              <button className={`dock-create${isActive ? " active" : ""}`} data-onboard={`dock-${pageKey}`} key={pageKey} type="button" onClick={() => navigate(pageKey)} aria-label={item.label}>
+              <button className={`dock-create${isActive ? " active" : ""}`} data-onboard={`dock-${pageKey}`} key={pageKey} type="button" onClick={() => mobileMenu.directoryChildren[pageKey]?.length ? openDirectory(pageKey) : navigate(pageKey)} aria-label={item.label}>
                 <span className="dock-create-glyph" aria-hidden="true"><Icon size={22} strokeWidth={2.4} /></span>
                 <span>{item.label}</span>
               </button>
             );
           }
           return (
-            <button className={isActive ? "active" : ""} data-onboard={`dock-${pageKey}`} key={pageKey} onClick={() => pageKey === "home" ? setActive("home") : navigate(pageKey)}>
+            <button className={isActive ? "active" : ""} data-onboard={`dock-${pageKey}`} key={pageKey} onClick={() => mobileMenu.directoryChildren[pageKey]?.length ? openDirectory(pageKey) : pageKey === "home" ? (setActiveDirectory(null), setActive("home")) : navigate(pageKey)}>
               <Icon size={21} /><span>{item.label}</span>
             </button>
           );
         })}
       </nav>
-      <MenuSheet open={menuOpen} active={active} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={navigate} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} menuConfig={menuConfig} />
+      <MenuSheet open={menuOpen} active={active} activeDirectory={activeDirectory} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={navigate} onOpenDirectory={openDirectory} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} menuConfig={menuConfig} hierarchyConfig={entryPromotions} />
       <BindEmailSheet
         open={bindEmailOpen}
         currentEmail={String(userInfo?.email || "")}

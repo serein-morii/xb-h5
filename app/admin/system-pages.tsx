@@ -76,7 +76,17 @@ function resolveOpsView(active: MenuKey): string {
  * 系统/运行中心子页统一入口。
  * shell.tsx 把 sys* / ops* / systemCenter / operationsCenter / mobileMenu 全部路由到这里。
  */
-export function SystemHubPage({ active, notify, onExit }: { active: MenuKey; notify: Notify; onExit: () => void }) {
+export function SystemHubPage({
+  active,
+  notify,
+  onExit,
+  exitLabel = "工作台",
+}: {
+  active: MenuKey;
+  notify: Notify;
+  onExit: () => void;
+  exitLabel?: string;
+}) {
   const access = useAccess();
   const kind = classify(active);
   if (kind === "system") {
@@ -86,6 +96,7 @@ export function SystemHubPage({ active, notify, onExit }: { active: MenuKey; not
           notify={notify}
           initialModule={(resolveSystemModule(active) as never) || null}
           onExit={onExit}
+          exitLabel={exitLabel}
         />
       </Suspense>
     );
@@ -97,6 +108,7 @@ export function SystemHubPage({ active, notify, onExit }: { active: MenuKey; not
           notify={notify}
           initialView={resolveOpsView(active) as never}
           onClose={onExit}
+          exitLabel={exitLabel}
         />
       </Suspense>
     );
@@ -109,12 +121,7 @@ export function SystemHubPage({ active, notify, onExit }: { active: MenuKey; not
     }
     return (
       <Suspense fallback={<Loading />}>
-        <div className="module-page">
-          <button className="module-back-link" type="button" onClick={onExit} style={{ margin: "0 0 8px 4px" }}>
-            返回工作台
-          </button>
-          <MobileMenuSettingsPage notify={notify} />
-        </div>
+        <MobileMenuSettingsPage notify={notify} onBack={onExit} backLabel={exitLabel} />
       </Suspense>
     );
   }

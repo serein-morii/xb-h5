@@ -1,8 +1,9 @@
-import { ArrowLeft, Ban, CheckCircle2, LoaderCircle, Phone, RefreshCw, Search, Store as StoreIcon } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Ban, LoaderCircle, Phone, Search, Store as StoreIcon } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest, listPublicStores, PublicStoreRow } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { OrderStatsCards, StatusFilter, computeOrderStats, filterOrdersByStatus } from "../OrderStatsCards";
+import { SliderCaptcha } from "../../components/SliderCaptcha";
 
 type Row = Record<string, unknown>;
 
@@ -37,7 +38,8 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [uuid, setUuid] = useState("");
-  const [captcha, setCaptcha] = useState("");
+  const [captchaOn, setCaptchaOn] = useState(true);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [orders, setOrders] = useState<PublicOrderRecord[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,14 +80,6 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
     return () => { cancelled = true; };
   }, [storeCode, onResolvedName]);
 
-  const loadCaptcha = useCallback(async () => {
-    try {
-      const result = await apiRequest<Row>("/captchaImage", { auth: false });
-      setUuid(String(result.uuid || "")); setCaptcha(result.img ? `data:image/png;base64,${result.img}` : ""); setCode("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "验证码加载失败"); }
-  }, []);
-  useEffect(() => { loadCaptcha(); }, [loadCaptcha]);
-
   useEffect(() => {
     if (!orders.length) return;
     const node = resultsRef.current;
@@ -103,7 +97,8 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (queryBlocked) return setError("该店铺已暂停订单查询，请联系店铺或客服了解恢复时间");
-    if (!phone.trim() || !code.trim()) return setError("请输入手机号和验证码");
+    if (!phone.trim()) return setError("请输入手机号");
+    if (captchaOn && !code.trim()) return setError("请先完成滑块验证");
     if (!storeCode) return setError("缺少店铺编码");
     setLoading(true); setError(""); setOrders([]); setStatusFilter(null);
     try {
@@ -124,7 +119,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
       if (!data.length) setError("该店铺下暂无订单记录");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "查询失败，请稍后重试");
-      await loadCaptcha();
+      setCaptchaReset((value) => value + 1);
     } finally {
       setLoading(false);
     }
@@ -163,23 +158,7 @@ export default function StoreQuery({ storeCode: storeCodeProp, onResolvedName }:
           />
         </div>
       </label>
-      <label>
-        <span>验证码</span>
-        <div className="tool-captcha">
-          <div className="tool-input">
-            <CheckCircle2 size={17} />
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="请输入验证码"
-              disabled={queryBlocked}
-            />
-          </div>
-          <button type="button" onClick={loadCaptcha} disabled={queryBlocked}>
-            {captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={18} />}
-          </button>
-        </div>
-      </label>
+      {captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading || queryBlocked} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
       {error ? <p className="tool-error">{error}</p> : null}
       <button className="tool-primary" disabled={loading || queryBlocked} type="submit">
         {loading ? <LoaderCircle className="spin" size={18} /> : <Search size={18} />}

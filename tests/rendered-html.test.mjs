@@ -7,6 +7,11 @@ import {
 } from "../app/lib/orderPayment.ts";
 import { readExcelGrid, readExcelJson } from "../app/lib/excel.ts";
 import { installViewportZoomLock } from "../app/lib/viewport.ts";
+import {
+  DEFAULT_MOBILE_ENTRY_PROMOTIONS,
+  normalizeMobileMenuHierarchy,
+  resolveMobileMenuHierarchy,
+} from "../app/admin/mobileEntryPromotions.config.ts";
 
 const source = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const sourceMany = async (...paths) => {
@@ -29,8 +34,60 @@ test("super admin bypasses capability checks and shell guards cached pages", asy
     source("app/admin/shell.tsx"),
   ]);
   assert.match(access, /manifest\.superAdmin \|\| granted\.has\(capability\)/);
-  assert.match(shell, /!canOpenMenu\(access, active\).*setActive\("home"\)/);
+  assert.match(shell, /!mobileMenu\.directoryChildren\[active\]\?\.length && !canOpenMenu\(access, active\).*setActive\("home"\)/);
   assert.match(shell, /visibleActive = access\.ready && canOpenMenu\(access, active\) \? active : "home"/);
+});
+
+test("mobile menu hierarchy stays two levels and exposes directory children", () => {
+  const hierarchy = resolveMobileMenuHierarchy(DEFAULT_MOBILE_ENTRY_PROMOTIONS);
+  assert.equal(hierarchy.parentOf("mobileMenu"), "systemCenter");
+  assert.ok(hierarchy.childrenOf("systemCenter").includes("sysUsers"));
+  assert.ok(hierarchy.childrenOf("systemCenter").includes("mobileMenu"));
+
+  const normalized = normalizeMobileMenuHierarchy([
+    { key: "sysUsers", parentKey: "systemCenter" },
+    { key: "systemCenter", parentKey: "home" },
+    { key: "sysRoles", parentKey: "sysUsers" },
+    { key: "orders", parentKey: "orders" },
+  ]);
+  assert.deepEqual(normalized, [{ key: "systemCenter", parentKey: "home" }]);
+
+  const customKey = "directory:test-tools";
+  const customHierarchy = resolveMobileMenuHierarchy({
+    version: 3,
+    directories: [{ key: customKey, label: "测试工具" }],
+    entries: [{ key: "orders", parentKey: customKey }],
+  });
+  assert.equal(customHierarchy.parentOf("orders"), customKey);
+  assert.deepEqual(customHierarchy.childrenOf(customKey), ["orders"]);
+
+});
+
+test("child pages opened from a directory return to that directory", async () => {
+  const [shell, systemPages, systemManagement, operations, ui, menuSettings] = await Promise.all([
+    source("app/admin/shell.tsx"),
+    source("app/admin/system-pages.tsx"),
+    source("app/admin/system-management.tsx"),
+    source("app/admin/operations-center.tsx"),
+    source("app/admin/ui.tsx"),
+    source("app/admin/mobile-menu-settings.tsx"),
+  ]);
+  assert.match(ui, /export function MobileBackButton/);
+  assert.match(ui, /mobile-back-nav/);
+  assert.match(shell, /exitToParentOrHome/);
+  assert.match(shell, /parentByChild\[active\]/);
+  assert.match(shell, /setActiveDirectory\(parent\)/);
+  assert.match(shell, /exitLabel=\{exitLabel\}/);
+  assert.match(shell, /MobileBackButton/);
+  assert.match(shell, /product-main-back-row/);
+  assert.match(systemPages, /exitLabel = "工作台"/);
+  assert.match(systemPages, /onBack=\{onExit\}/);
+  assert.match(systemPages, /backLabel=\{exitLabel\}/);
+  assert.match(menuSettings, /MobileBackButton/);
+  assert.match(systemManagement, /MobileBackButton/);
+  assert.match(systemManagement, /backLabel=\{active === "dictData"/);
+  assert.match(operations, /MobileBackButton/);
+  assert.match(operations, /backLabel = initialView !== "home" && onClose \? exitLabel : "运行中心"/);
 });
 
 test("keeps permission management focused on members roles and features", async () => {
@@ -265,6 +322,7 @@ test("contains all order module entries and authentication endpoints", async () 
     "app/admin/login.tsx",
     "app/admin/crud.tsx",
     "app/admin/orderCopyMenu.config.ts",
+    "app/components/SliderCaptcha.tsx",
   );
   const api = await source("app/lib/api.ts");
 
@@ -354,7 +412,7 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
   assert.match(orderPage, /purchaserShortId/);
   assert.match(orderPage, /\/search\/purchaser\/orders/);
   assert.match(orderPage, /\/search\/order-options/);
-  assert.match(orderPage, /\/captchaImage/);
+  assert.match(orderPage, /SliderCaptcha/);
   assert.match(orderPage, /\/search\/order/);
   assert.doesNotMatch(orderPage, /storeCode: linkKey/);
   assert.doesNotMatch(orderPage, /buyer/i);
@@ -377,8 +435,7 @@ test("keeps theme settings behind admin login and allows registration without a 
   assert.doesNotMatch(main, /<ThemeSettings\s*\/>/);
   assert.match(adminShell, /<ThemeSettings\s*\/>/);
   assert.match(authPage, /专属下单码（选填）/);
-  assert.match(authPage, /customer-captcha-row/);
-  assert.match(authPage, /\/captchaImage/);
+  assert.match(authPage, /SliderCaptcha/);
   assert.match(authPage, /captchaCode\.trim\(\)/);
   assert.match(authPage, /uuid: captchaUuid/);
   assert.match(authPage, /isSelfRegistration/);
@@ -407,7 +464,7 @@ test("keeps the original public HTML capabilities in the integrated project", as
   assert.match(linkQuery, /\/tools\/order#\$\{encodeURIComponent/);
   assert.match(linkQuery, /rawHash\.startsWith\("id="\)/);
   assert.match(linkQuery, /new URLSearchParams/);
-  assert.match(search, /\/captchaImage/);
+  assert.match(search, /SliderCaptcha/);
   assert.match(search, /method: "POST"/);
   assert.match(search, /OrderList/);
   assert.match(orderList, /物流信息详情/);

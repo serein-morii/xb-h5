@@ -1,6 +1,8 @@
 import {
   Box,
   Check,
+  ChevronLeft,
+  CircleAlert,
   LoaderCircle,
   ShieldCheck,
   Sparkles,
@@ -9,6 +11,30 @@ import {
 } from "lucide-react";
 import { type ChangeEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import type { DataRow, FieldConfig, ToastState } from "./core";
+
+/** 移动端统一返回：嵌在标题区里的轻量文字导航，避免胶囊按钮抢视觉。 */
+export function MobileBackButton({
+  label = "返回",
+  onClick,
+  className = "",
+}: {
+  label?: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  const text = label.replace(/^返回/, "") || "返回";
+  return (
+    <button
+      className={`mobile-back-nav${className ? ` ${className}` : ""}`}
+      type="button"
+      onClick={onClick}
+      aria-label={label.startsWith("返回") ? label : `返回${label}`}
+    >
+      <ChevronLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+      <span>{text}</span>
+    </button>
+  );
+}
 
 export function AppLogo({ compact = false }: { compact?: boolean }) {
   return (
@@ -126,6 +152,38 @@ export function ConfirmDialog({
               try { await state.action(); onClose(); } finally { setBusy(false); }
             }}
           >{busy ? <LoaderCircle className="spin" size={17} /> : null}确认</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AlertDialog({
+  open,
+  title,
+  message,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose, open]);
+  if (!open) return null;
+  return (
+    <div className="confirm-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="confirm-card login-error-dialog" role="alertdialog" aria-modal="true" aria-label={title}>
+        <div className="confirm-icon danger"><CircleAlert size={22} /></div>
+        <h3>{title}</h3>
+        <p>{message}</p>
+        <div className="confirm-actions login-error-dialog-actions">
+          <button className="button button-primary" type="button" onClick={onClose} autoFocus>我知道了</button>
         </div>
       </div>
     </div>

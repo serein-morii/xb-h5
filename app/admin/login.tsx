@@ -5,13 +5,12 @@ import {
   LoaderCircle,
   LockKeyhole,
   Phone,
-  RefreshCw,
   Send,
   ShieldCheck,
   Sparkles,
   User,
 } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import {
   apiRequest,
   bindEmail,
@@ -22,15 +21,16 @@ import {
   updateProfile,
 } from "../lib/api";
 import type { DataRow } from "./core";
-import { AppLogo, Sheet } from "./ui";
+import { AlertDialog, AppLogo, Sheet } from "./ui";
+import { SliderCaptcha } from "../components/SliderCaptcha";
 
 export function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [uuid, setUuid] = useState("");
-  const [captcha, setCaptcha] = useState("");
   const [captchaOn, setCaptchaOn] = useState(true);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [publicKey, setPublicKey] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -46,35 +46,19 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
     }
   }, []);
 
-  const loadCaptcha = useCallback(async () => {
-    try {
-      const result = await apiRequest<DataRow>("/captchaImage", { auth: false });
-      const enabled = result.captchaOnOff === undefined ? true : Boolean(result.captchaOnOff);
-      setCaptchaOn(enabled);
-      setUuid(String(result.uuid || ""));
-      setCaptcha(enabled && result.img ? `data:image/gif;base64,${result.img}` : "");
-      setCode("");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "验证码加载失败");
-    }
-  }, []);
-
   useEffect(() => {
     const saved = window.localStorage.getItem("xb-mobile-username");
     if (saved) setUsername(saved);
-    Promise.all([
-      apiRequest<DataRow>("/getPublicKey", { auth: false }).then((result) => {
+    apiRequest<DataRow>("/getPublicKey", { auth: false }).then((result) => {
         setPublicKey(String(result.publicKey || result.data?.publicKey || ""));
-      }),
-      loadCaptcha(),
-    ]).catch((error) => setMessage(error instanceof Error ? error.message : "系统初始化失败"));
-  }, [loadCaptcha]);
+      }).catch((error) => setMessage(error instanceof Error ? error.message : "系统初始化失败"));
+  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setMessage("");
     if (!username.trim() || !password) return setMessage("请输入账号和密码");
-    if (captchaOn && !code.trim()) return setMessage("请输入验证码");
+    if (captchaOn && !code.trim()) return setMessage("请先完成滑块验证");
     if (!publicKey) return setMessage("登录加密尚未准备完成，请稍后重试");
     setLoading(true);
     try {
@@ -95,7 +79,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
       onLogin(token, username.trim());
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "登录失败");
-      await loadCaptcha();
+      setCaptchaReset((value) => value + 1);
     } finally {
       setLoading(false);
     }
@@ -110,9 +94,8 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         <form onSubmit={submit} className="login-form">
           <label><span>账号</span><div className="input-shell"><User size={18} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></div></label>
           <label><span>密码</span><div className="input-shell"><LockKeyhole size={18} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label>
-          {captchaOn ? <label><span>验证码</span><div className="captcha-login"><div className="input-shell"><ShieldCheck size={18} /><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="请输入" /></div><button type="button" onClick={loadCaptcha} aria-label="刷新验证码">{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button></div></label> : null}
+          {captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
           <label className="remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>记住账号</span></label>
-          {message ? <p className="tool-error login-alert"><ShieldCheck size={14} />{message}</p> : null}
           <button className="login-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={19} /> : <ShieldCheck size={19} />}{loading ? "正在登录" : "安全登录"}</button>
         </form>
         <p className="login-footnote"><span /> 账号密码将通过 RSA 加密传输</p>
@@ -137,6 +120,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         }}
       />
       <ForgotPasswordSheet open={forgotOpen} onClose={() => setForgotOpen(false)} />
+      <AlertDialog open={Boolean(message)} title="登录未成功" message={message} onClose={() => setMessage("")} />
     </main>
   );
 }

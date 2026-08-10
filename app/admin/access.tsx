@@ -89,11 +89,15 @@ const OPS_MODULE_KEYS: ReadonlyArray<MenuKey> = [
   "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
 ];
 
-export function canOpenMenu(access: Pick<AccessState, "has">, key: MenuKey) {
+export function canOpenMenu(access: Pick<AccessState, "has">, key: MenuKey): boolean {
+  // 编辑权限蕴含查看权限；否则可编辑移动菜单的管理员反而看不到入口。
+  if (key === "mobileMenu") {
+    return access.has("system.mobileMenu.view") || access.has("system.mobileMenu.edit");
+  }
   // 系统中心是合并入口：任一系统子项权限即可进入（兼容老 nav.systemCenter 角色）
   if (key === "systemCenter") {
     if (access.has("nav.systemCenter")) return true;
-    return SYSTEM_MODULE_KEYS.some((sub) => access.has(MENU_CAPABILITIES[sub]));
+    return SYSTEM_MODULE_KEYS.some((sub) => canOpenMenu(access, sub));
   }
   // 运行中心是合并入口：任一运行子项权限即可进入（兼容老 nav.operationsCenter 角色）
   if (key === "operationsCenter") {

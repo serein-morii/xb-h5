@@ -1,9 +1,10 @@
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, RefreshCw, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, apiRequest, clearCustomerToken, customerHeaders, setCustomerToken } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { StatusFilter, computeOrderStats } from "../OrderStatsCards";
+import { SliderCaptcha } from "../../components/SliderCaptcha";
 
 type Row = Record<string, unknown>;
 type ApiRequestOptions = Parameters<typeof apiRequest>[1];
@@ -158,9 +159,10 @@ export default function PurchaserOrderPage() {
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [success, setSuccess] = useState<Row | null>(null);
   const [captchaOpen, setCaptchaOpen] = useState(false);
-  const [captcha, setCaptcha] = useState("");
   const [uuid, setUuid] = useState("");
   const [code, setCode] = useState("");
+  const [captchaOn, setCaptchaOn] = useState(true);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [pwd, setPwd] = useState("");
   // 编辑 / 删除 流程
   const [editingOrder, setEditingOrder] = useState<PublicOrderRecord | null>(null);
@@ -189,8 +191,9 @@ export default function PurchaserOrderPage() {
   const [addressAuthPhone, setAddressAuthPhone] = useState("");
   const [addressAuthCode, setAddressAuthCode] = useState("");
   const [addressAuthPwd, setAddressAuthPwd] = useState("");
-  const [addressCaptcha, setAddressCaptcha] = useState("");
   const [addressUuid, setAddressUuid] = useState("");
+  const [addressCaptchaOn, setAddressCaptchaOn] = useState(true);
+  const [addressCaptchaReset, setAddressCaptchaReset] = useState(0);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(EMPTY_ADDRESS_DRAFT);
   const [addressDraftPasteText, setAddressDraftPasteText] = useState("");
   const [addressDraftParsing, setAddressDraftParsing] = useState(false);
@@ -744,14 +747,9 @@ export default function PurchaserOrderPage() {
   }
 
   async function loadAddressCaptcha() {
-    try {
-      const result = await apiRequest<Row>("/captchaImage", { auth: false });
-      setAddressUuid(String(result.uuid || ""));
-      setAddressCaptcha(result.img ? `data:image/png;base64,${result.img}` : "");
-      setAddressAuthCode("");
-    } catch (cause) {
-      setAddressBookError(cause instanceof Error ? cause.message : "验证码加载失败");
-    }
+    setAddressUuid("");
+    setAddressAuthCode("");
+    setAddressCaptchaReset((value) => value + 1);
   }
 
   async function loadAddresses(token: string) {
@@ -819,8 +817,8 @@ export default function PurchaserOrderPage() {
       showPromptToast("请输入专属下单人绑定的完整手机号");
       return;
     }
-    if (!usePassword && !addressAuthCode.trim()) {
-      showPromptToast("请输入图中验证码");
+    if (!usePassword && addressCaptchaOn && !addressAuthCode.trim()) {
+      showPromptToast("请先完成滑块验证");
       return;
     }
     setAddressBookBusy(true);
@@ -944,13 +942,10 @@ export default function PurchaserOrderPage() {
 
   async function loadCaptcha() {
     setError("");
-    try {
-      const result = await apiRequest<Row>("/captchaImage", { auth: false });
-      setUuid(String(result.uuid || ""));
-      setCaptcha(result.img ? `data:image/png;base64,${result.img}` : "");
-      setCode("");
-      setCaptchaOpen(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "验证码加载失败"); }
+    setUuid("");
+    setCode("");
+    setCaptchaReset((value) => value + 1);
+    setCaptchaOpen(true);
   }
 
   const FIELD_TO_INPUT: Record<string, string> = {
@@ -1034,7 +1029,7 @@ export default function PurchaserOrderPage() {
       return;
     }
     if (Number(linkContext?.accountRequired) === 1 || Number(linkContext?.requirePwd) === 1) {
-      setCode(""); setUuid(""); setPwd(""); setCaptcha(""); setError(""); setCaptchaOpen(true);
+      setCode(""); setUuid(""); setPwd(""); setError(""); setCaptchaOpen(true);
     } else {
       void loadCaptcha();
     }
@@ -1044,7 +1039,7 @@ export default function PurchaserOrderPage() {
     const accountMode = Number(linkContext?.accountRequired) === 1;
     const requirePwd = !accountMode && Number(linkContext?.requirePwd) === 1;
     if (requirePwd && !/^\d{4,6}$/.test(pwd.trim())) return setError("请输入 4-6 位下单码");
-    if (!accountMode && !requirePwd && !code.trim()) return setError("请输入验证码");
+    if (!accountMode && !requirePwd && captchaOn && !code.trim()) return setError("请先完成滑块验证");
     setSubmitting(true); setError("");
     try {
       const body = { ...form, orderNameDesc: form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label, orderTypeDesc: form.orderType === "other" ? form.orderTypeDesc.trim() : selectedSize?.label, purchaserShortId: linkKey.purchaserId, code: code.trim(), uuid, pwd: requirePwd ? pwd.trim() : undefined, addressId: selectedAddressId || undefined, saveAddress: selectedAddressId ? false : saveAddress };
@@ -1540,7 +1535,7 @@ export default function PurchaserOrderPage() {
           <div className="purchaser-address-auth">
             {Number(linkContext?.requirePwd) === 1 ? <label><span>专属下单码</span><input autoFocus inputMode="numeric" maxLength={6} value={addressAuthPwd} onChange={(event) => { setAddressAuthPwd(event.target.value.replace(/\D/g, "")); setAddressBookError(""); }} placeholder="输入 4-6 位下单码" /></label> : <>
               <label><span>绑定手机号</span><input autoFocus inputMode="tel" maxLength={11} value={addressAuthPhone} onChange={(event) => { setAddressAuthPhone(event.target.value.replace(/\D/g, "")); setAddressBookError(""); }} placeholder="输入完整手机号" /></label>
-              <label><span>图形验证码</span><div className="purchaser-address-captcha"><button type="button" onClick={loadAddressCaptcha} aria-label="刷新图形验证码" title="点击刷新验证码">{addressCaptcha ? <img src={addressCaptcha} alt="图形验证码" /> : <RefreshCw size={19} />}</button><input inputMode="text" autoComplete="off" value={addressAuthCode} onChange={(event) => { setAddressAuthCode(event.target.value); setAddressBookError(""); }} placeholder="输入验证码" aria-label="输入图形验证码" /></div></label>
+              {addressCaptchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={addressCaptchaReset} disabled={addressBookBusy} onEnabledChange={setAddressCaptchaOn} onVerified={(value) => { setAddressUuid(value.uuid); setAddressAuthCode(value.token); setAddressBookError(""); }} /></label> : null}
             </>}
           </div>
           {addressBookError ? <p className="tool-error purchaser-address-error"><AlertCircle size={14} />{addressBookError}</p> : null}
@@ -1622,12 +1617,9 @@ export default function PurchaserOrderPage() {
             <div className="purchaser-captcha-row purchaser-captcha-pwd-row">
               <input className="purchaser-captcha-pwd" autoFocus inputMode="numeric" maxLength={6} value={pwd} onChange={(event) => setPwd(event.target.value.replace(/\D/g, ""))} placeholder="输入 4-6 位下单码" />
             </div>
-          ) : (
-            <div className="purchaser-captcha-row">
-              <button className="purchaser-captcha-image" type="button" onClick={loadCaptcha}>{captcha ? <img src={captcha} alt="验证码" /> : <RefreshCw size={20} />}</button>
-              <input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="输入图中验证码" />
-            </div>
-          )}
+          ) : captchaOn ? (
+            <SliderCaptcha resetKey={captchaReset} disabled={submitting} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} />
+          ) : null}
           {error ? <p className="tool-error">{error}</p> : null}
           <button className="purchaser-captcha-submit" type="button" disabled={submitting} onClick={submitOrder}>
             {submitting ? <LoaderCircle className="spin" size={18} /> : <CheckCircle2 size={18} />}
@@ -1748,7 +1740,7 @@ export default function PurchaserOrderPage() {
         </section>
         <section>
           <h3>④ 验证码</h3>
-          <p>点 <b>确认商品并提交订单</b> 后弹验证码图片，输完即建单。本链接是专属的，可多次使用，每次订单都记在「我的订单」里。</p>
+          <p>点 <b>确认商品并提交订单</b> 后完成滑块验证即可建单。本链接是专属的，可多次使用，每次订单都记在「我的订单」里。</p>
         </section>
         {linkContext.storeName ? <div className="purchaser-help-contact">
           <span>下单店铺</span>
