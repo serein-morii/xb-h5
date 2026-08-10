@@ -1,4 +1,4 @@
-import { AlertCircle, Edit3, Layers3, LoaderCircle, PackageCheck, Plus, RefreshCw, Save, Tags, Trash2, X } from "lucide-react";
+import { Edit3, Layers3, LoaderCircle, PackageCheck, Plus, RefreshCw, Save, Tags, Trash2, X } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../lib/api";
 import { DictionaryContext } from "./core";
@@ -8,7 +8,6 @@ import { useAccess } from "./access";
 type Sku = { id?: number; skuCode: string; displayName: string; specValues: string; billOrderType?: string; salePrice: number | string; stock?: number | null; status: number; sortNum: number };
 type Product = { id?: number; productCode: string; name: string; subtitle: string; description: string; coverUrl: string; specSchema: string; status: number; sortNum: number; skus: Sku[] };
 type SpecGroup = { name: string; values: string[] };
-type AlertState = { title: string; message: string; danger?: boolean } | null;
 
 const emptySku = (index = 0): Sku => ({ skuCode: "", displayName: "", specValues: "{}", billOrderType: "", salePrice: "", stock: null, status: 1, sortNum: index });
 const EMPTY_PRODUCT: Product = { productCode: "", name: "", subtitle: "", description: "", coverUrl: "", specSchema: "[]", status: 1, sortNum: 0, skus: [emptySku()] };
@@ -51,24 +50,6 @@ function cloneProduct(product?: Product): Product {
   return { ...base, skus: base.skus?.length ? base.skus : [emptySku()] };
 }
 
-function AlertDialog({ state, onClose }: { state: AlertState; onClose: () => void }) {
-  if (!state) return null;
-  return (
-    <div className="confirm-backdrop product-alert-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="confirm-card product-alert-card" role="alertdialog" aria-modal="true">
-        <div className={`confirm-icon ${state.danger ? "danger" : ""}`}>
-          <AlertCircle size={22} />
-        </div>
-        <h3>{state.title}</h3>
-        <p>{state.message}</p>
-        <div className="confirm-actions single">
-          <button className={state.danger ? "button button-danger" : "button button-primary"} type="button" onClick={onClose}>知道了</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ProductsPage({ notify }: { notify: (message: string, type?: "success" | "error" | "info") => void }) {
   const access = useAccess();
   const dictionaries = useContext(DictionaryContext);
@@ -76,7 +57,6 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [busy, setBusy] = useState(false);
-  const [alert, setAlert] = useState<AlertState>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
 
   const load = useCallback(async () => {
@@ -85,9 +65,9 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
       const result = await apiRequest<{ data?: Product[] }>("/biz/product/list");
       setRows(Array.isArray(result.data) ? result.data : []);
     } catch (cause) {
-      setAlert({ title: "商品加载失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+      notify(cause instanceof Error ? cause.message : "商品加载失败，请稍后重试", "error");
     } finally { setLoading(false); }
-  }, []);
+  }, [notify]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -96,7 +76,6 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
   const activeSkus = rows.reduce((total, product) => total + (product.skus || []).filter((sku) => sku.status === 1).length, 0);
 
   function edit(product?: Product) {
-    setAlert(null);
     setEditing(cloneProduct(product));
   }
 
@@ -194,7 +173,8 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
     if (!editing) return;
     const messages = validationMessages(editing);
     if (messages.length) {
-      setAlert({ title: "商品信息还没填完整", message: messages.slice(0, 8).join("\n"), danger: true });
+      const preview = messages.slice(0, 3).join("；");
+      notify(`${preview}${messages.length > 3 ? `；另有 ${messages.length - 3} 项待完善` : ""}`, "error");
       return;
     }
     setBusy(true);
@@ -217,7 +197,7 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
       notify("商品与规格已保存", "success");
       await load();
     } catch (cause) {
-      setAlert({ title: "保存失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+      notify(cause instanceof Error ? cause.message : "保存失败，请稍后重试", "error");
     } finally { setBusy(false); }
   }
 
@@ -233,7 +213,7 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
           notify("商品已下架并移除", "success");
           await load();
         } catch (cause) {
-          setAlert({ title: "删除失败", message: cause instanceof Error ? cause.message : "请稍后重试", danger: true });
+          notify(cause instanceof Error ? cause.message : "删除失败，请稍后重试", "error");
         }
       },
     });
@@ -335,7 +315,6 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
         </div>
       ) : null}
 
-      <AlertDialog state={alert} onClose={() => setAlert(null)} />
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );

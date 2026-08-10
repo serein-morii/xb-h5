@@ -13021,10 +13021,6 @@ html.theme-dark .purchaser-price-preview {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.product-alert-card p {
-  white-space: pre-line;
-}
-
 html.theme-dark .product-manager-stats > span,
 html.theme-dark .product-manager-list > article,
 html.theme-dark .product-manager-empty,
