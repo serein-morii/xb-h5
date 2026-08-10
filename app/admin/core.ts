@@ -14,6 +14,25 @@ import {
   User,
   ReceiptText,
   Settings2,
+  Users,
+  ShieldCheck,
+  Building2,
+  BriefcaseBusiness,
+  Menu as MenuIcon,
+  BookKey,
+  Bell,
+  Wifi,
+  Server,
+  Database,
+  HardDrive,
+  Clock3,
+  FileClock,
+  History,
+  LogIn,
+  Code2,
+  BookOpen,
+  MessageSquareCode,
+  SlidersHorizontal,
 } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
@@ -36,12 +55,35 @@ export type MenuKey =
   | "logistics"
   | "shortLinks"
   | "systemCenter"
-  | "operationsCenter";
+  | "operationsCenter"
+  | "mobileMenu"
+  | "sysUsers"
+  | "sysRoles"
+  | "sysDepts"
+  | "sysPosts"
+  | "sysMenus"
+  | "sysDictTypes"
+  | "sysConfigs"
+  | "sysNotices"
+  | "opsOnline"
+  | "opsJobs"
+  | "opsJobLogs"
+  | "opsOperLogs"
+  | "opsLoginLogs"
+  | "opsServer"
+  | "opsCache"
+  | "opsDruid"
+  | "opsGenerator"
+  | "opsSwagger"
+  | "opsMessages";
 
 export const ALL_MENU_KEYS: MenuKey[] = [
   "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "products",
   "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks",
-  "systemCenter", "operationsCenter",
+  "systemCenter", "operationsCenter", "mobileMenu",
+  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
+  "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
+  "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
 ];
 
 const ACTIVE_PAGE_CACHE_KEY = "xb-h5-active-page";
@@ -199,8 +241,28 @@ export const NAV_ITEMS: Array<{
   { key: "tracking", label: "快递查询", description: "快递100、顺丰、EMS", icon: SearchCheck },
   { key: "logistics", label: "物流用量", description: "额度、开关与用量记录", icon: Gauge },
   { key: "shortLinks", label: "短链管理", description: "自定义域名短链接跳转", icon: Link2 },
-  { key: "systemCenter", label: "系统运行", description: "账号权限、监控日志与开发工具", icon: Settings2 },
-  { key: "operationsCenter", label: "系统运行", description: "账号权限、监控日志与开发工具", icon: Activity },
+  { key: "systemCenter", label: "系统中心", description: "账号权限与系统配置", icon: Settings2 },
+  { key: "operationsCenter", label: "运行中心", description: "监控审计与开发工具", icon: Activity },
+  { key: "mobileMenu", label: "移动菜单", description: "H5 Dock 与全部功能布局", icon: SlidersHorizontal },
+  { key: "sysUsers", label: "成员", description: "登录账号、状态与角色", icon: Users },
+  { key: "sysRoles", label: "角色", description: "功能权限组合", icon: ShieldCheck },
+  { key: "sysDepts", label: "部门", description: "组织架构树", icon: Building2 },
+  { key: "sysPosts", label: "岗位", description: "岗位编码与排序", icon: BriefcaseBusiness },
+  { key: "sysMenus", label: "菜单", description: "目录、页面与按钮", icon: MenuIcon },
+  { key: "sysDictTypes", label: "字典", description: "字典类型与数据项", icon: BookKey },
+  { key: "sysConfigs", label: "参数", description: "系统参数设置", icon: Settings2 },
+  { key: "sysNotices", label: "公告", description: "通知与公告", icon: Bell },
+  { key: "opsOnline", label: "在线用户", description: "会话查看与强退", icon: Wifi },
+  { key: "opsServer", label: "服务监控", description: "CPU、内存与磁盘", icon: Server },
+  { key: "opsCache", label: "缓存监控", description: "Redis 状态与键值", icon: Database },
+  { key: "opsDruid", label: "数据源", description: "Druid 连接池监控", icon: HardDrive },
+  { key: "opsJobs", label: "定时任务", description: "任务启停与执行", icon: Clock3 },
+  { key: "opsJobLogs", label: "调度日志", description: "任务执行结果", icon: FileClock },
+  { key: "opsOperLogs", label: "操作日志", description: "后台操作审计", icon: History },
+  { key: "opsLoginLogs", label: "登录日志", description: "登录成功与失败", icon: LogIn },
+  { key: "opsGenerator", label: "代码生成", description: "表结构与代码下载", icon: Code2 },
+  { key: "opsSwagger", label: "接口文档", description: "Swagger API", icon: BookOpen },
+  { key: "opsMessages", label: "开发消息", description: "调试消息通道", icon: MessageSquareCode },
 ];
 
 export type FieldConfig = {

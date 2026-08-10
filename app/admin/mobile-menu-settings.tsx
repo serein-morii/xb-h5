@@ -39,8 +39,9 @@ type HistoryRow = {
   hasConfig?: boolean;
 };
 
+// 全部 MenuKey 都可以作为菜单项使用（包括 sys*/ops*/mobileMenu 子项）。
+// 与后端白名单对齐：仅注册过的 key 才会出现在编辑器里；无权限的运行时自动隐藏。
 const PAGE_OPTIONS = Object.values(MOBILE_PAGE_REGISTRY)
-  .filter((item) => item.key !== "operationsCenter")
   .map((item) => ({ key: item.key, label: item.label }));
 
 const ALLOWED_PAGE_KEYS = new Set(PAGE_OPTIONS.map((item) => item.key));

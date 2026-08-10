@@ -609,7 +609,8 @@ function ResourceTreeList({
   config,
   onEdit,
   onRemove,
-  onOpenDictData,
+  // onOpenDictData 由 dictTypes 模块单独用，这里不消费；保留形参以免破坏其它调用方
+  onOpenDictData: _onOpenDictData,
 }: {
   nodes: ResourceTreeNode[];
   config: ModuleConfig;
@@ -1329,8 +1330,22 @@ function ResourceModule({
   );
 }
 
-const PRIMARY_MODULES = [MODULES.users, MODULES.roles];
-const ADVANCED_MODULES = [MODULES.depts, MODULES.posts, MODULES.dictTypes, MODULES.configs, MODULES.notices, MODULES.menus];
+/** 系统中心首页分组映射：每个子项属于哪个语义分组。改这里就能调整首页布局。 */
+const HUB_GROUP: Partial<Record<ModuleKey, "account" | "config">> = {
+  users: "account",
+  roles: "account",
+  depts: "account",
+  posts: "account",
+  menus: "config",
+  dictTypes: "config",
+  configs: "config",
+  notices: "config",
+};
+
+const HUB_GROUPS: Array<{ key: "account" | "config"; title: string; description: string }> = [
+  { key: "account", title: "账号与权限", description: "成员、角色与组织" },
+  { key: "config", title: "系统配置", description: "菜单、字典、参数与公告" },
+];
 
 export function SystemManagementCenter({ notify: externalNotify, initialModule = null, onExit }: { notify?: Notify; initialModule?: ModuleKey | null; onExit?: () => void } = {}) {
   const access = useAccess();
@@ -1364,7 +1379,13 @@ export function SystemManagementCenter({ notify: externalNotify, initialModule =
         </button>
       );
     });
-  const hasAdvanced = ADVANCED_MODULES.some((module) => access.has(`system.${capabilityResource(module.key)}.view`));
+  // 把模块按 HUB_GROUP 划分到语义分组；未分组的会被跳过
+  const groupedHubs = HUB_GROUPS.map((group) => ({
+    ...group,
+    modules: (Object.values(MODULES) as ModuleConfig[]).filter(
+      (module) => HUB_GROUP[module.key] === group.key,
+    ),
+  })).filter((group) => group.modules.some((module) => access.has(`system.${capabilityResource(module.key)}.view`)));
 
   if (config) {
     return (
@@ -1397,16 +1418,12 @@ export function SystemManagementCenter({ notify: externalNotify, initialModule =
         <span className="hero-tool-icon"><Settings2 size={27} /></span>
       </div>
       <div className="menu-groups">
-        <section className="menu-group">
-          <div className="menu-group-title"><b>常用入口</b><small>成员与角色</small></div>
-          <div className="menu-grid">{renderModules(PRIMARY_MODULES)}</div>
-        </section>
-        {hasAdvanced ? (
-          <section className="menu-group">
-            <div className="menu-group-title"><b>更多系统设置</b><small>部门、岗位、字典、参数和底层菜单</small></div>
-            <div className="menu-grid">{renderModules(ADVANCED_MODULES)}</div>
+        {groupedHubs.map((group) => (
+          <section className="menu-group" key={group.key}>
+            <div className="menu-group-title"><b>{group.title}</b><small>{group.description}</small></div>
+            <div className="menu-grid">{renderModules(group.modules)}</div>
           </section>
-        ) : null}
+        ))}
       </div>
     </div>
   );

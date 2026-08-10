@@ -3,13 +3,10 @@ import {
   ChevronRight,
   ExternalLink,
   House,
-  LockKeyhole,
-  LogOut,
   LoaderCircle,
   Pencil,
   Search,
   SearchCheck,
-  Send,
   Sparkles,
   Truck,
   Copy,
@@ -49,10 +46,14 @@ import {
   fetchMobileMenuConfig,
   getMobileMenuConfig,
   MOBILE_MENU_ALL_KEY,
+  resolveMobileIcon,
   resolveMobileMenu,
   type MobileMenuConfig,
 } from "./mobileMenu.config";
 import { createCrudConfigs, CrudModule } from "./crud";
+import { fetchCrudOverrides, getCrudOverrides, type CrudOverridesConfig } from "./crudConfigs.config";
+import { fetchTrackingServices, getTrackingServices, resolveTrackingServices } from "./trackingServices.config";
+import { fetchProfileActions, getProfileActions, type ProfileActionsConfig } from "./profileActions.config";
 import { DashboardPage } from "./dashboard";
 import { BindEmailSheet, ChangePwdByEmailSheet, EditProfileSheet, LoginScreen } from "./login";
 import { Sheet, Toast } from "./ui";
@@ -66,11 +67,19 @@ const ShortLinkManager = lazy(() => import("../tools/short-links/ShortLinkManage
 const LogisticsPage = lazy(() => import("./logistics").then((module) => ({ default: module.LogisticsPage })));
 const OrdersPage = lazy(() => import("./orders").then((module) => ({ default: module.OrdersPage })));
 const ProductsPage = lazy(() => import("./products"));
-const SystemRuntimeCenter = lazy(() => import("./system-runtime").then((module) => ({ default: module.SystemRuntimeCenter })));
+const SystemHubPage = lazy(() => import("./system-pages").then((module) => ({ default: module.SystemHubPage })));
 
 export function TrackingPage() {
-  const services = [{ name: "快递100", desc: "支持多家快递公司查询", url: "https://m.kuaidi100.com/", color: "orange" },{ name: "顺丰速运", desc: "顺丰官方运单跟踪", url: "https://www.sf-express.com/we/ow/chn/sc/waybill/list", color: "green" },{ name: "EMS", desc: "中国邮政 EMS 邮件查询", url: "https://www.ems.com.cn/queryList", color: "blue" }];
-  return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.name}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
+  const [servicesConfig, setServicesConfig] = useState(getTrackingServices);
+  useEffect(() => {
+    let mounted = true;
+    fetchTrackingServices(apiRequest).then((config) => { if (mounted) setServicesConfig(config); }).catch(() => { /* 默认兜底 */ });
+    const reload = () => { fetchTrackingServices(apiRequest).then((config) => { if (mounted) setServicesConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-tracking-services-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-tracking-services-changed", reload); };
+  }, []);
+  const services = resolveTrackingServices(servicesConfig);
+  return <div className="module-page"><div className="module-hero compact-hero"><div><span className="eyebrow">物流工具</span><h1>快递查询</h1><p>快递官方入口集合</p></div><span className="hero-tool-icon"><SearchCheck size={27} /></span></div><div className="tracking-guide"><Sparkles size={20} /><div><b>查询提示</b><p>点击卡片将在新页面打开对应的官方查询页。</p></div></div><div className="tracking-grid">{services.map((service) => <a className={`tracking-card tracking-${service.color}`} href={service.url} target="_blank" rel="noreferrer" key={service.key}><span className="tracking-logo"><Truck size={24} /></span><div><b>{service.name}</b><p>{service.desc}</p></div><ExternalLink size={18} /></a>)}</div><div className="tracking-manual"><h2>快速识别</h2><p>复制快递单号后，选择上方对应平台即可查询。</p><div><Copy size={18} /><span>系统已针对手机端打开移动版查询入口</span></div></div></div>;
 }
 
 export function MenuSheet({ open, active, username, userInfo, onClose, onSelect, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig }: { open: boolean; active: MenuKey; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig }) {
@@ -82,6 +91,14 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
   // 标记修改密码流程是否需要"先绑定邮箱再改密"
   const [pendingChangePwd, setPendingChangePwd] = useState(false);
+  const [profileActionsConfig, setProfileActionsConfig] = useState<ProfileActionsConfig>(getProfileActions);
+  useEffect(() => {
+    let mounted = true;
+    fetchProfileActions(apiRequest).then((config) => { if (mounted) setProfileActionsConfig(config); }).catch(() => { /* */ });
+    const reload = () => { fetchProfileActions(apiRequest).then((config) => { if (mounted) setProfileActionsConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-profile-actions-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-profile-actions-changed", reload); };
+  }, []);
   const mobileMenu = useMemo(
     () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
     [access, menuConfig],
@@ -146,19 +163,24 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
         <div><span>账号状态</span><b className="profile-status">正常</b></div>
       </section>
       <button className="profile-back" type="button" onClick={() => setView("menu")}><ArrowLeft size={18} />返回全部功能</button>
-      <button className="profile-action" type="button" onClick={() => setEditProfileOpen(true)}>
-        <Pencil size={18} />编辑信息
-      </button>
-      <button className="profile-action" type="button" onClick={handleChangePwdClick} title="通过邮箱验证码修改密码">
-        <LockKeyhole size={18} />修改密码
-      </button>
-      <button className="profile-action" type="button" onClick={() => setBindEmailOpen(true)}>
-        <Send size={18} />{userEmail ? "更换邮箱" : "绑定邮箱"}
-      </button>
-      <button className="profile-action" type="button" onClick={onReplayTour} title="再看一遍新手引导">
-        <Sparkles size={18} />重看引导
-      </button>
-      <button className="logout-row profile-logout" type="button" onClick={onLogout}><LogOut size={18} />退出当前账号</button>
+      {profileActionsConfig.items.filter((item) => !item.hidden).map((item) => {
+        const Icon = resolveMobileIcon(item.icon, Pencil);
+        const label = item.key === "bindEmail" && userEmail && item.altLabel ? item.altLabel : item.label;
+        const titleByKey: Record<string, string> = {
+          changePwd: "通过邮箱验证码修改密码",
+          replayTour: "再看一遍新手引导",
+        };
+        if (item.key === "logout") {
+          return <button key={item.key} className="logout-row profile-logout" type="button" onClick={onLogout}><Icon size={18} />{label}</button>;
+        }
+        const onClick = () => {
+          if (item.key === "editProfile") setEditProfileOpen(true);
+          else if (item.key === "changePwd") handleChangePwdClick();
+          else if (item.key === "bindEmail") setBindEmailOpen(true);
+          else if (item.key === "replayTour") onReplayTour();
+        };
+        return <button key={item.key} className="profile-action" type="button" onClick={onClick} title={titleByKey[item.key] || ""}><Icon size={18} />{label}</button>;
+      })}
     </div></Sheet>
     <EditProfileSheet
       open={editProfileOpen}
@@ -218,7 +240,7 @@ export function MenuSheet({ open, active, username, userInfo, onClose, onSelect,
             {group.items.map((item) => {
               const Icon = item.icon;
               return (
-                <button className={active === item.key || (item.key === "systemCenter" && active === "operationsCenter") ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}>
+                <button className={active === item.key || (item.key === "systemCenter" && (active === "operationsCenter" || active.startsWith("sys") || active === "mobileMenu")) || (item.key === "operationsCenter" && active.startsWith("ops")) ? "active" : ""} key={item.key} onClick={() => { onSelect(item.key); onClose(); }}>
                   <span><Icon size={21} /></span>
                   <b>{item.label}</b>
                   <small>{item.description}</small>
@@ -251,6 +273,14 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   const [userInfo, setUserInfo] = useState<DataRow | null>(null);
   const [access, setAccess] = useState(EMPTY_ACCESS);
   const [menuConfig, setMenuConfig] = useState<MobileMenuConfig>(getMobileMenuConfig);
+  const [crudOverrides, setCrudOverrides] = useState<CrudOverridesConfig>(getCrudOverrides);
+  useEffect(() => {
+    let mounted = true;
+    fetchCrudOverrides(apiRequest).then((config) => { if (mounted) setCrudOverrides(config); }).catch(() => { /* 本地默认兜底 */ });
+    const reload = () => { fetchCrudOverrides(apiRequest).then((config) => { if (mounted) setCrudOverrides(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-crud-overrides-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-crud-overrides-changed", reload); };
+  }, []);
   // 登录后若邮箱为空，自动弹"绑定邮箱"页（不再用 Toast 提示）。
   // 用户可关闭；下次登录仍会再弹，直到真正去绑定邮箱。
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
@@ -393,7 +423,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     }, 320);
     return () => window.clearTimeout(t);
   }, [active, onboardingTriggers]);
-  const configs = useMemo(() => createCrudConfigs(dictionaries), [dictionaries]);
+  const configs = useMemo(() => createCrudConfigs(dictionaries, crudOverrides), [dictionaries, crudOverrides]);
   const mobileMenu = useMemo(
     () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key)),
     [access, menuConfig],
@@ -403,6 +433,13 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     else notify("当前角色没有此功能权限", "error");
   }, [access, notify]);
   const visibleActive = access.ready && canOpenMenu(access, active) ? active : "home";
+  const exitToHome = useCallback(() => setActive("home"), []);
+  const SYSTEM_HUB_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>([
+    "systemCenter", "operationsCenter", "mobileMenu",
+    "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
+    "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
+    "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
+  ]), []);
   const renderPage = visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} />
     : visibleActive === "orders" ? <OrdersPage notify={notify} onNavigate={navigate} />
     : visibleActive === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
@@ -413,7 +450,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : visibleActive === "tracking" ? <TrackingPage />
     : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
     : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
-    : visibleActive === "systemCenter" || visibleActive === "operationsCenter" ? <SystemRuntimeCenter notify={notify} />
+    : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToHome} />
     : <CrudModule config={configs[visibleActive as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
   if (!access.ready) return <div className="app-loading"><LoaderCircle className="spin" size={28} /><p>正在同步权限</p></div>;

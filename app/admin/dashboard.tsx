@@ -1,18 +1,13 @@
 import {
   ChevronDown,
   ChevronRight,
-  CircleCheck,
   Copy,
-  FileSpreadsheet,
   LoaderCircle,
-  PackageCheck,
   Plus,
   RefreshCw,
-  Send,
   ShoppingBag,
   Truck,
   User,
-  WalletCards,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard } from "../lib/api";
@@ -21,6 +16,21 @@ import type { DataRow, MenuKey } from "./core";
 import { shortDate } from "./core";
 import { useCountUp } from "./ui";
 import { StatusBadge } from "./logistics";
+import { useAccess } from "./access";
+import { canOpenMenu } from "./access";
+import {
+  fetchDashboardShortcuts,
+  getDashboardShortcuts,
+  resolveDashboardShortcuts,
+  type DashboardShortcutsConfig,
+  type ResolvedDashboardShortcut,
+} from "./dashboardShortcuts.config";
+import {
+  fetchDashboardFocus,
+  getDashboardFocus,
+  resolveDashboardFocus,
+  type DashboardFocusConfig,
+} from "./dashboardFocus.config";
 
 export type DashboardData = {
   orderTotal: number;
@@ -135,9 +145,26 @@ export const greetByHour = (h: number) => {
 };
 
 export function DashboardPage({ username, userInfo, onNavigate, notify }: { username: string; userInfo: DataRow | null; onNavigate: (key: MenuKey) => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+  const access = useAccess();
   const [data, setData] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<{ orders: boolean; buyers: boolean }>({ orders: false, buyers: false });
+  const [shortcutsConfig, setShortcutsConfig] = useState<DashboardShortcutsConfig>(getDashboardShortcuts);
+  const [focusConfig, setFocusConfig] = useState<DashboardFocusConfig>(getDashboardFocus);
+  useEffect(() => {
+    let mounted = true;
+    fetchDashboardShortcuts(apiRequest).then((config) => { if (mounted) setShortcutsConfig(config); }).catch(() => { /* 本地默认兜底 */ });
+    const reload = () => { fetchDashboardShortcuts(apiRequest).then((config) => { if (mounted) setShortcutsConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-dashboard-shortcuts-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-dashboard-shortcuts-changed", reload); };
+  }, []);
+  useEffect(() => {
+    let mounted = true;
+    fetchDashboardFocus(apiRequest).then((config) => { if (mounted) setFocusConfig(config); }).catch(() => { /* */ });
+    const reload = () => { fetchDashboardFocus(apiRequest).then((config) => { if (mounted) setFocusConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-dashboard-focus-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-dashboard-focus-changed", reload); };
+  }, []);
   const HOME_LIST_PREVIEW = 3;
   const toggleExpanded = (key: "orders" | "buyers") => setExpanded((current) => ({ ...current, [key]: !current[key] }));
   const today = useMemo(() => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date()), []);
@@ -203,29 +230,30 @@ export function DashboardPage({ username, userInfo, onNavigate, notify }: { user
     }
   }
 
-  const shortcuts: Array<{ key: MenuKey; label: string; desc: string; icon: typeof ShoppingBag; tone: string }> = [
-    { key: "orders", label: "订单管理", desc: "查询与发货", icon: ShoppingBag, tone: "green" },
-    { key: "batchOrder", label: "批量录单", desc: "Excel 粘贴批量下单", icon: FileSpreadsheet, tone: "green" },
-    { key: "orderLink", label: "生成链接", desc: "买家专属入口", icon: Send, tone: "peach" },
-    { key: "purchasers", label: "买家管理", desc: `${data.purchaserTotal} 位买家`, icon: User, tone: "green" },
-    { key: "express", label: "快递管理", desc: "物流轨迹", icon: Truck, tone: "blue" },
-    { key: "bills", label: "账单管理", desc: `${data.billTotal} 条账单`, icon: WalletCards, tone: "amber" },
-  ];
+  const shortcuts: ResolvedDashboardShortcut[] = useMemo(
+    () => resolveDashboardShortcuts(shortcutsConfig, data as unknown as Record<string, unknown>)
+      .filter((entry) => canOpenMenu(access, entry.key)),
+    [shortcutsConfig, data, access],
+  );
 
   const attentionTotal = data.pending + data.waiting;
-  const focusSource: Array<{ key: OrderStatusView; label: string; count: number }> = [
-    { key: "pending", label: "待处理", count: data.pending },
-    { key: "shipping", label: "待发货", count: data.waiting },
-    { key: "transit", label: "运输中", count: data.sent },
-    { key: "completed", label: "已完成", count: data.completed },
-  ];
-  const activeFocusCard = focusSource[0];
-  const animatedFocusCount = useCountUp(activeFocusCard.count, 500);
-  const attentionRatio = data.orderTotal > 0 ? Math.min(100, Math.round((activeFocusCard.count / data.orderTotal) * 100)) : 0;
+  const { focus: focusItem, strip: stripItems } = useMemo(() => resolveDashboardFocus(focusConfig), [focusConfig]);
+  const focusDataKey = (focusItem?.key || "pending") as keyof DashboardData;
+  const focusCount = focusItem ? Number(data[focusDataKey] || 0) : 0;
+  const animatedFocusCount = useCountUp(focusCount, 500);
+  const attentionRatio = data.orderTotal > 0 ? Math.min(100, Math.round((focusCount / data.orderTotal) * 100)) : 0;
   const focusSummary = attentionTotal ? `${data.pending} 笔待处理 · ${data.waiting} 笔待发货` : "今天暂无待处理订单";
   const openStatusOrders = (status: OrderStatusView) => {
     saveOrderStatusView(status);
     onNavigate("orders");
+  };
+  const openFocusCard = () => {
+    if (!focusItem) return;
+    if (focusItem.filterStatus) {
+      openStatusOrders(focusItem.filterStatus);
+    } else if (focusItem.onClickKey) {
+      onNavigate(focusItem.onClickKey);
+    }
   };
 
   return <div className="home-space">
@@ -243,35 +271,50 @@ export function DashboardPage({ username, userInfo, onNavigate, notify }: { user
 
     <section className="home-glance" aria-label="今日订单概况">
       <div className="home-focus-deck">
-        <button
-          className="home-focus-card home-focus-single is-front"
-          type="button"
-          onClick={() => openStatusOrders(activeFocusCard.key)}
-          aria-label={`查看${activeFocusCard.label}订单，共 ${activeFocusCard.count} 笔`}
-        >
-          <span className="home-focus-card-tab">
-            <b>今日重点</b>
-            <em>{activeFocusCard.label}</em>
-          </span>
-          <span className="home-focus-card-body">
-            <span className="home-focus-copy">
-              <strong>{focusSummary}</strong>
-              <span className="home-focus-meter" aria-label={`${activeFocusCard.label}订单占全部订单 ${attentionRatio}%`}><i style={{ width: `${attentionRatio}%` }} /></span>
-              <em>查看{activeFocusCard.label}订单<ChevronRight size={15} /></em>
+        {focusItem ? (
+          <button
+            className="home-focus-card home-focus-single is-front"
+            type="button"
+            onClick={openFocusCard}
+            aria-label={`查看${focusItem.label}订单，共 ${focusCount} 笔`}
+          >
+            <span className="home-focus-card-tab">
+              <b>今日重点</b>
+              <em>{focusItem.label}</em>
             </span>
-            <span className="home-focus-number">
-              <b>{animatedFocusCount}</b>
-              <small>{activeFocusCard.label}</small>
+            <span className="home-focus-card-body">
+              <span className="home-focus-copy">
+                <strong>{focusSummary}</strong>
+                <span className="home-focus-meter" aria-label={`${focusItem.label}订单占全部订单 ${attentionRatio}%`}><i style={{ width: `${attentionRatio}%` }} /></span>
+                <em>查看{focusItem.label}订单<ChevronRight size={15} /></em>
+              </span>
+              <span className="home-focus-number">
+                <b>{animatedFocusCount}</b>
+                <small>{focusItem.label}</small>
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        ) : null}
       </div>
     </section>
 
     <div className="home-stat-strip">
-      <button type="button" onClick={() => onNavigate("orders")}><small>全部订单</small><b>{data.orderTotal}</b><span><ShoppingBag size={16} />累计</span></button>
-      <button type="button" onClick={() => onNavigate("orders")}><small>待发货</small><b>{data.waiting}</b><span><PackageCheck size={16} />需跟进</span></button>
-      <button type="button" onClick={() => onNavigate("orders")}><small>已完成</small><b>{data.completed}</b><span><CircleCheck size={16} />已归档</span></button>
+      {stripItems.map((item) => {
+        const Icon = item.icon;
+        const value = Number(data[item.key as keyof DashboardData] || 0);
+        return (
+          <button
+            type="button"
+            key={item.key}
+            onClick={() => item.onClickKey && onNavigate(item.onClickKey)}
+            disabled={!item.onClickKey}
+          >
+            <small>{item.label}</small>
+            <b>{value}</b>
+            <span><Icon size={16} />{item.sub}</span>
+          </button>
+        );
+      })}
     </div>
 
     <section className="home-trend-card" aria-label="近七日订单趋势">

@@ -59,12 +59,46 @@ export const MENU_CAPABILITIES: Record<MenuKey, string> = {
   shortLinks: "nav.shortLinks",
   systemCenter: "nav.systemCenter",
   operationsCenter: "nav.operationsCenter",
+  mobileMenu: "system.mobileMenu.view",
+  sysUsers: "system.users.view",
+  sysRoles: "system.roles.view",
+  sysDepts: "system.depts.view",
+  sysPosts: "system.posts.view",
+  sysMenus: "system.menus.view",
+  sysDictTypes: "system.dictTypes.view",
+  sysConfigs: "system.configs.view",
+  sysNotices: "system.notices.view",
+  opsOnline: "operations.online.view",
+  opsJobs: "operations.jobs.view",
+  opsJobLogs: "operations.jobs.view",
+  opsOperLogs: "operations.operLogs.view",
+  opsLoginLogs: "operations.loginLogs.view",
+  opsServer: "operations.server.view",
+  opsCache: "operations.cache.view",
+  opsDruid: "operations.server.view",
+  opsGenerator: "operations.codegen.view",
+  opsSwagger: "operations.codegen.view",
+  opsMessages: "operations.messages.view",
 };
 
+const SYSTEM_MODULE_KEYS: ReadonlyArray<MenuKey> = [
+  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices", "mobileMenu",
+];
+const OPS_MODULE_KEYS: ReadonlyArray<MenuKey> = [
+  "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
+  "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
+];
+
 export function canOpenMenu(access: Pick<AccessState, "has">, key: MenuKey) {
-  // 系统运行是合并入口：任一中心权限即可进入
-  if (key === "systemCenter" || key === "operationsCenter") {
-    return access.has("nav.systemCenter") || access.has("nav.operationsCenter");
+  // 系统中心是合并入口：任一系统子项权限即可进入（兼容老 nav.systemCenter 角色）
+  if (key === "systemCenter") {
+    if (access.has("nav.systemCenter")) return true;
+    return SYSTEM_MODULE_KEYS.some((sub) => access.has(MENU_CAPABILITIES[sub]));
+  }
+  // 运行中心是合并入口：任一运行子项权限即可进入（兼容老 nav.operationsCenter 角色）
+  if (key === "operationsCenter") {
+    if (access.has("nav.operationsCenter")) return true;
+    return OPS_MODULE_KEYS.some((sub) => access.has(MENU_CAPABILITIES[sub]));
   }
   return access.has(MENU_CAPABILITIES[key]);
 }
@@ -97,6 +131,10 @@ for (const [resource, permission] of [
   LEGACY_CAPABILITIES[`system.${resource}.edit`] = [`${permission}:edit`];
   LEGACY_CAPABILITIES[`system.${resource}.delete`] = [`${permission}:remove`];
 }
+LEGACY_CAPABILITIES["system.dictTypes.view"] = ["system:dict:list"];
+LEGACY_CAPABILITIES["system.dictTypes.create"] = ["system:dict:add"];
+LEGACY_CAPABILITIES["system.dictTypes.edit"] = ["system:dict:edit"];
+LEGACY_CAPABILITIES["system.dictTypes.delete"] = ["system:dict:remove"];
 Object.assign(LEGACY_CAPABILITIES, {
   "system.users.import": ["system:user:import"], "system.users.export": ["system:user:export"],
   "system.users.resetPassword": ["system:user:resetPwd"],

@@ -264,6 +264,7 @@ test("contains all order module entries and authentication endpoints", async () 
     "app/admin/dashboard.tsx",
     "app/admin/login.tsx",
     "app/admin/crud.tsx",
+    "app/admin/orderCopyMenu.config.ts",
   );
   const api = await source("app/lib/api.ts");
 
@@ -281,7 +282,7 @@ test("contains all order module entries and authentication endpoints", async () 
   assert.match(app, /purchaserShortId/);
   assert.match(app, /function OrderCopyMenu|export function OrderCopyMenu/);
   for (const copyLabel of ["订单详情", "下单人链接", "收件人链接", "发货识别信息"]) assert.match(app, new RegExp(copyLabel));
-  assert.match(app, /`v-\$\{String\(row\.signId/);
+  assert.match(app, /encodeURIComponent\(`v-\$\{signId\}`\)/);
   for (const endpoint of ["/getPublicKey", "/captchaImage", "/login", "/biz/order/list", "/system/dict/data/type/"]) {
     assert.match(app, new RegExp(endpoint.replaceAll("/", "\\/")));
   }
@@ -304,7 +305,7 @@ test("keeps the migrated authenticated quick order entry workflow", async () => 
     source("app/AdminOrderEntry.tsx"),
     source("app/lib/api.ts"),
   ]);
-  assert.match(admin, /active === "orderEntry"/);
+  assert.match(admin, /visibleActive === "orderEntry"/);
   for (const endpoint of ["/biz/purchaser/list", "/biz/purchaser", "/biz/store/options", "/search/order-options", "/search/addr", "/biz/exp/getAllCom", "/biz/exp/getCom", "/biz/order"]) {
     assert.match(entry, new RegExp(endpoint.replaceAll("/", "\\/")));
   }
@@ -318,7 +319,7 @@ test("keeps the migrated authenticated quick order entry workflow", async () => 
 test("keeps the public order tracking route", async () => {
   const [publicPage, admin] = await Promise.all([
     source("app/order/PublicOrder.tsx"),
-    sourceMany("app/admin/orders.tsx", "app/admin/shell.tsx"),
+    sourceMany("app/admin/orders.tsx", "app/admin/shell.tsx", "app/admin/orderCopyMenu.config.ts"),
   ]);
   assert.match(publicPage, /publicApiRequest/);
   assert.match(publicPage, /\/search\/by/);
@@ -395,7 +396,7 @@ test("keeps the original public HTML capabilities in the integrated project", as
     source("app/tools/freight-calculator/FreightCalculator.tsx"),
     source("app/tools/freight-compare/FreightCompare.tsx"),
     source("app/tools/freight-data.ts"),
-    sourceMany("app/admin/shell.tsx", "app/admin/orders.tsx"),
+    sourceMany("app/admin/shell.tsx", "app/admin/orders.tsx", "app/admin/mobileMenu.config.ts"),
     source("app/lib/api.ts"),
   ]);
   for (const route of ["/tools/order-search", "/tools/freight-calculator", "/tools/freight-compare"]) assert.match(menu, new RegExp(route));
@@ -417,5 +418,6 @@ test("keeps the original public HTML capabilities in the integrated project", as
   assert.match(api, /navigator\.clipboard\.writeText/);
   assert.match(compare, /downloadExcelJson|exportExcel/);
   for (const company of ["京东", "顺丰", "邮政"]) assert.match(freightData, new RegExp(company));
-  assert.match(admin, /href="\/tools"/);
+  assert.match(admin, /toolboxHref: "\/tools"/);
+  assert.match(admin, /href=\{extras\.toolboxHref\}/);
 });

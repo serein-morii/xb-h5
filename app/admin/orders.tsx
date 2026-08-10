@@ -5,12 +5,10 @@ import {
   Copy,
   CreditCard,
   Download,
-  ExternalLink,
   Eye,
   FileSpreadsheet,
   LoaderCircle,
   MapPin,
-  PackageCheck,
   Pencil,
   Phone,
   Plus,
@@ -49,9 +47,20 @@ import {
 import { mergeOrderDetailPaymentStatus } from "../lib/orderPayment";
 import type { DataRow, MenuKey } from "./core";
 import {
+  fetchOrderFilters,
+  getOrderFilters,
+  resolveOrderPayFilter,
+  resolveOrderStatusFilter,
+} from "./orderFilters.config";
+import {
+  fetchOrderCopyMenu,
+  getOrderCopyMenu,
+  resolveOrderCopyMenu,
+  type OrderCopyMenuConfig,
+} from "./orderCopyMenu.config";
+import {
   DictionaryContext,
   optionLabel,
-  shortDate,
 } from "./core";
 import {
   clearOrderStatusView,
@@ -492,21 +501,9 @@ export function ShippingEditor({
   );
 }
 
-export function OrderCopyMenu({ row, onCopy }: { row: DataRow; onCopy: (text: string, message: string) => void }) {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const orderLink = `${origin}/tools/order#${encodeURIComponent(String(row.signId || ""))}`;
-  const purchaserLink = `${origin}/tools/order#${encodeURIComponent(`v-${String(row.signId || "")}`)}`;
-  const orderDetail = `【订单详情】\n订单号: ${row.orderCode || ""}\n下单时间: ${shortDate(row.orderTime)}\n商品: ${row.orderNameDesc || ""} ${row.orderTypeDesc || ""} × ${row.orderNum || 1}\n收件人: ${row.customer || ""}\n手机号: ${row.phone || ""}\n地址: ${row.address || ""}\n快递: ${row.expComDesc || ""} ${row.expCode || ""}\n查看更多: ${orderLink}`;
-  const purchaserOrders = `【${row.purchaser || "下单人"}】的订单列表：\n${purchaserLink}`;
-  const customerOrders = `【${row.customer || "收件人"}】的订单：\n${orderLink}`;
-  const expressInfo = `${row.orderNameDesc || ""}   ${row.orderTypeDesc || ""}   ${row.expComDesc || ""}\n\n收件人: ${row.customer || ""}\n手机号: ${row.phone || ""}\n地址: ${row.address || ""}`;
-  const items = [
-    { label: "订单详情", desc: "完整订单、快递及查询链接", icon: ReceiptText, text: orderDetail, message: "订单详情已复制", tone: "green" },
-    { label: "下单人链接", desc: `${row.purchaser || "下单人"}的订单列表`, icon: User, text: purchaserOrders, message: "下单人查询链接已复制", tone: "blue" },
-    { label: "收件人链接", desc: `${row.customer || "收件人"}的订单查询`, icon: ExternalLink, text: customerOrders, message: "收件人查询链接已复制", tone: "amber" },
-    { label: "发货识别信息", desc: "商品、收件人、手机和地址", icon: Truck, text: expressInfo, message: "快递识别信息已复制", tone: "peach" },
-  ];
-  return <div className="order-copy-menu"><section><span><Copy size={21} /></span><div><small>订单 {row.orderCode || "--"}</small><h3>选择要复制的内容</h3><p>与 PC 端订单列表的复制按钮保持一致</p></div></section><div>{items.map((item) => { const Icon = item.icon; return <button type="button" key={item.label} onClick={() => onCopy(item.text, item.message)}><span className={`copy-tone-${item.tone}`}><Icon size={19} /></span><div><b>{item.label}</b><small>{item.desc}</small></div><Copy size={16} /></button>; })}</div></div>;
+export function OrderCopyMenu({ row, config, onCopy }: { row: DataRow; config?: OrderCopyMenuConfig; onCopy: (text: string, message: string) => void }) {
+  const items = resolveOrderCopyMenu(config || getOrderCopyMenu());
+  return <div className="order-copy-menu"><section><span><Copy size={21} /></span><div><small>订单 {row.orderCode || "--"}</small><h3>选择要复制的内容</h3><p>与 PC 端订单列表的复制按钮保持一致</p></div></section><div>{items.map((item) => { const Icon = item.icon; return <button type="button" key={item.key} onClick={() => onCopy(item.text(row), item.message)}><span className={`copy-tone-${item.tone}`}><Icon size={19} /></span><div><b>{item.label}</b><small>{item.desc(row)}</small></div><Copy size={16} /></button>; })}</div></div>;
 }
 
 export function OrdersPage({ notify, onNavigate }: { notify: (message: string, type?: "success" | "error" | "info") => void; onNavigate?: (key: MenuKey) => void }) {
@@ -533,6 +530,24 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<OrderStatusView | null>(initialStatusFilter);
   const [counts, setCounts] = useState({ pending: 0, shipping: 0, transit: 0, completed: 0 });
+  const [filtersConfig, setFiltersConfig] = useState(getOrderFilters);
+  const [copyMenuConfig, setCopyMenuConfig] = useState<OrderCopyMenuConfig>(getOrderCopyMenu);
+  useEffect(() => {
+    let mounted = true;
+    fetchOrderFilters(apiRequest).then((config) => { if (mounted) setFiltersConfig(config); }).catch(() => { /* */ });
+    const reload = () => { fetchOrderFilters(apiRequest).then((config) => { if (mounted) setFiltersConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-order-filters-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-order-filters-changed", reload); };
+  }, []);
+  useEffect(() => {
+    let mounted = true;
+    fetchOrderCopyMenu(apiRequest).then((config) => { if (mounted) setCopyMenuConfig(config); }).catch(() => { /* */ });
+    const reload = () => { fetchOrderCopyMenu(apiRequest).then((config) => { if (mounted) setCopyMenuConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-order-copy-menu-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-order-copy-menu-changed", reload); };
+  }, []);
+  const statusFilterItems = useMemo(() => resolveOrderStatusFilter(filtersConfig), [filtersConfig]);
+  const payFilterItems = useMemo(() => resolveOrderPayFilter(filtersConfig), [filtersConfig]);
   // 串行刷新物流进度（与同步所有同款结构）
   const [refreshState, setRefreshState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
   const [markPayState, setMarkPayState] = useState<{ loading: boolean; kind: "paid" | "unpaid"; current: number; total: number; success: number; failed: number }>({ loading: false, kind: "paid", current: 0, total: 0, success: 0, failed: 0 });
@@ -910,13 +925,49 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
         <button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button>
       </div>
       <div className="metric-grid orders-status-grid">
-        <button type="button" className={statusFilter === null ? "active" : ""} onClick={() => applyStatusFilter(null)} aria-pressed={statusFilter === null}><span className="metric-icon peach"><ShoppingBag size={19} /></span><p>本页订单</p><b>{rows.length}</b></button>
-        <button type="button" className={statusFilter === "pending" ? "active" : ""} onClick={() => applyStatusFilter("pending")} aria-pressed={statusFilter === "pending"}><span className="metric-icon amber"><RotateCw size={19} /></span><p>待处理</p><b>{counts.pending}</b></button>
-        <button type="button" className={statusFilter === "shipping" ? "active" : ""} onClick={() => applyStatusFilter("shipping")} aria-pressed={statusFilter === "shipping"}><span className="metric-icon blue"><PackageCheck size={19} /></span><p>待发货</p><b>{counts.shipping}</b></button>
-        <button type="button" className={statusFilter === "transit" ? "active" : ""} onClick={() => applyStatusFilter("transit")} aria-pressed={statusFilter === "transit"}><span className="metric-icon green"><Truck size={19} /></span><p>运输中</p><b>{counts.transit}</b></button>
-        <button type="button" className={statusFilter === "completed" ? "active" : ""} onClick={() => applyStatusFilter("completed")} aria-pressed={statusFilter === "completed"}><span className="metric-icon green"><CircleCheck size={19} /></span><p>已完成</p><b>{counts.completed}</b></button>
+        {statusFilterItems.map((item) => {
+          const Icon = item.icon;
+          const active = item.key === "all" ? statusFilter === null : statusFilter === item.key;
+          const count = item.key === "all" ? rows.length : (counts as Record<string, number>)[item.key as string] || 0;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={active ? "active" : ""}
+              onClick={() => applyStatusFilter(item.key === "all" ? null : (item.key as OrderStatusView))}
+              aria-pressed={active}
+            >
+              <span className={`metric-icon ${item.tone}`}><Icon size={19} /></span>
+              <p>{item.label}</p>
+              <b>{count}</b>
+            </button>
+          );
+        })}
       </div>
-      <div className="quick-pay-filter" role="toolbar" aria-label="付款状态快捷筛选"><button type="button" className={!filters.payStatus ? "active" : ""} onClick={() => setFilters((current: DataRow) => { const next: DataRow = { ...current, pageNum: 1 }; if (current.payStatus) delete next.payStatus; return next; })}>全部付款 {rows.length}</button><button type="button" className={String(filters.payStatus || "") === "1" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "1", pageNum: 1 }))}><CreditCard size={13} />已付款 {payCounts.paid}</button><button type="button" className={String(filters.payStatus || "") === "3" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "3", pageNum: 1 }))}>待确认 {payCounts.confirming}</button><button type="button" className={String(filters.payStatus || "") === "0" ? "active" : ""} onClick={() => setFilters((current: DataRow) => ({ ...current, payStatus: "0", pageNum: 1 }))}>未付款 {payCounts.unpaid}</button></div>
+      <div className="quick-pay-filter" role="toolbar" aria-label="付款状态快捷筛选">
+        {payFilterItems.map((item) => {
+          const Icon = item.icon;
+          const active = item.key === "all" ? !filters.payStatus : String(filters.payStatus || "") === String(item.key);
+          const count = item.key === "all" ? rows.length : (payCounts as Record<string, number>)[item.key === "1" ? "paid" : item.key === "3" ? "confirming" : "unpaid"] || 0;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={active ? "active" : ""}
+              onClick={() => {
+                if (item.key === "all") {
+                  setFilters((current: DataRow) => { const next: DataRow = { ...current, pageNum: 1 }; if (current.payStatus) delete next.payStatus; return next; });
+                } else {
+                  setFilters((current: DataRow) => ({ ...current, payStatus: String(item.key), pageNum: 1 }));
+                }
+              }}
+            >
+              {Icon ? <Icon size={13} /> : null}
+              {item.label} {count}
+            </button>
+          );
+        })}
+      </div>
       <div className="toolbar-card search-toolbar">
         <label className="quick-search">
           <Search size={15} strokeWidth={2.2} />
@@ -1185,7 +1236,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
           <label><span>统一销售价格</span><div><i>¥</i><input required type="number" inputMode="decimal" min="0" step="0.01" value={batchSalePrice} onChange={(event) => setBatchSalePrice(event.target.value)} placeholder="0.00" /></div></label>
         </form>
       </Sheet>
-      <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
+      <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} config={copyMenuConfig} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
       <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} storeNameByCode={storeNameByCode} /> : null}</Sheet>
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>

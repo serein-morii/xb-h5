@@ -32,6 +32,7 @@ import {
   Trash2,
   Wifi,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import {
   type FormEvent,
@@ -44,6 +45,7 @@ import {
 import { API_BASE, apiRequest, getStoredToken, toQuery } from "../lib/api";
 import { useAccess } from "./access";
 import { ConfirmDialog, EmptyState, Sheet } from "./ui";
+import { fetchOpsHome, getOpsHome, resolveOpsHome, type OpsHomeConfig } from "./operationsCenterHome.config";
 
 type DataRow = Record<string, unknown>;
 type NoticeType = "success" | "error" | "info";
@@ -947,40 +949,40 @@ function ExternalEntry({ kind, onBack }: { kind: "druid" | "swagger"; onBack: ()
   );
 }
 
-const HOME_GROUPS: Array<{ title: string; description: string; items: Array<{ key: ViewKey; title: string; description: string }> }> = [
-  {
-    title: "实时运行",
-    description: "掌握服务与登录会话的即时状态",
-    items: [
-      { key: "online", title: "在线用户", description: "会话查看与强制退出" },
-      { key: "server", title: "服务监控", description: "CPU、内存、JVM 与磁盘" },
-      { key: "cache", title: "缓存监控", description: "Redis 状态与缓存键管理" },
-      { key: "druid", title: "数据源", description: "Druid 连接池与 SQL 监控" },
-    ],
-  },
-  {
-    title: "任务与审计",
-    description: "调度后台任务，回溯关键操作",
-    items: [
-      { key: "jobs", title: "定时任务", description: "任务启停与立即执行" },
-      { key: "jobLogs", title: "调度日志", description: "任务执行结果与异常" },
-      { key: "operLogs", title: "操作日志", description: "后台操作审计轨迹" },
-      { key: "loginLogs", title: "登录日志", description: "登录成功与失败记录" },
-    ],
-  },
-  {
-    title: "开发工具",
-    description: "面向研发和联调的常用入口",
-    items: [
-      { key: "generator", title: "代码生成", description: "表结构同步与代码下载" },
-      { key: "swagger", title: "接口文档", description: "Swagger API 文档" },
-      { key: "messages", title: "开发消息", description: "调试消息通道" },
-    ],
-  },
-];
+/** 每个 ViewKey 的默认 title/description/icon。分组在 opsHome config 里定义，这里只存兜底。 */
+const VIEW_DEFAULTS: Record<ViewKey, { title: string; description: string }> = {
+  online: { title: "在线用户", description: "会话查看与强制退出" },
+  server: { title: "服务监控", description: "CPU、内存、JVM 与磁盘" },
+  cache: { title: "缓存监控", description: "Redis 状态与缓存键管理" },
+  druid: { title: "数据源", description: "Druid 连接池与 SQL 监控" },
+  jobs: { title: "定时任务", description: "任务启停与立即执行" },
+  jobLogs: { title: "调度日志", description: "任务执行结果与异常" },
+  operLogs: { title: "操作日志", description: "后台操作审计轨迹" },
+  loginLogs: { title: "登录日志", description: "登录成功与失败记录" },
+  generator: { title: "代码生成", description: "表结构同步与代码下载" },
+  swagger: { title: "接口文档", description: "Swagger API 文档" },
+  messages: { title: "开发消息", description: "调试消息通道" },
+  home: { title: "运行中心", description: "服务状态、调度审计和开发工具集中入口" },
+};
 
-function HomePage({ open, onExit }: { open: (view: ViewKey) => void; onExit?: () => void }) {
+function HomePage({ open, onExit, opsHomeConfig }: { open: (view: ViewKey) => void; onExit?: () => void; opsHomeConfig: OpsHomeConfig }) {
   const access = useAccess();
+  // 每个 ViewKey 的兜底元数据，注入到 resolver
+  const defaultsByKey = useMemo(() => {
+    const map = new Map<string, { title: string; description: string; icon: LucideIcon }>();
+    (Object.keys(VIEW_DEFAULTS) as ViewKey[]).forEach((key) => {
+      map.set(key, { ...VIEW_DEFAULTS[key], icon: iconFor(key) });
+    });
+    return map;
+  }, []);
+  const groups = useMemo(() => {
+    return resolveOpsHome(opsHomeConfig, defaultsByKey)
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => access.has(VIEW_CAPABILITY[item.key as ViewKey])),
+      }))
+      .filter((group) => group.items.length);
+  }, [opsHomeConfig, defaultsByKey, access]);
   return (
     <div className="module-page opsc-home">
       <div className="module-hero compact-hero">
@@ -993,14 +995,14 @@ function HomePage({ open, onExit }: { open: (view: ViewKey) => void; onExit?: ()
         <span className="hero-tool-icon"><Activity size={27} /></span>
       </div>
       <div className="menu-groups">
-        {HOME_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => access.has(VIEW_CAPABILITY[item.key])) })).filter((group) => group.items.length).map((group) => (
-          <section className="menu-group" key={group.title}>
-            <div className="menu-group-title"><b>{group.title}</b><small>{group.description}</small></div>
+        {groups.map((group) => (
+          <section className="menu-group" key={group.key}>
+            <div className="menu-group-title"><b>{group.title}</b>{group.description ? <small>{group.description}</small> : null}</div>
             <div className="menu-grid">
               {group.items.map((item) => {
-                const Icon = iconFor(item.key);
+                const Icon = item.icon;
                 return (
-                  <button type="button" key={item.key} onClick={() => open(item.key)}>
+                  <button type="button" key={item.key} onClick={() => open(item.key as ViewKey)}>
                     <span><Icon size={19} /></span>
                     <b>{item.title}</b>
                     <small>{item.description}</small>
@@ -1025,6 +1027,14 @@ export function OperationsCenterPage({ notify: externalNotify, initialView = "ho
   const access = useAccess();
   const [view, setView] = useState<ViewKey>(initialView);
   const [notice, setNotice] = useState<{ message: string; type: NoticeType } | null>(null);
+  const [opsHomeConfig, setOpsHomeConfig] = useState<OpsHomeConfig>(getOpsHome);
+  useEffect(() => {
+    let mounted = true;
+    fetchOpsHome(apiRequest).then((config) => { if (mounted) setOpsHomeConfig(config); }).catch(() => { /* 本地默认兜底 */ });
+    const reload = () => { fetchOpsHome(apiRequest).then((config) => { if (mounted) setOpsHomeConfig(config); }).catch(() => { /* */ }); };
+    window.addEventListener("xb-ops-home-changed", reload);
+    return () => { mounted = false; window.removeEventListener("xb-ops-home-changed", reload); };
+  }, []);
 
   const notify = useCallback<Notify>((message, type = "info") => {
     if (externalNotify) externalNotify(message, type);
@@ -1058,7 +1068,7 @@ export function OperationsCenterPage({ notify: externalNotify, initialView = "ho
     if (view === "generator") return <GeneratorPage notify={notify} onBack={goHome} />;
     if (view === "swagger") return <ExternalEntry kind="swagger" onBack={goHome} />;
     if (view === "messages") return <MessagesPage notify={notify} onBack={goHome} />;
-    return <HomePage open={openView} onExit={onClose} />;
+    return <HomePage open={openView} onExit={onClose} opsHomeConfig={opsHomeConfig} />;
   }, [goHome, notify, openView, view]);
 
   return (

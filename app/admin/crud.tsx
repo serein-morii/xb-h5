@@ -40,6 +40,7 @@ import {
 import { StatusBadge } from "./logistics";
 import PurchaserFilterSearch from "./PurchaserFilterSearch";
 import { ConfirmDialog, EmptyState, FieldInput, Sheet, StoreStatusBadge } from "./ui";
+import { applyCrudOverride, type CrudOverridesConfig } from "./crudConfigs.config";
 
 const BILL_PAY_STATUS_OPTIONS = [
   { value: 0, label: "未付款" },
@@ -85,8 +86,9 @@ export type CrudConfig = {
   importable?: boolean;
 };
 
-export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products" | "systemCenter" | "operationsCenter">, CrudConfig> {
-  return {
+export function createCrudConfigs(dictionaries: Dictionaries, overrides: CrudOverridesConfig = { version: 1, overrides: {} }): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products" | "systemCenter" | "operationsCenter" | "mobileMenu" | "sysUsers" | "sysRoles" | "sysDepts" | "sysPosts" | "sysMenus" | "sysDictTypes" | "sysConfigs" | "sysNotices" | "opsOnline" | "opsJobs" | "opsJobLogs" | "opsOperLogs" | "opsLoginLogs" | "opsServer" | "opsCache" | "opsDruid" | "opsGenerator" | "opsSwagger" | "opsMessages">, CrudConfig> {
+  const ov = overrides.overrides;
+  const base: Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products" | "systemCenter" | "operationsCenter" | "mobileMenu" | "sysUsers" | "sysRoles" | "sysDepts" | "sysPosts" | "sysMenus" | "sysDictTypes" | "sysConfigs" | "sysNotices" | "opsOnline" | "opsJobs" | "opsJobLogs" | "opsOperLogs" | "opsLoginLogs" | "opsServer" | "opsCache" | "opsDruid" | "opsGenerator" | "opsSwagger" | "opsMessages">, CrudConfig> = {
   bills: {
     key: "bills", title: "账单管理", itemName: "账单", api: "/biz/bill", icon: ReceiptText, titleKey: "orderCode",
     subtitle: (row) => `${row.orderNameDesc || optionLabel(row.orderName, dictionaries.products)} · ${orderTypeLabel(row.orderType, dictionaries.sizes, row.orderTypeDesc)} · ${row.customer || "暂无收件人"}`,
@@ -200,6 +202,28 @@ export function createCrudConfigs(dictionaries: Dictionaries): Record<Exclude<Me
     note: (row) => [row.notice, row.noticeUrl].filter(Boolean).join(" · "),
   },
   };
+  return applyCrudConfigOverrides(base, ov);
+}
+
+function applyCrudConfigOverrides<T extends Record<string, CrudConfig>>(
+  base: T,
+  overrides: CrudOverridesConfig["overrides"],
+): T {
+  if (!overrides) return base;
+  const out = { ...base } as T;
+  for (const key of Object.keys(overrides)) {
+    const cfg: CrudConfig | undefined = out[key];
+    const o = overrides[key as keyof typeof overrides];
+    if (!cfg || !o) continue;
+    const next: CrudConfig = { ...cfg };
+    if (o.searchFields) next.searchFields = applyCrudOverride(next.searchFields, o.searchFields);
+    if (o.fields) next.fields = applyCrudOverride(next.fields, o.fields);
+    if (o.display) next.display = applyCrudOverride(next.display, o.display);
+    if (o.expand && next.expand) next.expand = applyCrudOverride(next.expand, o.expand);
+    if (o.summary && next.summary) next.summary = applyCrudOverride(next.summary, o.summary);
+    (out as Record<string, CrudConfig>)[key] = next;
+  }
+  return out;
 }
 
 function BillOrderFilter({
