@@ -65,6 +65,10 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     return purchasers.filter((item) => [item.name, item.phone, item.shortId, item.storeName].some((field) => String(field || "").toLowerCase().includes(value)));
   }, [keyword, purchasers]);
 
+  function patchPurchaser(id: number, patch: Partial<Purchaser>) {
+    setPurchasers((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
+  }
+
   async function bind(item: Purchaser) {
     const storeCode = draftStore[item.id]; if (!storeCode) return setError("请选择要绑定的店铺");
     setBusyId(item.id); setError("");
@@ -241,30 +245,38 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
 
   async function toggleBlock(item: Purchaser, field: "blockOrder" | "blockQuery", next: 0 | 1) {
     if (blockBusyId === item.id) return;
+    const previous = item[field];
+    patchPurchaser(item.id, { [field]: next });
     setBlockBusyId(item.id); setError("");
     try {
       // 只传变化的那一项，避免覆盖另一项
       const body = field === "blockOrder" ? { blockOrder: next } : { blockQuery: next };
       await apiRequest(`/biz/purchaser/${item.id}/block`, { method: "PUT", body });
-      await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "操作失败"); }
+    } catch (cause) {
+      patchPurchaser(item.id, { [field]: previous });
+      setError(cause instanceof Error ? cause.message : "操作失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
   async function toggleAddressVerify(item: Purchaser, next: 0 | 1) {
     if (blockBusyId === item.id) return;
+    const previous = item.addressVerifyEnabled;
+    patchPurchaser(item.id, { addressVerifyEnabled: next });
     setBlockBusyId(item.id); setError("");
     try {
       await apiRequest(`/biz/purchaser/${item.id}/address-verify`, { method: "PUT", body: { addressVerifyEnabled: next } });
-      setNotice(next === 1 ? "已开启常用地址访问验证" : "已关闭常用地址访问验证");
-      await load();
-      window.setTimeout(() => setNotice(""), 1600);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "地址验证设置失败"); }
+    } catch (cause) {
+      patchPurchaser(item.id, { addressVerifyEnabled: previous });
+      setError(cause instanceof Error ? cause.message : "地址验证设置失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
   async function toggleQueryExpRefresh(item: Purchaser, next: 0 | 1) {
     if (blockBusyId === item.id) return;
+    const previous = item.queryExpRefreshEnabled;
+    patchPurchaser(item.id, { queryExpRefreshEnabled: next });
     setBlockBusyId(item.id); setError("");
     try {
       const interval = Number(refreshIntervalDraft[item.id] || item.queryExpRefreshIntervalMinutes || 120);
@@ -272,10 +284,10 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
         method: "PUT",
         body: { queryExpRefreshEnabled: next, queryExpRefreshIntervalMinutes: interval },
       });
-      setNotice(next === 1 ? "已开启主动拉取快递" : "已关闭主动拉取快递");
-      await load();
-      window.setTimeout(() => setNotice(""), 1600);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "快递刷新设置失败"); }
+    } catch (cause) {
+      patchPurchaser(item.id, { queryExpRefreshEnabled: previous });
+      setError(cause instanceof Error ? cause.message : "快递刷新设置失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
@@ -288,6 +300,8 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
       return;
     }
     if (interval === (item.queryExpRefreshIntervalMinutes || 120)) return;
+    const previous = item.queryExpRefreshIntervalMinutes;
+    patchPurchaser(item.id, { queryExpRefreshIntervalMinutes: interval });
     setBlockBusyId(item.id); setError("");
     try {
       await apiRequest(`/biz/purchaser/${item.id}/query-exp-refresh`, {
@@ -297,21 +311,26 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
           queryExpRefreshIntervalMinutes: interval,
         },
       });
-      setNotice(`刷新间隔已改为 ${interval} 分钟`);
-      await load();
-      window.setTimeout(() => setNotice(""), 1600);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "刷新间隔保存失败"); }
+    } catch (cause) {
+      patchPurchaser(item.id, { queryExpRefreshIntervalMinutes: previous });
+      setRefreshIntervalDraft((current) => ({ ...current, [item.id]: String(previous || 120) }));
+      setError(cause instanceof Error ? cause.message : "刷新间隔保存失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
   async function setBlockDisplay(item: Purchaser, next: BlockDisplay) {
     if (blockBusyId === item.id) return;
     if ((item.blockDisplayType || "banner") === next) return;
+    const previous = item.blockDisplayType;
+    patchPurchaser(item.id, { blockDisplayType: next });
     setBlockBusyId(item.id); setError("");
     try {
       await apiRequest(`/biz/purchaser/${item.id}/block`, { method: "PUT", body: { blockDisplayType: next } });
-      await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "保存失败"); }
+    } catch (cause) {
+      patchPurchaser(item.id, { blockDisplayType: previous });
+      setError(cause instanceof Error ? cause.message : "保存失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
@@ -319,12 +338,23 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
     if (blockBusyId === item.id) return;
     const accountRequired = field === "accountRequired" ? next : (item.accountRequired === 1 ? 1 : 0);
     const paymentRequired = field === "paymentRequired" ? next : (item.paymentRequired === 1 ? 1 : 0);
+    const previous: Partial<Purchaser> = {
+      accountRequired: item.accountRequired,
+      paymentRequired: item.paymentRequired,
+      quickLoginEnabled: item.quickLoginEnabled,
+    };
+    const optimistic: Partial<Purchaser> = field === "accountRequired"
+      ? { accountRequired: next, ...(next === 1 ? { quickLoginEnabled: 0 } : {}) }
+      : { paymentRequired: next, ...(next === 1 ? { accountRequired: 1, quickLoginEnabled: 0 } : {}) };
+    patchPurchaser(item.id, optimistic);
     setBlockBusyId(item.id); setError("");
     try {
-      await apiRequest(`/biz/purchaser/${item.id}/customer-settings`, { method: "PUT", body: { accountRequired, paymentRequired } });
-      setNotice(field === "accountRequired" ? (next ? "已要求客户注册登录，并关闭历史快捷登录" : "已关闭强制注册") : (next ? "已开启下单支付" : "已关闭下单支付"));
-      await load(); window.setTimeout(() => setNotice(""), 1800);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "客户设置保存失败"); }
+      const result = await apiRequest<{ data?: Purchaser }>(`/biz/purchaser/${item.id}/customer-settings`, { method: "PUT", body: { accountRequired, paymentRequired } });
+      if (result.data) patchPurchaser(item.id, result.data);
+    } catch (cause) {
+      patchPurchaser(item.id, previous);
+      setError(cause instanceof Error ? cause.message : "客户设置保存失败");
+    }
     finally { setBlockBusyId(null); }
   }
 
@@ -342,7 +372,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
           <ShieldCheck size={15} />
           <div className="purchaser-block-info"><small>常用地址访问验证</small><b>{item.addressVerifyEnabled === 1 ? "已开启，打开前需验证" : "已关闭，直接打开地址库"}</b></div>
           <div className="purchaser-block-toggle">
-            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.addressVerifyEnabled === 1 ? "on" : "off"}`} aria-label="切换常用地址访问验证" aria-pressed={item.addressVerifyEnabled === 1} onClick={() => toggleAddressVerify(item, item.addressVerifyEnabled === 1 ? 0 : 1)}><span /></button>}
+            <button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.addressVerifyEnabled === 1 ? "on" : "off"}`} aria-label="切换常用地址访问验证" aria-pressed={item.addressVerifyEnabled === 1} onClick={() => toggleAddressVerify(item, item.addressVerifyEnabled === 1 ? 0 : 1)}><span /></button>
           </div>
         </div>
         <div className="purchaser-block-row">
@@ -353,21 +383,21 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
           </div>
           <div className="purchaser-block-toggle purchaser-refresh-control">
             <label><input type="number" min="1" max="43200" inputMode="numeric" value={refreshIntervalDraft[item.id] || "120"} disabled={blockBusyId === item.id} onChange={(event) => setRefreshIntervalDraft((current) => ({ ...current, [item.id]: event.target.value }))} onBlur={() => { void saveQueryExpRefreshInterval(item); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span>分钟</span></label>
-            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.queryExpRefreshEnabled === 0 ? "off" : "on"}`} aria-label="切换主动拉取快递" aria-pressed={item.queryExpRefreshEnabled !== 0} onClick={() => toggleQueryExpRefresh(item, item.queryExpRefreshEnabled === 0 ? 1 : 0)}><span /></button>}
+            <button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.queryExpRefreshEnabled === 0 ? "off" : "on"}`} aria-label="切换主动拉取快递" aria-pressed={item.queryExpRefreshEnabled !== 0} onClick={() => toggleQueryExpRefresh(item, item.queryExpRefreshEnabled === 0 ? 1 : 0)}><span /></button>
           </div>
         </div>
         <div className="purchaser-block-row">
           <Ban size={15} />
           <div className="purchaser-block-info"><small>禁止下单</small><b>{item.blockOrder === 1 ? "已拦截下单" : "未拦截"}</b></div>
           <div className="purchaser-block-toggle">
-            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.blockOrder === 1 ? "on" : "off"}`} aria-label="切换禁止下单" onClick={() => toggleBlock(item, "blockOrder", item.blockOrder === 1 ? 0 : 1)}><span /></button>}
+            <button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.blockOrder === 1 ? "on" : "off"}`} aria-label="切换禁止下单" onClick={() => toggleBlock(item, "blockOrder", item.blockOrder === 1 ? 0 : 1)}><span /></button>
           </div>
         </div>
         <div className="purchaser-block-row">
           <Ban size={15} />
           <div className="purchaser-block-info"><small>禁止查询订单</small><b>{item.blockQuery === 1 ? "已拦截查单" : "未拦截"}</b></div>
           <div className="purchaser-block-toggle">
-            {blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.blockQuery === 1 ? "on" : "off"}`} aria-label="切换禁止查询订单" onClick={() => toggleBlock(item, "blockQuery", item.blockQuery === 1 ? 0 : 1)}><span /></button>}
+            <button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.blockQuery === 1 ? "on" : "off"}`} aria-label="切换禁止查询订单" onClick={() => toggleBlock(item, "blockQuery", item.blockQuery === 1 ? 0 : 1)}><span /></button>
           </div>
         </div>
         <div className="purchaser-block-display-row">
@@ -398,12 +428,12 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
         <div className="purchaser-block-row">
           <User size={15} />
           <div className="purchaser-block-info"><small>转换为注册客户</small><b>{item.accountRequired === 1 ? `已开启 · ${item.customerRegistered ? "账号已注册" : "等待客户完善"}` : "默认关闭，沿用免注册短链"}</b></div>
-          <div className="purchaser-block-toggle">{blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.accountRequired === 1 ? "on" : "off"}`} aria-label="切换客户注册" onClick={() => updateCustomerSetting(item, "accountRequired", item.accountRequired === 1 ? 0 : 1)}><span /></button>}</div>
+          <div className="purchaser-block-toggle"><button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.accountRequired === 1 ? "on" : "off"}`} aria-label="切换客户注册" onClick={() => updateCustomerSetting(item, "accountRequired", item.accountRequired === 1 ? 0 : 1)}><span /></button></div>
         </div>
         <div className="purchaser-block-row">
           <Wallet size={15} />
           <div className="purchaser-block-info"><small>客户下单支付</small><b>{item.paymentRequired === 1 ? "已开启，展示收款码并人工确认" : "默认关闭，下单后无需支付"}</b></div>
-          <div className="purchaser-block-toggle">{blockBusyId === item.id ? <LoaderCircle className="spin" size={15} /> : <button type="button" className={`toggle ${item.paymentRequired === 1 ? "on" : "off"}`} aria-label="切换下单支付" onClick={() => updateCustomerSetting(item, "paymentRequired", item.paymentRequired === 1 ? 0 : 1)}><span /></button>}</div>
+          <div className="purchaser-block-toggle"><button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.paymentRequired === 1 ? "on" : "off"}`} aria-label="切换下单支付" onClick={() => updateCustomerSetting(item, "paymentRequired", item.paymentRequired === 1 ? 0 : 1)}><span /></button></div>
         </div>
       </div>
       <div className="card-actions"><button type="button" onClick={() => openEdit(item)}><Pencil size={16} />修改</button><button type="button" className="danger-text" disabled={busyId === item.id} onClick={() => requestDelete(item)}><Trash2 size={16} />删除</button></div></article>)}</section>}

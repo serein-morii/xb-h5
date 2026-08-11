@@ -374,7 +374,7 @@ export function ShippingEditor({
   onSavingChange,
 }: {
   initial: DataRow;
-  onSaved: () => void;
+  onSaved: (updated: DataRow) => void;
   onClose: () => void;
   notify: (message: string, type?: "success" | "error" | "info") => void;
   formId?: string;
@@ -466,8 +466,9 @@ export function ShippingEditor({
     if (!expCom || !expCode.trim()) return notify("请选择快递公司并填写快递单号", "info");
     setSaving(true);
     try {
-      await apiRequest("/biz/order", { method: "PUT", body: { ...initial, expCom, expComDesc: optionLabel(expCom, dictionaries.expressCompanies), expCode: expCode.trim(), orderStatus: "YFH", orderStatusDesc: "已发货", isUpdateBill: false, isUpdateExp: false } });
-      notify("发货成功，快递信息已保存", "success"); onSaved(); onClose();
+      const updated = { ...initial, expCom, expComDesc: optionLabel(expCom, dictionaries.expressCompanies), expCode: expCode.trim(), orderStatus: "YFH", orderStatusDesc: "已发货", isUpdateBill: false, isUpdateExp: false };
+      await apiRequest("/biz/order", { method: "PUT", body: updated });
+      notify("发货成功，快递信息已保存", "success"); onSaved(updated); onClose();
     } catch (error) { notify(error instanceof Error ? error.message : "发货失败", "error"); }
     finally { setSaving(false); }
   }
@@ -575,6 +576,67 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
     } catch (error) { notify(error instanceof Error ? error.message : "订单加载失败", "error"); }
     finally { setLoading(false); }
   }, [filters, notify]);
+
+  // 操作后的静默刷新要保留用户已经加载的范围：普通分页保留当前条数，
+  // 点击过“加载所有”后则继续分页取完，避免每次操作都退回第一页。
+  async function refreshLoadedRange(expectedDelta = 0) {
+    const pageSize = Number(filters.pageSize || 20) || 20;
+    const hadAllRows = total > 0 && rows.length >= total;
+    const targetSize = Math.max(pageSize, rows.length + expectedDelta);
+    const accumulated: DataRow[] = [];
+    let serverTotal = total;
+    let pageNum = 1;
+    try {
+      while (pageNum <= 200) {
+        const requestSize = hadAllRows ? pageSize : targetSize;
+        const result = await apiRequest<DataRow>("/biz/order/list", {
+          query: { ...filters, pageNum, pageSize: requestSize },
+        });
+        const pageRows = Array.isArray(result.rows) ? result.rows : [];
+        serverTotal = Number(result.total || 0);
+        accumulated.push(...pageRows);
+        if (!hadAllRows || !pageRows.length || accumulated.length >= serverTotal) break;
+        pageNum += 1;
+      }
+      setRows(accumulated);
+      setTotal(serverTotal);
+
+      // 统计数字也同步更新，但不切换整页 loading，避免卡片和列表闪烁。
+      const stats = await apiRequest<{ data?: DataRow }>("/biz/order/stats");
+      const statsData = (stats.data && typeof stats.data === "object" ? stats.data : {}) as DataRow;
+      setCounts({
+        pending: Number(statsData.pending || 0),
+        shipping: Number(statsData.waiting || 0),
+        transit: Number(statsData.sent || 0),
+        completed: Number(statsData.completed || 0),
+      });
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "订单刷新失败", "error");
+    }
+  }
+
+  function applyShippedOrder(updated: DataRow) {
+    const previous = rows.find((row) => String(row.id) === String(updated.id));
+    const activeStatus = String(filters.orderStatus || "");
+    const leavesCurrentFilter = Boolean(activeStatus) && activeStatus !== "YFH";
+    setRows((current) => leavesCurrentFilter
+      ? current.filter((row) => String(row.id) !== String(updated.id))
+      : current.map((row) => String(row.id) === String(updated.id) ? { ...row, ...updated } : row));
+    if (previous && leavesCurrentFilter) setTotal((current) => Math.max(0, current - 1));
+    setDetail((current) => current && String(current.id) === String(updated.id) ? { ...current, ...updated } : current);
+    setSelected((current) => {
+      const next = new Set(current);
+      next.delete(String(updated.id));
+      return next;
+    });
+    if (previous && String(previous.orderStatus) !== "YFH") {
+      setCounts((current) => ({
+        ...current,
+        shipping: String(previous.orderStatus) === "DFH" ? Math.max(0, current.shipping - 1) : current.shipping,
+        transit: current.transit + 1,
+      }));
+    }
+  }
   useEffect(() => { load(); }, [load]);
   // order_info.store 现在统一存的是 storeCode。订单详情展示时拿 code 反查店名，
   // 让运营看到的还是「小曾桃铺」而不是「xiaozeng_001」。
@@ -724,7 +786,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   }
   function action(path: string, actionIds: string, success: string) {
     return async () => {
-      try { await apiRequest(`/biz/order/${path}/${actionIds}`, { method: "PATCH" }); notify(success, "success"); setSelected(new Set()); await load(); }
+      try { await apiRequest(`/biz/order/${path}/${actionIds}`, { method: "PATCH" }); notify(success, "success"); setSelected(new Set()); await refreshLoadedRange(); }
       catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); }
     };
   }
@@ -750,7 +812,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
     const summary = `${label}：成功 ${success} 条，失败 ${failed} 条${firstErrorMsg ? `（${firstErrorMsg}）` : ""}`;
     notify(summary, failed ? "error" : "success");
     setSelected(new Set());
-    await load();
+    await refreshLoadedRange();
   }
   function requestBatch(path: string, label: string, row?: DataRow) {
     const targetIds = row ? String(row.id) : ids;
@@ -771,7 +833,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   function requestDelete(row?: DataRow) {
     const target = row ? String(row.id) : ids;
     if (!target) return notify("请先选择订单", "info");
-    setConfirm({ title: "删除订单", message: `删除后无法恢复，确认删除 ${row ? 1 : selected.size} 个订单？`, danger: true, action: async () => { await apiRequest(`/biz/order/${target}`, { method: "DELETE" }); notify("删除成功", "success"); setSelected(new Set()); await load(); } });
+    setConfirm({ title: "删除订单", message: `删除后无法恢复，确认删除 ${row ? 1 : selected.size} 个订单？`, danger: true, action: async () => { await apiRequest(`/biz/order/${target}`, { method: "DELETE" }); notify("删除成功", "success"); setSelected(new Set()); await refreshLoadedRange(row ? -1 : -selected.size); } });
   }
 
   function openBatchSalePrice() {
@@ -799,7 +861,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
       setBatchSaleOpen(false);
       setBatchSalePrice("");
       setSelected(new Set());
-      await load();
+      await refreshLoadedRange();
     } catch (error) {
       notify(error instanceof Error ? error.message : "批量修改销售价格失败", "error");
     } finally {
@@ -832,14 +894,14 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
     const summary = `${label}：成功 ${success} 条，失败 ${failed} 条${firstErrorMsg ? `（${firstErrorMsg}）` : ""}`;
     notify(summary, failed ? "error" : "success");
     setSelected(new Set());
-    await load();
+    await refreshLoadedRange();
   }
   
 // 单条刷新（卡片/批量条都用）
   async function refreshLogistics(row?: DataRow) {
     const targets = row ? [String(row.orderCode)] : selectedRows.map((item) => String(item.orderCode)).filter(Boolean);
     if (!targets.length) return notify("请先选择订单", "info");
-    try { await apiRequest("/biz/exp/refresh", { method: "PATCH", body: targets, timeoutMs: 55_000 }); notify("物流轨迹已更新", "success"); await load(); }
+    try { await apiRequest("/biz/exp/refresh", { method: "PATCH", body: targets, timeoutMs: 55_000 }); notify("物流轨迹已更新", "success"); await refreshLoadedRange(); }
     catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
   }
   // 逐单提交并展示真实进度，单张订单最长等待 55 秒，避免一个长请求被网关断开后整批结果不明。
@@ -879,7 +941,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
     setRefreshState({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
     notify(`刷新完成：成功 ${success} 条，失败 ${failed} 条${firstError ? `（${firstError}）` : ""}`, failed ? "error" : "success");
     setSelected(new Set());
-    await load();
+    await refreshLoadedRange();
   }
   async function copy(text: string, message: string) {
     const ok = await copyToClipboard(text);
@@ -1046,7 +1108,6 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
             e.preventDefault();
             setFilters((current: DataRow) => ({ ...current, pageNum: 1 }));
             setFilterOpen(false);
-            load();
           }}
         >
           <div className="filter-sheet-body">
@@ -1195,7 +1256,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
             initial={editor === "new" ? null : editor}
             formId="order-editor-form"
             onSavingChange={setEditorSaving}
-            onSaved={load}
+            onSaved={() => { void refreshLoadedRange(editor === "new" ? 1 : 0); }}
             onClose={() => { setEditor(null); setEditorSaving(false); }}
             notify={notify}
           />
@@ -1219,7 +1280,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
             initial={shipping}
             formId="shipping-editor-form"
             onSavingChange={setShippingSaving}
-            onSaved={() => { setSelected(new Set()); load(); }}
+            onSaved={applyShippedOrder}
             onClose={() => { setShipping(null); setShippingSaving(false); }}
             notify={notify}
           />

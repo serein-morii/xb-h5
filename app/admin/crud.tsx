@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   LoaderCircle,
   LockKeyhole,
+  Mail,
   Pencil,
   Plus,
   Power,
@@ -25,6 +26,7 @@ import {
   Trash2,
   Truck,
   Upload,
+  UserRoundCheck,
   X,
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -195,10 +197,12 @@ export function createCrudConfigs(dictionaries: Dictionaries, overrides: CrudOve
       { key: "orderCodeRequirePwd", label: "下单码", tone: "default", valueFormat: (row) => Number(row.orderCodeRequirePwd) === 1 ? (row.orderCodePwd ? "需要 · 密码已设" : "需要 · 密码未设") : "免下单码" },
       { key: "blockOrder", label: "下单拦截", tone: "danger", valueFormat: (row) => Number(row.blockOrder) === 1 ? "已禁止" : "未拦截" },
       { key: "blockQuery", label: "查单拦截", tone: "danger", valueFormat: (row) => Number(row.blockQuery) === 1 ? "已禁止" : "未拦截" },
+      { key: "accountRequired", label: "客户账号", tone: "default", valueFormat: (row) => Number(row.accountRequired) === 1 ? "统一要求注册" : "按买家设置" },
+      { key: "mailEnabled", label: "邮件发送", tone: "default", valueFormat: (row) => Number(row.mailEnabled) === 1 ? (Number(row.mailDefault) === 1 ? "已启用 · 默认" : "已启用") : "未配置" },
     ],
     searchFields: [{ key: "code", label: "店铺编码" }, { key: "name", label: "店铺名称" }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", type: "date" }],
-    fields: [{ key: "code", label: "店铺编码", required: true }, { key: "name", label: "店铺名称", required: true }, { key: "isDelete", label: "营业状态", type: "select", options: STORE_STATUS_OPTIONS, required: true }, { key: "notice", label: "店铺通知", type: "textarea" }, { key: "orderCodeRequirePwd", label: "需要下单码", type: "select", options: [{ value: "0", label: "否" }, { value: "1", label: "是" }] }, { key: "orderCodePwd", label: "店铺下单码", placeholder: "4-6 位数字，留空则买家单独配置" }, { key: "blockOrder", label: "禁止下单", type: "select", options: [{ value: "0", label: "未拦截" }, { value: "1", label: "禁止下单" }] }, { key: "blockQuery", label: "禁止查单", type: "select", options: [{ value: "0", label: "未拦截" }, { value: "1", label: "禁止查询订单" }] }, { key: "blockDisplayType", label: "拦截展示形式", type: "select", options: STORE_BLOCK_DISPLAY_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", type: "select", options: dictionaries.platforms }, { key: "noticeUrl", label: "通知地址", type: "textarea" }],
-    display: [{ key: "isDelete", label: "营业状态", options: STORE_STATUS_OPTIONS }, { key: "code", label: "店铺编码" }, { key: "orderCodeRequirePwd", label: "下单码", format: (row) => Number(row.orderCodeRequirePwd) === 1 ? "需要" : "不需要" }, { key: "blockOrder", label: "禁止下单", format: (row) => Number(row.blockOrder) === 1 ? "已禁止" : "未拦截" }, { key: "blockQuery", label: "禁止查单", format: (row) => Number(row.blockQuery) === 1 ? "已禁止" : "未拦截" }, { key: "blockDisplayType", label: "拦截展示", options: STORE_BLOCK_DISPLAY_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", options: dictionaries.platforms }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime) }, { key: "updateTime", label: "更新时间", format: (row) => shortDate(row.updateTime) }],
+    fields: [{ key: "code", label: "店铺编码", required: true }, { key: "name", label: "店铺名称", required: true }, { key: "defPurchaser", label: "默认买家", placeholder: "可选，用于新建订单时默认带入" }],
+    display: [{ key: "isDelete", label: "营业状态", options: STORE_STATUS_OPTIONS }, { key: "code", label: "店铺编码" }, { key: "accountRequired", label: "转换注册客户", format: (row) => Number(row.accountRequired) === 1 ? "店铺统一要求" : "按买家设置" }, { key: "orderCodeRequirePwd", label: "下单码", format: (row) => Number(row.orderCodeRequirePwd) === 1 ? "需要" : "不需要" }, { key: "blockOrder", label: "禁止下单", format: (row) => Number(row.blockOrder) === 1 ? "已禁止" : "未拦截" }, { key: "blockQuery", label: "禁止查单", format: (row) => Number(row.blockQuery) === 1 ? "已禁止" : "未拦截" }, { key: "blockDisplayType", label: "拦截展示", options: STORE_BLOCK_DISPLAY_OPTIONS }, { key: "defPurchaser", label: "默认买家" }, { key: "noticeType", label: "通知类型", options: dictionaries.platforms }, { key: "createBy", label: "创建人" }, { key: "createTime", label: "创建时间", format: (row) => shortDate(row.createTime) }, { key: "updateTime", label: "更新时间", format: (row) => shortDate(row.updateTime) }],
     note: (row) => [row.notice, row.noticeUrl].filter(Boolean).join(" · "),
   },
   };
@@ -306,6 +310,10 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchSaving, setBatchSaving] = useState(false);
   const [syncModeOpen, setSyncModeOpen] = useState(false);
+  const [mailStore, setMailStore] = useState<DataRow | null>(null);
+  const [noticeStore, setNoticeStore] = useState<DataRow | null>(null);
+  const [accessStore, setAccessStore] = useState<DataRow | null>(null);
+  const [storeSwitchBusy, setStoreSwitchBusy] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
   const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
   const [filterPurchasers, setFilterPurchasers] = useState<DataRow[]>([]);
@@ -339,7 +347,30 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
     if (!config.extraAction) return null;
     return typeof config.extraAction === "function" ? config.extraAction(row) : config.extraAction;
   }
-  async function extra(row: DataRow) { const action = resolveExtra(row); if (!action) return; const doCall = async () => { try { await apiRequest(action.path(row), { method: action.method }); notify(`${action.label}成功`, "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }; if (action.confirm) { setConfirm({ title: action.label, message: action.confirm, danger: action.danger, action: async () => { await doCall(); setConfirm(null); } }); } else { await doCall(); } }
+  async function refreshLoadedRange(expectedDelta = 0) {
+    const pageSize = Number(query.pageSize || 15) || 15;
+    const hadAllRows = total > 0 && rows.length >= total;
+    const targetSize = Math.max(pageSize, rows.length + expectedDelta);
+    const accumulated: DataRow[] = [];
+    let serverTotal = total;
+    let pageNum = 1;
+    try {
+      while (pageNum <= 200) {
+        const requestSize = hadAllRows ? pageSize : targetSize;
+        const result = await apiRequest<DataRow>(`${config.api}/list`, { query: { ...query, pageNum, pageSize: requestSize } });
+        const pageRows = Array.isArray(result.rows) ? result.rows : [];
+        serverTotal = Number(result.total || 0);
+        accumulated.push(...pageRows);
+        if (!hadAllRows || !pageRows.length || accumulated.length >= serverTotal) break;
+        pageNum += 1;
+      }
+      setRows(accumulated);
+      setTotal(serverTotal);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : `${config.itemName}刷新失败`, "error");
+    }
+  }
+  async function extra(row: DataRow) { const action = resolveExtra(row); if (!action) return; const doCall = async () => { try { await apiRequest(action.path(row), { method: action.method }); notify(`${action.label}成功`, "success"); await refreshLoadedRange(); } catch (error) { notify(error instanceof Error ? error.message : "操作失败", "error"); } }; if (action.confirm) { setConfirm({ title: action.label, message: action.confirm, danger: action.danger, action: async () => { await doCall(); setConfirm(null); } }); } else { await doCall(); } }
   async function loadAllRows() {
     if (loadAllState.loading) return;
     const pageSize = Number(query.pageSize || 15) || 15;
@@ -415,7 +446,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
         summary += `。失败明细：${preview}${failedDetails.length > 3 ? `…（共 ${failedDetails.length} 条，全部明细见 Console）` : ""}`;
       }
       notify(summary, failed ? "info" : "success");
-      load();
+      await refreshLoadedRange();
     } catch (error) {
       notify(error instanceof Error ? error.message : `同步所有${config.itemName}失败`, "error");
     } finally {
@@ -429,50 +460,47 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
     const ok = await copyToClipboard(text);
     notify(ok ? message : "复制失败，请手动选择文本复制", ok ? "success" : "error");
   }
-  // 店铺专用：快速切换营业/暂停（PUT 全量对象，仅翻 isDelete 一个字段）
-  async function toggleStoreStatus(row: DataRow) {
-    const isOpen = Number(row.isDelete) === 1;
-    const nextValue = isOpen ? 2 : 1;
-    setConfirm({
-      title: isOpen ? "暂停营业" : "恢复营业",
-      message: isOpen ? `暂停后「${row.name || row.code || "该店铺"}」将从列表隐藏（仍可在筛选里选「已关闭」查回），确认？` : `恢复后「${row.name || row.code || "该店铺"}」将重新出现在列表里，确认？`,
-      action: async () => {
-        try {
-          await apiRequest(config.api, { method: "PUT", body: { ...row, isDelete: nextValue } });
-          notify(isOpen ? "已暂停营业" : "已恢复营业", "success");
-          setConfirm(null);
-          load();
-        } catch (error) {
-          notify(error instanceof Error ? error.message : "切换营业状态失败", "error");
-          setConfirm(null);
-        }
-      },
-    });
+  function patchStoreRow(id: unknown, patch: DataRow) {
+    setRows((current) => current.map((item) => String(item.id) === String(id) ? { ...item, ...patch } : item));
   }
+
+  async function saveStoreSwitch(row: DataRow, key: string, patch: DataRow, request: () => Promise<unknown>, success: string) {
+    const busyKey = `${row.id}:${key}`;
+    if (storeSwitchBusy.has(busyKey)) return;
+    const previous = Object.fromEntries(Object.keys(patch).map((field) => [field, row[field]]));
+    patchStoreRow(row.id, patch);
+    setStoreSwitchBusy((current) => new Set(current).add(busyKey));
+    try {
+      await request();
+      notify(success, "success");
+    } catch (error) {
+      patchStoreRow(row.id, previous);
+      notify(error instanceof Error ? error.message : "店铺设置保存失败", "error");
+    } finally {
+      setStoreSwitchBusy((current) => { const next = new Set(current); next.delete(busyKey); return next; });
+    }
+  }
+
+  async function toggleStoreStatus(row: DataRow) {
+    const nextValue = Number(row.isDelete) === 1 ? 2 : 1;
+    await saveStoreSwitch(row, "isDelete", { isDelete: nextValue },
+      () => apiRequest(config.api, { method: "PUT", body: { id: row.id, isDelete: nextValue } }),
+      nextValue === 1 ? "店铺已恢复营业" : "店铺已暂停营业");
+  }
+
   async function toggleStoreBlock(row: DataRow, field: "blockOrder" | "blockQuery") {
-    const isBlocked = Number(row[field]) === 1;
-    const nextValue = isBlocked ? 0 : 1;
-    const isOrder = field === "blockOrder";
-    const label = isOrder ? "下单" : "查单";
-    const storeName = String(row.name || row.code || "该店铺");
-    setConfirm({
-      title: isBlocked ? `恢复${label}` : `禁止${label}`,
-      message: isBlocked
-        ? `恢复后「${storeName}」的客户将重新可以${label === "下单" ? "提交订单" : "查询订单"}，确认？`
-        : `开启后「${storeName}」下所有买家都会被拦截，优先级高于买家管理里的开关，确认？`,
-      danger: !isBlocked,
-      action: async () => {
-        try {
-          await apiRequest(`${config.api}/${row.id}/block`, { method: "PUT", body: { [field]: nextValue } });
-          notify(isBlocked ? `已恢复${label}` : `已禁止${label}`, "success");
-          setConfirm(null);
-          load();
-        } catch (error) {
-          notify(error instanceof Error ? error.message : "切换店铺拦截失败", "error");
-          setConfirm(null);
-        }
-      },
-    });
+    const nextValue = Number(row[field]) === 1 ? 0 : 1;
+    const label = field === "blockOrder" ? "下单" : "查单";
+    await saveStoreSwitch(row, field, { [field]: nextValue },
+      () => apiRequest(`${config.api}/${row.id}/block`, { method: "PUT", body: { [field]: nextValue } }),
+      nextValue === 1 ? `已禁止${label}` : `已恢复${label}`);
+  }
+
+  async function toggleStoreCustomerAccess(row: DataRow) {
+    const nextValue = Number(row.accountRequired) === 1 ? 0 : 1;
+    await saveStoreSwitch(row, "accountRequired", { accountRequired: nextValue },
+      () => apiRequest(`${config.api}/${row.id}/customer-access`, { method: "PUT", body: { accountRequired: nextValue } }),
+      nextValue === 1 ? "已要求店铺客户注册" : "已改为按买家设置");
   }
   function displayValue(row: DataRow, item: CrudConfig["display"][number]) {
     if (item.format) return item.format(row);
@@ -504,7 +532,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
       <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
-        {config.importable ? <><button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button><button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/importTemplate`, {}, `${config.key}_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button><input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { await uploadFile(`${config.api}/importData`, file, { updateSupport: false }); notify("导入成功", "success"); load(); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} /></> : null}
+        {config.importable ? <><button type="button" onClick={() => fileRef.current?.click()}><Upload size={16} />导入</button><button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/importTemplate`, {}, `${config.key}_template_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><FileSpreadsheet size={16} />模板</button><input ref={fileRef} hidden type="file" accept=".xls,.xlsx" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { await uploadFile(`${config.api}/importData`, file, { updateSupport: false }); notify("导入成功", "success"); await refreshLoadedRange(1); } catch (error) { notify(error instanceof Error ? error.message : "导入失败", "error"); } event.target.value = ""; }} /></> : null}
         <button type="button" onClick={loadAllRows} disabled={loadAllState.loading || (total > 0 && rows.length >= total)} className={loadAllState.loading ? "is-loading" : ""}>
           {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
           {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
@@ -526,19 +554,33 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           const expand = config.expand;
           const isOpen = expanded.has(row.id as string | number);
           const hasExpand = !!expand?.length;
+          if (config.key === "stores") {
+            return <StoreManagementCard
+              key={String(row.id)}
+              row={row}
+              dictionaries={dictionaries}
+              expanded={isOpen}
+              busy={storeSwitchBusy}
+              onToggleExpand={() => toggleExpand(row.id as string | number)}
+              onToggleStatus={() => { void toggleStoreStatus(row); }}
+              onToggleRegistration={() => { void toggleStoreCustomerAccess(row); }}
+              onToggleBlock={(field) => { void toggleStoreBlock(row, field); }}
+              onEdit={() => edit(row)}
+              onNotice={() => setNoticeStore(row)}
+              onMail={() => setMailStore(row)}
+              onAccess={() => setAccessStore(row)}
+              onCopy={copyText}
+              onDelete={() => setConfirm({ title: "删除店铺", message: `删除「${String(row.name || row.code || "该店铺")}」后无法恢复，是否继续？`, danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); await refreshLoadedRange(-1); } })}
+            />;
+          }
           return <article className={`data-card data-card-${config.key}`} key={String(row.id)}>
-            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "stores" ? <StoreStatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = billOrderStatusLabel(row, dictionaries); return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
+            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = billOrderStatusLabel(row, dictionaries); return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
             {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
             <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
             {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
             {hasExpand ? <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpand(row.id as string | number)} aria-expanded={isOpen}><span>{isOpen ? "收起明细" : "查看更多"}</span><ChevronDown size={15} /></button> : null}
             {note ? <p className="data-note">{note}</p> : null}
-            {config.key === "stores" ? <div className="store-extras">
-              {row.notice ? <div className="store-extra-line"><span><Bell size={13} />{row.noticeType ? optionLabel(row.noticeType, dictionaries.platforms) : "店铺通知"}</span><b>{row.notice}</b></div> : null}
-              {row.noticeUrl ? <div className="store-extra-line"><span><ExternalLink size={13} />通知地址</span><b className="store-notice-url">{row.noticeUrl}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.noticeUrl), "通知地址已复制")}><Copy size={12} />复制</button></div> : null}
-              {row.orderCodeRequirePwd && row.orderCodePwd ? <div className="store-extra-line"><span><LockKeyhole size={13} />店铺下单码</span><b>{row.orderCodePwd}</b><button type="button" className="store-extra-copy" onClick={() => copyText(String(row.orderCodePwd), "下单码已复制")}><Copy size={12} />复制</button></div> : null}
-            </div> : null}
-            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{config.key === "stores" ? <><button type="button" className={Number(row.blockOrder) === 1 ? "primary-action" : "primary-action danger-action"} onClick={() => toggleStoreBlock(row, "blockOrder")}><Ban size={16} />{Number(row.blockOrder) === 1 ? "恢复下单" : "禁下单"}</button><button type="button" className={Number(row.blockQuery) === 1 ? "primary-action" : "primary-action danger-action"} onClick={() => toggleStoreBlock(row, "blockQuery")}><SearchX size={16} />{Number(row.blockQuery) === 1 ? "恢复查单" : "禁查单"}</button><button type="button" className={Number(row.isDelete) === 1 ? "primary-action danger-action" : "primary-action"} onClick={() => toggleStoreStatus(row)}><Power size={16} />{Number(row.isDelete) === 1 ? "暂停营业" : "恢复营业"}</button></> : null}{(() => { const action = resolveExtra(row); if (!action) return null; return <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => extra(row)}><RefreshCw size={16} />{action.label}</button>; })()}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); load(); } })}><Trash2 size={16} />删除</button></div>
+            <div className="card-actions"><button type="button" onClick={() => edit(row)}><Pencil size={16} />修改</button>{(() => { const action = resolveExtra(row); if (!action) return null; return <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => extra(row)}><RefreshCw size={16} />{action.label}</button>; })()}<button type="button" className="danger-text" onClick={() => setConfirm({ title: `删除${config.itemName}`, message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); await refreshLoadedRange(-1); } })}><Trash2 size={16} />删除</button></div>
           </article>;
         })}
       </div>
@@ -550,7 +592,6 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
             event.preventDefault();
             setQuery((current: DataRow) => ({ ...current, pageNum: 1 }));
             setFilterOpen(false);
-            load();
           }}
         >
           <div className="filter-sheet-body">
@@ -593,10 +634,19 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
             formId={`crud-editor-${config.key}`}
             onSavingChange={setEditorSaving}
             onClose={() => { setEditor(null); setEditorSaving(false); }}
-            onSaved={load}
+            onSaved={() => { void refreshLoadedRange(editor === "new" ? 1 : 0); }}
             notify={notify}
           />
         ) : null}
+      </Sheet>
+      <Sheet open={mailStore !== null} title={`邮件发送 · ${String(mailStore?.name || "店铺")}`} onClose={() => setMailStore(null)} wide>
+        {mailStore ? <StoreMailSettingsEditor store={mailStore} notify={notify} onClose={() => setMailStore(null)} onSaved={() => { void refreshLoadedRange(); }} /> : null}
+      </Sheet>
+      <Sheet open={noticeStore !== null} title={`店铺通知 · ${String(noticeStore?.name || "店铺")}`} onClose={() => setNoticeStore(null)} wide>
+        {noticeStore ? <StoreNoticeEditor store={noticeStore} dictionaries={dictionaries} notify={notify} onClose={() => setNoticeStore(null)} onSaved={(updated) => patchStoreRow(noticeStore.id, updated)} /> : null}
+      </Sheet>
+      <Sheet open={accessStore !== null} title={`访问设置 · ${String(accessStore?.name || "店铺")}`} onClose={() => setAccessStore(null)}>
+        {accessStore ? <StoreAccessEditor store={accessStore} notify={notify} onClose={() => setAccessStore(null)} onSaved={(updated) => patchStoreRow(accessStore.id, updated)} /> : null}
       </Sheet>
       {config.batchAction ? (
         <Sheet
@@ -618,7 +668,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
             rows={visibleRows}
             formId={`crud-batch-${config.key}`}
             onSavingChange={setBatchSaving}
-            onSaved={() => { setBatchOpen(false); setBatchSaving(false); load(); }}
+            onSaved={() => { setBatchOpen(false); setBatchSaving(false); void refreshLoadedRange(); }}
             notify={notify}
           />
         </Sheet>
@@ -819,6 +869,239 @@ export function CrudEditor({
           </label>
         ))}
       </div>
+    </form>
+  );
+}
+
+function StoreManagementCard({
+  row,
+  dictionaries,
+  expanded,
+  busy,
+  onToggleExpand,
+  onToggleStatus,
+  onToggleRegistration,
+  onToggleBlock,
+  onEdit,
+  onNotice,
+  onMail,
+  onAccess,
+  onCopy,
+  onDelete,
+}: {
+  row: DataRow;
+  dictionaries: Dictionaries;
+  expanded: boolean;
+  busy: Set<string>;
+  onToggleExpand: () => void;
+  onToggleStatus: () => void;
+  onToggleRegistration: () => void;
+  onToggleBlock: (field: "blockOrder" | "blockQuery") => void;
+  onEdit: () => void;
+  onNotice: () => void;
+  onMail: () => void;
+  onAccess: () => void;
+  onCopy: (text: string, message: string) => void;
+  onDelete: () => void;
+}) {
+  const id = String(row.id);
+  const isOpen = Number(row.isDelete) === 1;
+  const registration = Number(row.accountRequired) === 1;
+  const orderAllowed = Number(row.blockOrder) !== 1;
+  const queryAllowed = Number(row.blockQuery) !== 1;
+  const mailEnabled = Number(row.mailEnabled) === 1;
+  const switchItem = (key: string, label: string, description: string, checked: boolean, onClick: () => void, tone = "normal") => (
+    <button type="button" className={`store-control-switch tone-${tone}`} role="switch" aria-checked={checked} disabled={busy.has(`${id}:${key}`)} onClick={onClick}>
+      <span className="store-control-copy"><b>{label}</b><small>{description}</small></span>
+      <span className={`store-switch${checked ? " on" : ""}`}>{busy.has(`${id}:${key}`) ? <LoaderCircle className="spin" size={12} /> : <i />}</span>
+    </button>
+  );
+  return (
+    <article className={`data-card store-card-modern${expanded ? " expanded" : ""}`}>
+      <header className="store-card-header">
+        <span className="store-card-icon"><StoreIcon size={19} /></span>
+        <div className="store-card-identity"><b>{String(row.name || "未命名店铺")}</b><small>{String(row.code || "暂无编码")}</small></div>
+        <div className="store-card-badges"><span className={`store-state-pill ${isOpen ? "open" : "paused"}`}><i />{isOpen ? "营业中" : "已暂停"}</span>{Number(row.mailDefault) === 1 ? <span className="store-default-pill">默认发件</span> : null}</div>
+      </header>
+
+      {row.notice ? <button type="button" className="store-notice-preview" onClick={onNotice}><Bell size={14} /><span><b>{row.noticeType ? optionLabel(row.noticeType, dictionaries.platforms) : "店铺通知"}</b><small>{String(row.notice)}</small></span><ChevronRight size={15} /></button> : <button type="button" className="store-notice-preview empty" onClick={onNotice}><Bell size={14} /><span><b>店铺通知</b><small>尚未设置，点击添加通知内容</small></span><Plus size={14} /></button>}
+
+      <section className="store-control-grid" aria-label="店铺快速开关">
+        {switchItem("isDelete", "店铺营业", isOpen ? "客户可以正常访问店铺" : "店铺当前暂停对外服务", isOpen, onToggleStatus)}
+        {switchItem("accountRequired", "客户注册", registration ? "专属链接需要先注册" : "按买家自己的设置执行", registration, onToggleRegistration)}
+        {switchItem("blockOrder", "允许下单", orderAllowed ? "客户可以提交新订单" : "所有买家均被禁止下单", orderAllowed, () => onToggleBlock("blockOrder"), orderAllowed ? "normal" : "danger")}
+        {switchItem("blockQuery", "允许查单", queryAllowed ? "客户可以查询订单" : "所有买家均被禁止查单", queryAllowed, () => onToggleBlock("blockQuery"), queryAllowed ? "normal" : "danger")}
+      </section>
+
+      <nav className="store-card-quick-actions" aria-label="店铺配置入口">
+        <button type="button" onClick={onEdit}><Pencil size={15} /><span>基本资料</span></button>
+        <button type="button" onClick={onNotice}><Bell size={15} /><span>通知设置</span></button>
+        <button type="button" className={mailEnabled ? "configured" : ""} onClick={onMail}><Mail size={15} /><span>邮件配置</span>{mailEnabled ? <i /> : null}</button>
+        <button type="button" onClick={onAccess}><LockKeyhole size={15} /><span>访问设置</span></button>
+      </nav>
+
+      <div className={`store-detail-collapse${expanded ? " open" : ""}`}>
+        <div className="store-detail-inner">
+          <dl className="store-detail-grid">
+            <div><dt>默认买家</dt><dd>{String(row.defPurchaser || "未设置")}</dd></div>
+            <div><dt>下单码</dt><dd>{Number(row.orderCodeRequirePwd) === 1 ? (row.orderCodePwd ? "已启用" : "待设置") : "免验证"}</dd></div>
+            <div><dt>拦截样式</dt><dd>{row.blockDisplayType ? optionLabel(row.blockDisplayType, STORE_BLOCK_DISPLAY_OPTIONS) : "顶部提示"}</dd></div>
+            <div><dt>邮件发送</dt><dd>{mailEnabled ? (Number(row.mailDefault) === 1 ? "已启用 · 系统默认" : "已启用") : "未配置"}</dd></div>
+            <div><dt>创建人</dt><dd>{String(row.createBy || "--")}</dd></div>
+            <div><dt>最近更新</dt><dd>{shortDate(row.updateTime || row.createTime, true)}</dd></div>
+          </dl>
+          {row.noticeUrl ? <div className="store-detail-link"><ExternalLink size={13} /><span>{String(row.noticeUrl)}</span><button type="button" onClick={() => onCopy(String(row.noticeUrl), "通知地址已复制")}><Copy size={12} />复制</button></div> : null}
+          {Number(row.orderCodeRequirePwd) === 1 && row.orderCodePwd ? <div className="store-detail-link"><LockKeyhole size={13} /><span>店铺下单码：{String(row.orderCodePwd)}</span><button type="button" onClick={() => onCopy(String(row.orderCodePwd), "下单码已复制")}><Copy size={12} />复制</button></div> : null}
+          <button type="button" className="store-delete-action" onClick={onDelete}><Trash2 size={14} />删除店铺</button>
+        </div>
+      </div>
+      <button type="button" className={`store-detail-toggle${expanded ? " open" : ""}`} onClick={onToggleExpand} aria-expanded={expanded}><span>{expanded ? "收起店铺信息" : "更多店铺信息"}</span><ChevronDown size={15} /></button>
+    </article>
+  );
+}
+
+function StoreNoticeEditor({ store, dictionaries, notify, onClose, onSaved }: { store: DataRow; dictionaries: Dictionaries; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void }) {
+  const [form, setForm] = useState({ notice: String(store.notice || ""), noticeType: String(store.noticeType || ""), noticeUrl: String(store.noticeUrl || "") });
+  const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const result = await apiRequest<DataRow>(`/biz/store/${store.id}/notice-settings`, { method: "PUT", body: form });
+      const updated = result.data && typeof result.data === "object" ? result.data as DataRow : { ...store, ...form };
+      notify(form.notice.trim() ? "店铺通知已更新" : "店铺通知已清空", "success");
+      onSaved(updated);
+      onClose();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "店铺通知保存失败", "error");
+    } finally { setSaving(false); }
+  }
+  return <form className="store-setting-editor" onSubmit={submit}>
+    <section className="store-setting-intro"><span><Bell size={18} /></span><div><b>独立维护店铺通知</b><p>通知内容会在专属下单页展示。删除全部文字并保存即可清空通知。</p></div></section>
+    <label className="span-full"><span>通知内容</span><textarea rows={5} value={form.notice} onChange={(event) => setForm((current) => ({ ...current, notice: event.target.value }))} placeholder="例如：欢迎购买本店商品，预计两日内发货" /></label>
+    <div className="store-setting-grid"><label><span>通知类型</span><select value={form.noticeType} onChange={(event) => setForm((current) => ({ ...current, noticeType: event.target.value }))}><option value="">普通通知</option>{dictionaries.platforms.map((item) => <option key={String(item.value)} value={String(item.value)}>{item.label}</option>)}</select></label><label><span>跳转地址</span><input value={form.noticeUrl} onChange={(event) => setForm((current) => ({ ...current, noticeUrl: event.target.value }))} placeholder="https://...（可选）" /></label></div>
+    <section className={`store-notice-live-preview${form.notice.trim() ? "" : " empty"}`}><Bell size={14} /><div><b>{form.noticeType ? optionLabel(form.noticeType, dictionaries.platforms) : "店铺通知"}</b><p>{form.notice.trim() || "通知清空后，专属下单页不会展示此模块"}</p></div></section>
+    <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存通知"}</button></div>
+  </form>;
+}
+
+function StoreAccessEditor({ store, notify, onClose, onSaved }: { store: DataRow; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void }) {
+  const [form, setForm] = useState({ orderCodeRequirePwd: Number(store.orderCodeRequirePwd || 0), orderCodePwd: String(store.orderCodePwd || ""), blockDisplayType: String(store.blockDisplayType || "banner") });
+  const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (form.orderCodeRequirePwd === 1 && !/^\d{4,6}$/.test(form.orderCodePwd)) return notify("下单码必须是 4-6 位数字", "info");
+    setSaving(true);
+    try {
+      const patch = { ...form, orderCodePwd: form.orderCodeRequirePwd === 1 ? form.orderCodePwd : "", id: store.id };
+      await apiRequest("/biz/store", { method: "PUT", body: patch });
+      notify("店铺访问设置已保存", "success");
+      onSaved({ ...store, ...patch });
+      onClose();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "访问设置保存失败", "error");
+    } finally { setSaving(false); }
+  }
+  return <form className="store-setting-editor" onSubmit={submit}>
+    <section className="store-setting-intro"><span><LockKeyhole size={18} /></span><div><b>下单访问与拦截展示</b><p>下单码用于店铺级统一验证；拦截展示形式只在禁止下单或查单时生效。</p></div></section>
+    <label><span>店铺下单码</span><select value={String(form.orderCodeRequirePwd)} onChange={(event) => setForm((current) => ({ ...current, orderCodeRequirePwd: Number(event.target.value) }))}><option value="0">免下单码</option><option value="1">需要下单码</option></select></label>
+    {form.orderCodeRequirePwd === 1 ? <label><span>4-6 位数字下单码</span><input inputMode="numeric" maxLength={6} value={form.orderCodePwd} onChange={(event) => setForm((current) => ({ ...current, orderCodePwd: event.target.value.replace(/\D/g, "") }))} placeholder="请输入下单码" /></label> : null}
+    <label><span>拦截提示样式</span><select value={form.blockDisplayType} onChange={(event) => setForm((current) => ({ ...current, blockDisplayType: event.target.value }))}>{STORE_BLOCK_DISPLAY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+    <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存访问设置"}</button></div>
+  </form>;
+}
+
+function StoreMailSettingsEditor({
+  store,
+  notify,
+  onClose,
+  onSaved,
+}: {
+  store: DataRow;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<DataRow>({
+    enabled: 0,
+    defaultSender: 0,
+    host: "smtp.163.com",
+    port: 465,
+    username: "",
+    password: "",
+    security: "SSL",
+    fromAddress: "",
+    fromName: String(store.name || ""),
+    passwordConfigured: false,
+    applyToAllStores: true,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    apiRequest<DataRow>(`/biz/store/${store.id}/mail-settings`)
+      .then((result) => {
+        if (!active) return;
+        const data = result.data && typeof result.data === "object" ? result.data as DataRow : {};
+        setForm((current) => ({ ...current, ...data, password: "", applyToAllStores: true }));
+      })
+      .catch((error) => { if (active) notify(error instanceof Error ? error.message : "邮件配置加载失败", "error"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [notify, store.id]);
+
+  function update(key: string, value: unknown) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await apiRequest(`/biz/store/${store.id}/mail-settings`, {
+        method: "PUT",
+        body: {
+          ...form,
+          enabled: Number(form.enabled || 0),
+          defaultSender: Number(form.defaultSender || 0),
+          port: Number(form.port || 0),
+        },
+      });
+      notify(form.applyToAllStores ? "邮件配置已同步到全部店铺" : "店铺邮件配置已保存", "success");
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "邮件配置保存失败", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="mail-settings-loading"><LoaderCircle className="spin" size={21} />正在读取邮件配置</div>;
+  const enabled = Number(form.enabled) === 1;
+  return (
+    <form className="mail-settings-editor" onSubmit={submit}>
+      <section className="mail-settings-intro">
+        <span><Mail size={18} /></span>
+        <div><b>SMTP 发件服务</b><p>客户注册、邮箱登录和找回密码均使用当前店铺配置。授权码加密保存且不会回显。</p></div>
+      </section>
+      <label className="mail-settings-switch"><div><b>启用邮件发送</b><small>未启用时邮箱登录会提示使用账号密码登录</small></div><input type="checkbox" checked={enabled} onChange={(event) => update("enabled", event.target.checked ? 1 : 0)} /><span /></label>
+      <div className={`mail-settings-fields${enabled ? "" : " disabled"}`}>
+        <label><span>SMTP 主机</span><input disabled={!enabled} value={String(form.host || "")} onChange={(event) => update("host", event.target.value)} placeholder="smtp.163.com" /></label>
+        <label><span>端口</span><input disabled={!enabled} type="number" value={String(form.port || "")} onChange={(event) => update("port", event.target.value)} placeholder="465" /></label>
+        <label><span>安全连接</span><select disabled={!enabled} value={String(form.security || "SSL")} onChange={(event) => update("security", event.target.value)}><option value="SSL">SSL（常用 465）</option><option value="STARTTLS">STARTTLS（常用 587）</option></select></label>
+        <label><span>SMTP 用户名</span><input disabled={!enabled} value={String(form.username || "")} onChange={(event) => update("username", event.target.value)} placeholder="完整邮箱地址" autoComplete="off" /></label>
+        <label className="span-full"><span>授权码 / SMTP 密码</span><input disabled={!enabled} type="password" value={String(form.password || "")} onChange={(event) => update("password", event.target.value)} placeholder={form.passwordConfigured ? "已安全保存，留空表示不修改" : "请输入邮箱服务商提供的 SMTP 授权码"} autoComplete="new-password" /></label>
+        <label><span>发件邮箱</span><input disabled={!enabled} value={String(form.fromAddress || "")} onChange={(event) => update("fromAddress", event.target.value)} placeholder="留空时使用 SMTP 用户名" /></label>
+        <label><span>发件人名称</span><input disabled={!enabled} value={String(form.fromName || "")} onChange={(event) => update("fromName", event.target.value)} placeholder="如：炎陵黄桃" /></label>
+      </div>
+      <section className="mail-settings-options">
+        <label><input type="checkbox" disabled={!enabled} checked={enabled && Number(form.defaultSender) === 1} onChange={(event) => update("defaultSender", event.target.checked ? 1 : 0)} /><span><b>设为系统默认发件配置</b><small>用于管理端邮箱登录等没有店铺上下文的场景</small></span></label>
+        <label><input type="checkbox" checked={Boolean(form.applyToAllStores)} onChange={(event) => update("applyToAllStores", event.target.checked)} /><span><b>同步到全部店铺</b><small>一次覆盖所有正常店铺，之后仍可单独修改某个店铺</small></span></label>
+      </section>
+      <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存邮件配置"}</button></div>
     </form>
   );
 }

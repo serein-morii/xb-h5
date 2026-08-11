@@ -20,6 +20,7 @@ type CustomerProfile = { purchaserName?: string; purchaserShortId?: string; mask
 type CustomerAuthData = { token?: string; purchaserShortId?: string; purchaserName?: string; email?: string };
 type RegisterPreview = { confirmRequired?: boolean; matchType?: string; registered?: boolean; purchaserName?: string; maskedEmail?: string; maskedPhone?: string; message?: string };
 type MineRegisterDraft = { name: string; phone: string; email: string; code: string; password: string; confirmPassword: string };
+type AccountOnboardingStep = "welcome" | "register" | "success" | null;
 type OrderForm = { orderName: string; orderNameDesc: string; orderType: string; orderTypeDesc: string; productId?: number; skuId?: number; orderNum: number; customer: string; phone: string; address: string; orderDesc: string; expCom: string };
 type PurchaserAddressRecord = { id: number; receiverName: string; receiverPhone: string; address: string; isDefault?: number; useCount?: number; lastUsedTime?: string };
 type AddressDraft = { id?: number; receiverName: string; receiverPhone: string; address: string; isDefault: boolean };
@@ -219,6 +220,7 @@ export default function PurchaserOrderPage() {
   const [mineRegisterCountdown, setMineRegisterCountdown] = useState(0);
   const [mineRegisterPreview, setMineRegisterPreview] = useState<RegisterPreview | null>(null);
   const [mineRegisterConfirmExisting, setMineRegisterConfirmExisting] = useState(false);
+  const [accountOnboardingStep, setAccountOnboardingStep] = useState<AccountOnboardingStep>("welcome");
 
   useEffect(() => {
     if (!promptToast) return;
@@ -361,7 +363,7 @@ export default function PurchaserOrderPage() {
   async function ensureMineRegisterConfirmation() {
     const draft = mineRegisterDraft;
     if (!draft.name.trim()) { setProfileError("请输入姓名"); return false; }
-    if (!/^1\d{10}$/.test(draft.phone.trim())) { setProfileError("请输入真实的11位手机号"); return false; }
+    if (linkContext?.phoneCompletionRequired && !/^1\d{10}$/.test(draft.phone.trim())) { setProfileError("请输入真实的11位手机号"); return false; }
     if (!draft.email.trim()) { setProfileError("请输入邮箱"); return false; }
     if (mineRegisterConfirmExisting) return true;
     try {
@@ -438,6 +440,98 @@ export default function PurchaserOrderPage() {
     } finally {
       setMineRegisterBusy(false);
     }
+  }
+
+  function startAccountOnboarding() {
+    setMineRegisterDraft({
+      ...EMPTY_MINE_REGISTER_DRAFT,
+      name: linkContext?.purchaserName || "",
+    });
+    setMineRegisterPreview(null);
+    setMineRegisterConfirmExisting(false);
+    setProfileError("");
+    setAccountOnboardingStep("register");
+  }
+
+  async function submitAccountOnboarding(event: FormEvent) {
+    event.preventDefault();
+    const draft = mineRegisterDraft;
+    setProfileError("");
+    if (!(await ensureMineRegisterConfirmation())) return;
+    if (!/^\d{6}$/.test(draft.code.trim())) return setProfileError("请输入6位邮箱验证码");
+    if (draft.password.length < 8 || draft.password.length > 64) return setProfileError("密码需为8-64位");
+    if (!/[A-Za-z]/.test(draft.password) || !/\d/.test(draft.password)) return setProfileError("密码需同时包含字母和数字");
+    if (draft.password !== draft.confirmPassword) return setProfileError("两次输入的密码不一致");
+
+    setMineRegisterBusy(true);
+    try {
+      const result = await apiRequest<{ data?: CustomerAuthData }>("/customer/auth/register", {
+        auth: false,
+        method: "POST",
+        body: {
+          shortId: linkKey.purchaserId,
+          name: draft.name.trim(),
+          email: draft.email.trim(),
+          phone: draft.phone.trim(),
+          code: draft.code.trim(),
+          password: draft.password,
+          confirmExisting: mineRegisterConfirmExisting ? "1" : "0",
+        },
+      });
+      if (result.data?.token) setCustomerToken(result.data.token);
+      setCustomerProfile({
+        purchaserName: result.data?.purchaserName || linkContext?.purchaserName,
+        purchaserShortId: result.data?.purchaserShortId || linkKey.purchaserId,
+        maskedEmail: draft.email,
+        registered: true,
+        quickLoginEnabled: 0,
+        authMode: "REGISTER",
+      });
+      setLinkContext((current) => current ? {
+        ...current,
+        authenticated: true,
+        customerRegistered: true,
+        quickLoginEnabled: 0,
+      } : current);
+      setMineRegisterPreview(null);
+      setMineRegisterConfirmExisting(false);
+      setAccountOnboardingStep("success");
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "注册失败，请重试");
+    } finally {
+      setMineRegisterBusy(false);
+    }
+  }
+
+  async function toggleOnboardingQuickLogin() {
+    if (profileBusy) return;
+    const enabled = Number(linkContext?.quickLoginEnabled) === 1 ? 0 : 1;
+    setProfileBusy(true);
+    setProfileError("");
+    try {
+      const result = await customerApiRequest<{ data?: CustomerProfile }>("/customer/auth/quick-login", {
+        method: "PUT",
+        body: { enabled },
+      }, linkKey.purchaserId);
+      setCustomerProfile(result.data || { ...customerProfile, registered: true, quickLoginEnabled: enabled });
+      setLinkContext((current) => current ? { ...current, quickLoginEnabled: enabled } : current);
+      showPromptToast(enabled === 1 ? "已开启短链快捷下单" : "已关闭短链快捷下单");
+    } catch (cause) {
+      setProfileError(cause instanceof Error ? cause.message : "快捷下单设置失败");
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
+  async function finishAccountOnboarding() {
+    setProfileError("");
+    if (linkContext?.blockQuery !== 1) {
+      try { await loadOrders(linkKey.purchaserId); }
+      catch (cause) { setProfileError(cause instanceof Error ? cause.message : "订单加载失败"); return; }
+    }
+    setAccountOnboardingStep(null);
+    setTab("home");
+    showPromptToast("欢迎回来，可以开始下单了");
   }
 
   function logoutCustomer() {
@@ -1226,7 +1320,61 @@ export default function PurchaserOrderPage() {
 
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
   if (!linkContext) return <div className="tool-page purchaser-order-page"><section className="invalid-link-card"><X size={28} /><h1>链接无效</h1><p>{error || "无法识别该下单链接"}</p><small>专属链接只包含6位下单人短ID，修改短码、解绑店铺或关闭店铺后将无法下单。</small></section></div>;
-  if (linkContext.accountRequired === 1 && !linkContext.authenticated) return <div className="tool-page purchaser-order-page"><section className="purchaser-account-gate"><span><LockKeyhole size={26} /></span><small>客户专属入口</small><h1>{linkContext.customerRegistered ? "登录后继续下单" : "完善资料并开通账号"}</h1><p>{linkContext.customerRegistered ? "该专属链接已关闭快捷登录，请使用密码或邮箱验证码登录。" : `您好，${linkContext.purchaserName || "客户"}。请先完成邮箱验证${linkContext.phoneCompletionRequired ? "并完善真实手机号" : ""}，以后即可安全登录。`}</p><a className="primary" href={linkContext.customerRegistered ? `/customer/login?shortId=${linkKey.purchaserId}` : `/customer/register?shortId=${linkKey.purchaserId}`}><LogIn size={17} />{linkContext.customerRegistered ? "立即登录下单" : "立即注册并下单"}</a>{linkContext.customerRegistered ? <a href="/customer/reset">忘记密码</a> : null}</section></div>;
+  if (accountOnboardingStep === "success" && linkContext.authenticated && linkContext.customerRegistered) return <div className="tool-page purchaser-order-page purchaser-onboarding-page">
+    <section className="purchaser-account-onboarding success-step">
+      <div className="onboarding-progress" aria-label="注册进度"><i className="done" /><i className="done" /><i className="active" /></div>
+      <span className="onboarding-success-mark"><CheckCircle2 size={34} /></span>
+      <small>WELCOME TO {String(linkContext.storeName || "XB").toUpperCase()}</small>
+      <h1>注册成功，欢迎你</h1>
+      <p>你的专属下单账号已经准备好了。最后选择是否让这条短链接以后直接进入下单页面。</p>
+      <button type="button" className={`onboarding-quick-choice${Number(linkContext.quickLoginEnabled) === 1 ? " selected" : ""}`} aria-pressed={Number(linkContext.quickLoginEnabled) === 1} disabled={profileBusy} onClick={() => void toggleOnboardingQuickLogin()}>
+        <span><Star size={19} /><b>短链快捷下单</b><small>再次打开当前短链接时，无需重复登录</small></span>
+        <i><span /></i>
+      </button>
+      <p className="onboarding-setting-note"><CircleHelp size={14} />以后可以在“我的”中随时打开或关闭</p>
+      {profileError ? <p className="onboarding-error"><AlertCircle size={15} />{profileError}</p> : null}
+      <button type="button" className="onboarding-primary" disabled={profileBusy} onClick={() => void finishAccountOnboarding()}>{profileBusy ? <LoaderCircle className="spin" size={17} /> : <ArrowRight size={17} />}开始下单</button>
+    </section>
+    {promptToast ? <div className="purchaser-prompt-toast"><CheckCircle2 size={16} />{promptToast.message}</div> : null}
+  </div>;
+
+  if (linkContext.accountRequired === 1 && !linkContext.authenticated) {
+    if (linkContext.customerRegistered) return <div className="tool-page purchaser-order-page purchaser-onboarding-page"><section className="purchaser-account-gate"><span><LockKeyhole size={26} /></span><small>客户专属入口</small><h1>登录后继续下单</h1><p>这条专属链接已关闭快捷下单，请使用密码或邮箱验证码验证身份。</p><a className="primary" href={`/customer/login?shortId=${linkKey.purchaserId}`}><LogIn size={17} />登录并继续</a><a href="/customer/reset">忘记密码</a></section></div>;
+
+    if (accountOnboardingStep === "register") return <div className="tool-page purchaser-order-page purchaser-onboarding-page">
+      <section className="purchaser-account-onboarding register-step">
+        <div className="onboarding-progress" aria-label="注册进度"><i className="done" /><i className="active" /><i /></div>
+        <button type="button" className="onboarding-back" onClick={() => { setProfileError(""); setAccountOnboardingStep("welcome"); }}><ArrowLeft size={16} />返回</button>
+        <small>创建你的专属账号</small>
+        <h1>只差一步</h1>
+        <p>验证邮箱并设置密码，注册完成后会直接回到当前专属下单页面。</p>
+        <form className="onboarding-register-form" onSubmit={submitAccountOnboarding}>
+          <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder="用于登录和找回密码" /></label>
+          {linkContext.phoneCompletionRequired ? <label><span>手机号</span><input inputMode="tel" autoComplete="tel" maxLength={11} value={mineRegisterDraft.phone} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入真实的11位手机号" /></label> : null}
+          <label><span>邮箱验证码</span><div className="onboarding-code-row"><input inputMode="numeric" maxLength={6} value={mineRegisterDraft.code} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={mineRegisterSending || mineRegisterBusy || mineRegisterCountdown > 0} onClick={() => void sendMineRegisterCode()}>{mineRegisterCountdown > 0 ? `${mineRegisterCountdown}s` : mineRegisterSending ? "发送中" : "获取验证码"}</button></div></label>
+          <label><span>登录密码</span><input type="password" autoComplete="new-password" value={mineRegisterDraft.password} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, password: event.target.value }))} placeholder="8-64位，包含字母和数字" /></label>
+          <label><span>确认密码</span><input type="password" autoComplete="new-password" value={mineRegisterDraft.confirmPassword} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, confirmPassword: event.target.value }))} placeholder="再次输入密码" /></label>
+          {mineRegisterPreview?.confirmRequired ? <div className="onboarding-existing-note"><b>{mineRegisterPreview.message || "发现已有买家档案"}</b><small>{[mineRegisterPreview.purchaserName, mineRegisterPreview.maskedPhone, mineRegisterPreview.maskedEmail].filter(Boolean).join(" · ")}</small><button type="button" onClick={() => { setMineRegisterConfirmExisting(true); setMineRegisterPreview(null); }}>确认并继续</button></div> : null}
+          {profileError ? <p className="onboarding-error"><AlertCircle size={15} />{profileError}</p> : null}
+          <button type="submit" className="onboarding-primary" disabled={mineRegisterBusy}>{mineRegisterBusy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}完成注册</button>
+        </form>
+      </section>
+      {promptToast ? <div className="purchaser-prompt-toast"><CheckCircle2 size={16} />{promptToast.message}</div> : null}
+    </div>;
+
+    return <div className="tool-page purchaser-order-page purchaser-onboarding-page">
+      <section className="purchaser-account-onboarding welcome-step">
+        <div className="onboarding-progress" aria-label="注册进度"><i className="active" /><i /><i /></div>
+        <div className="onboarding-orbit" aria-hidden="true"><span><User size={35} /></span><i /><i /></div>
+        <small>{linkContext.storeName || "专属下单"}</small>
+        <h1>你好，{linkContext.purchaserName || "新朋友"}</h1>
+        <p>欢迎来到你的专属下单空间。接下来会引导你安全地开通账号，全程不会离开这个页面。</p>
+        <div className="onboarding-benefits"><span><ShieldCheck size={16} />订单与资料更安全</span><span><Mail size={16} />邮箱验证，随时找回</span><span><Star size={16} />可选择短链快捷下单</span></div>
+        <button type="button" className="onboarding-primary" onClick={startAccountOnboarding}><ArrowRight size={17} />开始</button>
+        <em>大约需要 1 分钟</em>
+      </section>
+    </div>;
+  }
 
   const blockOrderOn = linkContext.blockOrder === 1;
   const blockQueryOn = linkContext.blockQuery === 1;
