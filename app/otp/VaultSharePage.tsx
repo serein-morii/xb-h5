@@ -67,7 +67,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   const statusMessage = status?.status === "EXPIRED" ? "授权已经过期" : status?.status === "REVOKED" ? "授权已被撤销" : status?.status === "LIMIT_REACHED" ? "授权访问次数已用完" : "授权链接不可用";
 
   if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
-  if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>HANDY LAB</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
+  if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
 
   const gateVisible = !sessionToken || !items.length;
   return <main className={`share-page ${gateVisible ? "is-gate" : "is-open"}`}>
