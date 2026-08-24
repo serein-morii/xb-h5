@@ -61,6 +61,7 @@
 .vault-card-actions button:first-child { color: var(--vault-accent); font-weight: 750; }
 .vault-page .vault-toast { border: 1px solid rgba(255, 255, 255, .22); background: linear-gradient(135deg, rgba(72, 92, 199, .96), rgba(112, 123, 225, .96)); color: #fff; box-shadow: 0 18px 42px rgba(72, 92, 199, .28); backdrop-filter: blur(14px); }
 .vault-page .vault-toast.is-error { background: linear-gradient(135deg, rgba(165, 72, 63, .96), rgba(203, 91, 83, .96)); box-shadow: 0 18px 42px rgba(165, 72, 63, .25); }
+.vault-account.is-blurred { display: inline-block; filter: blur(4px); opacity: .78; user-select: none; }
 .vault-group > header b { font-size: 12px; }
 .vault-share-list > article,
 .vault-settings { border: 0; background: #fff; box-shadow: 0 5px 20px rgba(34, 44, 76, .06); }
@@ -512,6 +513,15 @@
 .vault-shared-badge { margin-left: auto; padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
 .vault-code.is-readonly { cursor: default; }
 .vault-shared-expiry { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--utility-muted); font-size: 8px; }
+.vault-card.is-compact { padding: 10px 11px; border-radius: 15px; }
+.vault-card.is-compact .vault-service-mark { width: 30px; height: 30px; border-radius: 10px; font-size: 9px; }
+.vault-card.is-compact .vault-card-top b { font-size: 12px; }
+.vault-card.is-compact .vault-card-top small { font-size: 9px; }
+.vault-card.is-compact .vault-code { margin: 8px 0 5px; }
+.vault-card.is-compact .vault-code span { font-size: 21px; }
+.vault-card.is-compact .vault-no-code { height: 30px; margin: 7px 0 5px; font-size: 10px; }
+.vault-card.is-compact .vault-card-foot { margin-top: 4px; }
+.vault-card.is-compact .vault-card-actions { margin-top: 6px; padding-top: 6px; }
 
 .vault-share-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .vault-share-mode > button { min-width: 0; min-height: 58px; padding: 10px 11px; display: flex; align-items: center; gap: 9px; border: 1px solid var(--utility-line); border-radius: 12px; background: var(--utility-paper); color: var(--utility-muted); text-align: left; cursor: pointer; }
@@ -554,6 +564,23 @@
   .vault-card-foot { margin-top: 6px; }
   .vault-card-actions { margin-top: 8px; padding-top: 7px; gap: 12px; }
   .vault-card-actions button { width: 30px; height: 28px; }
+  .vault-card.is-compact { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "top code" "progress progress" "foot actions"; align-items: center; column-gap: 10px; row-gap: 5px; padding: 9px 10px; border-radius: 14px; }
+  .vault-card.is-compact .vault-card-top { grid-area: top; min-width: 0; gap: 7px; }
+  .vault-card.is-compact .vault-service-mark { width: 28px; height: 28px; border-radius: 9px; font-size: 8px; }
+  .vault-card.is-compact .vault-card-top b { font-size: 11px; }
+  .vault-card.is-compact .vault-card-top small { font-size: 8px; }
+  .vault-card.is-compact .vault-card-top > button,
+  .vault-card.is-compact .vault-shared-badge { display: none; }
+  .vault-card.is-compact .vault-code,
+  .vault-card.is-compact .vault-no-code { grid-area: code; width: auto; min-width: 86px; height: auto; margin: 0; justify-content: flex-end; gap: 5px; white-space: nowrap; }
+  .vault-card.is-compact .vault-code span { font-size: 20px; letter-spacing: .06em; }
+  .vault-card.is-compact .vault-code svg { display: none; }
+  .vault-card.is-compact .vault-no-code { min-width: 70px; font-size: 9px; }
+  .vault-card.is-compact .vault-progress { grid-area: progress; height: 3px; }
+  .vault-card.is-compact .vault-card-foot { grid-area: foot; margin-top: 0; justify-content: flex-start; gap: 8px; font-size: 8px; }
+  .vault-card.is-compact .vault-card-foot span:first-child { display: none; }
+  .vault-card.is-compact .vault-card-actions { grid-area: actions; justify-content: flex-end; margin-top: 0; padding-top: 0; border-top: 0; gap: 6px; }
+  .vault-card.is-compact .vault-card-actions button { width: 24px; height: 24px; }
   .vault-create-share { width: 43px; height: 43px; border: 1px solid #cfd5f3; border-radius: 50%; background: rgba(255,255,255,.94); color: #485cc7; box-shadow: 0 9px 24px rgba(35, 49, 99, .18); backdrop-filter: blur(14px); }
   .vault-share-mode { grid-template-columns: 1fr; }
 }
