@@ -112,8 +112,11 @@
 .vault-scanner-view { position: relative; min-height: 220px; overflow: hidden; display: grid; place-items: center; border-radius: 16px; background: #101725; }
 .vault-scanner-view video { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; }
 .vault-scanner-view > span { position: relative; z-index: 1; width: 126px; height: 126px; display: grid; place-items: center; border: 2px solid rgba(255, 255, 255, .78); border-radius: 18px; color: #fff; box-shadow: 0 0 0 999px rgba(5, 9, 18, .2); }
+.vault-scanner .vault-scanner-view { min-height: 240px; }
+.vault-scanner .vault-section-help { margin: 10px 0 0; }
 .vault-scan-files { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.vault-scan-file { min-height: 58px !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; padding: 0 16px !important; }
+.vault-scan-file { min-height: 58px !important; margin: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; padding: 0 16px !important; border-color: #dce0f5 !important; background: #f0f2fd !important; }
+.vault-scan-file span { color: #485cc7 !important; font-size: 11px; font-weight: 750; }
 .vault-scan-error { margin: 10px 0 0; padding: 10px 11px; border-radius: 10px; background: #fff0ed; color: #a5483f; font-size: 10px; line-height: 1.5; }
 
 .vault-share-list > article { cursor: pointer; outline: 0; transition: .16s; }
@@ -315,6 +318,8 @@
 	  .vault-delete-icon { background: #3a2023; color: #f2aaa7; }
 	  .vault-scan-entry { border-color: #343f63; background: #222b4a; color: #b1baff; }
   .vault-scan-entry small { color: #929caf; }
+  .vault-scan-file { border-color: #343f63 !important; background: #222b4a !important; }
+  .vault-scan-file span { color: #b1baff !important; }
   .vault-scan-error { background: #3a2023; color: #f2aaa7; }
   .vault-share-detail-hero, .vault-select-list label.is-selected, .vault-option-grid label.is-selected { background: #222b4a; }
   .vault-share-detail-grid section, .vault-share-detail-section, .vault-toggle-row, .vault-option-grid label { background: #101725; }
