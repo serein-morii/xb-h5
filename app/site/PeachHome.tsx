@@ -19,6 +19,11 @@ export default function PeachHome() {
       <aside className="peach-snap-progress" aria-hidden="true">
         {pages.map((page) => <span key={page.index}>{page.index}</span>)}
       </aside>
+      <a className="peach-lab-portal" href="/lab" aria-label="打开 Handy Lab 灵感实验室">
+        <span className="peach-lab-orbit" aria-hidden="true"><i /><i /><i /></span>
+        <span className="peach-lab-copy"><small>HANDY</small><b>LAB</b></span>
+        <span className="peach-lab-arrow" aria-hidden="true">↗</span>
+      </a>
 
       <section className="peach-snap-panel peach-snap-panel-hero" aria-labelledby="peach-snap-title">
         <div className="peach-snap-mark" aria-hidden="true">

@@ -179,7 +179,7 @@ export async function apiRequest<T = Record<string, unknown>>(
  *  - change：已登录用户用邮箱改密
  *  - bind：已登录用户绑定/更换邮箱
  */
-export type EmailCodeType = "login" | "reset" | "change" | "bind";
+export type EmailCodeType = "login" | "reset" | "change" | "bind" | "otp-login" | "otp-register";
 
 /**
  * 发送邮箱验证码（公开接口）
@@ -195,11 +195,11 @@ export function sendEmailCode(email: string, type: EmailCodeType) {
 /**
  * 邮箱登录（公开接口）：返回与 /login 同结构的结果（含 token）
  */
-export function loginByEmail(email: string, code: string) {
+export function loginByEmail(email: string, code: string, type: "login" | "otp-login" = "login", longSession = false) {
   return apiRequest<{ token: string }>("/loginByEmail", {
     auth: false,
     method: "POST",
-    body: { email: email.trim(), code: code.trim() },
+    body: { email: email.trim(), code: code.trim(), type, longSession: String(longSession) },
   });
 }
 
@@ -406,6 +406,7 @@ export const LOCAL_ROUTES: string[] = [
   "/tools/order-link", "/tools/place-order", "/tools/purchasers",
   "/tools/store-query",
   "/tools/freight-calculator", "/tools/freight-compare",
+  "/lab", "/lab/video-extract",
 ];
 // path 命名约束：跟后端 ShortLinkServiceImpl.createShortLink 同步
 export const SHORT_LINK_PATH_RULE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;

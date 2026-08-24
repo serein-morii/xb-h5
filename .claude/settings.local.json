@@ -106,7 +106,8 @@
       "Bash(xargs cat:*)",
       "Bash(grep -rn \"theme-dark\\\\|setTheme\\\\|dark-mode\\\\|moon\\\\|Sun\\\\|Moon\" /Users/xp/dev/xb/order/xb-h5/app/*.tsx /Users/xp/dev/xb/order/xb-h5/app/components)",
       "Bash(grep -rn \"theme-dark\\\\|color-scheme\" /Users/xp/dev/xb/order/xb-h5/app/*.tsx /Users/xp/dev/xb/order/xb-h5/index.html)",
-      "Bash(rg -n \"返回|back|Back|goBack|history\\\\.back|mobileBack|navBack|onBack\" app/admin app --glob '*.{tsx,ts,css}')"
+      "Bash(rg -n \"返回|back|Back|goBack|history\\\\.back|mobileBack|navBack|onBack\" app/admin app --glob '*.{tsx,ts,css}')",
+      "Read(//Users/xp/dev/xb/video-extract-workers/**)"
     ]
   }
 }
