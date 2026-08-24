@@ -45,6 +45,10 @@ export type VaultRecipient = {
   userId: number; userName: string; nickName?: string; email?: string;
 };
 
+export type VaultPrefs = {
+  masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
+};
+
 export type ShareStatus = {
   status: string; accessCodeRequired: boolean; expireTime: string;
   itemCount: number; remainingAccessCount?: number;
@@ -61,6 +65,8 @@ export const saveVaultCredential = (id: number | null, body: Record<string, unkn
 export const deleteVaultCredential = (id: number) => otpApiRequest(`/otp/vault/credentials/${id}`, { method: "DELETE" });
 export const importLegacyVault = (text: string, ownerUsername = "") => otpApiRequest<{ data: { total: number; created: number; updated: number; ownerUsername: string } }>("/otp/vault/import/legacy", { method: "POST", body: { text, ownerUsername } });
 export const listVaultRecipients = (keyword: string) => otpApiRequest<{ data: VaultRecipient[] }>(`/otp/vault/recipients?keyword=${encodeURIComponent(keyword)}`);
+export const getVaultPreferences = () => otpApiRequest<{ data: VaultPrefs }>("/otp/vault/preferences");
+export const saveVaultPreferences = (body: VaultPrefs) => otpApiRequest<{ data: VaultPrefs }>("/otp/vault/preferences", { method: "PUT", body });
 export const listVaultShares = () => otpApiRequest<{ data: VaultShare[] }>("/otp/vault/shares");
 export const getVaultShare = (id: number) => otpApiRequest<{ data: VaultShare }>(`/otp/vault/shares/${id}`);
 export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest<{ data: { id: number; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string; itemCount: number } }>("/otp/vault/shares", { method: "POST", body });
