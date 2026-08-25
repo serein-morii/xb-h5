@@ -179,7 +179,10 @@ export async function apiRequest<T = Record<string, unknown>>(
  *  - change：已登录用户用邮箱改密
  *  - bind：已登录用户绑定/更换邮箱
  */
-export type EmailCodeType = "login" | "reset" | "change" | "bind" | "otp-login" | "otp-register";
+export type EmailCodeType = "login" | "reset" | "change" | "bind" | "otp-login" | "otp-register" | "otp-change";
+
+/** 注册 / 换绑提示。实际拦截以后端域名白名单为准。 */
+export const COMMON_MAILBOX_HINT = "请使用 QQ、163、Gmail、Outlook 等常用邮箱";
 
 /**
  * 发送邮箱验证码（公开接口）

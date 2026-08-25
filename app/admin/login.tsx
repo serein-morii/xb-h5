@@ -19,6 +19,7 @@ import {
   resetPasswordByEmail,
   sendEmailCode,
   updateProfile,
+  COMMON_MAILBOX_HINT,
 } from "../lib/api";
 import type { DataRow } from "./core";
 import { AppLogo, Sheet, Toast } from "./ui";
@@ -796,7 +797,7 @@ export function BindEmailSheet({
         }}
       >
         <p className="email-auth-tip top">
-          验证码会发到下面填写的邮箱，填写后请到对应邮箱查收。{currentEmail ? `当前已绑定：${currentEmail}` : "当前未绑定邮箱，绑定后即可使用邮箱登录 / 找回密码 / 邮箱改密。"}
+          验证码会发到下面填写的邮箱，填写后请到对应邮箱查收。{COMMON_MAILBOX_HINT}。{currentEmail ? `当前已绑定：${currentEmail}` : "当前未绑定邮箱，绑定后即可使用邮箱登录 / 找回密码 / 邮箱改密。"}
         </p>
         <label>
           <span>新邮箱</span>
@@ -807,7 +808,7 @@ export function BindEmailSheet({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              placeholder="请输入新邮箱"
+              placeholder={COMMON_MAILBOX_HINT}
             />
           </div>
         </label>

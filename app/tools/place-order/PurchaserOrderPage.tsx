@@ -1,7 +1,7 @@
 
 import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ApiError, apiRequest, clearCustomerToken, customerHeaders, setCustomerToken } from "../../lib/api";
+import { ApiError, apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, customerHeaders, setCustomerToken } from "../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { StatusFilter, computeOrderStats } from "../OrderStatsCards";
 import { SliderCaptcha } from "../../components/SliderCaptcha";
@@ -1349,7 +1349,7 @@ export default function PurchaserOrderPage() {
         <h1>只差一步</h1>
         <p>验证邮箱并设置密码，注册完成后会直接回到当前专属下单页面。</p>
         <form className="onboarding-register-form" onSubmit={submitAccountOnboarding}>
-          <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder="用于登录和找回密码" /></label>
+          <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder={COMMON_MAILBOX_HINT} /></label>
           {linkContext.phoneCompletionRequired ? <label><span>手机号</span><input inputMode="tel" autoComplete="tel" maxLength={11} value={mineRegisterDraft.phone} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入真实的11位手机号" /></label> : null}
           <label><span>邮箱验证码</span><div className="onboarding-code-row"><input inputMode="numeric" maxLength={6} value={mineRegisterDraft.code} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={mineRegisterSending || mineRegisterBusy || mineRegisterCountdown > 0} onClick={() => void sendMineRegisterCode()}>{mineRegisterCountdown > 0 ? `${mineRegisterCountdown}s` : mineRegisterSending ? "发送中" : "获取验证码"}</button></div></label>
           <label><span>登录密码</span><input type="password" autoComplete="new-password" value={mineRegisterDraft.password} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, password: event.target.value }))} placeholder="8-64位，包含字母和数字" /></label>
@@ -1507,9 +1507,9 @@ export default function PurchaserOrderPage() {
           <label><span>当前邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={phoneDraft.code} onChange={(event) => setPhoneDraft((current) => ({ ...current, code: event.target.value.replace(/\D/g, "") }))} placeholder="6位验证码" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
           <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerPhone()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认修改</button>
         </> : <>
-          <header><div><h3 id="purchaser-profile-editor-title">修改绑定邮箱</h3><p>先验证当前邮箱，再验证新邮箱</p></div><button type="button" disabled={profileBusy} onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
+          <header><div><h3 id="purchaser-profile-editor-title">修改绑定邮箱</h3><p>先验证当前邮箱，再验证新邮箱。{COMMON_MAILBOX_HINT}</p></div><button type="button" disabled={profileBusy} onClick={() => setProfileEditor(null)}><X size={17} /></button></header>
           <label><span>当前邮箱验证码</span><div><input autoFocus inputMode="numeric" maxLength={6} value={emailDraft.currentCode} onChange={(event) => setEmailDraft((current) => ({ ...current, currentCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至当前邮箱" /><button type="button" disabled={profileBusy} onClick={() => void sendCustomerProfileCode("current")}>获取验证码</button></div></label>
-          <label><span>新邮箱</span><input inputMode="email" value={emailDraft.email} onChange={(event) => setEmailDraft((current) => ({ ...current, email: event.target.value }))} placeholder="请输入新的邮箱地址" /></label>
+          <label><span>新邮箱</span><input inputMode="email" value={emailDraft.email} onChange={(event) => setEmailDraft((current) => ({ ...current, email: event.target.value }))} placeholder={COMMON_MAILBOX_HINT} /></label>
           <label><span>新邮箱验证码</span><div><input inputMode="numeric" maxLength={6} value={emailDraft.newCode} onChange={(event) => setEmailDraft((current) => ({ ...current, newCode: event.target.value.replace(/\D/g, "") }))} placeholder="发送至新邮箱" /><button type="button" disabled={profileBusy || !emailDraft.email.trim()} onClick={() => void sendCustomerProfileCode("new-email")}>获取验证码</button></div></label>
           <button className="purchaser-profile-save" type="button" disabled={profileBusy} onClick={() => void saveCustomerEmail()}>{profileBusy ? <LoaderCircle className="spin" size={16} /> : null}确认换绑</button>
         </>}
@@ -1522,7 +1522,7 @@ export default function PurchaserOrderPage() {
         <header><div><h3 id="purchaser-mine-register-title">开通客户账号</h3><p>注册后可继续使用当前专属下单页，也能用邮箱和密码登录。</p></div><button type="button" disabled={mineRegisterBusy} onClick={() => setMineRegisterOpen(false)}><X size={17} /></button></header>
         <label><span>姓名</span><input autoFocus autoComplete="name" maxLength={30} value={mineRegisterDraft.name} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, name: event.target.value }))} placeholder="用于收货与订单识别" /></label>
         <label><span>真实手机号</span><input inputMode="tel" autoComplete="tel" maxLength={11} value={mineRegisterDraft.phone} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "") }))} placeholder="请输入11位手机号" /></label>
-        <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder="用于登录和找回密码" /></label>
+        <label><span>邮箱</span><input type="email" autoComplete="email" value={mineRegisterDraft.email} onChange={(event) => setMineRegisterDraft((current) => ({ ...current, email: event.target.value }))} placeholder={COMMON_MAILBOX_HINT} /></label>
         {mineRegisterPreview?.confirmRequired ? (
           <section className="purchaser-mine-register-confirm">
             <b>{mineRegisterPreview.registered && mineRegisterPreview.matchType === "phone" ? "该手机号已绑定账号" : "发现已有买家档案"}</b>

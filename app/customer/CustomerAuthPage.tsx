@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { apiRequest, clearCustomerToken, getCustomerToken, setCustomerToken } from "../lib/api";
+import { apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, getCustomerToken, setCustomerToken } from "../lib/api";
 import { SliderCaptcha } from "../components/SliderCaptcha";
 
 type Mode = "login" | "register" | "reset";
@@ -211,7 +211,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
               <button type="button" className={loginMethod === "code" ? "active" : ""} onClick={() => setLoginMethod("code")}>邮箱验证码</button>
             </div>
           ) : null}
-          <label><span>邮箱</span><input type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder={context?.maskedEmail || "用于登录和找回密码"} /></label>
+          <label><span>邮箱</span><input type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder={context?.maskedEmail || (mode === "register" ? COMMON_MAILBOX_HINT : "用于登录和找回密码")} />{mode === "register" ? <small>{COMMON_MAILBOX_HINT}</small> : null}</label>
           {mode === "register" && (isSelfRegistration || context?.phoneRequired) ? (
             <label><span>真实手机号</span><input inputMode="tel" autoComplete="tel" maxLength={11} value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ""))} placeholder={isSelfRegistration ? "用于创建买家资料" : "当前为占位手机号，请先完善"} /></label>
           ) : null}
