@@ -1,3 +1,8 @@
+.otp-boot { display: grid; justify-items: center; gap: 14px; color: #98a7dd; font-size: 13px; }
+.otp-boot-mark { width: 28px; height: 28px; border: 2px solid rgba(152, 167, 221, .25); border-top-color: #9eabff; border-radius: 50%; animation: otp-boot-spin .7s linear infinite; }
+.otp-boot p { margin: 0; }
+@keyframes otp-boot-spin { to { transform: rotate(360deg); } }
+
 .otp-auth-page {
   min-height: 100dvh;
   padding: 28px 16px;

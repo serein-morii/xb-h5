@@ -82,6 +82,8 @@ location / {
 
 `try_files` 不能省略，否则直接刷新 `/tools/order-search`、`/order` 等页面会出现 404。
 
+独立域名（`otp.gooop.top` 这类）不要反代到 `/otp` 子路径，否则静态资源 404、页面卡在启动占位文案。约定和 nginx 模板见 [docs/subsystem-host.md](docs/subsystem-host.md)。
+
 ## 主要功能
 
 - 登录：账号、密码、验证码登录，密码使用后端公钥进行 RSA 加密。

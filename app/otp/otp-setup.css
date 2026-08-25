@@ -1,0 +1,120 @@
+/* OTP 账号补全面板（注册引导 + 设置页 modal 共用），视觉与 otp-auth 一致 */
+
+.otp-setup { display: flex; flex-direction: column; gap: 14px; }
+
+.otp-setup-steps { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.otp-setup-steps li { flex: 1; display: flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid #e5e7ee; border-radius: 12px; background: #f3f4f9; color: #8f96a8; font-size: 10px; font-weight: 700; }
+.otp-setup-steps li > span { display: grid; place-items: center; min-width: 18px; height: 18px; border-radius: 6px; background: #e2e5ee; font-size: 9px; }
+.otp-setup-steps li.is-active { border-color: #b9c0f0; background: #eef0fb; color: #4e5ec7; }
+.otp-setup-steps li.is-active > span { background: #5868d9; color: #fff; }
+.otp-setup-steps li.is-done { color: #4e5ec7; }
+.otp-setup-steps li.is-done > span { background: #c6cdf5; color: #4e5ec7; }
+
+.otp-setup-step { display: flex; flex-direction: column; gap: 11px; }
+.otp-setup-step > header { display: flex; align-items: center; gap: 10px; }
+.otp-setup-step-icon { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 12px; background: #e8ebfa; color: #4e5ec7; }
+.otp-setup-step > header b { display: block; color: #222739; font-size: 14px; }
+.otp-setup-step > header small { display: block; margin-top: 2px; color: #818797; font-size: 10px; }
+
+.otp-setup-step label { display: flex; flex-direction: column; gap: 5px; }
+.otp-setup-step label > span { padding-left: 2px; color: #5a6070; font-size: 10px; font-weight: 700; }
+.otp-setup-step label > div { min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: 12px; background: #eef0f5; color: #7c8394; }
+.otp-setup-step label > div:focus-within { border-color: #aeb6ec; background: #fff; box-shadow: 0 0 0 3px rgba(88, 104, 217, .08); }
+.otp-setup-step input { flex: 1; min-width: 0; border: 0; background: transparent; color: #262b3d; font-size: 13px; outline: none; }
+.otp-setup-step input::placeholder { color: #9aa0af; }
+.otp-setup-generated label > div button,
+.otp-setup-step label > div > button { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; background: #dde1f6; color: #4e5ec7; cursor: pointer; }
+.otp-setup-generated label > div button:active { background: #c9cfee; }
+
+.otp-setup-hint { margin: 0; display: flex; align-items: flex-start; gap: 6px; color: #8a91a2; font-size: 9px; line-height: 1.6; }
+.otp-setup-hint > svg { flex: none; margin-top: 1px; color: #a76b15; }
+
+.otp-setup-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.otp-setup-options > button { position: relative; padding: 10px 11px 10px 34px; display: flex; align-items: center; gap: 8px; border: 1px solid #e5e7ee; border-radius: 13px; background: #f8f9fc; color: #4b5163; text-align: left; cursor: pointer; }
+.otp-setup-options > button > span:not(.otp-setup-option-radio) { min-width: 0; }
+.otp-setup-options > button b { display: block; font-size: 11px; }
+.otp-setup-options > button small { display: block; margin-top: 2px; color: #8a91a2; font-size: 9px; }
+.otp-setup-options > button > svg { margin-left: auto; flex: none; color: #5868d9; }
+.otp-setup-option-radio { position: absolute; top: 13px; left: 12px; width: 14px; height: 14px; border: 2px solid #c9cede; border-radius: 50%; }
+.otp-setup-options > button.is-selected { border-color: #a9b1ea; background: #eef0fb; }
+.otp-setup-options > button.is-selected .otp-setup-option-radio { border-color: #5868d9; background: radial-gradient(circle, #5868d9 45%, transparent 50%); }
+
+.otp-setup-generated { display: flex; flex-direction: column; gap: 8px; padding: 10px 11px; border: 1px dashed #b9c0f0; border-radius: 13px; background: #f5f6fd; }
+.otp-setup-generated label { gap: 6px; }
+.otp-setup-generated label > div { background: #fff; }
+.otp-setup-generated input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .06em; }
+
+.otp-setup-custom { display: flex; flex-direction: column; gap: 11px; }
+
+.otp-setup-verify { display: flex; flex-direction: column; gap: 10px; padding: 10px 11px; border: 1px solid #e5e7ee; border-radius: 13px; background: #f8f9fc; }
+.otp-setup-verify-tabs { display: flex; gap: 16px; border-bottom: 1px solid #e5e7ee; }
+.otp-setup-verify-tabs button { position: relative; padding: 2px 1px 8px; border: 0; background: transparent; color: #959aa7; font-size: 11px; font-weight: 700; cursor: pointer; }
+.otp-setup-verify-tabs button.is-active { color: #4e5ec7; }
+.otp-setup-verify-tabs button.is-active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; border-radius: 2px; background: #5868d9; }
+.otp-setup-verify .otp-email-code { flex: 1; min-height: 44px; padding: 0 8px 0 12px; display: flex; align-items: center; gap: 8px; }
+
+.otp-setup-warning { margin: 0; padding: 10px 11px; display: flex; align-items: flex-start; gap: 8px; border: 1px solid #f0d7ad; border-radius: 12px; background: #fff8e9; color: #a76b15; }
+.otp-setup-warning > svg { flex: none; margin-top: 1px; }
+.otp-setup-warning b, .otp-setup-warning small { display: block; }
+.otp-setup-warning b { font-size: 10px; }
+.otp-setup-warning small { margin-top: 3px; color: #9b7540; font-size: 9px; line-height: 1.6; }
+
+.otp-setup-message { margin: 0; padding: 9px 11px; border-radius: 11px; background: #fdeceb; color: #c0504a; font-size: 10px; line-height: 1.5; }
+
+.otp-setup-actions { margin-top: 3px; display: flex; gap: 9px; }
+.otp-setup-actions > button { flex: 1; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 12px; font-size: 12px; font-weight: 750; cursor: pointer; }
+.otp-setup-actions > .otp-setup-ghost { border: 1px solid #dcdfe9; background: #fff; color: #5a6070; }
+.otp-setup-actions > .otp-setup-primary { background: #5363d2; color: #fff; box-shadow: 0 9px 22px rgba(74, 89, 194, .22); }
+.otp-setup-actions > button:disabled { opacity: .6; cursor: default; }
+
+/* 设置页 modal 中打开时收窄外层留白 */
+.vault-modal .otp-setup { gap: 12px; }
+
+/* 设置页「账号安全」入口 */
+.vault-account-entry { width: 100%; padding: 13px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; border: 0; border-top: 1px solid rgba(38, 50, 77, .07); background: #fff; color: #3b4356; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; transition: background .15s; }
+.vault-account-entry:hover { background: #fafbfe; }
+.vault-account-entry small { color: var(--utility-muted); font-size: 9px; font-weight: 500; }
+
+@media (prefers-color-scheme: dark) {
+  .otp-setup-steps li { border-color: #293143; background: #0e1523; color: #7f899e; }
+  .otp-setup-steps li > span { background: #1d2637; }
+  .otp-setup-steps li.is-active { border-color: #3c4879; background: #1a2238; color: #9eabff; }
+  .otp-setup-steps li.is-active > span { background: #4c5cd0; }
+  .otp-setup-steps li.is-done { color: #9eabff; }
+  .otp-setup-steps li.is-done > span { background: #2c375c; color: #9eabff; }
+
+  .otp-setup-step-icon { background: #232c44; color: #9eabff; }
+  .otp-setup-step > header b { color: #eef0fa; }
+  .otp-setup-step > header small { color: #8f98ab; }
+  .otp-setup-step label > span { color: #aeb6c8; }
+  .otp-setup-step label > div { background: #171f2e; }
+  .otp-setup-step label > div:focus-within { border-color: #606fce; background: #1b2435; box-shadow: 0 0 0 3px rgba(113, 129, 237, .11); }
+  .otp-setup-step input { color: #f0f3fa; }
+  .otp-setup-step input::placeholder { color: #657086; }
+  .otp-setup-generated label > div button,
+  .otp-setup-step label > div > button { background: #293352; color: #b1bbff; }
+
+  .otp-setup-hint { color: #8f98ab; }
+  .otp-setup-hint > svg { color: #d9a05b; }
+
+  .otp-setup-options > button { border-color: #293143; background: #0e1523; color: #d6dae6; }
+  .otp-setup-options > button small { color: #7f899e; }
+  .otp-setup-options > button > svg { color: #9eabff; }
+  .otp-setup-option-radio { border-color: #3d465c; }
+  .otp-setup-options > button.is-selected { border-color: #3c4879; background: #1a2238; }
+  .otp-setup-options > button.is-selected .otp-setup-option-radio { border-color: #7181ed; background: radial-gradient(circle, #7181ed 45%, transparent 50%); }
+
+  .otp-setup-generated { border-color: #3c4879; background: #161f31; }
+  .otp-setup-generated label > div { background: #101828; }
+  .otp-setup-warning { border-color: #5f4829; background: #30251f; color: #f0b36f; }
+  .otp-setup-warning small { color: #c59a6e; }
+  .otp-setup-message { background: #3a2321; color: #f0968f; }
+  .otp-setup-actions > .otp-setup-ghost { border-color: #333d52; background: #171f2e; color: #aeb6c8; }
+  .otp-setup-verify { border-color: #293143; background: #0e1523; }
+  .otp-setup-verify-tabs { border-color: #293143; }
+  .otp-setup-verify-tabs button { color: #7f899e; }
+  .otp-setup-verify-tabs button.is-active { color: #9eabff; }
+  .vault-account-entry { border-top-color: rgba(226, 232, 255, .14); background: transparent; color: #dfe4ef; }
+  .vault-account-entry:hover { background: rgba(226, 232, 255, .05); }
+  .vault-account-entry small { color: #8992a8; }
+}

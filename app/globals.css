@@ -2557,6 +2557,13 @@ html.theme-dark .purchaser-block-group .purchaser-order-code-row > svg { color: 
   letter-spacing: 0.08em;
 }
 
+html[data-otp] .app-starting {
+  color: #98a7dd;
+  background: #0e1730;
+  letter-spacing: 0;
+}
+
+
 .spa-not-found span {
   color: #1d9a64;
   font-size: 64px;

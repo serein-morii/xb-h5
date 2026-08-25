@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./lib/api";
+import { collectSubsystemPrefixes, resolveSubsystemPath } from "./lib/subsystemHost";
 import PeachHome from "./site/PeachHome";
 
 const MobileAdmin = lazy(() => import("./MobileAdmin"));
@@ -173,10 +174,7 @@ const routes: Record<string, RouteConfig> = {
   },
 };
 
-function normalizePath(pathname: string) {
-  if (pathname === "/") return pathname;
-  return pathname.replace(/\/+$/, "");
-}
+const subsystemPrefixes = collectSubsystemPrefixes(Object.keys(routes));
 
 function NotFound() {
   return (
@@ -213,7 +211,7 @@ type ShortLinkResolveState =
   | { status: "not-found" };
 
 export default function App() {
-  const pathname = normalizePath(window.location.pathname);
+  const pathname = resolveSubsystemPath(window.location.pathname, window.location.hostname, subsystemPrefixes);
   const [shortLinkState, setShortLinkState] = useState<ShortLinkResolveState | null>(null);
   // 专属查单页用：店铺名异步加载好之后回传上来，标题/描述才有真名而不是 URL 里的 code
   const [storeQueryResolvedName, setStoreQueryResolvedName] = useState<string>("");

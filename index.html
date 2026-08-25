@@ -9,9 +9,25 @@
     <meta name="description" content="专为手机端设计的喜八订单管理工作台。" />
     <link rel="icon" href="/favicon.svg" />
     <title>喜八移动订单管理</title>
+    <script>
+      (function () {
+        var host = location.hostname.toLowerCase();
+        var path = location.pathname.replace(/\/+$/, "") || "/";
+        var otp = host === "otp.gooop.top" || host.indexOf("otp.") === 0 || path === "/otp" || path.indexOf("/otp/") === 0 || path.indexOf("/s/") === 0;
+        if (!otp) return;
+        document.title = "OTP Vault";
+        document.documentElement.dataset.otp = "1";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"><div class="app-starting">正在启动移动工作台…</div></div>
+    <script>
+      if (document.documentElement.dataset.otp) {
+        var el = document.querySelector(".app-starting");
+        if (el) el.textContent = "正在打开 OTP Vault…";
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

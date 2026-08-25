@@ -1,15 +1,15 @@
 import { KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldAlert, ShieldCheck, User, UserPlus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { SliderCaptcha } from "../components/SliderCaptcha";
-import { apiRequest, loginByEmail, sendEmailCode } from "../lib/api";
+import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "../lib/api";
+import { registerOtpAccount } from "./vaultApi";
 import "./otp-auth.css";
 
-export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (token: string) => void }) {
+export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (token: string, registration?: { username: string }) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [loginMethod, setLoginMethod] = useState<"password" | "email">("password");
+  const [loginMethod, setLoginMethod] = useState<"password" | "email">("email");
   const [username, setUsername] = useState(() => localStorage.getItem("otp-vault-username") || "");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [emailSending, setEmailSending] = useState(false);
@@ -33,7 +33,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
   }, [countdown]);
 
   const switchMode = (next: "login" | "register") => {
-    setMode(next); setLoginMethod("password"); setPassword(""); setConfirmPassword(""); setEmailCode(""); setCountdown(0); setUuid(""); setCode(""); setMessage(""); setCaptchaReset((value) => value + 1);
+    setMode(next); setLoginMethod("email"); setPassword(""); setEmailCode(""); setCountdown(0); setUuid(""); setCode(""); setMessage(""); setCaptchaReset((value) => value + 1);
   };
 
   const switchLoginMethod = (next: "password" | "email") => {
@@ -51,19 +51,35 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
     finally { setEmailSending(false); }
   }
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    const account = username.trim();
-    if ((mode === "register" || loginMethod === "password") && (account.length < 2 || account.length > 20)) return setMessage("账号长度必须为 2-20 位");
-    if ((mode === "register" || loginMethod === "password") && (password.length < 5 || password.length > 20)) return setMessage("密码长度必须为 5-20 位");
-    if (mode === "register" && password !== confirmPassword) return setMessage("两次输入的密码不一致");
-    if ((mode === "register" || loginMethod === "email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setMessage("请输入正确的邮箱地址");
-    if ((mode === "register" || loginMethod === "email") && !/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
-    if (captchaOn && (mode === "register" || loginMethod === "password") && (!uuid || !code)) return setMessage("请先完成滑块验证");
-    if ((mode === "register" || loginMethod === "password") && !publicKey) return setMessage("安全加密尚未准备完成，请稍后重试");
+  // 注册只需邮箱 + 验证码，成功即自动登录，由保险库引导页补全用户名和密码
+  async function submitRegister() {
+    const value = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
+    if (!/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
     setBusy(true); setMessage("");
     try {
-      if (mode === "login" && loginMethod === "email") {
+      const result = await registerOtpAccount(value, emailCode.trim());
+      const token = String(result.token || "");
+      if (!token) throw new Error("注册成功但未返回凭证");
+      onAuthenticated(token, { username: String(result.username || value.split("@")[0]) });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "注册失败");
+    } finally { setBusy(false); }
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (mode === "register") return void submitRegister();
+    const account = username.trim();
+    if (loginMethod === "password" && (account.length < 2 || account.length > 20)) return setMessage("账号长度必须为 2-20 位");
+    if (loginMethod === "password" && (password.length < 5 || password.length > 20)) return setMessage("密码长度必须为 5-20 位");
+    if (loginMethod === "email" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setMessage("请输入正确的邮箱地址");
+    if (loginMethod === "email" && !/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
+    if (captchaOn && loginMethod === "password" && (!uuid || !code)) return setMessage("请先完成滑块验证");
+    if (loginMethod === "password" && !publicKey) return setMessage("安全加密尚未准备完成，请稍后重试");
+    setBusy(true); setMessage("");
+    try {
+      if (loginMethod === "email") {
         const result = await loginByEmail(email, emailCode, "otp-login", longSession);
         const token = String(result.token || "");
         if (!token) throw new Error("登录成功但未返回凭证");
@@ -74,19 +90,13 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
       const encryptor = new JSEncrypt(); encryptor.setPublicKey(publicKey);
       const encryptedPassword = encryptor.encrypt(password);
       if (!encryptedPassword) throw new Error("密码加密失败");
-      if (mode === "register") {
-        await apiRequest("/register", { auth: false, method: "POST", body: { username: account, password: encryptedPassword, email: email.trim().toLowerCase(), emailCode: emailCode.trim(), code, uuid } });
-        localStorage.setItem("otp-vault-username", account);
-        switchMode("login"); setUsername(account); setMessage("注册成功，请登录 OTP Vault");
-      } else {
-        const result = await apiRequest<Record<string, unknown>>("/login", { auth: false, method: "POST", body: { username: account, password: encryptedPassword, code, uuid, longSession } });
-        const token = String(result.token || "");
-        if (!token) throw new Error("登录成功但未返回凭证");
-        localStorage.setItem("otp-vault-username", account);
-        onAuthenticated(token);
-      }
+      const result = await apiRequest<Record<string, unknown>>("/login", { auth: false, method: "POST", body: { username: account, password: encryptedPassword, code, uuid, longSession } });
+      const token = String(result.token || "");
+      if (!token) throw new Error("登录成功但未返回凭证");
+      localStorage.setItem("otp-vault-username", account);
+      onAuthenticated(token);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : mode === "login" ? "登录失败" : "注册失败");
+      setMessage(error instanceof Error ? error.message : "登录失败");
       setUuid(""); setCode(""); setCaptchaReset((value) => value + 1);
     } finally { setBusy(false); }
   }
@@ -99,19 +109,18 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
     </section>
     <section className="otp-auth-card">
       <span className="otp-auth-handle" aria-hidden="true" />
-      <div className="otp-auth-copy"><h2>{mode === "login" ? "欢迎回来" : "创建账户"}</h2><p>{mode === "login" ? loginMethod === "email" ? "使用绑定邮箱和验证码登录。" : "使用账号密码登录 OTP Vault。" : "通过邮箱验证创建独立 OTP 账户。"}</p></div>
+      <div className="otp-auth-copy"><h2>{mode === "login" ? "欢迎回来" : "创建账户"}</h2><p>{mode === "login" ? loginMethod === "email" ? "使用绑定邮箱和验证码登录。" : "使用账号密码登录 OTP Vault。" : `只需邮箱和验证码，注册成功后自动登录。${COMMON_MAILBOX_HINT}。`}</p></div>
       <div className="otp-auth-tabs"><button type="button" className={mode === "login" ? "is-active" : ""} onClick={() => switchMode("login")}>登录</button><button type="button" className={mode === "register" ? "is-active" : ""} onClick={() => switchMode("register")}>注册</button></div>
       <form className="otp-auth-form" onSubmit={submit}>
-        {mode === "login" ? <div className="otp-login-methods"><button type="button" className={loginMethod === "password" ? "is-active" : ""} onClick={() => switchLoginMethod("password")}>账号密码</button><button type="button" className={loginMethod === "email" ? "is-active" : ""} onClick={() => switchLoginMethod("email")}>邮箱验证码</button></div> : null}
-        {mode === "register" || loginMethod === "password" ? <label><span>账号</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位账号" /></div></label> : null}
-        {mode === "register" || loginMethod === "email" ? <label><span>邮箱</span><div><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={50} autoComplete="email" placeholder={mode === "register" ? "用于验证和找回账户" : "请输入已绑定邮箱"} /></div></label> : null}
+        {mode === "login" ? <div className="otp-login-methods"><button type="button" className={loginMethod === "email" ? "is-active" : ""} onClick={() => switchLoginMethod("email")}>邮箱验证码</button><button type="button" className={loginMethod === "password" ? "is-active" : ""} onClick={() => switchLoginMethod("password")}>账号密码</button></div> : null}
+        {mode === "login" && loginMethod === "password" ? <label><span>账号</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位账号" /></div></label> : null}
+        {mode === "register" || loginMethod === "email" ? <label><span>邮箱</span><div><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={50} autoComplete="email" placeholder={mode === "register" ? COMMON_MAILBOX_HINT : "请输入已绑定邮箱"} /></div></label> : null}
         {mode === "register" || loginMethod === "email" ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={17} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder="6 位验证码" /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestEmailCode(mode === "register" ? "otp-register" : "otp-login")}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label> : null}
-        {mode === "register" || loginMethod === "password" ? <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} maxLength={20} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="5-20 位密码" /></div></label> : null}
-        {mode === "register" ? <label><span>确认密码</span><div><LockKeyhole size={17} /><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} maxLength={20} autoComplete="new-password" placeholder="再次输入密码" /></div></label> : null}
-        {captchaOn && (mode === "register" || loginMethod === "password") ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={busy} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
+        {mode === "login" && loginMethod === "password" ? <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="5-20 位密码" /></div></label> : null}
+        {captchaOn && mode === "login" && loginMethod === "password" ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={busy} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
         {mode === "login" ? <><label className="otp-long-session"><input type="checkbox" checked={longSession} onChange={(event) => setLongSession(event.target.checked)} /><i /><span><b>保持登录 15 天</b><small>有操作时自动续期</small></span></label>{longSession ? <p className="otp-session-warning"><ShieldAlert size={15} /><span><b>请确认这是你的私人设备</b><small>15 天内无需重新登录，公共或他人设备请勿开启。</small></span></p> : null}</> : null}
         {message ? <p className="otp-auth-message" role="status">{message}</p> : null}
-        <button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" ? "进入保险库" : "创建账号"}</button>
+        <button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" ? "进入保险库" : "创建账号并进入"}</button>
       </form>
       <footer><span />RSA 加密传输 · 独立登录状态</footer>
     </section>

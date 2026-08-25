@@ -75,3 +75,17 @@ export const revokeVaultShare = (id: number) => otpApiRequest(`/otp/vault/shares
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`/otp/share/${token}/status`, { auth: false });
 export const openVaultShare = (token: string, accessCode: string) => apiRequest<{ data: { sessionToken: string; sessionExpiresIn: number } }>(`/otp/share/${token}/open`, { auth: false, method: "POST", body: { accessCode } });
 export const getSharedContent = (token: string, sessionToken: string) => apiRequest<{ data: { items: SharedItem[]; allowCopy: boolean; expireTime: string; serverTime: number } }>(`/otp/share/${token}/content`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
+
+// ─── 注册与账号自助 ───────────────────────────────────────────
+
+/** 邮箱 + 验证码注册 OTP 账号，注册即登录：返回 token 与派生用户名 */
+export const registerOtpAccount = (email: string, emailCode: string) =>
+  apiRequest<{ token: string; username: string }>("/registerOtp", { auth: false, method: "POST", body: { email: email.trim(), emailCode: emailCode.trim() } });
+
+/** 修改当前账号的用户名（注册引导 / 设置页共用） */
+export const setVaultUsername = (username: string) =>
+  otpApiRequest<{ data: string }>("/otp/vault/account/username", { method: "PUT", body: { username: username.trim() } });
+
+/** 设置当前账号的登录密码（password / oldPassword 需为 RSA 公钥加密后的密文） */
+export const setVaultPassword = (encryptedPassword: string, extra: { oldPassword?: string; emailCode?: string; setup?: boolean } = {}) =>
+  otpApiRequest("/otp/vault/account/password", { method: "PUT", body: { password: encryptedPassword, oldPassword: extra.oldPassword || undefined, emailCode: extra.emailCode || undefined, setup: extra.setup ? "true" : undefined } });
