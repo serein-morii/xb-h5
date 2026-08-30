@@ -54,7 +54,8 @@
 .vault-view-toggle i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(20,29,55,.18); transition: transform .18s; }
 .vault-view-toggle input:checked + i { background: var(--vault-accent); }
 .vault-view-toggle input:checked + i::after { transform: translateX(11px); }
-.vault-search { min-height: 43px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 4px 16px rgba(34, 44, 76, .06); }
+.vault-search { min-height: 38px; border: 0; border-radius: 12px; background: #fff; box-shadow: 0 4px 16px rgba(34, 44, 76, .06); }
+.vault-modal input:not([type=checkbox]):not([type=radio]),.vault-modal select,.vault-modal textarea { min-height: 38px; padding: 7px 10px; }
 .vault-filters { align-items: center; gap: 8px; margin: -3px 0 15px; padding: 7px; border: 1px solid rgba(72,92,199,.08); border-radius: 14px; background: rgba(233,236,246,.82); }
 .vault-filters label { position: relative; min-width: 152px; display: block; }
 .vault-filters label > span { position: absolute; z-index: 1; top: 6px; left: 11px; color: #8992a7; font-size: 7px; font-weight: 750; letter-spacing: .06em; pointer-events: none; }
