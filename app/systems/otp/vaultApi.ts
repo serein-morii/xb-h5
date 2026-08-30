@@ -129,7 +129,8 @@ export const finishPasskeyLogin = (requestId: string, credential: Record<string,
 export const listVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares`);
 export const getVaultShare = (id: number) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`);
 export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest<{ data: { id: number; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string; itemCount: number } }>(`${vault}/shares`, { method: "POST", body });
-export const revokeVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}`, { method: "DELETE" });
+export const revokeVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}/revoke`, { method: "POST" });
+export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}`, { method: "DELETE" });
 
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`${share}/${token}/status`, { auth: false });
 export const openVaultShare = (token: string, accessCode: string) => apiRequest<{ data: { sessionToken: string; sessionExpiresIn: number } }>(`${share}/${token}/open`, { auth: false, method: "POST", body: { accessCode } });

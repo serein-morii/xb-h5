@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
+import "./otp-vault.css";
 import "./otp-auth.css";
 
 const OtpVaultPage = lazy(() => import("./OtpVaultPage"));

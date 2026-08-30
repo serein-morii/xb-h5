@@ -1,4 +1,4 @@
-import { LoaderCircle, ShieldAlert } from "lucide-react";
+import { KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { clearOtpToken, getOtpToken, otpApiRequest, setOtpToken } from "./vaultApi";
 import { API_PATHS } from "../../lib/pathConventions";
@@ -9,6 +9,19 @@ import "./otp-vault.css";
 
 const OtpVaultWorkspace = lazy(() => import("./OtpVaultWorkspace"));
 const OtpOfflineVault = lazy(() => import("./OtpOfflineVault"));
+
+function VaultStartup({ label }: { label: string }) {
+  return <main className="vault-startup" role="status" aria-live="polite">
+    <section className="vault-startup-card">
+      <span className="vault-startup-mark"><KeyRound size={29} /></span>
+      <small>PRIVATE VAULT</small>
+      <strong>OTP Vault</strong>
+      <div className="vault-startup-progress" aria-hidden="true"><i /></div>
+      <p>{label}</p>
+      <em><ShieldCheck size={12} />安全通道已就绪</em>
+    </section>
+  </main>;
+}
 
 export default function OtpVaultPage() {
   const [access, setAccess] = useState<"loading" | "login" | "allowed" | "denied" | "offline">("loading");
@@ -36,10 +49,10 @@ export default function OtpVaultPage() {
   }, []);
   useEffect(() => { void checkAccess(); }, [checkAccess]);
   useEffect(() => { const expired = () => setAccess("login"); window.addEventListener("otp-session-expired", expired); return () => window.removeEventListener("otp-session-expired", expired); }, []);
-  if (access === "loading") return <div className="vault-auth-state"><LoaderCircle className="spin" size={24} /><p>正在验证 OTP Vault 权限…</p></div>;
+  if (access === "loading") return <VaultStartup label="正在验证访问权限" />;
   if (access === "offline") return <Suspense fallback={null}><OtpOfflineVault onExit={() => setAccess("login")} /></Suspense>;
   if (access === "login") return <OtpAuthScreen onAuthenticated={(token, registration) => { setOtpToken(token); if (registration?.username) setOnboard({ username: registration.username }); setAccess("loading"); void checkAccess(); }} />;
   if (access === "denied") return <div className="vault-auth-state"><ShieldAlert size={30} /><h1>没有 OTP Vault 权限</h1><p>当前账号不能访问这个保险库。</p><button type="button" onClick={() => { clearOtpToken(); setAccess("login"); }}>换一个账号</button></div>;
   if (onboard) return <VaultOnboardingPage username={onboard.username} onDone={finishOnboard} />;
-  return <Suspense fallback={<div className="vault-auth-state"><LoaderCircle className="spin" size={24} /><p>正在打开保险库…</p></div>}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountEmail={accountEmail} onAccountNameChange={setAccountName} /></Suspense>;
+  return <Suspense fallback={<VaultStartup label="正在打开保险库" />}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountEmail={accountEmail} onAccountNameChange={setAccountName} /></Suspense>;
 }
