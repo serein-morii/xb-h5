@@ -1,3 +1,5 @@
+import { APP_ROUTES } from "../lib/pathConventions";
+
 const PEACH_IMAGES = {
   hero: "/images/peach-official/hero-modern-v2.webp",
   peach: "/images/peach-official/yanling-peach-line.svg",
@@ -19,7 +21,7 @@ export default function PeachHome() {
       <aside className="peach-snap-progress" aria-hidden="true">
         {pages.map((page) => <span key={page.index}>{page.index}</span>)}
       </aside>
-      <a className="peach-lab-portal" href="/lab" aria-label="打开 Handy Lab 灵感实验室">
+      <a className="peach-lab-portal" href={APP_ROUTES.lab} aria-label="打开 Handy Lab 灵感实验室">
         <span className="peach-lab-orbit" aria-hidden="true"><i /><i /><i /></span>
         <span className="peach-lab-copy"><small>HANDY</small><b>LAB</b></span>
         <span className="peach-lab-arrow" aria-hidden="true">↗</span>
@@ -34,7 +36,7 @@ export default function PeachHome() {
           <p>炎陵黄桃</p>
           <h1 id="peach-snap-title">把盛夏装进清甜里</h1>
           <span>山风经过果园，甜意慢慢醒来。成熟的黄桃，不必说得太响。</span>
-          <a className="peach-snap-login" href="/customer/login">用户登录</a>
+          <a className="peach-snap-login" href={APP_ROUTES.customerLogin}>用户登录</a>
         </div>
         <figure className="peach-snap-hero-fruit">
           <img src={PEACH_IMAGES.hero} alt="炎陵黄桃果实" width="1160" height="1320" fetchPriority="high" />
@@ -80,10 +82,10 @@ export default function PeachHome() {
           <p>专属入口</p>
           <h2 id="peach-snap-login-title">登录后，进入你的下单与订单进度。</h2>
           <span>还没有账号？登录页里可以注册。已有订单，也可以在底部轻轻查一下。</span>
-          <a className="peach-snap-login" href="/customer/login">用户登录</a>
+          <a className="peach-snap-login" href={APP_ROUTES.customerLogin}>用户登录</a>
           <nav aria-label="弱化入口">
-            <a href="/tools/order-search">订单查询</a>
-            <a href="/manage">管理入口</a>
+            <a href={APP_ROUTES.toolOrderSearch}>订单查询</a>
+            <a href={APP_ROUTES.manage}>管理入口</a>
           </nav>
         </div>
         <footer className="peach-snap-footer">

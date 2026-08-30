@@ -1,3 +1,5 @@
+import { API_PATHS } from "./pathConventions";
+
 // dev 走相对路径，由 vite.config.ts 的 server.proxy 反代到 127.0.0.1:8080（与 xb-ui 一致）
 const DEVELOPMENT_API_BASE = "/prod-api";
 const isDevelopment = import.meta.env.DEV;
@@ -179,7 +181,7 @@ export async function apiRequest<T = Record<string, unknown>>(
  *  - change：已登录用户用邮箱改密
  *  - bind：已登录用户绑定/更换邮箱
  */
-export type EmailCodeType = "login" | "reset" | "change" | "bind" | "otp-login" | "otp-register" | "otp-change";
+export type EmailCodeType = "login" | "reset" | "change" | "bind" | "otp-login" | "otp-register" | "otp-change" | "otp-security";
 
 /** 注册 / 换绑提示。实际拦截以后端域名白名单为准。 */
 export const COMMON_MAILBOX_HINT = "请使用 QQ、163、Gmail、Outlook 等常用邮箱";
@@ -188,7 +190,7 @@ export const COMMON_MAILBOX_HINT = "请使用 QQ、163、Gmail、Outlook 等常�
  * 发送邮箱验证码（公开接口）
  */
 export function sendEmailCode(email: string, type: EmailCodeType) {
-  return apiRequest("/sendEmailCode", {
+  return apiRequest(API_PATHS.auth.sendEmailCode, {
     auth: false,
     method: "POST",
     body: { email: email.trim(), type },
@@ -199,7 +201,7 @@ export function sendEmailCode(email: string, type: EmailCodeType) {
  * 邮箱登录（公开接口）：返回与 /login 同结构的结果（含 token）
  */
 export function loginByEmail(email: string, code: string, type: "login" | "otp-login" = "login", longSession = false) {
-  return apiRequest<{ token: string }>("/loginByEmail", {
+  return apiRequest<{ token: string }>(API_PATHS.auth.loginByEmail, {
     auth: false,
     method: "POST",
     body: { email: email.trim(), code: code.trim(), type, longSession: String(longSession) },
@@ -210,7 +212,7 @@ export function loginByEmail(email: string, code: string, type: "login" | "otp-l
  * 忘记密码重置（公开接口）
  */
 export function resetPasswordByEmail(email: string, code: string, newPassword: string) {
-  return apiRequest("/resetPasswordByEmail", {
+  return apiRequest(API_PATHS.auth.resetPasswordByEmail, {
     auth: false,
     method: "POST",
     body: { email: email.trim(), code: code.trim(), newPassword },
@@ -222,7 +224,7 @@ export function resetPasswordByEmail(email: string, code: string, newPassword: s
  * 前置：用户必须已绑定邮箱；email 必须与当前账号一致（后端强校验）。
  */
 export function changePwdByEmail(email: string, code: string, newPassword: string) {
-  return apiRequest("/system/user/profile/changePwdByEmail", {
+  return apiRequest(`${API_PATHS.identity.userProfile}/password/email`, {
     method: "PUT",
     body: { email: email.trim(), code: code.trim(), newPassword },
   });
@@ -243,7 +245,7 @@ export function updateProfile(payload: {
   if (payload.phonenumber !== undefined) body.phonenumber = payload.phonenumber.trim();
   if (payload.email !== undefined) body.email = payload.email.trim();
   if (payload.sex !== undefined) body.sex = payload.sex;
-  return apiRequest("/system/user/profile", {
+  return apiRequest(API_PATHS.identity.userProfile, {
     method: "PUT",
     body,
   });
@@ -255,222 +257,10 @@ export function updateProfile(payload: {
  * 且新邮箱不能与当前邮箱相同、不能被其他账号占用。
  */
 export function bindEmail(email: string, code: string) {
-  return apiRequest("/system/user/profile/email", {
+  return apiRequest(`${API_PATHS.identity.userProfile}/email`, {
     method: "PUT",
     body: { email: email.trim(), code: code.trim() },
   });
-}
-
-// ============================================================
-// 物流轨迹刷新额度（移动端）
-// ============================================================
-
-export type LogisticsSwitchType = "manual" | "scheduled" | "query";
-
-export type LogisticsQuotaStatus = {
-  storeCode: string;
-  storeName?: string;
-  totalQuota: number;
-  usedQuota: number;
-  remainingQuota: number;
-  enabled: number;
-  remark?: string;
-  switches: Array<{ type: LogisticsSwitchType; label: string; enabled: number }>;
-  todayUsage: number;
-  updateTime?: string;
-};
-
-export type LogisticsGlobalQuotaStatus = {
-  totalQuota: number;
-  usedQuota: number;
-  remainingQuota: number;
-  enabled: number;
-  remark?: string;
-  /** 全局还能再分配的剩余额度（= remainingQuota） */
-  distributable: number;
-  updateTime?: string;
-};
-
-export type LogisticsUsageRow = {
-  id: number;
-  storeCode?: string;
-  storeName?: string;
-  userId: number;
-  userName?: string;
-  nickName?: string;
-  switchType: LogisticsSwitchType;
-  orderCode?: string;
-  expCode?: string;
-  success: number;
-  cost: number;
-  source?: string;
-  remark?: string;
-  createTime?: string;
-};
-
-/** 自助：可见店铺的额度 + 开关 + 今日用量列表 */
-export function listMyLogisticsQuota() {
-  return apiRequest<LogisticsQuotaStatus[]>("/system/logistics-quota/my");
-}
-
-/** 全局额度（admin 可编辑，非 admin 只读） */
-export function getLogisticsGlobalQuota() {
-  return apiRequest<LogisticsGlobalQuotaStatus>("/system/logistics-quota/global");
-}
-
-/** admin：设置全局总额度 / 总开关 / 备注 */
-export function adminUpdateLogisticsGlobalQuota(payload: {
-  totalQuota?: number;
-  enabled?: 0 | 1;
-  remark?: string;
-}) {
-  return apiRequest("/system/logistics-quota/updateGlobal", {
-    method: "PUT",
-    body: payload,
-  });
-}
-
-/** 自助：改某店铺的某分开关 */
-export function updateMyLogisticsSwitch(
-  storeCode: string,
-  switchType: LogisticsSwitchType,
-  enabled: boolean,
-) {
-  return apiRequest("/system/logistics-quota/my/switch", {
-    method: "PUT",
-    body: { storeCode, switchType, enabled: enabled ? 1 : 0 },
-  });
-}
-
-/** admin：所有店铺额度 + 开关一览 */
-export function listAllLogisticsQuota() {
-  return apiRequest<LogisticsQuotaStatus[]>("/system/logistics-quota/list");
-}
-
-/** admin：设置某店铺的总额度 / 总开关 / 备注 */
-export function adminUpdateLogisticsQuota(payload: {
-  storeCode: string;
-  totalQuota?: number;
-  enabled?: 0 | 1;
-  remark?: string;
-}) {
-  return apiRequest("/system/logistics-quota/update", {
-    method: "PUT",
-    body: payload,
-  });
-}
-
-/** admin / 自助：用量日志（分页） */
-export function listLogisticsUsage(query: {
-  pageNum: number;
-  pageSize: number;
-  storeCode?: string;
-  switchType?: LogisticsSwitchType;
-  startTime?: string;
-  endTime?: string;
-} = { pageNum: 1, pageSize: 20 }) {
-  return apiRequest<{ rows: LogisticsUsageRow[]; total: number }>(
-    "/system/logistics-quota/usage",
-    { query },
-  );
-}
-
-// ─── 短链管理 ────────────────────────────────────────────────
-export type ShortLinkType = "internal" | "external";
-
-export type ShortLinkRow = {
-  id: number;
-  path: string;
-  targetType: ShortLinkType;
-  target: string;
-  expireTime?: string | null;
-  visitCount?: number;
-  lastVisitTime?: string | null;
-  lastVisitIp?: string | null;
-  remark?: string;
-  createBy: string;
-  createTime?: string;
-  updateBy?: string;
-  updateTime?: string;
-};
-
-export type ShortLinkVisitRow = {
-  id: number;
-  linkId: number;
-  visitIp?: string;
-  visitTime?: string;
-};
-
-// 本地路由白名单：与后端 SearchController.localRoutes 保持一致。
-// 创建短链时 path 不允许与这些冲突。
-export const LOCAL_ROUTES: string[] = [
-  "/", "/order",
-  "/tools", "/tools/order-search", "/tools/order",
-  "/tools/order-link", "/tools/place-order", "/tools/purchasers",
-  "/tools/store-query",
-  "/tools/freight-calculator", "/tools/freight-compare",
-  "/lab", "/lab/video-extract",
-];
-// path 命名约束：跟后端 ShortLinkServiceImpl.createShortLink 同步
-export const SHORT_LINK_PATH_RULE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
-
-/** 短链列表（带 dataScope 过滤） */
-export function listShortLinks(params: { path?: string; targetType?: ShortLinkType } = {}) {
-  return apiRequest<{ data?: ShortLinkRow[] } | ShortLinkRow[]>("/biz/short-link/list", { query: params });
-}
-
-/** 新建短链 */
-export function createShortLink(payload: { path: string; targetType: ShortLinkType; target: string; remark?: string; expireTime?: string | null }) {
-  return apiRequest("/biz/short-link", { method: "POST", body: payload });
-}
-
-/** 编辑短链（改 targetType/target/remark/expireTime；path 不可改） */
-export function updateShortLink(id: number, payload: { targetType: ShortLinkType; target: string; remark?: string; expireTime?: string | null }) {
-  return apiRequest(`/biz/short-link/${id}`, { method: "PUT", body: payload });
-}
-
-/** 删除短链（软删） */
-export function deleteShortLink(id: number) {
-  return apiRequest(`/biz/short-link/${id}`, { method: "DELETE" });
-}
-
-/** 最近 N 条访问日志（默认 20，上限 100） */
-export function listShortLinkVisits(id: number, limit = 20) {
-  return apiRequest<{ data?: ShortLinkVisitRow[] } | ShortLinkVisitRow[]>(`/biz/short-link/${id}/visits`, { query: { limit } });
-}
-
-/** 公开解析短链（SPA 启动时 catch-all 调用） */
-export function resolveShortLink(path: string) {
-  return publicApiRequest<{ data?: { id: number; path: string; targetType: ShortLinkType; target: string; expireTime?: string | null; visitCount?: number; lastVisitTime?: string | null } }>(
-    `/search/short-link/${encodeURIComponent(path)}`,
-  );
-}
-
-// ─── 公开店铺 ────────────────────────────────────────────────
-
-/**
- * 公开店铺下拉 VO。
- * 与后端 StoreInfoVO 同结构：code 是店铺编码（= 订单 store 字段），
- * value/text 是店铺名（前端展示用）。
- */
-export type PublicStoreRow = {
-  code?: string;
-  value?: string;
-  text?: string;
-  notice?: string;
-  defPurchaser?: string;
-  blockOrder?: number;
-  blockQuery?: number;
-  blockDisplayType?: string;
-};
-
-/**
- * 公开查询店铺列表/单店。
- * 「专属查询」入口会用 code 查单个店铺做头部展示；列表页则不带任何过滤拿全量。
- * 与 storeInfoService.store() 同后端，但走 publicApiRequest 走免登录域名。
- */
-export function listPublicStores(params: { code?: string; name?: string; createBy?: string } = {}) {
-  return publicApiRequest<{ data?: PublicStoreRow[] } | PublicStoreRow[]>("/search/store", params);
 }
 
 export async function publicApiRequest<T = Record<string, unknown>>(

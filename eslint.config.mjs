@@ -19,6 +19,17 @@ export default tseslint.config(
     },
   },
   {
+    files: ["app/systems/lab/bead-studio/**/*.js"],
+    languageOptions: {
+      globals: globals.browser,
+    },
+    rules: {
+      // Bead Studio is a self-contained browser module; its event wiring intentionally uses expression callbacks.
+      "no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+    },
+  },
+  {
     files: ["*.config.{js,mjs,ts}", "tests/**/*.mjs"],
     languageOptions: {
       globals: globals.node,

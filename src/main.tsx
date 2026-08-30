@@ -16,7 +16,7 @@ if (import.meta.hot) {
 
 async function boot() {
   if (isOtpSurface()) {
-    const { default: OtpApp } = await import("../app/otp/OtpApp");
+    const { default: OtpApp } = await import("../app/systems/otp/OtpApp");
     createRoot(root!).render(<StrictMode><OtpApp /></StrictMode>);
     return;
   }

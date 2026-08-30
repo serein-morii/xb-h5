@@ -1,0 +1,11 @@
+{
+  "name": "OTP Vault",
+  "short_name": "OTP Vault",
+  "description": "私人身份保险库",
+  "start_url": "/otp",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f5fa",
+  "theme_color": "#6674cf",
+  "icons": [{ "src": "/otp-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

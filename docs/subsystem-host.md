@@ -3,7 +3,7 @@
 给人工和 AI 看的约定。改路由、加子系统、配 nginx 之前先读这一份。
 
 实现：`app/lib/subsystemHost.ts`  
-入口：OTP 走 `src/main.tsx` → `app/otp/OtpApp.tsx`（不加载主站 App）；其它域名仍走 `app/App.tsx` 的 `resolveSubsystemPath`。
+入口：OTP 走 `src/main.tsx` → `app/systems/otp/OtpApp.tsx`（不加载主站 App）；其它域名仍走 `app/App.tsx` 的 `resolveSubsystemPath`。
 
 ## 一句话
 
@@ -159,7 +159,7 @@ DNS 把 `foo.gooop.top` A 到这台 nginx。改完 `nginx -t` 再 reload。
 | 要改什么 | 文件 |
 | --- | --- |
 | 映射规则 / 保留主机名 / 全局路径 / OTP 启动面 | `app/lib/subsystemHost.ts` |
-| OTP 独立入口 | `src/main.tsx`、`app/otp/OtpApp.tsx` |
+| OTP 独立入口 | `src/main.tsx`、`app/systems/otp/OtpApp.tsx` |
 | 注册页面 | `app/App.tsx` 的 `routes` |
 | API 基址（生产已写死主站） | `app/lib/api.ts` 的 `API_BASE` |
 | 这份说明 | `docs/subsystem-host.md` |

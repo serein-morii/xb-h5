@@ -1,4 +1,5 @@
 import { CheckCircle2, LoaderCircle, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { API_PATHS } from "../lib/pathConventions";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { apiRequest } from "../lib/api";
 
@@ -43,7 +44,7 @@ export function SliderCaptcha({ onVerified, onEnabledChange, resetKey = 0, disab
     dragValue.current = 0;
     onVerifiedRef.current({ uuid: "", token: "" });
     try {
-      const result = await apiRequest<Record<string, unknown>>("/captchaImage", { auth: false });
+      const result = await apiRequest<Record<string, unknown>>(API_PATHS.auth.captchaImage, { auth: false });
       const enabled = result.captchaOnOff === undefined ? true : Boolean(result.captchaOnOff);
       onEnabledChangeRef.current?.(enabled);
       if (!enabled) {
@@ -104,7 +105,7 @@ export function SliderCaptcha({ onVerified, onEnabledChange, resetKey = 0, disab
     setVerifying(true);
     setError("");
     try {
-      const result = await apiRequest<Record<string, unknown>>("/captcha/slider/verify", {
+      const result = await apiRequest<Record<string, unknown>>(API_PATHS.auth.sliderVerify, {
         auth: false,
         method: "POST",
         body: { uuid: challenge.uuid, x: Math.round(value) },

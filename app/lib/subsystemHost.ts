@@ -4,6 +4,7 @@
  * 完整说明（nginx 模板 / 保留名 / 如何新增）：docs/subsystem-host.md
  * nginx 只做整站反代到主站根路径（不要拼 /otp、/lab），前端按主机名补前缀。
  */
+import { APP_ROUTES } from "./pathConventions";
 
 const RESERVED_HOSTS = new Set([
   "www", "m", "api", "admin", "uat", "dev", "stage", "test",
@@ -12,6 +13,9 @@ const RESERVED_HOSTS = new Set([
 
 /** 跨子系统仍按原路径打开的全局前缀（OTP 分享链等） */
 const GLOBAL_PATHS = new Set(["s"]);
+const HOST_ROUTE_ALIASES: Record<string, string> = {
+  order: "order-system",
+};
 
 export function normalizePath(pathname: string) {
   if (!pathname || pathname === "/") return "/";
@@ -36,7 +40,7 @@ export function isOtpSurface(hostname = window.location.hostname, pathname = win
   const host = hostname.toLowerCase();
   const path = normalizePath(pathname);
   if (host === "otp.gooop.top" || host.startsWith("otp.")) return true;
-  if (path === "/otp" || path.startsWith("/otp/")) return true;
+  if (path === APP_ROUTES.otp || path.startsWith(`${APP_ROUTES.otp}/`)) return true;
   if (/^\/s\/[A-Za-z0-9_-]{5,}$/.test(path)) return true;
   return false;
 }
@@ -49,10 +53,11 @@ export function resolveSubsystemPath(pathname: string, hostname: string, subsyst
   const path = normalizePath(pathname);
   const prefixes = subsystemPrefixes instanceof Set ? subsystemPrefixes : new Set(subsystemPrefixes);
   const sub = hostLabel(hostname);
-  if (!sub || RESERVED_HOSTS.has(sub) || !prefixes.has(sub)) return path;
-  if (path === `/${sub}` || path.startsWith(`/${sub}/`)) return path;
-  if (path === "/") return `/${sub}`;
+  const routeSub = HOST_ROUTE_ALIASES[sub] || sub;
+  if (!sub || RESERVED_HOSTS.has(sub) || !prefixes.has(routeSub)) return path;
+  if (path === `/${routeSub}` || path.startsWith(`/${routeSub}/`)) return path;
+  if (path === "/") return `/${routeSub}`;
   const first = path.split("/").filter(Boolean)[0] || "";
   if (GLOBAL_PATHS.has(first)) return path;
-  return `/${sub}${path}`;
+  return `/${routeSub}${path}`;
 }
