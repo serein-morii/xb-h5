@@ -62,7 +62,7 @@ export const API_PATHS = {
     sliderVerify: "/auth/captcha/verify",
     sendEmailCode: "/auth/email/code",
     loginByEmail: "/auth/login/email",
-		passkeyLogin: "/auth/otp/passkeys/login",
+		passkeyLogin: "/auth/passkeys/login",
     resetPasswordByEmail: "/auth/password/reset",
   },
   orders: {
@@ -99,6 +99,7 @@ export const API_PATHS = {
     roles: "/identity/roles",
     users: "/identity/users",
     userProfile: "/identity/users/profile",
+    passkeys: "/identity/passkeys",
   },
   administration: {
     root: "/administration",

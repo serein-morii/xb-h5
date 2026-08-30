@@ -4,7 +4,7 @@ import { SliderCaptcha } from "../../components/SliderCaptcha";
 import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
 import { finishPasskeyLogin, getPasskeyLoginOptions, registerOtpAccount } from "./vaultApi";
-import { getVaultPasskey } from "./vaultPasskey";
+import { getPasskey } from "../../lib/passkey";
 import "./otp-auth.css";
 
 export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (token: string, registration?: { username: string }) => void }) {
@@ -83,7 +83,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
     try {
 			if (loginMethod === "passkey") {
 				const options = await getPasskeyLoginOptions(account, longSession);
-				const credential = await getVaultPasskey(options.data.publicKey);
+				const credential = await getPasskey(options.data.publicKey);
 				const result = await finishPasskeyLogin(options.data.requestId, credential);
 				if (!result.data.token) throw new Error("登录成功但未返回凭证");
 				localStorage.setItem("otp-vault-username", result.data.username || account);

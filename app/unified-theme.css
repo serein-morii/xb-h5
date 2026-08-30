@@ -13412,13 +13412,15 @@ html.theme-dark .purchaser-order-page .purchaser-account-gate a.primary {
 
 .purchaser-mine-loading {
   display: flex;
-  min-height: 120px;
+  min-height: 96px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--xb-text-secondary);
-  font-size: 12px;
+  font-size: 10px;
 }
+
+.purchaser-mine-loading svg { width: 16px; height: 16px; }
 
 .purchaser-mine-profile-card,
 .purchaser-mine-security-card,
@@ -16032,4 +16034,39 @@ html.theme-dark .utility-shell {
   .peach-lab-orbit { width: 36px; height: 36px; }
   .peach-lab-copy,
   .peach-lab-arrow { display: none; }
+}
+
+/* 系统账号与客户账号共用的 Passkey 管理卡片。 */
+.account-passkeys { display: grid; gap: 10px; padding: 14px; }
+.account-passkeys-heading { display: flex; align-items: center; gap: 9px; }
+.account-passkeys-heading > span { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; color: var(--xb-accent); background: var(--xb-accent-soft); }
+.account-passkeys-heading > div { min-width: 0; flex: 1; }
+.account-passkeys-heading b,.account-passkeys-heading small { display: block; }
+.account-passkeys-heading b { font-size: 12px; }
+.account-passkeys-heading small { margin-top: 2px; color: var(--xb-text-secondary); font-size: 9px; line-height: 1.4; }
+.account-passkeys-heading > button { min-height: 34px; padding: 0 11px; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 10px; color: var(--xb-on-action); background: var(--xb-action); font-size: 10px; font-weight: 750; }
+.account-passkeys-list { display: grid; gap: 7px; }
+.account-passkeys-list article { min-width: 0; padding: 9px 10px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--xb-line); border-radius: 12px; background: var(--xb-surface-muted); }
+.account-passkeys-list article > svg { flex: none; color: var(--xb-accent); }
+.account-passkeys-list article > div { min-width: 0; flex: 1; }
+.account-passkeys-list article b,.account-passkeys-list article small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-passkeys-list article b { font-size: 11px; }
+.account-passkeys-list article small { margin-top: 3px; color: var(--xb-text-secondary); font-size: 8px; }
+.account-passkeys-list article > button { width: 30px; height: 30px; padding: 0; flex: none; display: grid; place-items: center; border: 1px solid var(--xb-line); border-radius: 9px; color: var(--xb-text-secondary); background: var(--xb-surface); }
+.account-passkeys-list article > button.danger { color: #c84852; }
+.account-passkeys-list > p { min-height: 58px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px dashed var(--xb-line); border-radius: 12px; color: var(--xb-text-secondary); font-size: 9px; }
+.account-passkeys-message { padding: 8px 10px; border-radius: 10px; color: #b42318; background: rgba(254, 242, 242, .82); font-size: 9px; }
+.purchaser-mine-passkey-row { width: 100%; min-height: 58px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; border: 0; border-top: 1px solid var(--xb-line); color: var(--xb-text); background: transparent; text-align: left; }
+.purchaser-mine-passkey-row > svg:first-child { color: var(--xb-accent); }
+.purchaser-mine-passkey-row > span { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.purchaser-mine-passkey-row b { font-size: 12px; }
+.purchaser-mine-passkey-row small { color: var(--xb-text-secondary); font-size: 9px; }
+.purchaser-passkey-editor { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+
+@media (max-width: 560px) {
+  .account-passkeys { padding: 11px; }
+  .account-passkeys-heading > span { width: 32px; height: 32px; }
+  .account-passkeys-heading > button { min-height: 32px; padding: 0 9px; }
+  .account-passkeys-list article { padding: 8px; }
+  .login-secondary-links { flex-wrap: wrap; gap: 5px 8px; }
 }

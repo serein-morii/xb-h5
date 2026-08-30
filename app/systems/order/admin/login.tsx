@@ -2,6 +2,7 @@ import {
   Briefcase,
   Building2,
   ChevronRight,
+  Fingerprint,
   LoaderCircle,
   LockKeyhole,
   Phone,
@@ -25,6 +26,7 @@ import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
 import type { DataRow } from "./core";
 import { AppLogo, Sheet, Toast } from "./ui";
 import { SliderCaptcha } from "../../../components/SliderCaptcha";
+import { getPasskey } from "../../../lib/passkey";
 
 export function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) => void }) {
   const [username, setUsername] = useState("");
@@ -93,6 +95,22 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
     }
   }
 
+  async function loginWithPasskey() {
+    if (!username.trim()) return setMessage("请先输入账号或邮箱");
+    setLoading(true); setMessage("");
+    try {
+      const options = await apiRequest<{ data?: { requestId?: string; publicKey?: Record<string, unknown> } }>(`${API_PATHS.auth.passkeyLogin}/options`, { auth: false, method: "POST", body: { identifier: username.trim() } });
+      if (!options.data?.requestId || !options.data.publicKey) throw new Error("Passkey 登录参数不完整");
+      const result = await apiRequest<{ data?: { token?: string; username?: string } }>(`${API_PATHS.auth.passkeyLogin}/finish`, { auth: false, method: "POST", body: { requestId: options.data.requestId, credential: await getPasskey(options.data.publicKey) } });
+      const token = String(result.data?.token || "");
+      if (!token) throw new Error("登录成功但未返回凭证");
+      if (remember) window.localStorage.setItem("xb-mobile-username", username.trim());
+      onLogin(token, String(result.data?.username || username.trim()));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Passkey 登录失败");
+    } finally { setLoading(false); }
+  }
+
   return (
     <main className="login-page">
       <div className="login-orb login-orb-one" /><div className="login-orb login-orb-two" />
@@ -110,6 +128,10 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         <div className="login-secondary-links">
           <button type="button" className="login-link-button" onClick={() => setEmailLoginOpen(true)}>
             <Send size={14} />使用邮箱登录
+          </button>
+          <span className="login-link-divider" />
+          <button type="button" className="login-link-button" disabled={loading} onClick={() => void loginWithPasskey()}>
+            <Fingerprint size={14} />Passkey 登录
           </button>
           <span className="login-link-divider" />
           <button type="button" className="login-link-button" onClick={() => setForgotOpen(true)}>

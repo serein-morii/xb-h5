@@ -68,12 +68,30 @@
 .otp-setup-actions > button:disabled { opacity: .6; cursor: default; }
 
 /* 设置页 modal 中打开时收窄外层留白 */
+.vault-account-modal { width: min(620px, 100%) !important; }
 .vault-modal .otp-setup { gap: 12px; }
+.vault-modal .otp-setup-steps { gap: 4px; padding: 4px; border-radius: 13px; background: var(--utility-bg); }
+.vault-modal .otp-setup-steps li { justify-content: center; border: 0; border-radius: 10px; background: transparent; }
+.vault-modal .otp-setup-steps li.is-active { background: var(--utility-paper); box-shadow: 0 5px 14px rgba(38, 50, 77, .08); }
+.vault-modal .otp-setup-step > header { padding: 11px 12px; border-radius: 14px; background: color-mix(in srgb, var(--utility-paper) 55%, var(--utility-bg)); }
+.vault-modal .otp-setup-verify-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 0; border-radius: 11px; background: #eef0f5; }
+.vault-modal .otp-setup-verify-tabs button { min-height: 31px; padding: 0 8px; border-radius: 8px; }
+.vault-modal .otp-setup-verify-tabs button.is-active { background: #fff; box-shadow: 0 4px 12px rgba(28, 39, 72, .08); }
+.vault-modal .otp-setup-verify-tabs button.is-active::after { display: none; }
 
 /* 设置页「账号安全」入口 */
 .vault-account-entry { width: 100%; padding: 13px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; border: 0; border-top: 1px solid rgba(38, 50, 77, .07); background: #fff; color: #3b4356; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; transition: background .15s; }
 .vault-account-entry:hover { background: #fafbfe; }
 .vault-account-entry small { color: var(--utility-muted); font-size: 9px; font-weight: 500; }
+
+@media (max-width: 560px) {
+  .vault-modal .otp-setup { gap: 10px; }
+  .vault-modal .otp-setup-steps li { padding: 7px 6px; font-size: 9px; }
+  .vault-modal .otp-setup-step { gap: 9px; }
+  .vault-modal .otp-setup-step > header { padding: 9px 10px; }
+  .vault-modal .otp-setup-step label > div { min-height: 41px; }
+  .vault-modal .otp-setup-options > button { padding: 8px 8px 8px 30px; }
+}
 
 @media (prefers-color-scheme: dark) {
   .otp-setup-steps li { border-color: #293143; background: #0e1523; color: #7f899e; }
@@ -114,6 +132,8 @@
   .otp-setup-verify-tabs { border-color: #293143; }
   .otp-setup-verify-tabs button { color: #7f899e; }
   .otp-setup-verify-tabs button.is-active { color: #9eabff; }
+  .vault-modal .otp-setup-verify-tabs { background: #111827; }
+  .vault-modal .otp-setup-verify-tabs button.is-active { background: #273044; box-shadow: none; }
   .vault-account-entry { border-top-color: rgba(226, 232, 255, .14); background: transparent; color: #dfe4ef; }
   .vault-account-entry:hover { background: rgba(226, 232, 255, .05); }
   .vault-account-entry small { color: #8992a8; }

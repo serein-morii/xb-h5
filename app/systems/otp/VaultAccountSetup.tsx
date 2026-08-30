@@ -163,12 +163,12 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
 
   return <div className="otp-setup">
     <ol className="otp-setup-steps" aria-label="账号设置进度">
-      <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span>01</span>用户名</li>
-      <li className={step === "password" ? "is-active" : ""}><span>02</span>登录密码</li>
+      <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span><User size={13} /></span>用户名</li>
+      <li className={step === "password" ? "is-active" : ""}><span><KeyRound size={13} /></span>登录密码</li>
     </ol>
 
     {step === "username" ? <form className="otp-setup-step" onSubmit={submitUsername}>
-      <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>设置用户名</b><small>不改就用邮箱 @ 前的默认名称</small></div></header>
+      <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>{requireVerify ? "修改用户名" : "设置用户名"}</b><small>{requireVerify ? `当前账号：${initialUsername}` : "不改就用邮箱 @ 前的默认名称"}</small></div></header>
       <label><span>用户名</span><div><User size={16} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位用户名" /></div></label>
       <p className="otp-setup-hint">用户名用于账号密码登录和分享时搜索你；随时可以在设置中修改。</p>
       {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
@@ -179,7 +179,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     </form> : null}
 
     {step === "password" ? <form className="otp-setup-step" onSubmit={submitPassword}>
-      <header><span className="otp-setup-step-icon"><KeyRound size={17} /></span><div><b>设置登录密码</b><small>也可以跳过，之后只用邮箱验证码登录</small></div></header>
+      <header><span className="otp-setup-step-icon"><KeyRound size={17} /></span><div><b>{requireVerify ? "更新登录密码" : "设置登录密码"}</b><small>{requireVerify ? "选择新密码，并完成身份验证" : "也可以跳过，之后只用邮箱验证码登录"}</small></div></header>
       <div className="otp-setup-options">
         {([["complex", "随机复杂密码", "16 位，大小写 + 数字 + 符号"], ["simple", "随机简单密码", "8 位小写字母 + 数字"], ["custom", "自定义密码", "5-20 位，自己输入"], ...(!requireVerify ? [["skip", "跳过", "之后只能邮箱验证码登录"] as const] : [])] as const).map(([key, title, detail]) => <button type="button" className={passwordMode === key ? "is-selected" : ""} onClick={() => chooseMode(key)} key={key}><span className="otp-setup-option-radio" /><span><b>{title}</b><small>{detail}</small></span>{passwordMode === key ? <Check size={15} /> : null}</button>)}
       </div>

@@ -115,6 +115,8 @@ export const revokeVaultDevice = (deviceKey: string) => otpApiRequest(`${vaultAc
 export const revokeOtherVaultSessions = () => otpApiRequest<{ data: { revoked: number } }>(`${vaultAccount}/sessions/others`, { method: "DELETE" });
 export const updateVaultDevice = (deviceKey: string, body: { displayName?: string; trusted?: boolean }) => otpApiRequest(`${vaultAccount}/devices/${encodeURIComponent(deviceKey)}`, { method: "PUT", body });
 export const verifyVaultSecurity = (body: { password?: string; emailCode?: string }) => otpApiRequest<{ data: { token: string; expiresIn: number; keyId: string } }>(`${vaultAccount}/security/verify`, { method: "POST", body });
+export const getVaultStepUpPasskeyOptions = () => otpApiRequest<{ data: { requestId: string; publicKey: Record<string, unknown> } }>(`${vaultAccount}/security/passkey/options`, { method: "POST" });
+export const finishVaultStepUpPasskey = (requestId: string, credential: Record<string, unknown>) => otpApiRequest<{ data: { token: string; expiresIn: number; keyId: string } }>(`${vaultAccount}/security/passkey/finish`, { method: "POST", body: { requestId, credential } });
 export const lockVaultSecurity = () => otpApiRequest(`${vaultAccount}/security/lock`, { method: "POST" });
 export const getVaultSecurityStatus = () => otpApiRequest<{ data: VaultSecurityStatus }>(`${vaultAccount}/security/status`);
 export const rotateVaultKey = () => otpApiRequest<{ data: { credentials: number; shares: number; shareItems: number; keyId: string } }>(`${vaultAccount}/security/key-rotation`, { method: "POST" });

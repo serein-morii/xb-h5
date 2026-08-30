@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./systems/order/api";
+import { AppStartup } from "./components/AppStartup";
 import { APP_ROUTES } from "./lib/pathConventions";
 import { collectSubsystemPrefixes, resolveSubsystemPath } from "./lib/subsystemHost";
 import { isStoreQueryRoute, resolveDynamicRoute, routes, wrapRouteContent } from "./systems/routes";
@@ -21,19 +22,11 @@ function NotFound() {
 }
 
 function ShortLinkLoading() {
-  return (
-    <main className="spa-short-link-loading">
-      <div className="app-loading-mark"><span /></div>
-    </main>
-  );
+  return <AppStartup message="正在识别访问地址" />;
 }
 
 function RouteFallback() {
-  return (
-    <main className="spa-short-link-loading">
-      <div className="app-loading-mark"><span /></div>
-    </main>
-  );
+  return <AppStartup message="正在加载页面" />;
 }
 
 type ShortLinkResolveState =

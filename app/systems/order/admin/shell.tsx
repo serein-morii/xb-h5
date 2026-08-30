@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ChevronRight,
   ExternalLink,
+  Fingerprint,
   House,
   LoaderCircle,
   Pencil,
@@ -21,6 +22,9 @@ import {
   setStoredToken,
 } from "../../../lib/api";
 import ThemeSettings from "../../../components/ThemeSettings";
+import { AppStartup } from "../../../components/AppStartup";
+import { PasskeyManager, type PasskeyRequest } from "../../../components/PasskeyManager";
+import { getStartupConfig } from "../../../lib/startup";
 import {
   OnboardingOverlay,
   OnboardingProvider,
@@ -65,6 +69,8 @@ import { DashboardPage } from "./dashboard";
 import { BindEmailSheet, ChangePwdByEmailSheet, EditProfileSheet, LoginScreen } from "./login";
 import { MobileBackButton, Sheet, Toast } from "./ui";
 import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest, useAccess } from "./access";
+
+const adminPasskeyRequest: PasskeyRequest = (path, options) => apiRequest(path, options);
 
 const AdminOrderEntry = lazy(() => import("../AdminOrderEntry"));
 const BatchOrderEntry = lazy(() => import("../tools/batch-order/BatchOrderEntry"));
@@ -128,6 +134,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
   // 标记修改密码流程是否需要"先绑定邮箱再改密"
   const [pendingChangePwd, setPendingChangePwd] = useState(false);
   const [profileActionsConfig, setProfileActionsConfig] = useState<ProfileActionsConfig>(getProfileActions);
+  const [passkeyOpen, setPasskeyOpen] = useState(false);
   useEffect(() => {
     let mounted = true;
     fetchProfileActions(apiRequest).then((config) => { if (mounted) setProfileActionsConfig(config); }).catch(() => { /* */ });
@@ -139,7 +146,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
     () => resolveMobileMenu(menuConfig, (key) => canOpenMenu(access, key), hierarchyConfig),
     [access, menuConfig, hierarchyConfig],
   );
-  useEffect(() => { if (!open) { setView("menu"); setMenuQuery(""); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPendingChangePwd(false); } }, [open]);
+  useEffect(() => { if (!open) { setView("menu"); setMenuQuery(""); setChangePwdOpen(false); setEditProfileOpen(false); setBindEmailOpen(false); setPasskeyOpen(false); setPendingChangePwd(false); } }, [open]);
   const filteredGroups = useMemo(() => {
     const keyword = menuQuery.trim().toLowerCase();
     if (!keyword) return mobileMenu.groups;
@@ -203,6 +210,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
         <div><span>账号状态</span><b className="profile-status">正常</b></div>
       </section>
       <button className="profile-back" type="button" onClick={() => setView("menu")}><ArrowLeft size={18} />返回全部功能</button>
+      <button className="profile-action" type="button" onClick={() => setPasskeyOpen(true)}><Fingerprint size={18} />Passkey 管理</button>
       {profileActionsConfig.items.filter((item) => !item.hidden).map((item) => {
         const Icon = resolveMobileIcon(item.icon, Pencil);
         const label = item.key === "bindEmail" && userEmail && item.altLabel ? item.altLabel : item.label;
@@ -244,6 +252,9 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
       onClose={() => setChangePwdOpen(false)}
       notify={notify}
     />
+    <Sheet open={passkeyOpen} title="Passkey 管理" onClose={() => setPasskeyOpen(false)}>
+      <PasskeyManager endpoint={API_PATHS.identity.passkeys} request={adminPasskeyRequest} />
+    </Sheet>
   </>;
   const extras = mobileMenu.extras;
   return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}>
@@ -530,7 +541,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToParentOrHome} exitLabel={exitLabel} />
     : <CrudModule config={configs[visibleActive as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
-  if (!access.ready) return <div className="app-loading"><LoaderCircle className="spin" size={28} /><p>正在同步权限</p></div>;
+  if (!access.ready) return <AppStartup system="order" message="正在同步权限" />;
 
   return <AccessContext.Provider value={access}><DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
@@ -601,7 +612,6 @@ export default function MobileAdmin() {
   const [token, setToken] = useState("");
   const [username, setUsername] = useState("管理员");
   const [showSplash, setShowSplash] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
   useEffect(() => {
     const stored = getStoredToken();
     const savedName = window.localStorage.getItem("xb-mobile-username");
@@ -614,21 +624,14 @@ export default function MobileAdmin() {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    // 启动动画至少展示 ~700ms，让 logo 弹入 + 进度条跑一会儿，再淡出
-    const fadeTimer = window.setTimeout(() => setSplashFading(true), 700);
-    const hideTimer = window.setTimeout(() => setShowSplash(false), 1100);
-    return () => { window.clearTimeout(fadeTimer); window.clearTimeout(hideTimer); };
+    const timer = window.setTimeout(() => setShowSplash(false), getStartupConfig("order").minimumMs);
+    return () => window.clearTimeout(timer);
   }, [ready]);
   async function logout() {
     try { await apiRequest(API_PATHS.auth.logout, { method: "POST" }); } catch { /* local logout still proceeds */ }
     clearStoredToken(); setToken("");
   }
-  if (showSplash) return <div className={`app-loading${splashFading ? " fading" : ""}`}>
-    <div className="brand-mark app-loading-mark"><span /></div>
-    <h1>XB</h1>
-    <div className="app-loading-bar"><span /></div>
-    <p>正在启动移动工作台</p>
-  </div>;
+  if (showSplash) return <AppStartup system="order" />;
   if (!token) return <LoginScreen onLogin={(nextToken, nextUsername) => { setStoredToken(nextToken); setToken(nextToken); setUsername(nextUsername); }} />;
   return <OnboardingProvider>
     <AdminShell username={username} onLogout={logout} />

@@ -2540,8 +2540,7 @@ html.theme-dark .purchaser-block-group .purchaser-order-code-row > svg { color: 
   .admin-entry-express-code { grid-template-columns: 1fr 1fr; }
   .admin-entry-express-code input { grid-column: 1/-1; }
 }
-/* Static SPA bootstrap and fallback pages. */
-.app-starting,
+/* Static SPA fallback pages. */
 .spa-not-found {
   min-height: 100dvh;
   display: grid;
@@ -2551,18 +2550,6 @@ html.theme-dark .purchaser-block-group .purchaser-order-code-row > svg { color: 
   color: #173d31;
   background: #f3faf6;
 }
-
-.app-starting {
-  font-size: 15px;
-  letter-spacing: 0.08em;
-}
-
-html[data-otp] .app-starting {
-  color: #98a7dd;
-  background: #0e1730;
-  letter-spacing: 0;
-}
-
 
 .spa-not-found span {
   color: #1d9a64;
@@ -3622,8 +3609,7 @@ html.theme-dark .generated-link-action-secondary:hover { background: rgba(7, 193
   color: var(--ink);
 }
 
-.spa-not-found,
-.app-starting {
+.spa-not-found {
   color: var(--ink);
   background: #f7f8fa;
 }
@@ -11141,6 +11127,7 @@ html.theme-dark .peach-atelier-product img {
 }
 
 .customer-login-method {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
   padding: 5px;
   border: 1px solid rgba(35, 49, 62, .08);

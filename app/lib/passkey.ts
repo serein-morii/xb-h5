@@ -1,7 +1,7 @@
 const fromBase64Url = (value: string) => Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=")), (char) => char.charCodeAt(0));
 const toBase64Url = (value: ArrayBuffer | null) => value ? btoa(String.fromCharCode(...new Uint8Array(value))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") : null;
 
-export async function createVaultPasskey(raw: Record<string, unknown>) {
+export async function createPasskey(raw: Record<string, unknown>) {
   if (!window.PublicKeyCredential || !navigator.credentials) throw new Error("当前浏览器不支持 Passkey");
   const source = raw as { challenge: string; user: { id: string }; excludeCredentials?: Array<{ id: string }> };
   const publicKey = { ...raw, challenge: fromBase64Url(source.challenge), user: { ...(raw.user as object), id: fromBase64Url(source.user.id) }, excludeCredentials: source.excludeCredentials?.map((item) => ({ ...item, id: fromBase64Url(item.id) })) } as unknown as PublicKeyCredentialCreationOptions;
@@ -16,7 +16,7 @@ export async function createVaultPasskey(raw: Record<string, unknown>) {
   };
 }
 
-export async function getVaultPasskey(raw: Record<string, unknown>) {
+export async function getPasskey(raw: Record<string, unknown>) {
   if (!window.PublicKeyCredential || !navigator.credentials) throw new Error("当前浏览器不支持 Passkey");
   const source = raw as { challenge: string; allowCredentials?: Array<{ id: string }> };
   const publicKey = { ...raw, challenge: fromBase64Url(source.challenge), allowCredentials: source.allowCredentials?.map((item) => ({ ...item, id: fromBase64Url(item.id) })) } as PublicKeyCredentialRequestOptions;

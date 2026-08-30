@@ -1,4 +1,5 @@
 import { lazy, useEffect } from "react";
+import { AppStartup } from "../../components/AppStartup";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import type { RouteConfig } from "../types";
 
@@ -10,14 +11,14 @@ function BeadStudioRedirect() {
   useEffect(() => {
     window.location.replace(APP_ROUTES.beadStudio);
   }, []);
-  return <main className="spa-short-link-loading"><div className="app-loading-mark"><span /></div></main>;
+  return <AppStartup system="lab" message="正在打开拼豆工作台" />;
 }
 
 function LabRedirect() {
   useEffect(() => {
     window.location.replace(APP_ROUTES.lab);
   }, []);
-  return <main className="spa-short-link-loading"><div className="app-loading-mark"><span /></div></main>;
+  return <AppStartup system="lab" message="正在打开实验室" />;
 }
 
 export const labRoutes: Record<string, RouteConfig> = {

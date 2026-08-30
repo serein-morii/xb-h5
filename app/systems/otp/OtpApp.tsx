@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { AppStartup } from "../../components/AppStartup";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
 import "./otp-vault.css";
 import "./otp-auth.css";
@@ -7,7 +8,7 @@ const OtpVaultPage = lazy(() => import("./OtpVaultPage"));
 const VaultSharePage = lazy(() => import("./VaultSharePage"));
 
 function Fallback() {
-  return <main className="otp-auth-page"><div className="otp-boot"><span className="otp-boot-mark" /><p>正在打开 OTP Vault…</p></div></main>;
+  return <AppStartup system="otp" message="正在加载安全组件" />;
 }
 
 /** OTP 独立壳：不经过主站 App，避免订单/黄桃/工具箱一起进来 */

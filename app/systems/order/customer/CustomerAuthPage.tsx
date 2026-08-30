@@ -2,9 +2,10 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
 import { apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, getCustomerToken, setCustomerToken } from "../../../lib/api";
 import { SliderCaptcha } from "../../../components/SliderCaptcha";
+import { getPasskey } from "../../../lib/passkey";
 
 type Mode = "login" | "register" | "reset";
-type LoginMethod = "password" | "code";
+type LoginMethod = "password" | "code" | "passkey";
 type Context = {
   purchaserShortId?: string;
   purchaserName?: string;
@@ -114,6 +115,13 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
     setBusy(true);
     try {
       if (mode === "login") {
+        if (loginMethod === "passkey") {
+          const options = await apiRequest<{ data?: { requestId?: string; publicKey?: Record<string, unknown> } }>(`${API_PATHS.customers.root}/auth/passkeys/login/options`, { auth: false, method: "POST", body: { shortId, email } });
+          if (!options.data?.requestId || !options.data.publicKey) throw new Error("Passkey 登录参数不完整");
+          const result = await apiRequest<{ data?: AuthData }>(`${API_PATHS.customers.root}/auth/passkeys/login/finish`, { auth: false, method: "POST", body: { requestId: options.data.requestId, credential: await getPasskey(options.data.publicKey) } });
+          finishLogin(result.data);
+          return;
+        }
         const endpoint = loginMethod === "code" ? `${API_PATHS.customers.root}/auth/login-code` : `${API_PATHS.customers.root}/auth/login`;
         if (loginMethod === "password" && captchaOn && !captchaCode.trim()) return setError("请先完成滑块验证");
         const result = await apiRequest<{ data?: AuthData }>(endpoint, {
@@ -210,6 +218,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
             <div className="customer-login-method" role="tablist">
               <button type="button" className={loginMethod === "password" ? "active" : ""} onClick={() => setLoginMethod("password")} disabled={context?.passwordAvailable === false}>密码登录</button>
               <button type="button" className={loginMethod === "code" ? "active" : ""} onClick={() => setLoginMethod("code")}>邮箱验证码</button>
+              <button type="button" className={loginMethod === "passkey" ? "active" : ""} onClick={() => setLoginMethod("passkey")}>Passkey</button>
             </div>
           ) : null}
           <label><span>邮箱</span><input type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder={context?.maskedEmail || (mode === "register" ? COMMON_MAILBOX_HINT : "用于登录和找回密码")} />{mode === "register" ? <small>{COMMON_MAILBOX_HINT}</small> : null}</label>
@@ -237,7 +246,7 @@ export default function CustomerAuthPage({ mode }: { mode: Mode }) {
           ) : null}
           {mode !== "login" ? <label><span>确认密码</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="再次输入密码" /></label> : null}
           {error ? <p className="customer-auth-error">{error}</p> : null}
-          <button className="customer-auth-submit" disabled={busy || (mode === "register" && context?.registered) || (mode === "login" && context?.registered === false)}>{busy ? "正在处理" : mode === "login" ? "登录并进入" : mode === "register" ? "完成注册" : "重置密码"}</button>
+          <button className="customer-auth-submit" disabled={busy || (mode === "register" && context?.registered) || (mode === "login" && context?.registered === false)}>{busy ? "正在处理" : mode === "login" && loginMethod === "passkey" ? "使用 Passkey 登录" : mode === "login" ? "登录并进入" : mode === "register" ? "完成注册" : "重置密码"}</button>
         </form>
         <footer>
           {mode === "login" ? <><a href={`${APP_ROUTES.customerRegister}${shortIdLink}`}>首次注册</a><a href={APP_ROUTES.customerReset}>忘记密码</a></> : <a href={`${APP_ROUTES.customerLogin}${shortIdLink}`}>返回客户登录</a>}
