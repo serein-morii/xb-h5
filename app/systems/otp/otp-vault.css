@@ -437,10 +437,12 @@
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
 .share-content h1 { margin: 4px 0 3px; color: #172033; font-size: 25px; }
 .share-content > header p { color: #747d90; }
-.share-expiry { min-width: 196px; padding: 11px 13px; border: 0; border-radius: 15px; background: linear-gradient(135deg, #4257c4, #6f7fe0); color: #fff; box-shadow: 0 10px 24px rgba(72, 92, 199, .2); }
-.share-expiry-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: rgba(255, 255, 255, .14); }
-.share-expiry small { margin: 0 0 3px; color: rgba(255, 255, 255, .7); font-size: 8px; }
-.share-expiry b { color: #fff; font-size: 13px; font-variant-numeric: tabular-nums; }
+.share-expiry { min-width: 230px; padding: 9px 10px; display: flex; align-items: center; gap: 9px; border: 1px solid rgba(72,92,199,.1); border-radius: 15px; background: rgba(255,255,255,.78); color: #172033; box-shadow: 0 8px 22px rgba(40,53,99,.07), inset 0 1px 0 rgba(255,255,255,.9); backdrop-filter: blur(12px); }
+.share-expiry-icon { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg,#5368d2,#8492e8); color: #fff; box-shadow: 0 7px 16px rgba(72,92,199,.2); }
+.share-expiry small { margin: 0 0 3px; color: #858da0; font-size: 8px; font-weight: 650; }
+.share-expiry b { color: #28334c; font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.share-expiry em { margin-left: auto; padding: 5px 7px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; background: #edf8f2; color: #37825b; font-size: 8px; font-style: normal; font-weight: 750; }
+.share-expiry em i { width: 5px; height: 5px; border-radius: 50%; background: #4ead78; box-shadow: 0 0 0 3px rgba(78,173,120,.12); }
 .share-item-list { gap: 12px; }
 .share-item-list > article { padding: 16px; border: 0; border-radius: 19px; background: #fff; box-shadow: 0 7px 22px rgba(34, 44, 76, .07); }
 .share-item-title > span { width: 40px; height: 40px; border-radius: 13px; background: linear-gradient(135deg, #4055c3, #7887e5); }
@@ -483,6 +485,7 @@
   .share-expiry-icon { width: 28px; height: 28px; }
   .share-expiry small { font-size: 7px; }
   .share-expiry b { font-size: 10px; white-space: nowrap; }
+  .share-expiry em { display: none; }
   .share-toolbar { width: 100%; }
   .share-toolbar .vault-search { min-width: 0; flex: 1; }
   .share-item-list { margin-top: 12px; }
@@ -501,6 +504,10 @@
   .share-page.is-open { background: #0e1420; }
   .share-content { background: rgba(23, 30, 44, .9); }
   .share-content > header { border-color: rgba(225,231,248,.08); background: linear-gradient(135deg, #222b4a, #1b2332); }
+  .share-expiry { border-color: rgba(225,231,248,.09); background: rgba(23,30,44,.82); box-shadow: 0 8px 22px rgba(0,0,0,.16); }
+  .share-expiry b { color: #eef1f8; }
+  .share-expiry small { color: #939caf; }
+  .share-expiry em { background: rgba(63,151,101,.15); color: #7fc49d; }
   .share-content h1, .share-item-title b, .share-value-row.emphasize b { color: #eef1f8; }
   .share-item-list > article { background: #171e2c; box-shadow: 0 8px 25px rgba(0,0,0,.2); }
   .share-value-row.emphasize { background: #222b4a; }
