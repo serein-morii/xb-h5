@@ -401,30 +401,34 @@
 }
 
 /* 临时分享页采用独立 App 视觉，不复用后台卡片结构。 */
-.share-page.is-gate { position: relative; overflow: hidden; background: radial-gradient(circle at 15% -8%, rgba(142, 157, 255, .55), transparent 33%), radial-gradient(circle at 95% 30%, rgba(76, 200, 201, .16), transparent 28%), linear-gradient(155deg, #111a35, #273c76 62%, #172347); }
+.share-page.is-gate { position: relative; min-height: 100dvh; overflow: hidden; padding: 24px; display: grid; grid-template-columns: minmax(0,1fr); align-content: center; background: radial-gradient(circle at 15% -8%, rgba(142, 157, 255, .55), transparent 33%), radial-gradient(circle at 88% 22%, rgba(76, 200, 201, .17), transparent 25%), radial-gradient(circle at 50% 105%, rgba(95, 112, 218, .2), transparent 34%), linear-gradient(155deg, #111a35, #273c76 62%, #172347); }
 .share-page.is-gate::before { content: ""; position: fixed; inset: 0; opacity: .18; background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px); background-size: 34px 34px; mask-image: linear-gradient(to bottom, #000, transparent 68%); pointer-events: none; }
-.share-page.is-gate .share-brand { position: relative; z-index: 1; max-width: 420px; color: #fff; }
+.share-page.is-gate .share-brand { position: relative; z-index: 1; width: 100%; max-width: 420px; margin: 0 auto 12px; color: #fff; }
+.share-page.is-gate .share-brand b { font-size: 13px; letter-spacing: -.01em; }
 .share-page.is-gate .share-brand small { color: rgba(255, 255, 255, .65); }
-.share-page.is-gate .share-vault-mark { background: rgba(255, 255, 255, .16); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); backdrop-filter: blur(12px); }
-.share-access-card { position: relative; z-index: 1; width: min(420px, 100%); margin: 3vh auto 0; padding: 22px; display: block; border: 1px solid rgba(255,255,255,.5); border-radius: 24px; background: rgba(255, 255, 255, .97); color: #172033; text-align: left; box-shadow: 0 24px 64px rgba(4, 9, 28, .3); backdrop-filter: blur(18px); }
+.share-page.is-gate .share-vault-mark { border-radius: 12px; background: rgba(255, 255, 255, .14); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 8px 24px rgba(5,10,31,.12); backdrop-filter: blur(12px); }
+.share-access-card { position: relative; z-index: 1; box-sizing: border-box; width: min(420px, 100%); margin: 0 auto; padding: 22px; overflow: hidden; display: block; border: 1px solid rgba(255,255,255,.62); border-radius: 24px; background: linear-gradient(155deg,rgba(255,255,255,.99),rgba(248,249,253,.96)); color: #172033; text-align: left; box-shadow: 0 26px 70px rgba(4, 9, 28, .32), inset 0 1px 0 #fff; backdrop-filter: blur(20px); }
+.share-access-card::before { content: ""; position: absolute; top: 0; right: 38px; left: 38px; height: 3px; border-radius: 0 0 999px 999px; background: linear-gradient(90deg,transparent,#7181e3 28%,#5fc3c2 72%,transparent); opacity: .8; }
 .share-access-intro { display: flex; align-items: flex-start; gap: 12px; }
 .share-access-intro > div { min-width: 0; flex: 1; }
 .share-access-intro > div > small { display: block; color: #6575d3; font-size: 9px; font-weight: 800; letter-spacing: .08em; }
 .share-access-intro h1 { margin: 4px 0 5px; color: #172033; font-size: 24px; letter-spacing: -.04em; }
 .share-access-intro p { margin: 0; color: #747d90; font-size: 10px; line-height: 1.6; }
 .share-lock { width: 42px; height: 42px; flex: none; border-radius: 13px; background: linear-gradient(135deg, #4055c3, #7887e5); box-shadow: 0 8px 18px rgba(72, 92, 199, .24); }
-.share-access-summary { margin-top: 16px; overflow: hidden; border: 0; border-radius: 13px; background: #f1f3fa; }
-.share-access-summary span { padding: 10px; border-color: rgba(38, 50, 77, .08); }
+.share-access-summary { margin-top: 16px; gap: 8px; overflow: visible; border: 0; border-radius: 0; background: transparent; }
+.share-access-summary span,.share-access-summary span:first-child { padding: 9px 10px; border: 1px solid rgba(38,50,77,.06); border-radius: 12px; background: linear-gradient(145deg,#f4f5fa,#eef0f7); }
 .share-access-summary small { color: #80889a; font-size: 8px; }
 .share-access-summary b { margin-top: 3px; color: #25304a; font-size: 11px; }
 .share-access-card form { margin-top: 17px; }
 .share-access-card form label > span { margin-bottom: 6px; color: #566074; font-size: 9px; font-weight: 750; }
-.share-code-input { height: 52px; padding: 0 13px; border: 1.5px solid #e0e3ef; border-radius: 14px; background: #f8f9fc; }
+.share-code-input { height: 52px; padding: 0 13px; border: 1px solid #dde1ed; border-radius: 14px; background: #f8f9fc; box-shadow: inset 0 1px 2px rgba(30,42,78,.04); transition: border-color .18s,background .18s,box-shadow .18s; }
 .share-code-input:focus-within { border-color: #6c7bdd; background: #fff; box-shadow: 0 0 0 4px rgba(72, 92, 199, .09); }
-.share-code-input input { color: #172033; font-size: 20px; }
+.share-code-input input { color: #172033; font-size: 20px; font-weight: 800; letter-spacing: .24em; font-variant-numeric: tabular-nums; }
 .share-access-help { color: #8a92a2; }
-.share-access-card form > button, .share-open-button { min-height: 45px; margin-top: 10px; border-radius: 13px; background: linear-gradient(135deg, #4055c3, #6576dc); box-shadow: 0 9px 20px rgba(72, 92, 199, .2); font-size: 11px; }
-.share-access-card footer { color: #8a92a2; }
+.share-access-card form > button, .share-open-button { min-height: 45px; margin-top: 10px; border-radius: 13px; background: linear-gradient(135deg, #3f54c3, #6c7de1); box-shadow: 0 10px 22px rgba(72, 92, 199, .23), inset 0 1px 0 rgba(255,255,255,.18); font-size: 11px; transition: transform .16s,box-shadow .16s; }
+.share-access-card form > button:not(:disabled):hover,.share-open-button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 13px 27px rgba(72,92,199,.27), inset 0 1px 0 rgba(255,255,255,.2); }
+.share-access-card form > button:not(:disabled):active,.share-open-button:not(:disabled):active { transform: translateY(0) scale(.99); }
+.share-access-card footer { margin-top: 13px; padding-top: 11px; color: #8a92a2; }
 
 .share-page.is-open { background: radial-gradient(circle at 90% 0, rgba(100, 117, 218, .15), transparent 28%), #eef1f7; }
 .share-page.is-open .share-brand { max-width: 820px; }
@@ -463,8 +467,8 @@
 .share-empty { grid-column: 1 / -1; margin: 20px 0; color: var(--share-muted); font-size: 11px; text-align: center; }
 
 @media (max-width: 560px) {
-  .share-page.is-gate { min-height: 100dvh; padding: max(17px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom)); }
-  .share-page.is-gate .share-brand { width: 100%; margin: 0; }
+  .share-page.is-gate { min-height: 100dvh; padding: max(17px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom)); display: block; }
+  .share-page.is-gate .share-brand { width: 100%; margin: 0 auto 12px; }
   .share-page.is-gate .share-access-card { width: 100%; margin: 12px auto 0; padding: 20px 17px; border-radius: 23px; box-shadow: 0 20px 52px rgba(5, 10, 31, .26); }
   .share-access-intro h1 { font-size: 23px; }
   .share-code-input { height: 50px; }
