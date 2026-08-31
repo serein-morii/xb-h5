@@ -384,6 +384,20 @@ test("keeps the public order tracking route", async () => {
   assert.match(admin, /\/tools\/order#\$\{encodeURIComponent/);
 });
 
+test("keeps OTP share preferences local and share browsing compact", async () => {
+  const [workspace, share, api] = await Promise.all([
+    source("app/systems/otp/OtpVaultWorkspace.tsx"),
+    source("app/systems/otp/VaultSharePage.tsx"),
+    source("app/systems/otp/vaultApi.ts"),
+  ]);
+  assert.match(workspace, /compact: true/);
+  assert.match(workspace, /getVaultPreferences/);
+  assert.match(api, /saveVaultPreferences/);
+  assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
+  assert.match(share, /搜索服务或账号/);
+  assert.match(share, /compact \? " is-compact"/);
+});
+
 test("allows purchasers to edit and delete their own pending orders", async () => {
   const page = await source("app/systems/order/tools/place-order/PurchaserOrderPage.tsx");
   assert.match(page, /\/search\/order\/\$\{editingOrder\.id\}/);

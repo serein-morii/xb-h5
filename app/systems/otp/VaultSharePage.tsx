@@ -1,5 +1,5 @@
-import { Check, Clock3, Copy, ExternalLink, KeyRound, LoaderCircle, LockKeyhole, ShieldCheck, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Check, Clock3, Copy, ExternalLink, KeyRound, LayoutGrid, LoaderCircle, LockKeyhole, Search, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { getSharedContent, getShareStatus, openVaultShare, type SharedItem, type ShareStatus } from "./vaultApi";
 import "./otp-vault.css";
 
@@ -18,6 +18,8 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
+  const [query, setQuery] = useState("");
+  const [compact, setCompact] = useState(() => { try { return JSON.parse(localStorage.getItem("otp-vault-share-prefs") || "{}").compact ?? true; } catch { return true; } });
   const otpRefreshAt = useRef(0);
 
   const loadContent = useCallback(async (session: string) => {
@@ -57,6 +59,7 @@ export default function VaultSharePage({ token }: { token: string }) {
     otpRefreshAt.current = now;
     void loadContent(sessionToken);
   }, [items, loadContent, now, sessionToken]);
+  useEffect(() => { localStorage.setItem("otp-vault-share-prefs", JSON.stringify({ compact })); }, [compact]);
 
   const copy = async (value: string, key: string) => {
     if (!allowCopy) return;
@@ -65,6 +68,10 @@ export default function VaultSharePage({ token }: { token: string }) {
   const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - now) / 1000)) : 0;
   const accessExpiresIn = status?.expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(status.expireTime)).getTime() - now) / 1000)) : 0;
   const statusMessage = status?.status === "EXPIRED" ? "授权已经过期" : status?.status === "REVOKED" ? "授权已被撤销" : status?.status === "LIMIT_REACHED" ? "授权访问次数已用完" : "授权链接不可用";
+  const filteredItems = useMemo(() => {
+    const value = query.trim().toLowerCase();
+    return value ? items.filter((item) => `${item.issuer} ${item.accountName || ""}`.toLowerCase().includes(value)) : items;
+  }, [items, query]);
 
   if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
   if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
@@ -79,14 +86,15 @@ export default function VaultSharePage({ token }: { token: string }) {
       {error ? <p className="share-error" role="alert">{error}</p> : null}<footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
       <header><div><span>临时授权已验证</span><h1>凭据内容</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-icon"><Clock3 size={16} /></span><span><small>授权剩余有效时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
-      <div className="share-item-list">{items.map((item, index) => <article key={`${item.issuer}-${index}`}>
+      <div className="share-toolbar vault-panel-tools"><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={compact} onChange={(event) => setCompact(event.target.checked)} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div>
+      <div className={`share-item-list${compact ? " is-compact" : ""}`}>{filteredItems.map((item, index) => <article key={`${item.issuer}-${item.accountName || ""}-${index}`}>
         <div className="share-item-title"><span>{item.issuer.slice(0, 2).toUpperCase()}</span><div><b>{item.issuer}</b>{item.accountName ? <small>{item.accountName}</small> : null}</div></div>
         {item.otp ? <SharedRow label="动态验证码" value={item.otp.replace(/(.{3})/, "$1 ")} copyValue={item.otp} copyKey={`${index}-otp`} allowCopy={allowCopy} copied={copied} onCopy={copy} emphasize expiresAt={item.otpValidUntil} period={item.otpPeriodSeconds} now={now} /> : null}
         {item.accountName ? <SharedRow label="账号" value={item.accountName} copyValue={item.accountName} copyKey={`${index}-account`} allowCopy={allowCopy} copied={copied} onCopy={copy} /> : null}
         {item.password ? <SharedRow label="密码" value={item.password} copyValue={item.password} copyKey={`${index}-password`} allowCopy={allowCopy} copied={copied} onCopy={copy} secret /> : null}
         {item.loginUrl ? <a className="share-login-link" href={item.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} />打开登录地址</a> : null}
         {item.note ? <p className="share-note">{item.note}</p> : null}
-      </article>)}</div>
+      </article>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
     </section>}
   </main>;
