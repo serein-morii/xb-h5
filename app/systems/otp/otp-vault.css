@@ -209,6 +209,19 @@
 .vault-option-grid label.is-selected svg { display: block; }
 .vault-access-options { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--utility-line); }
 .vault-single-field { grid-template-columns: 1fr; }
+.vault-duration { margin-top: 10px; padding: 11px; display: grid; grid-template-columns: 125px minmax(0,1fr); gap: 8px 10px; border: 1px solid color-mix(in srgb,#6674cf 14%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,#6674cf 4%,var(--utility-paper)); }
+.vault-duration-head { grid-row: 1 / 3; display: flex; align-items: center; gap: 9px; }
+.vault-duration-head > span { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg,#5368d2,#8492e8); color: #fff; box-shadow: 0 7px 15px rgba(72,92,199,.18); }
+.vault-duration-head small,.vault-duration-head b { display: block; }
+.vault-duration-head small { color: var(--utility-muted); font-size: 8px; }
+.vault-duration-head b { margin-top: 3px; color: var(--utility-text); font-size: 13px; }
+.vault-duration-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.vault-duration-presets button { min-height: 32px; padding: 0 7px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
+.vault-duration-presets button.is-active { border-color: transparent; background: #6674cf; color: #fff; box-shadow: 0 6px 14px rgba(72,92,199,.2); }
+.vault-duration > label { min-height: 32px; padding: 0 7px 0 10px; display: flex; align-items: center; gap: 7px; border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); }
+.vault-duration > label > span { margin-right: auto; font-size: 8px; }
+.vault-duration > label input { width: 58px !important; min-height: 26px !important; padding: 0 5px !important; border-radius: 7px !important; text-align: center; }
+.vault-duration > label em { color: var(--utility-muted); font-size: 8px; font-style: normal; }
 .vault-access-records { margin-top: 14px; overflow: hidden; border: 1px solid var(--utility-line); border-radius: 15px; }
 .vault-access-records > header { margin: 0; padding: 12px 13px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--utility-line); }
 .vault-access-records > header span, .vault-access-records > header small { display: block; }
@@ -364,6 +377,9 @@
   .vault-scan-error { background: #3a2023; color: #f2aaa7; }
   .vault-share-detail-hero, .vault-select-list label.is-selected, .vault-option-grid label.is-selected { background: #222b4a; }
   .vault-share-detail-grid section, .vault-share-detail-section, .vault-toggle-row, .vault-option-grid label { background: #101725; }
+  .vault-duration { background: #101725; }
+  .vault-duration-presets button,.vault-duration > label { background: #171e2c; }
+  .vault-duration-presets button.is-active { background: #6674cf; }
   .vault-permission-tags b { background: #222b3d; color: #b1baff; }
   .vault-access-records > header > b { background: #222b4a; color: #b1baff; }
   .vault-share-form > footer { background: #171e2c; box-shadow: 0 -8px 24px rgba(0, 0, 0, .22); }

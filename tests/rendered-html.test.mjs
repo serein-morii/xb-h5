@@ -392,6 +392,8 @@ test("keeps OTP share preferences local and share browsing compact", async () =>
   ]);
   assert.match(workspace, /compact: true/);
   assert.match(workspace, /getVaultPreferences/);
+  assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
+  assert.match(workspace, /vault-duration/);
   assert.match(api, /saveVaultPreferences/);
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
   assert.match(share, /搜索服务或账号/);
