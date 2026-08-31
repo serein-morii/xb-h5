@@ -398,6 +398,8 @@ test("keeps OTP share preferences local and share browsing compact", async () =>
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
   assert.match(share, /搜索服务或账号/);
   assert.match(share, /compact \? " is-compact"/);
+  assert.match(share, /expiryProgress/);
+  assert.match(share, /pathLength="100"/);
 });
 
 test("allows purchasers to edit and delete their own pending orders", async () => {

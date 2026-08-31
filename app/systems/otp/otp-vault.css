@@ -453,13 +453,15 @@
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
 .share-content h1 { margin: 4px 0 3px; color: #172033; font-size: 25px; }
 .share-content > header p { color: #747d90; }
-.share-expiry { position: relative; min-width: 220px; min-height: 70px; padding: 12px 14px; overflow: hidden; display: grid; grid-template-columns: 40px minmax(0,1fr); align-items: center; gap: 11px; border: 1px solid rgba(96,112,207,.16); border-radius: 18px; background: linear-gradient(145deg,#eef0ff,#f8f9ff 72%); color: #172033; box-shadow: 0 10px 28px rgba(55,68,125,.11), inset 0 1px 0 rgba(255,255,255,.95); }
-.share-expiry::after { content: ""; position: absolute; right: -24px; bottom: -34px; width: 82px; height: 82px; border-radius: 50%; background: rgba(102,116,207,.08); pointer-events: none; }
-.share-expiry-icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(145deg,#465bc7,#7f8ee8); color: #fff; box-shadow: 0 8px 18px rgba(72,92,199,.25); }
-.share-expiry small { margin: 0 0 3px; color: #737e9e; font-size: 8px; font-weight: 750; letter-spacing: .06em; }
-.share-expiry b { color: #26345d; font-size: 18px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
-.share-expiry em { position: absolute; top: 8px; right: 9px; z-index: 1; padding: 4px 6px; display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; background: rgba(255,255,255,.82); color: #37825b; box-shadow: 0 3px 10px rgba(41,78,59,.06); font-size: 7px; font-style: normal; font-weight: 800; }
-.share-expiry em i { width: 5px; height: 5px; border-radius: 50%; background: #4ead78; box-shadow: 0 0 0 3px rgba(78,173,120,.12); }
+.share-expiry { min-width: 150px; padding: 2px 8px; display: grid; justify-items: center; gap: 5px; color: #172033; }
+.share-expiry-ring { position: relative; width: 54px; height: 54px; display: grid; place-items: center; color: #586bcf; }
+.share-expiry-progress { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+.share-expiry-progress circle { fill: none; stroke: rgba(72,92,199,.12); stroke-width: 3.5; }
+.share-expiry-progress circle:last-child { stroke: #6674cf; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset .8s linear; }
+.share-expiry-clock { position: relative; }
+.share-expiry-copy { display: grid; justify-items: center; }
+.share-expiry small { margin: 0 0 2px; color: #7c859a; font-size: 7px; font-weight: 750; letter-spacing: .08em; }
+.share-expiry b { color: #26345d; font-size: 13px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.015em; white-space: nowrap; }
 .share-item-list { gap: 12px; }
 .share-item-list > article { padding: 16px; border: 0; border-radius: 19px; background: #fff; box-shadow: 0 7px 22px rgba(34, 44, 76, .07); }
 .share-item-title > span { width: 40px; height: 40px; border-radius: 13px; background: linear-gradient(135deg, #4055c3, #7887e5); }
@@ -498,11 +500,10 @@
   .share-content > header { position: sticky; z-index: 20; top: max(8px, env(safe-area-inset-top)); padding: 14px; flex-direction: row; align-items: center; border: 1px solid rgba(38, 50, 77, .07); border-radius: 19px; box-shadow: 0 10px 30px rgba(34, 44, 76, .12); backdrop-filter: blur(18px); }
   .share-content h1 { font-size: 20px; }
   .share-content > header p { font-size: 9px; }
-  .share-expiry { width: auto; min-width: 138px; min-height: 54px; margin-left: auto; padding: 8px 9px; grid-template-columns: 32px minmax(0,1fr); gap: 7px; border-radius: 14px; }
-  .share-expiry-icon { width: 32px; height: 32px; border-radius: 10px; }
+  .share-expiry { width: auto; min-width: 104px; margin-left: auto; padding: 0 2px; gap: 3px; }
+  .share-expiry-ring { width: 42px; height: 42px; }
   .share-expiry small { font-size: 7px; }
-  .share-expiry b { font-size: 13px; white-space: nowrap; }
-  .share-expiry em { display: none; }
+  .share-expiry b { font-size: 11px; }
   .share-toolbar { width: 100%; }
   .share-toolbar .vault-search { min-width: 0; flex: 1; }
   .share-item-list { margin-top: 12px; }
@@ -521,10 +522,11 @@
   .share-page.is-open { background: #0e1420; }
   .share-content { background: rgba(23, 30, 44, .9); }
   .share-content > header { border-color: rgba(225,231,248,.08); background: linear-gradient(135deg, #222b4a, #1b2332); }
-  .share-expiry { border-color: rgba(142,157,255,.18); background: linear-gradient(145deg,#242e50,#1d2538 72%); box-shadow: 0 10px 26px rgba(0,0,0,.2); }
+  .share-expiry-ring { color: #aeb7ff; }
+  .share-expiry-progress circle { stroke: rgba(174,183,255,.14); }
+  .share-expiry-progress circle:last-child { stroke: #9da8f3; }
   .share-expiry b { color: #eef1f8; }
   .share-expiry small { color: #939caf; }
-  .share-expiry em { background: rgba(63,151,101,.15); color: #7fc49d; }
   .share-content h1, .share-item-title b, .share-value-row.emphasize b { color: #eef1f8; }
   .share-item-list > article { background: #171e2c; box-shadow: 0 8px 25px rgba(0,0,0,.2); }
   .share-value-row.emphasize { background: #222b4a; }
