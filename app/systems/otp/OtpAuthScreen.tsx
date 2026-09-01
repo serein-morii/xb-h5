@@ -1,8 +1,8 @@
-import { Fingerprint, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldAlert, ShieldCheck, User, UserPlus } from "lucide-react";
+import { BookOpen, Fingerprint, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldAlert, ShieldCheck, User, UserPlus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { SliderCaptcha } from "../../components/SliderCaptcha";
 import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "../../lib/api";
-import { API_PATHS } from "../../lib/pathConventions";
+import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { finishPasskeyLogin, getPasskeyLoginOptions, registerOtpAccount } from "./vaultApi";
 import { getPasskey } from "../../lib/passkey";
 import "./otp-auth.css";
@@ -132,7 +132,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
         {message ? <p className="otp-auth-message" role="status">{message}</p> : null}
 		<button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" && loginMethod === "passkey" ? <Fingerprint size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" && loginMethod === "passkey" ? "使用 Passkey 登录" : mode === "login" ? "进入保险库" : "创建账号并进入"}</button>
       </form>
-      <footer><span />RSA 加密传输 · 独立登录状态</footer>
+      <footer><a href={APP_ROUTES.otpGuide}><BookOpen size={13} />使用指南</a></footer>
     </section>
   </div></main>;
 }

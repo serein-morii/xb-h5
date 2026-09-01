@@ -403,7 +403,13 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
   assert.match(workspace, /vault-duration/);
+  assert.match(workspace, /openShareEdit/);
+  assert.match(workspace, /updateVaultShare\(shareDetail\.id/);
+  assert.match(workspace, /原授权链接和访问码保持不变/);
+  assert.match(workspace, /created\?\.autoFillAllowed \? autoFillUrl : created\?\.shareUrl/);
+  assert.match(workspace, /\["临时凭据授权", copiedShareUrl, .*`访问码：\$\{created\.accessCode\}`.*`有效期：.*\]\.join\("\\n"\)/);
   assert.match(api, /saveVaultPreferences/);
+  assert.match(api, /method: "PUT"/);
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
   assert.match(share, /搜索服务或账号/);
   assert.match(share, /displayPrefs\.compact \? " is-compact"/);
@@ -419,6 +425,8 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
   assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
+  assert.match(styles, /\.share-toolbar \.vault-view-toggle\.is-active input:checked \+ i \{ background: #4054c3/);
+  assert.match(styles, /\.share-toolbar \.vault-view-toggle\.is-active input:checked \+ i::after \{ box-shadow:/);
 });
 
 test("allows purchasers to edit and delete their own pending orders", async () => {

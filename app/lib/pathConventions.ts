@@ -22,6 +22,7 @@ export const APP_ROUTES = {
   labBeadStudioHtml: "/lab/bead-studio.html",
   beadStudio: "/bead-studio",
   otp: "/otp",
+  otpGuide: "/otp/guide",
 } as const;
 
 export const LOCAL_ROUTES = [
@@ -48,6 +49,7 @@ export const LOCAL_ROUTES = [
   APP_ROUTES.labBeadStudioHtml,
   APP_ROUTES.beadStudio,
   APP_ROUTES.otp,
+  APP_ROUTES.otpGuide,
 ];
 
 export const API_PATHS = {

@@ -1,14 +1,15 @@
-import { Camera, Check, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Trash2, User, X } from "lucide-react";
+import { BookOpen, Camera, Check, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	createVaultShare, deleteVaultCredential, deleteVaultShare, getVaultCredential, getVaultShare, importLegacyVault, listVaultCredentials, listVaultShares,
 	listVaultRecipients, getVaultPreferences, revokeVaultShare, saveVaultCredential, saveVaultPreferences, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
-	nextVaultHotp, clearOtpStepUpToken,
+	nextVaultHotp, clearOtpStepUpToken, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
 import VaultSecurityCenter from "./VaultSecurityCenter";
 import VaultStepUpDialog from "./VaultStepUpDialog";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode } from "./vaultCrypto";
+import { APP_ROUTES } from "../../lib/pathConventions";
 import "./otp-vault.css";
 
 type JsQrFn = (data: Uint8ClampedArray, width: number, height: number, options?: { inversionAttempts?: string }) => { data: string; location: { topLeftCorner: { x: number; y: number }; topRightCorner: { x: number; y: number }; bottomRightCorner: { x: number; y: number }; bottomLeftCorner: { x: number; y: number } } } | null;
@@ -18,7 +19,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "import" | "share" | "shareDetail" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "created" | "account" | null;
+type Modal = "credential" | "scanner" | "detail" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "created" | "account" | null;
 type VaultView = "all" | "favorite" | "shares" | "security" | "settings";
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
@@ -501,6 +502,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
     catch (error) { setModal(null); notify(error instanceof Error ? error.message : "授权详情加载失败", true); }
     finally { setShareDetailLoading(false); }
   };
+	const openShareEdit = async (share: VaultShare) => {
+		setShareDetailLoading(true);
+		try {
+			const detail = (await getVaultShare(share.id)).data;
+			const days = Math.max(1, Math.ceil((new Date(normalizeDateTime(detail.expireTime)).getTime() - Date.now()) / 86400000));
+			setShareDetail(detail); setSelected(detail.credentialIds || []); setSharePickerOpen(false);
+			setShareForm((current) => ({ ...current, shareMode: detail.shareMode, recipientUsername: detail.recipientUsername || "", durationSeconds: days * 86400, accessCodeEnabled: detail.accessCodeEnabled, accessCodeMode: "CUSTOM", accessCode: detail.accessCode || "", showAccount: detail.showAccount, showPassword: detail.showPassword, showOtp: detail.showOtp, showLoginUrl: detail.showLoginUrl, showNote: detail.showNote, allowCopy: detail.allowCopy, oneTime: detail.oneTime, maxAccessCount: detail.maxAccessCount ? String(detail.maxAccessCount) : "" }));
+			setModal("shareEdit");
+		} catch (error) { notify(error instanceof Error ? error.message : "授权详情加载失败", true); }
+		finally { setShareDetailLoading(false); }
+	};
   async function submitShare(event: FormEvent) {
     event.preventDefault(); if (!selected.length) return notify("至少选择一个凭据", true);
     if (shareForm.shareMode === "DIRECT" && !shareForm.recipientUsername.trim()) return notify("请输入接收人账号", true);
@@ -511,6 +523,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
     } catch (error) { notify(error instanceof Error ? error.message : "创建授权失败", true); }
     finally { setBusy(false); }
   }
+	async function submitShareEdit(event: FormEvent) {
+		event.preventDefault(); if (!shareDetail || !selected.length) return notify("至少选择一个凭据", true);
+		setBusy(true);
+		try {
+			const result = await updateVaultShare(shareDetail.id, { credentialIds: selected, durationSeconds: shareForm.durationSeconds, showAccount: shareForm.showAccount, showPassword: shareForm.showPassword, showOtp: shareForm.showOtp, showLoginUrl: shareForm.showLoginUrl, showNote: shareForm.showNote, allowCopy: shareForm.allowCopy, oneTime: shareForm.oneTime, maxAccessCount: shareForm.maxAccessCount ? Number(shareForm.maxAccessCount) : null });
+			setShareDetail(result.data); setModal("shareDetail"); notify("授权已更新"); await load(true);
+		} catch (error) { notify(error instanceof Error ? error.message : "更新授权失败", true); }
+		finally { setBusy(false); }
+	}
   const copy = async (value: string, message = "已复制") => { await navigator.clipboard.writeText(value); notify(message); };
   const accountClass = prefs.masked ? "vault-account is-blurred" : "vault-account";
   const renderCredential = (item: VaultCredential) => {
@@ -525,13 +546,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
   };
   const liveDetail = detail ? { ...detail, ...(credentials.find((item) => item.id === detail.id) || {}), password: detail.password } : null;
   const selectedCredentials = ownCredentials.filter((item) => selected.includes(item.id));
-  const fullShareText = created?.shareUrl ? `临时凭据授权\n\n${created.shareUrl}${created.accessCode ? `\n\n访问码：${created.accessCode}` : ""}\n\n有效期：${new Date(created.expireTime).toLocaleString("zh-CN", { hour12: false })}` : "";
   const autoFillUrl = created?.shareUrl && created.accessCode ? `${created.shareUrl}#k=${created.accessCode}` : created?.shareUrl || "";
+  const copiedShareUrl = created?.autoFillAllowed ? autoFillUrl : created?.shareUrl || "";
+  const fullShareText = created?.shareUrl ? ["临时凭据授权", copiedShareUrl, ...(created.accessCode ? [`访问码：${created.accessCode}`] : []), `有效期：${new Date(created.expireTime).toLocaleString("zh-CN", { hour12: false })}`].join("\n") : "";
 
   return <div className="vault-page">
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
-      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-import-action" onClick={() => { setLegacyText(""); setModal("import"); }} aria-label="导入文件"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-primary vault-add-action" onClick={() => openCredential()} aria-label="添加凭据"><Plus size={21} /><span>添加</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
+      <div className="vault-head-actions"><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-ghost vault-import-action" onClick={() => { setLegacyText(""); setModal("import"); }} aria-label="导入文件"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-primary vault-add-action" onClick={() => openCredential()} aria-label="添加凭据"><Plus size={21} /><span>添加</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
     </section>
 
     <nav className="vault-tabs" aria-label="密钥管理导航">
@@ -549,7 +571,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
       <div className="vault-share-list">{shares.length ? shares.map((share) => <article key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
         <span className={`vault-status is-${share.status.toLowerCase()}`}>{share.status === "ACTIVE" ? "有效" : share.status === "EXPIRED" ? "已过期" : share.status === "LIMIT_REACHED" ? "次数已用完" : "已撤销"}</span>
         <div><b>{share.itemCount} 个凭据 · {share.shareMode === "DIRECT" ? `指定给 ${share.recipientUsername}` : share.accessCodeEnabled ? "访问码保护" : "链接访问"}</b><small><Clock3 size={12} />{share.status === "ACTIVE" ? `剩余 ${formatRemaining(share.expireTime, now)}` : new Date(normalizeDateTime(share.expireTime)).toLocaleString("zh-CN", { hour12: false })}{share.shareMode === "LINK" ? ` · 已访问 ${share.accessCount}${share.maxAccessCount ? `/${share.maxAccessCount}` : ""}` : ""}</small></div>
-        <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openShareDetail(share); }}><Eye size={14} />详情</button>{share.status === "ACTIVE" && share.sharePath ? <button type="button" onClick={(event) => { event.stopPropagation(); void copy(`${location.origin}${share.sharePath}`, "授权链接已复制"); }}><Copy size={14} />复制</button> : null}{share.status !== "REVOKED" ? <button type="button" onClick={(event) => { event.stopPropagation(); setPendingRevoke({ share, from: "list" }); setModal("revokeConfirm"); }}><X size={14} />撤销</button> : <button type="button" onClick={(event) => { event.stopPropagation(); setPendingShareDelete(share); setModal("shareDeleteConfirm"); }}><Trash2 size={14} />删除</button>}</div>
+        <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openShareDetail(share); }}><Eye size={14} />详情</button>{share.status === "ACTIVE" ? <button type="button" onClick={(event) => { event.stopPropagation(); void openShareEdit(share); }}><Pencil size={14} />编辑</button> : null}{share.status === "ACTIVE" && share.sharePath ? <button type="button" onClick={(event) => { event.stopPropagation(); void copy(`${location.origin}${share.sharePath}`, "授权链接已复制"); }}><Copy size={14} />复制</button> : null}{share.status !== "REVOKED" ? <button type="button" onClick={(event) => { event.stopPropagation(); setPendingRevoke({ share, from: "list" }); setModal("revokeConfirm"); }}><X size={14} />撤销</button> : <button type="button" onClick={(event) => { event.stopPropagation(); setPendingShareDelete(share); setModal("shareDeleteConfirm"); }}><Trash2 size={14} />删除</button>}</div>
       </article>) : <div className="vault-empty compact">还没有创建临时授权</div>}</div>
     </section> : null}
 
@@ -626,7 +648,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
           <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>访问内容</h3></div></div><div className="vault-permission-tags">{([["showAccount", "账号"], ["showPassword", "密码"], ["showOtp", "OTP"], ["showLoginUrl", "登录地址"], ["showNote", "备注"]] as const).filter(([key]) => shareDetail[key]).map(([, label]) => <b key={label}>{label}</b>)}</div>{shareDetail.sharePath ? <label><span>授权链接</span><div className="vault-copy-row"><input readOnly value={`${location.origin}${shareDetail.sharePath}`} /><button type="button" onClick={() => void copy(`${location.origin}${shareDetail.sharePath}`, "授权链接已复制")} aria-label="复制授权链接"><Copy size={15} /></button></div></label> : null}{shareDetail.shareMode === "DIRECT" ? <p className="vault-modal-note">该授权只会显示在 {shareDetail.recipientUsername} 的 OTP Vault 中，到期或撤销后自动消失。</p> : shareDetail.accessCodeEnabled ? <label><span>访问码</span>{shareDetail.accessCode ? <button type="button" className="vault-access-code vault-access-code-button is-detail" onClick={() => void copy(shareDetail.accessCode || "", "访问码已复制")}>{shareDetail.accessCode}<Copy size={15} /></button> : <p className="vault-modal-note">这是升级前创建的授权，当时只保存了不可逆哈希，无法还原访问码。请重新创建授权。</p>}</label> : <p className="vault-modal-note">此授权未启用访问码，获得链接即可访问。</p>}</section>
           {shareDetail.shareMode === "LINK" ? <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>访问记录</h3></div><button type="button">{shareDetail.accessRecords?.length || 0} 条</button></div><div className="vault-access-records">{shareDetail.accessRecords?.length ? <div>{shareDetail.accessRecords.map((record, index) => <article key={`${record.createTime}-${index}`} className={record.success ? "is-success" : "is-failed"}><span>{record.success ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />}</span><div><b>{accessActionLabel(record.action, record.success)}</b><small>{record.ipAddress || "未知 IP"} · {deviceLabel(record.userAgent)}</small>{record.detail ? <em>{record.detail}</em> : null}</div><time>{new Date(normalizeDateTime(record.createTime)).toLocaleString("zh-CN", { hour12: false })}</time></article>)}</div> : <p>还没有访问记录</p>}</div></section> : null}
         </div>
-        <footer><span>{shareDetail.status === "ACTIVE" ? "授权仍在有效期内" : "授权已结束"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>关闭</button>{shareDetail.status !== "REVOKED" ? <button type="button" className="vault-danger" onClick={() => { setPendingRevoke({ share: shareDetail, from: "detail" }); setModal("revokeConfirm"); }}>撤销授权</button> : <button type="button" className="vault-danger" onClick={() => { setPendingShareDelete(shareDetail); setModal("shareDeleteConfirm"); }}>删除记录</button>}</div></footer>
+        <footer><span>{shareDetail.status === "ACTIVE" ? "授权仍在有效期内" : "授权已结束"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>关闭</button>{shareDetail.status === "ACTIVE" ? <button type="button" className="vault-primary" onClick={() => void openShareEdit(shareDetail)}><Pencil size={14} />编辑授权</button> : null}{shareDetail.status !== "REVOKED" ? <button type="button" className="vault-danger" onClick={() => { setPendingRevoke({ share: shareDetail, from: "detail" }); setModal("revokeConfirm"); }}>撤销授权</button> : <button type="button" className="vault-danger" onClick={() => { setPendingShareDelete(shareDetail); setModal("shareDeleteConfirm"); }}>删除记录</button>}</div></footer>
       </>}
     </section></div> : null}
 
@@ -639,6 +661,16 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
       </div>
       <footer><span>{selected.length ? `将授权 ${selected.length} 个凭据 · ${shareForm.shareMode === "DIRECT" ? `指定给 ${shareForm.recipientUsername || "用户"}` : shareForm.accessCodeEnabled ? "访问码保护" : "链接直达"}` : "请先选择授权凭据"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !selected.length}>{busy ? "生成中" : "生成授权"}</button></div></footer>
     </form></div> : null}
+
+	{modal === "shareEdit" && shareDetail ? <div className="vault-modal-mask"><form className="vault-modal share vault-share-form" onSubmit={submitShareEdit}>
+		<header><div><small>EDIT TEMPORARY ACCESS</small><h2>编辑临时授权</h2><p>{shareDetail.shareMode === "DIRECT" ? `接收人 ${shareDetail.recipientUsername} 保持不变` : "原授权链接和访问码保持不变"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+		<div className="vault-share-scroll">
+			<section className="vault-share-section vault-share-picker-section"><div className="vault-section-title"><div><span>01</span><h3>授权凭据</h3></div><button type="button" onClick={() => setSelected(selected.length === ownCredentials.length ? [] : ownCredentials.map((item) => item.id))}>{selected.length === ownCredentials.length ? "取消全选" : "全部选择"}</button></div><details className="vault-credential-picker" open={sharePickerOpen} onToggle={(event) => setSharePickerOpen(event.currentTarget.open)}><summary><span><b>{selected.length ? `已选择 ${selected.length} 个凭据` : "请选择要授权的凭据"}</b><small>{selected.length ? `${selectedCredentials.slice(0, 2).map((item) => item.issuer).join("、")}${selected.length > 2 ? ` 等 ${selected.length} 项` : ""}` : "展开后可多选"}</small></span><em>{sharePickerOpen ? "收起" : "调整"}</em></summary><div className="vault-select-list">{ownCredentials.map((item) => <label className={selected.includes(item.id) ? "is-selected" : ""} key={item.id}><input type="checkbox" checked={selected.includes(item.id)} onChange={(event) => setSelected(event.target.checked ? [...selected, item.id] : selected.filter((credentialId) => credentialId !== item.id))} /><span><b>{item.issuer}</b><small>{item.accountName}</small></span><Check size={15} /></label>)}</div></details></section>
+			<section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>新的剩余有效期</h3></div></div><p className="vault-section-help">保存后从当前时间重新计算，原链接不会变化</p><div className="vault-duration"><div className="vault-duration-head"><span><Clock3 size={15} /></span><div><small>从现在起</small><b>{shareForm.durationSeconds / 86400} 天</b></div></div><div className="vault-duration-presets">{[1, 3, 7, 30].map((days) => <button type="button" className={shareForm.durationSeconds === days * 86400 ? "is-active" : ""} onClick={() => setShareForm({ ...shareForm, durationSeconds: days * 86400 })} key={days}>{days} 天</button>)}</div><label><span>自定义</span><input type="number" min={1} max={365} value={shareForm.durationSeconds / 86400} onChange={(event) => setShareForm({ ...shareForm, durationSeconds: Number(event.target.value) * 86400 })} /><em>天</em></label></div></section>
+			<section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>访问权限</h3></div></div><p className="vault-section-help">保存后立即应用到现有链接和已登录接收人</p><div className="vault-option-grid">{([['showAccount','账号'],['showPassword','密码'],['showOtp','动态验证码'],['showLoginUrl','登录地址'],['showNote','备注']] as const).map(([key, label]) => <label className={shareForm[key] ? "is-selected" : ""} key={key}><input type="checkbox" checked={Boolean(shareForm[key])} onChange={(event) => setShareForm({ ...shareForm, [key]: event.target.checked })} /><Check size={14} /><span>{label}</span></label>)}</div><div className="vault-form-grid vault-access-options"><label className="vault-check"><input type="checkbox" checked={shareForm.allowCopy} onChange={(event) => setShareForm({ ...shareForm, allowCopy: event.target.checked })} /><span><b>允许复制</b><small>关闭后只能在页面中查看</small></span></label>{shareDetail.shareMode === "LINK" ? <><label className="vault-check"><input type="checkbox" disabled={shareDetail.accessCount > 1} checked={shareForm.oneTime} onChange={(event) => setShareForm({ ...shareForm, oneTime: event.target.checked })} /><span><b>一次性访问</b><small>{shareDetail.accessCount > 1 ? "已访问多次，不能改为一次性" : "成功访问一次后立即失效"}</small></span></label><label><span>最大访问次数（已访问 {shareDetail.accessCount} 次）</span><input type="number" min={Math.max(1, shareDetail.accessCount)} max={1000} disabled={shareForm.oneTime} value={shareForm.oneTime ? "1" : shareForm.maxAccessCount} onChange={(event) => setShareForm({ ...shareForm, maxAccessCount: event.target.value })} placeholder="不填则不限" /></label></> : null}</div></section>
+		</div>
+		<footer><span>分享方式、接收人、链接和访问码不会变化</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !selected.length}>{busy ? "保存中" : "保存修改"}</button></div></footer>
+	</form></div> : null}
 
     {modal === "deleteConfirm" && pendingDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingDelete(null); closeModal(); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE CREDENTIAL</small><h2>删除凭据</h2><p>这项操作会同步撤回相关临时授权</p></div><button type="button" onClick={() => { setPendingDelete(null); closeModal(); }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要删除</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingDelete.issuer}</b><small>{pendingDelete.accountName}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">删除后会从你的保险库中移除，包含它的临时授权也会一起失效。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingDelete(null); closeModal(); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeCredential()}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
 

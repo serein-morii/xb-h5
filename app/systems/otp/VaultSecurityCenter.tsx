@@ -195,5 +195,5 @@ function formatTime(value: string) {
 }
 
 function activityLabel(action: string) {
-  return ({ UNLOCK: "完成二次身份验证", UNLOCK_FAILED: "二次身份验证失败", LOCK: "结束敏感操作授权", VIEW: "查看敏感凭据", CREATE: "新增凭据", UPDATE: "更新凭据", DELETE: "删除凭据", RESTORE: "恢复凭据", PURGE: "永久清除凭据", EXPORT: "导出恢复包", IMPORT: "恢复保险库", SHARE_CREATE: "创建授权", SHARE_REVOKE: "撤销授权", SHARE_DELETE: "删除授权记录", HOTP_NEXT: "推进 HOTP 计数器", KEY_ROTATE: "完成密钥轮换", RECOVERY_CHECK: "验证恢复包", PASSKEY_ADD: "添加 Passkey", PASSKEY_DELETE: "移除 Passkey", SESSION_REVOKE: "退出设备会话", SESSION_REVOKE_OTHERS: "退出其他设备", DEVICE_UPDATE: "更新设备设置" } as Record<string, string>)[action] || action;
+	return ({ UNLOCK: "完成二次身份验证", UNLOCK_FAILED: "二次身份验证失败", LOCK: "结束敏感操作授权", VIEW: "查看敏感凭据", CREATE: "新增凭据", UPDATE: "更新凭据", DELETE: "删除凭据", RESTORE: "恢复凭据", PURGE: "永久清除凭据", EXPORT: "导出恢复包", IMPORT: "恢复保险库", SHARE_CREATE: "创建授权", SHARE_UPDATE: "更新授权", SHARE_REVOKE: "撤销授权", SHARE_DELETE: "删除授权记录", HOTP_NEXT: "推进 HOTP 计数器", KEY_ROTATE: "完成密钥轮换", RECOVERY_CHECK: "验证恢复包", PASSKEY_ADD: "添加 Passkey", PASSKEY_DELETE: "移除 Passkey", SESSION_REVOKE: "退出设备会话", SESSION_REVOKE_OTHERS: "退出其他设备", DEVICE_UPDATE: "更新设备设置" } as Record<string, string>)[action] || action;
 }
