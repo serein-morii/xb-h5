@@ -1,4 +1,4 @@
-import { Check, Clock3, Copy, ExternalLink, KeyRound, LayoutGrid, LoaderCircle, LockKeyhole, Search, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { Check, Clock3, Copy, ExternalLink, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Search, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { getSharedContent, getShareStatus, openVaultShare, type SharedItem, type ShareStatus } from "./vaultApi";
 import "./otp-vault.css";
@@ -19,14 +19,23 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [query, setQuery] = useState("");
-  const [compact, setCompact] = useState(() => { try { return JSON.parse(localStorage.getItem("otp-vault-share-prefs") || "{}").compact ?? true; } catch { return true; } });
+  const [displayPrefs, setDisplayPrefs] = useState(() => {
+    try { return { compact: true, grouped: true, ...JSON.parse(localStorage.getItem("otp-vault-share-prefs") || "{}") }; }
+    catch { return { compact: true, grouped: true }; }
+  });
   const otpRefreshAt = useRef(0);
   const expiryTotal = useRef(0);
+  const serverTimeOffset = useRef(0);
+  const syncedNow = now + serverTimeOffset.current;
 
   const loadContent = useCallback(async (session: string) => {
     try {
+      const requestedAt = Date.now();
       const result = await getSharedContent(token, session);
-      expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - Date.now()) / 1000));
+      const receivedAt = Date.now();
+      const serverNow = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2);
+      serverTimeOffset.current = serverNow - receivedAt;
+      expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
       setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); setError("");
     } catch (contentError) {
       sessionStorage.removeItem(sessionKey); setSessionToken(""); setItems([]);
@@ -57,24 +66,26 @@ export default function VaultSharePage({ token }: { token: string }) {
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   useEffect(() => { if (!sessionToken) return; const timer = window.setInterval(() => void loadContent(sessionToken), 10_000); return () => window.clearInterval(timer); }, [loadContent, sessionToken]);
   useEffect(() => {
-    if (!sessionToken || !items.some((item) => item.otpValidUntil && item.otpValidUntil <= now) || now - otpRefreshAt.current < 1000) return;
-    otpRefreshAt.current = now;
+    if (!sessionToken || !items.some((item) => item.otpValidUntil && item.otpValidUntil <= syncedNow) || syncedNow - otpRefreshAt.current < 1000) return;
+    otpRefreshAt.current = syncedNow;
     void loadContent(sessionToken);
-  }, [items, loadContent, now, sessionToken]);
-  useEffect(() => { localStorage.setItem("otp-vault-share-prefs", JSON.stringify({ compact })); }, [compact]);
+  }, [items, loadContent, sessionToken, syncedNow]);
+  useEffect(() => { localStorage.setItem("otp-vault-share-prefs", JSON.stringify(displayPrefs)); }, [displayPrefs]);
 
   const copy = async (value: string, key: string) => {
     if (!allowCopy) return;
     await navigator.clipboard.writeText(value); setCopied(key); window.setTimeout(() => setCopied(""), 1600);
   };
-  const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - now) / 1000)) : 0;
+  const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - syncedNow) / 1000)) : 0;
   const expiryProgress = expiryTotal.current ? Math.max(0, Math.min(100, expiresIn / expiryTotal.current * 100)) : 100;
+  const secondsProgress = expiresIn ? ((expiresIn - 1) % 60 + 1) / 60 * 100 : 0;
   const accessExpiresIn = status?.expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(status.expireTime)).getTime() - now) / 1000)) : 0;
   const statusMessage = status?.status === "EXPIRED" ? "授权已经过期" : status?.status === "REVOKED" ? "授权已被撤销" : status?.status === "LIMIT_REACHED" ? "授权访问次数已用完" : "授权链接不可用";
   const filteredItems = useMemo(() => {
     const value = query.trim().toLowerCase();
     return value ? items.filter((item) => `${item.issuer} ${item.accountName || ""}`.toLowerCase().includes(value)) : items;
   }, [items, query]);
+  const groups = useMemo(() => displayPrefs.grouped ? [...new Set(filteredItems.map((item) => item.issuer))].map((name) => [name, filteredItems.filter((item) => item.issuer === name)] as const) : [["", filteredItems] as const], [displayPrefs.grouped, filteredItems]);
 
   if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
   if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
@@ -88,16 +99,16 @@ export default function VaultSharePage({ token }: { token: string }) {
       {status?.accessCodeRequired ? <form onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}><label><span>输入访问码</span><div className="share-code-input"><KeyRound size={17} /><input autoFocus inputMode="text" enterKeyHint="go" spellCheck={false} aria-label="访问码" value={accessCode} onChange={(event) => { setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")); if (error) setError(""); }} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="粘贴或输入访问码" /></div></label><p className="share-access-help">支持直接粘贴，输入完成后按回车</p><button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "继续查看"}</button></form> : <button className="share-open-button" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在建立安全会话" : "打开授权内容"}</button>}
       {error ? <p className="share-error" role="alert">{error}</p> : null}<footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
-      <header><div><span>临时授权已验证</span><h1>凭据内容</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" pathLength="100" /><circle cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /></svg><Clock3 className="share-expiry-clock" size={16} /></span><span className="share-expiry-copy"><small>授权有效时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
-      <div className="share-toolbar vault-panel-tools"><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={compact} onChange={(event) => setCompact(event.target.checked)} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div>
-      <div className={`share-item-list${compact ? " is-compact" : ""}`}>{filteredItems.map((item, index) => <article key={`${item.issuer}-${item.accountName || ""}-${index}`}>
-        <div className="share-item-title"><span>{item.issuer.slice(0, 2).toUpperCase()}</span><div><b>{item.issuer}</b>{item.accountName ? <small>{item.accountName}</small> : null}</div></div>
-        {item.otp ? <SharedRow label="动态验证码" value={item.otp.replace(/(.{3})/, "$1 ")} copyValue={item.otp} copyKey={`${index}-otp`} allowCopy={allowCopy} copied={copied} onCopy={copy} emphasize expiresAt={item.otpValidUntil} period={item.otpPeriodSeconds} now={now} /> : null}
-        {item.accountName ? <SharedRow label="账号" value={item.accountName} copyValue={item.accountName} copyKey={`${index}-account`} allowCopy={allowCopy} copied={copied} onCopy={copy} /> : null}
-        {item.password ? <SharedRow label="密码" value={item.password} copyValue={item.password} copyKey={`${index}-password`} allowCopy={allowCopy} copied={copied} onCopy={copy} secret /> : null}
-        {item.loginUrl ? <a className="share-login-link" href={item.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} />打开登录地址</a> : null}
-        {item.note ? <p className="share-note">{item.note}</p> : null}
-      </article>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
+      <header><div><span>临时授权已验证</span><h1>凭据内容</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
+      <div className="share-toolbar vault-panel-tools"><label className={`vault-view-toggle${displayPrefs.grouped ? " is-active" : ""}`}><Layers3 size={14} /><span>分组</span><small>{displayPrefs.grouped ? "开启" : "关闭"}</small><input type="checkbox" checked={displayPrefs.grouped} onChange={(event) => setDisplayPrefs({ ...displayPrefs, grouped: event.target.checked })} /><i /></label><label className={`vault-view-toggle${displayPrefs.compact ? " is-active" : ""}`}><LayoutGrid size={14} /><span>紧凑</span><small>{displayPrefs.compact ? "开启" : "关闭"}</small><input type="checkbox" checked={displayPrefs.compact} onChange={(event) => setDisplayPrefs({ ...displayPrefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div>
+      <div className="share-groups">{groups.map(([name, groupItems]) => <section className="share-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{groupItems.length}</span></header> : null}<div className={`share-item-list${displayPrefs.compact ? " is-compact" : ""}`}>{groupItems.map((item, index) => <article key={`${item.issuer}-${item.accountName || ""}-${index}`}>
+          <div className="share-item-title"><span>{item.issuer.slice(0, 2).toUpperCase()}</span><div><b>{item.issuer}</b>{item.accountName ? <small>{item.accountName}</small> : null}</div></div>
+          {item.otp ? <SharedRow label="动态验证码" value={item.otp.replace(/(.{3})/, "$1 ")} copyValue={item.otp} copyKey={`${name}-${index}-otp`} allowCopy={allowCopy} copied={copied} onCopy={copy} emphasize expiresAt={item.otpValidUntil} period={item.otpPeriodSeconds} now={syncedNow} /> : null}
+          {item.accountName ? <SharedRow label="账号" value={item.accountName} copyValue={item.accountName} copyKey={`${name}-${index}-account`} allowCopy={allowCopy} copied={copied} onCopy={copy} /> : null}
+          {item.password ? <SharedRow label="密码" value={item.password} copyValue={item.password} copyKey={`${name}-${index}-password`} allowCopy={allowCopy} copied={copied} onCopy={copy} secret /> : null}
+          {item.loginUrl ? <a className="share-login-link" href={item.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} />打开登录地址</a> : null}
+          {item.note ? <p className="share-note">{item.note}</p> : null}
+        </article>)}</div></section>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
     </section>}
   </main>;

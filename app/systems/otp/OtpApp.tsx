@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect } from "react";
 import { AppStartup } from "../../components/AppStartup";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
+import VaultSharePage from "./VaultSharePage";
 import "./otp-vault.css";
 import "./otp-auth.css";
 
 const OtpVaultPage = lazy(() => import("./OtpVaultPage"));
-const VaultSharePage = lazy(() => import("./VaultSharePage"));
 
 function Fallback() {
   return <AppStartup system="otp" message="正在加载安全组件" />;

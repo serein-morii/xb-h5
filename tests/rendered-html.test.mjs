@@ -384,22 +384,41 @@ test("keeps the public order tracking route", async () => {
   assert.match(admin, /\/tools\/order#\$\{encodeURIComponent/);
 });
 
-test("keeps OTP share preferences local and share browsing compact", async () => {
-  const [workspace, share, api] = await Promise.all([
+test("keeps OTP display preferences accessible and compact layouts dense", async () => {
+  const [workspace, security, share, api, styles] = await Promise.all([
     source("app/systems/otp/OtpVaultWorkspace.tsx"),
+    source("app/systems/otp/VaultSecurityCenter.tsx"),
     source("app/systems/otp/VaultSharePage.tsx"),
     source("app/systems/otp/vaultApi.ts"),
+    source("app/systems/otp/otp-vault.css"),
   ]);
   assert.match(workspace, /compact: true/);
+  assert.match(workspace, /stepUpEnabled: false/);
+  assert.match(security, /checked=\{prefs\.stepUpEnabled\}/);
+  assert.match(security, /敏感操作身份验证/);
+  assert.match(security, /listVaultActivities\(nextPage\)/);
+  assert.match(security, /activityTotal - activities\.length/);
+  assert.doesNotMatch(security, /activities\.slice\(0, 30\)/);
+  assert.match(workspace, /checked=\{prefs\.grouped\}/);
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
   assert.match(workspace, /vault-duration/);
   assert.match(api, /saveVaultPreferences/);
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
   assert.match(share, /搜索服务或账号/);
-  assert.match(share, /compact \? " is-compact"/);
+  assert.match(share, /displayPrefs\.compact \? " is-compact"/);
+  assert.match(share, /displayPrefs\.grouped/);
   assert.match(share, /expiryProgress/);
+  assert.match(share, /secondsProgress/);
+  assert.match(share, /share-expiry-seconds/);
+  assert.match(share, /serverTimeOffset/);
+  assert.match(share, /result\.data\.serverTime/);
+  assert.match(share, /vault-view-toggle.*is-active/);
   assert.match(share, /pathLength="100"/);
+  assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
+  assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
+  assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
+  assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
 });
 
 test("allows purchasers to edit and delete their own pending orders", async () => {

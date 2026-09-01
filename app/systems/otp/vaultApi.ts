@@ -70,7 +70,7 @@ export type VaultRecipient = {
 
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
-  autoLockMinutes: number; securityAlerts: boolean; zeroKnowledgeEnabled?: boolean;
+  autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
 };
 
@@ -108,7 +108,7 @@ export const saveVaultPreferences = (body: VaultPrefs) => otpApiRequest<{ data: 
 export const exportVaultBackup = () => otpApiRequest<{ data: VaultBackup }>(`${vault}/backup`);
 export const previewVaultImport = (items: VaultTransferItem[]) => otpApiRequest<{ data: { total: number; items: Array<{ issuer: string; accountName: string; status: "NEW" | "DUPLICATE" | "CONFLICT" }> } }>(`${vault}/import/preview`, { method: "POST", body: { items } });
 export const commitVaultImport = (items: VaultTransferItem[], replaceExisting: boolean) => otpApiRequest<{ data: { total: number; created: number; updated: number; skipped: number } }>(`${vault}/import`, { method: "POST", body: { items, replaceExisting } });
-export const listVaultActivities = () => otpApiRequest<{ data: VaultActivity[] }>(`${vault}/activities`);
+export const listVaultActivities = (pageNum = 1) => otpApiRequest<{ rows: VaultActivity[]; total: number }>(`${vault}/activities?pageNum=${pageNum}&pageSize=20`);
 export const listVaultSessions = () => otpApiRequest<{ data: VaultSession[] }>(`${vaultAccount}/sessions`);
 export const revokeVaultSession = (id: string) => otpApiRequest(`${vaultAccount}/sessions/${encodeURIComponent(id)}`, { method: "DELETE" });
 export const revokeVaultDevice = (deviceKey: string) => otpApiRequest(`${vaultAccount}/devices/${encodeURIComponent(deviceKey)}/sessions`, { method: "DELETE" });

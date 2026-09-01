@@ -2,7 +2,7 @@ import { lazy, type ReactNode } from "react";
 import { homeRoutes } from "./home/routes";
 import { labRoutes } from "./lab/routes";
 import { isStoreQueryRoute, orderRoutes, resolveOrderDynamicRoute } from "./order/routes";
-import { otpRoutes, resolveOtpDynamicRoute } from "./otp/routes";
+import { otpRoutes } from "./otp/routes";
 import type { RouteConfig } from "./types";
 
 const OrderToolsLayout = lazy(() => import("./order/tools/layout"));
@@ -22,7 +22,7 @@ export function resolveDynamicRoute(
   storeName: string,
   onStoreName: (name: string) => void,
 ) {
-  return resolveOrderDynamicRoute(pathname, storeName, onStoreName) || resolveOtpDynamicRoute(pathname);
+  return resolveOrderDynamicRoute(pathname, storeName, onStoreName);
 }
 
 export function wrapRouteContent(route: RouteConfig, content: ReactNode) {
