@@ -1,0 +1,44 @@
+app/systems/otp/issuerStyle.ts
+  s_1660af5fcf2104::t_060aca40067896 1-69
+app/systems/otp/otp-vault.css
+  s_1660af5fcf2104::t_fdd8f83ee0b643 7
+tests/otp-vault-ui.test.mjs
+  s_1660af5fcf2104::t_fead7a9d40f4f4 1-25
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_1660af5fcf2104::t_1428f27c3821a8 601
+  s_1660af5fcf2104::t_10b6623c31f42b 590
+  s_1660af5fcf2104::t_d0e5a8717689af 458-463
+  s_1660af5fcf2104::t_b1b7694eca9dc5 234-236
+  s_1660af5fcf2104::t_f038e97cf7ebe3 338-345,347
+  s_1660af5fcf2104::t_dee7faf9dc52b1 596-598
+  s_1660af5fcf2104::t_2588fb120889f4 558-582
+  s_1660af5fcf2104::t_319e23e9af7fd0 638
+  s_1660af5fcf2104::t_0924018391c5b5 740
+  s_1660af5fcf2104::t_3f8d5da8a56466 299
+  s_1660af5fcf2104::t_ae1773465b501a 13
+  s_1660af5fcf2104::t_6e9e635e1941ec 652
+  s_1660af5fcf2104::t_573086638e8aee 27-33
+  s_1660af5fcf2104::t_f28dbd51e3994f 208
+  s_1660af5fcf2104::t_adbd5c01408b63 648
+  s_1660af5fcf2104::t_443020ec8b1187 623
+  s_1660af5fcf2104::t_2fb0b9807d828d 600
+app/systems/otp/VaultSharePage.tsx
+  s_1660af5fcf2104::t_53661fdfef9bdb 4
+  s_1660af5fcf2104::t_bf3f32d57c9cc1 111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "b017ddd6005b62345f0c131285fe6d49b044a68d",
+  "prompts": {},
+  "sessions": {
+    "s_1660af5fcf2104": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "effd33d5-99db-4d05-a723-addcf038d5f2",
+        "model": "grok-4.6"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
