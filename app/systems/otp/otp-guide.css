@@ -209,35 +209,74 @@ html.theme-dark .otp-guide-lifecycle-branches { border-color: #364158; }
   .otp-guide-header { min-height: 62px; padding: 0 13px; }
   .otp-guide-brand > span { width: 34px; height: 34px; border-radius: 11px; }
   .otp-guide-open { min-height: 36px; padding: 0 11px; font-size: 11px; }
-  .otp-guide-hero { width: calc(100% - 24px); padding: 28px 0 22px; }
-  .otp-guide-hero h1 { margin-top: 12px; font-size: 30px; line-height: 1.15; }
+  .otp-guide-hero { width: calc(100% - 24px); padding: 24px 0 16px; }
+  .otp-guide-hero h1 { margin-top: 11px; font-size: 27px; line-height: 1.16; }
   .otp-guide-hero > div > p { font-size: 14px; }
   .otp-guide-pills span { font-size: 11px; }
   .otp-guide-actions { margin-top: 18px; }
   .otp-guide-actions a { min-height: 42px; padding: 0 14px; font-size: 12px; }
-  .otp-guide-hero-visual { min-height: 220px; padding: 22px 14px 16px; gap: 18px; border-radius: 18px; }
+  .otp-guide-hero-visual { display: none; }
   .otp-guide-vault-mark { width: 64px; height: 64px; border-radius: 18px; }
   .otp-guide-route { gap: 4px; }
   .otp-guide-route > span { min-height: 46px; font-size: 11px; }
-  .otp-guide-layout { width: calc(100% - 24px); padding-bottom: 36px; }
-  .otp-guide-section { padding: 20px 15px; border-radius: 18px; }
+  .otp-guide-layout { width: calc(100% - 24px); padding-bottom: 32px; gap: 10px; }
+  .otp-guide-layout > aside { position: sticky; z-index: 12; top: 68px; padding: 7px; border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 7px 22px rgba(35,48,91,.08); backdrop-filter: blur(14px); }
+  html.theme-dark .otp-guide-layout > aside { background: rgba(23,30,44,.96); }
+  .otp-guide-content { gap: 12px; }
+  .otp-guide-section { padding: 17px 13px; border-radius: 17px; }
   .otp-guide-section > header { align-items: flex-start; margin-bottom: 16px; }
   .otp-guide-section > header > span { width: 38px; height: 38px; border-radius: 12px; }
   .otp-guide-section h2 { font-size: 20px; }
   .otp-guide-section > header p, .otp-guide-copy p, .otp-guide-copy li, .otp-guide-methods p, .otp-guide-share-types p { font-size: 13px; }
-  .otp-guide-steps, .otp-guide-split, .otp-guide-split.is-reverse, .otp-guide-share-types, .otp-guide-security-grid { grid-template-columns: 1fr; }
-  .otp-guide-steps li { min-height: 92px; }
+  .otp-guide-steps, .otp-guide-split, .otp-guide-split.is-reverse { grid-template-columns: 1fr; }
+  .otp-guide-methods { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .otp-guide-methods section { padding: 11px 7px; text-align: center; }
+  .otp-guide-methods b { margin-top: 6px; font-size: 11px; }
+  .otp-guide-methods p { margin-top: 4px; display: -webkit-box; overflow: hidden; font-size: 9px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+  .otp-guide-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .otp-guide-steps li { min-height: 112px; padding: 14px 11px; gap: 7px; }
+  .otp-guide-steps p { font-size: 10px; line-height: 1.55; }
   .otp-guide-split, .otp-guide-split.is-reverse { gap: 16px; }
   .otp-guide-split.is-reverse .otp-guide-copy { order: -1; }
-  .otp-guide-share-flow { grid-template-columns: 1fr; }
-  .otp-guide-share-flow > svg { margin: 0 auto; transform: rotate(90deg); }
-  .otp-guide-backup-flow { grid-template-columns: 1fr; }
-  .otp-guide-backup-flow > svg { margin: 0 auto; transform: rotate(90deg); }
-  .otp-guide-lifecycle-rail { grid-template-columns: 1fr; }
-  .otp-guide-lifecycle-rail > svg { margin: 0 auto; transform: rotate(90deg); }
-  .otp-guide-lifecycle-branches, .otp-guide-features { grid-template-columns: 1fr; }
-  .otp-guide-lifecycle { padding: 11px; border-radius: 15px; }
+  .otp-guide-lifecycle { padding: 9px; border-radius: 14px; }
+  .otp-guide-lifecycle-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .otp-guide-lifecycle-rail > svg { display: none; }
+  .otp-guide-lifecycle-rail > article { min-height: 110px; padding: 13px 6px 10px; grid-template-columns: 1fr; justify-items: center; align-content: center; gap: 6px; text-align: center; }
+  .otp-guide-lifecycle-rail > article > em { top: 5px; right: 6px; font-size: 8px; }
+  .otp-guide-lifecycle-rail > article > span { width: 32px; height: 32px; border-radius: 10px; }
+  .otp-guide-lifecycle-rail b { font-size: 10px; }
+  .otp-guide-lifecycle-rail small { font-size: 8px; line-height: 1.4; }
+  .otp-guide-lifecycle-branches { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-top: 10px; }
+  .otp-guide-lifecycle-branches section { padding: 9px 6px; display: block; text-align: center; }
+  .otp-guide-lifecycle-branches section > span { margin: 0 auto 6px; }
+  .otp-guide-lifecycle-branches b { font-size: 9px; }
+  .otp-guide-lifecycle-branches p { display: none; }
+  .otp-guide-lifecycle-branches section > small { margin-top: 6px; padding-top: 5px; display: block; font-size: 8px; }
+  .otp-guide-features { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .otp-guide-features > section { padding: 10px; gap: 7px; }
+  .otp-guide-features > section > span { width: 29px; height: 29px; border-radius: 9px; }
+  .otp-guide-features b { font-size: 10px; }
+  .otp-guide-features p { font-size: 9px; line-height: 1.45; }
+  .otp-guide-share-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 8px; }
+  .otp-guide-share-flow > svg { display: none; }
+  .otp-guide-share-flow span { min-height: 38px; font-size: 10px; }
+  .otp-guide-share-types, .otp-guide-security-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .otp-guide-share-types section, .otp-guide-security-grid section { padding: 12px; }
+  .otp-guide-share-types p, .otp-guide-security-grid p { font-size: 10px; line-height: 1.55; }
+  .otp-guide-share-types small { margin-top: 7px; font-size: 9px; line-height: 1.45; }
+  .otp-guide-anatomy { padding: 12px; }
+  .otp-guide-anatomy ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .otp-guide-anatomy li { padding: 9px; }
+  .otp-guide-anatomy span { font-size: 11px; }
+  .otp-guide-anatomy small { font-size: 9px; }
+  .otp-guide-backup-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 8px; }
+  .otp-guide-backup-flow > svg { display: none; }
+  .otp-guide-backup-flow span { min-height: 45px; padding: 4px; font-size: 9px; }
   .otp-guide-footer { min-height: 88px; padding: 16px 14px; align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 350px) {
+  .otp-guide-steps, .otp-guide-features, .otp-guide-share-types, .otp-guide-security-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
