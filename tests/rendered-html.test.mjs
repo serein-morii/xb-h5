@@ -385,13 +385,15 @@ test("keeps the public order tracking route", async () => {
 });
 
 test("keeps OTP display preferences accessible and compact layouts dense", async () => {
-  const [workspace, accountSetup, security, share, api, styles] = await Promise.all([
+  const [workspace, accountSetup, security, share, api, styles, guide, toast] = await Promise.all([
     source("app/systems/otp/OtpVaultWorkspace.tsx"),
     source("app/systems/otp/VaultAccountSetup.tsx"),
     source("app/systems/otp/VaultSecurityCenter.tsx"),
     source("app/systems/otp/VaultSharePage.tsx"),
     source("app/systems/otp/vaultApi.ts"),
     source("app/systems/otp/otp-vault.css"),
+    source("app/systems/otp/OtpVaultGuidePage.tsx"),
+    source("app/systems/otp/VaultToastMessage.tsx"),
   ]);
   assert.match(workspace, /compact: true/);
   assert.match(workspace, /stepUpEnabled: false/);
@@ -412,6 +414,13 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(accountSetup, /only === "password" \? "确认修改" : "完成设置"/);
   assert.match(accountSetup, /className="otp-setup-confirm-mask"/);
   assert.match(accountSetup, /确认更新登录密码？/);
+  assert.match(accountSetup, /setVerifyMode\("passkey"\)/);
+  assert.match(accountSetup, /getVaultStepUpPasskeyOptions/);
+  assert.match(accountSetup, /setOtpStepUpToken\(verified\.data\.token\)/);
+  assert.match(accountSetup, /VaultToastMessage message=\{message\}/);
+  assert.match(toast, /window\.setTimeout/);
+  assert.match(guide, /otp-guide-lifecycle-rail/);
+  assert.match(guide, /登录、改密和敏感操作都可使用 Passkey/);
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
   assert.match(workspace, /vault-duration/);
@@ -440,6 +449,8 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
   assert.match(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
   assert.match(styles, /\.vault-toast \{ top: auto; bottom:/);
+  assert.match(styles, /html\.theme-dark \.vault-theme-options button\.is-active/);
+  assert.match(styles, /\.vault-toast\.is-error \{ border-color: rgba\(190,79,68/);
   assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
   assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);

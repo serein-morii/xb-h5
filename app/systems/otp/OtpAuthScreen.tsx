@@ -5,6 +5,7 @@ import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "..
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { finishPasskeyLogin, getPasskeyLoginOptions, registerOtpAccount } from "./vaultApi";
 import { getPasskey } from "../../lib/passkey";
+import VaultToastMessage from "./VaultToastMessage";
 import "./otp-auth.css";
 
 export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (token: string, registration?: { username: string }) => void }) {
@@ -129,7 +130,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
         {mode === "login" && loginMethod === "password" ? <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="5-20 位密码" /></div></label> : null}
         {captchaOn && mode === "login" && loginMethod === "password" ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={busy} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
         {mode === "login" ? <><label className="otp-long-session"><input type="checkbox" checked={longSession} onChange={(event) => setLongSession(event.target.checked)} /><i /><span><b>保持登录 15 天</b><small>有操作时自动续期</small></span></label>{longSession ? <p className="otp-session-warning"><ShieldAlert size={15} /><span><b>请确认这是你的私人设备</b><small>15 天内无需重新登录，公共或他人设备请勿开启。</small></span></p> : null}</> : null}
-        {message ? <p className="otp-auth-message" role="status">{message}</p> : null}
+		<VaultToastMessage message={message} onDismiss={() => setMessage("")} />
 		<button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" && loginMethod === "passkey" ? <Fingerprint size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" && loginMethod === "passkey" ? "使用 Passkey 登录" : mode === "login" ? "进入保险库" : "创建账号并进入"}</button>
       </form>
       <footer><a href={APP_ROUTES.otpGuide}><BookOpen size={13} />使用指南</a></footer>

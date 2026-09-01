@@ -4,6 +4,7 @@ import { apiRequest, sendEmailCode } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
 import { finishVaultStepUpPasskey, getVaultStepUpPasskeyOptions, setOtpStepUpToken, verifyVaultSecurity } from "./vaultApi";
 import { getPasskey } from "../../lib/passkey";
+import VaultToastMessage from "./VaultToastMessage";
 
 type Waiter = { resolve: () => void; reject: (reason?: unknown) => void };
 
@@ -70,7 +71,7 @@ export default function VaultStepUpDialog({ email }: { email: string }) {
     <div className="vault-step-up-icon"><ShieldCheck size={24} /></div>
     <div className="vault-share-mode vault-step-up-modes"><button type="button" className={mode === "email" ? "is-active" : ""} onClick={() => { setMode("email"); setValue(""); setMessage(""); }}><ShieldCheck size={15} /><span><b>邮箱验证码</b><small>{email || "未绑定邮箱"}</small></span></button><button type="button" className={mode === "password" ? "is-active" : ""} onClick={() => { setMode("password"); setValue(""); setMessage(""); }}><KeyRound size={15} /><span><b>登录密码</b><small>使用当前账号密码</small></span></button><button type="button" className={mode === "passkey" ? "is-active" : ""} onClick={() => { setMode("passkey"); setValue(""); setMessage(""); }}><Fingerprint size={15} /><span><b>Passkey</b><small>生物识别或设备 PIN</small></span></button></div>
     {mode === "passkey" ? <div className="vault-step-up-passkey"><Fingerprint size={20} /><span><b>使用这台设备确认身份</b><small>点击下方按钮后，按系统提示完成验证。</small></span></div> : <label><span>{mode === "email" ? "6 位邮箱验证码" : "登录密码"}</span><div className="vault-step-up-input"><input autoFocus type={mode === "password" ? "password" : "text"} inputMode={mode === "email" ? "numeric" : "text"} value={value} onChange={(event) => setValue(mode === "email" ? event.target.value.replace(/\D/g, "").slice(0, 6) : event.target.value)} autoComplete={mode === "password" ? "current-password" : "one-time-code"} />{mode === "email" ? <button type="button" disabled={sending || countdown > 0} onClick={() => void send()}>{sending ? "发送中" : countdown ? `${countdown}s` : "获取验证码"}</button> : null}</div></label>}
-    {message ? <p className="vault-modal-note">{message}</p> : null}
+    <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
     <footer><button type="button" className="vault-ghost" onClick={cancel}>取消</button><button className="vault-primary" disabled={busy || (mode !== "passkey" && !value.trim())}>{busy ? <LoaderCircle className="spin" size={15} /> : mode === "passkey" ? <Fingerprint size={15} /> : <ShieldCheck size={15} />}{busy ? "验证中" : mode === "passkey" ? "使用 Passkey 验证" : "解锁保险库"}</button></footer>
   </form></div>;
 }

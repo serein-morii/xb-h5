@@ -6,6 +6,7 @@ import { APP_ROUTES } from "../../lib/pathConventions";
 import "./otp-guide.css";
 
 const navigation = [
+  ["overview", "功能总览"],
   ["quick-start", "快速开始"],
   ["add", "添加凭据"],
   ["use", "查看和使用"],
@@ -32,6 +33,15 @@ const shareParts = [
   ["授权链接", "仅发给需要访问的人"],
   ["访问码", "建议与链接分开发送"],
   ["有效期", "到期后链接立即失效"],
+] as const;
+
+const featureHighlights = [
+  [QrCode, "录入不费劲", "支持单条扫码、图片识别、标准链接和批量迁移二维码"],
+  [Layers3, "多了也清楚", "搜索、分组、收藏和默认紧凑显示适合大量凭据"],
+  [Fingerprint, "验证更顺手", "登录、改密和敏感操作都可使用 Passkey"],
+  [Link2, "分享有边界", "按字段、对象、时间、次数和复制权限控制临时授权"],
+  [Download, "恢复有准备", "加密备份、完整性校验和离线应急覆盖换机与断网"],
+  [Smartphone, "手机优先", "小巧输入、底部反馈和窄布局兼顾单手操作"],
 ] as const;
 
 export default function OtpVaultGuidePage() {
@@ -61,6 +71,25 @@ export default function OtpVaultGuidePage() {
       <aside><b>本页目录</b><nav>{navigation.map(([id, label]) => <a href={`#${id}`} key={id}>{label}</a>)}</nav><p><ShieldCheck size={14} />不要向任何人发送 OTP Secret、登录密码或恢复密码。</p></aside>
 
       <article className="otp-guide-content">
+        <section id="overview" className="otp-guide-section otp-guide-overview">
+          <header><span><Layers3 size={21} /></span><div><h2>一张图看懂 OTP Vault</h2><p>先安全收进来，再用于登录；需要协作时临时开放，最后用备份兜底。</p></div></header>
+          <div className="otp-guide-lifecycle" aria-label="OTP Vault 完整使用流程图">
+            <div className="otp-guide-lifecycle-rail">
+              <article><em>01</em><span><QrCode size={19} /></span><div><b>收集凭据</b><small>扫码 · 图片 · 手动 · 批量导入</small></div></article>
+              <ArrowRight size={17} />
+              <article><em>02</em><span><ShieldCheck size={19} /></span><div><b>核对保存</b><small>系统、账号、算法与周期</small></div></article>
+              <ArrowRight size={17} />
+              <article><em>03</em><span><Clock3 size={19} /></span><div><b>日常使用</b><small>搜索 · 分组 · 复制动态口令</small></div></article>
+            </div>
+            <div className="otp-guide-lifecycle-branches">
+              <section><span><Link2 size={18} /></span><div><b>需要协作</b><p>创建最小权限的限时链接，或直接授权给指定账号。</p></div><small>按需分享</small></section>
+              <section><span><Fingerprint size={18} /></span><div><b>遇到敏感操作</b><p>使用邮箱、密码或 Passkey 再次确认身份。</p></div><small>再次验证</small></section>
+              <section><span><Download size={18} /></span><div><b>换机或应急</b><p>用加密备份恢复；可信设备还可准备离线只读副本。</p></div><small>恢复兜底</small></section>
+            </div>
+          </div>
+          <div className="otp-guide-features">{featureHighlights.map(([Icon, title, text]) => <section key={title}><span><Icon size={18} /></span><div><b>{title}</b><p>{text}</p></div></section>)}</div>
+        </section>
+
         <section id="quick-start" className="otp-guide-section">
           <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>第一次使用时，先登录，再按下面四步完成基本配置。</p></div></header>
           <div className="otp-guide-methods">{loginWays.map(([Icon, title, text]) => <section key={title}><Icon size={18} /><b>{title}</b><p>{text}</p></section>)}</div>
@@ -73,7 +102,7 @@ export default function OtpVaultGuidePage() {
           <div className="otp-guide-split">
             <div className="otp-guide-copy">
               <h3>扫描二维码</h3>
-              <ol><li>进入“全部”，点击右上角“添加”。</li><li>选择扫码并允许相机权限。</li><li>将二维码完整放入识别区域。</li><li>核对系统名称和账号后保存。</li></ol>
+              <ol><li>进入“全部”，点击顶部“导入”。</li><li>选择“单条录入”，再选择扫码并允许相机权限。</li><li>将二维码完整放入识别区域。</li><li>核对系统名称和账号后保存；多条迁移请选择“批量导入”。</li></ol>
               <h3>手动录入</h3>
               <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。</p>
               <h3>导入文本</h3>
@@ -130,7 +159,7 @@ export default function OtpVaultGuidePage() {
         <section id="security" className="otp-guide-section">
           <header><span><ShieldCheck size={21} /></span><div><h2>安全设置与备份恢复</h2><p>安全功能按需开启，但加密备份应尽早准备。</p></div></header>
           <div className="otp-guide-security-grid">
-            <section><Fingerprint size={22} /><h3>敏感操作验证</h3><p>默认关闭。多人共用设备或安全要求较高时建议开启，关键操作前会再次验证身份。</p></section>
+            <section><Fingerprint size={22} /><h3>敏感操作验证</h3><p>默认关闭。开启后可用邮箱、密码或 Passkey 验证；更新登录密码也支持 Passkey。</p></section>
             <section><LockKeyhole size={22} /><h3>零知识保护</h3><p>敏感字段在浏览器加密。忘记保护密码无法恢复，并且零知识凭据不能创建服务器分享快照。</p></section>
             <section><Download size={22} /><h3>加密备份</h3><p>下载 .xbvault 文件，将文件和恢复密码分开保存。恢复前可以先校验和预览内容。</p></section>
             <section><Smartphone size={22} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。凭据发生变化后需要重新更新离线副本。</p></section>
@@ -148,6 +177,7 @@ export default function OtpVaultGuidePage() {
             <details><summary>授权名称对方能看到吗？</summary><p>能。名称会显示在授权页标题和分享文案第一行，请不要写入敏感信息。</p></details>
             <details><summary>误删凭据还能恢复吗？</summary><p>进入“安全”中的回收站恢复。永久删除后只能从加密备份重新导入。</p></details>
             <details><summary>更换手机怎么迁移？</summary><p>在旧设备创建 .xbvault 加密备份，在新设备登录后校验并恢复。也可以生成迁移二维码导入兼容应用。</p></details>
+            <details><summary>没有原密码还能修改登录密码吗？</summary><p>可以使用绑定邮箱验证码，或选择已绑定的 Passkey，通过指纹、面容或设备 PIN 验证后修改。</p></details>
             <details><summary>发现陌生设备或来源 IP 怎么办？</summary><p>立即在“安全”中撤销设备、退出其他会话并修改登录密码，同时检查最近安全活动。</p></details>
           </div>
         </section>

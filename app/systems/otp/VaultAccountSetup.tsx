@@ -1,8 +1,10 @@
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, LoaderCircle, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, Fingerprint, KeyRound, LoaderCircle, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, User } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { apiRequest, copyToClipboard, sendEmailCode } from "../../lib/api";
+import { getPasskey } from "../../lib/passkey";
 import { API_PATHS } from "../../lib/pathConventions";
-import { setVaultPassword, setVaultUsername } from "./vaultApi";
+import { finishVaultStepUpPasskey, getVaultStepUpPasskeyOptions, setOtpStepUpToken, setVaultPassword, setVaultUsername } from "./vaultApi";
+import VaultToastMessage from "./VaultToastMessage";
 import "./otp-auth.css";
 import "./otp-setup.css";
 
@@ -14,7 +16,7 @@ export type VaultSetupResult = {
 };
 
 type PasswordMode = "complex" | "simple" | "custom" | "skip";
-type VerifyMode = "password" | "email";
+type VerifyMode = "password" | "email" | "passkey";
 
 /** 用 crypto 随机取字符，避免 Math.random 的可预测性 */
 function randomChars(pool: string, length: number) {
@@ -121,7 +123,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
 
   async function requestChangeCode() {
     const value = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("当前账号未绑定可用邮箱，请改用原密码验证");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("当前账号未绑定可用邮箱，请改用原密码或 Passkey 验证");
     setEmailSending(true); setMessage("");
     try {
       await sendEmailCode(value, "otp-change");
@@ -164,6 +166,11 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
         encryptedOld = encryptor.encrypt(oldPassword) || undefined;
         if (!encryptedOld) throw new Error("原密码加密失败");
       }
+      if (requireVerify && verifyMode === "passkey") {
+        const options = await getVaultStepUpPasskeyOptions();
+        const verified = await finishVaultStepUpPasskey(options.data.requestId, await getPasskey(options.data.publicKey));
+        setOtpStepUpToken(verified.data.token);
+      }
       await setVaultPassword(encrypted, {
         setup: !requireVerify,
         oldPassword: encryptedOld,
@@ -185,7 +192,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
       {!only ? <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>设置用户名</b><small>不改就用邮箱 @ 前的默认名称</small></div></header> : null}
       <label><span>用户名</span><div><User size={16} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位用户名" /></div></label>
       {!only ? <p className="otp-setup-hint">用户名用于账号密码登录和分享时搜索你；随时可以在设置中修改。</p> : null}
-      {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
+      <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
       <div className="otp-setup-actions">
         {cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null}
         <button className="otp-setup-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : only === "username" ? <Check size={16} /> : <ArrowRight size={16} />}{only === "username" ? "确认修改" : "下一步"}</button>
@@ -211,12 +218,12 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
       {passwordMode === "skip" ? <p className="otp-setup-warning"><ShieldAlert size={15} /><span><b>跳过后将无法使用账号密码登录</b><small>下次登录只能通过邮箱验证码；之后想设置密码，可在保险库「设置 → 账号安全」中补设。</small></span></p> : null}
 
       {requireVerify && passwordMode !== "skip" ? <div className="otp-setup-verify">
-        <div className="otp-setup-verify-tabs"><button type="button" className={verifyMode === "password" ? "is-active" : ""} onClick={() => { setVerifyMode("password"); setMessage(""); }}>原密码</button><button type="button" className={verifyMode === "email" ? "is-active" : ""} onClick={() => { setVerifyMode("email"); setMessage(""); }}>邮箱验证码</button></div>
-        {verifyMode === "password" ? <label><span>原密码</span><div><KeyRound size={16} /><input type="password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="当前登录密码" /></div></label> : <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder={email ? `发送到 ${email}` : "6 位验证码"} /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestChangeCode()}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label>}
-        <p className="otp-setup-hint">注册时跳过密码的账号没有原密码，请用邮箱验证码。</p>
+        <div className="otp-setup-verify-tabs"><button type="button" className={verifyMode === "password" ? "is-active" : ""} onClick={() => { setVerifyMode("password"); setMessage(""); }}>原密码</button><button type="button" className={verifyMode === "email" ? "is-active" : ""} onClick={() => { setVerifyMode("email"); setMessage(""); }}>邮箱验证码</button><button type="button" className={verifyMode === "passkey" ? "is-active" : ""} onClick={() => { setVerifyMode("passkey"); setMessage(""); }}>Passkey</button></div>
+        {verifyMode === "password" ? <label><span>原密码</span><div><KeyRound size={16} /><input type="password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="当前登录密码" /></div></label> : verifyMode === "email" ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder={email ? `发送到 ${email}` : "6 位验证码"} /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestChangeCode()}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label> : <div className="otp-setup-passkey"><Fingerprint size={19} /><span><b>使用 Passkey 确认身份</b><small>确认修改后，按系统提示使用指纹、面容或设备 PIN。</small></span></div>}
+        <p className="otp-setup-hint">没有原密码时，可使用邮箱验证码或已绑定的 Passkey。</p>
       </div> : null}
 
-      {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
+      <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
       <div className="otp-setup-actions">
         {only === "password" ? (cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null) : <button type="button" className="otp-setup-ghost" disabled={busy} onClick={() => { setStep("username"); setMessage(""); }}><ArrowLeft size={16} />上一步</button>}
         <button className={passwordMode === "skip" ? "otp-setup-ghost" : "otp-setup-primary"} disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : passwordMode === "skip" ? null : only === "password" ? <Check size={16} /> : <Sparkles size={16} />}{passwordMode === "skip" ? "跳过并完成" : only === "password" ? "确认修改" : "完成设置"}</button>

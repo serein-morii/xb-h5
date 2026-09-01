@@ -1,5 +1,5 @@
 import {
-  ArchiveRestore, BellRing, Check, Clock3, Download, FileCheck2, FileKey, Fingerprint, KeyRound, Laptop,
+  ArchiveRestore, Check, Clock3, Download, FileCheck2, FileKey, Fingerprint, KeyRound, Laptop,
   LoaderCircle, LockKeyhole, Pencil, QrCode, RefreshCw, RotateCw, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ import {
 } from "./vaultCrypto";
 import { createPasskey } from "../../lib/passkey";
 import { buildMigrationQrs } from "./vaultQr";
+import VaultToastMessage from "./VaultToastMessage";
 
 type Props = {
   prefs: VaultPrefs;
@@ -181,7 +182,7 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
       <section className="vault-settings-group"><header><div><b>回收站</b><small>误删的凭据可以恢复，也可以永久清除</small></div><span>{trash.length} 项</span></header><div className="vault-session-list">{trash.length ? trash.map((item) => <article key={item.id}><Trash2 size={17} /><div><b>{item.issuer}</b><small>{item.accountName}</small></div><button type="button" onClick={() => void run(`restore-${item.id}`, async () => { await restoreVaultCredential(item.id); await load(); setMessage("凭据已恢复"); })}>恢复</button><button type="button" className="is-danger" onClick={() => { const key = `purge-${item.id}`; if (confirmAction !== key) return setConfirmAction(key); void run(key, async () => { await purgeVaultCredential(item.id); setConfirmAction(""); await load(); setMessage("凭据已永久删除"); }); }}>{confirmAction === `purge-${item.id}` ? "确认清除" : "清除"}</button></article>) : <p className="vault-security-empty">回收站是空的</p>}</div></section>
       <section className="vault-settings-group"><header><div><b>最近安全活动</b><small>关键操作、设备和来源 IP</small></div><span>{activityTotal} 条</span></header><div className="vault-activity-list">{activities.map((item) => <article key={item.id}><span><KeyRound size={14} /></span><div><b>{activityLabel(item.action)}</b><small>{item.detail || item.targetType || "保险库"} · {item.ipAddress || "未知 IP"}</small></div><time>{formatTime(item.createTime)}</time></article>)}</div>{activities.length < activityTotal ? <button type="button" className="vault-security-more" disabled={busy !== ""} onClick={() => void loadMoreActivities()}>{busy === "activity-more" ? <><LoaderCircle className="spin" size={13} />加载中</> : `加载更多（剩余 ${activityTotal - activities.length} 条）`}</button> : null}</section>
     </div> : null}
-    {message ? <div className="vault-security-message"><BellRing size={14} />{message}</div> : null}
+    <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
   </div>;
 }
 
