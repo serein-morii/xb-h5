@@ -938,3 +938,8 @@
 .vault-offline-unlock h2,.vault-offline-unlock p { margin: 0; }.vault-offline-unlock h2 { color: var(--utility-text); font-size: 18px; }.vault-offline-unlock p { color: var(--utility-muted); font-size: 10px; line-height: 1.6; }
 .vault-offline-unlock input { width: 100%; min-height: 42px; margin-top: 5px; padding: 0 12px; border: 1px solid var(--utility-line); border-radius: 11px; outline: 0; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; }
 .vault-offline-unlock em { color: #bf4352; font-size: 9px; font-style: normal; }.vault-offline-unlock button { width: 100%; margin-top: 3px; }
+
+.vault-created-actions > :only-child { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .vault-created-actions { grid-template-columns: 1fr 1fr; }
+}
