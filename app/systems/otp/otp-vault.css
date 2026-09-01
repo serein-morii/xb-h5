@@ -212,6 +212,8 @@
 .vault-option-grid label.is-selected svg { display: block; }
 .vault-access-options { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--utility-line); }
 .vault-single-field { grid-template-columns: 1fr; }
+.vault-share-form .vault-single-field { margin-bottom: 2px; }
+.vault-share-form .vault-single-field input { min-height: 44px; }
 .vault-duration { margin-top: 10px; padding: 11px; display: grid; grid-template-columns: 125px minmax(0,1fr); gap: 8px 10px; border: 1px solid color-mix(in srgb,#6674cf 14%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,#6674cf 4%,var(--utility-paper)); }
 .vault-duration-head { grid-row: 1 / 3; display: flex; align-items: center; gap: 9px; }
 .vault-duration-head > span { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg,#5368d2,#8492e8); color: #fff; box-shadow: 0 7px 15px rgba(72,92,199,.18); }

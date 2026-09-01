@@ -23,7 +23,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(workspace, /formatShareText/);
   assert.match(workspace, /copyShareInfo/);
   assert.match(workspace, /share\.name\?\.trim\(\) \|\| "临时凭据授权"/);
-  assert.match(workspace, /placeholder="例如 王五的授权，不填则为临时凭据授权"/);
+  assert.match(workspace, /placeholder="例如 给同事的临时访问，不填则为临时凭据授权"/);
+  assert.match(workspace, /给这次授权起个名字/);
   assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
   for (const id of ["quick-start", "add", "use", "share", "security", "faq"]) assert.match(guide, new RegExp(`id="${id}"`));
   assert.match(guide, /授权名称/);

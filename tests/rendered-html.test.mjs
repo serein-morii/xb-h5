@@ -409,7 +409,8 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(workspace, /created\?\.autoFillAllowed \? autoFillUrl : created\?\.shareUrl/);
   assert.match(workspace, /formatShareText/);
   assert.match(workspace, /copyShareInfo/);
-  assert.match(workspace, /placeholder="例如 王五的授权，不填则为临时凭据授权"/);
+  assert.match(workspace, /placeholder="例如 给同事的临时访问，不填则为临时凭据授权"/);
+  assert.match(workspace, /给这次授权起个名字/);
   assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
   assert.match(api, /saveVaultPreferences/);
   assert.match(api, /method: "PUT"/);
