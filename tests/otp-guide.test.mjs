@@ -27,9 +27,13 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
   for (const id of ["quick-start", "add", "use", "share", "security", "faq"]) assert.match(guide, new RegExp(`id="${id}"`));
   assert.match(guide, /授权名称/);
-  assert.match(guide, /王五的授权/);
+  assert.match(guide, /给同事的临时访问/);
   assert.match(guide, /验证码一直不正确/);
   assert.match(guide, /设备与回收站/);
+  assert.match(guide, /otp-guide-anatomy/);
+  assert.match(guide, /otp-guide-methods/);
+  assert.doesNotMatch(guide, /gooop\.top\/s\//);
+  assert.doesNotMatch(guide, /dCOxR|W9KKQR/);
   assert.match(styles, /@media \(max-width: 600px\)/);
   assert.doesNotMatch(guide, /—/);
 });
