@@ -15,7 +15,8 @@ test("maps common issuers to local brand colors without network icons", () => {
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
-  assert.match(workspace, /concealOtp/);
+  assert.match(workspace, /concealOtpEnabled\(\) \{\s*return localStorage.getItem\(CONCEAL_KEY\) === "1";/);
+  assert.match(workspace, /useState\(concealOtpEnabled\)/);
   assert.match(workspace, /点按显示并复制/);
   assert.match(workspace, /最近使用/);
   assert.match(workspace, /已存在相同系统和账号的凭据/);

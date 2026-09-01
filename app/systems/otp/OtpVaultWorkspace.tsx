@@ -31,6 +31,9 @@ const CLIPBOARD_CLEAR_MS = 30_000;
 function readLastUsed(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(LAST_USED_KEY) || "{}"); } catch { return {}; }
 }
+function concealOtpEnabled() {
+  return localStorage.getItem(CONCEAL_KEY) === "1";
+}
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true };
 type ScannedCredential = Partial<typeof emptyCredential>;
@@ -231,7 +234,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
 	const [recipientLoading, setRecipientLoading] = useState(false);
 	const [created, setCreated] = useState<{ name?: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
-  const [concealOtp, setConcealOtp] = useState(() => localStorage.getItem(CONCEAL_KEY) === "1");
+  const [concealOtp, setConcealOtp] = useState(concealOtpEnabled);
   const [revealedOtp, setRevealedOtp] = useState<number | null>(null);
   const [lastUsed, setLastUsed] = useState(readLastUsed);
   const otpRefreshAt = useRef(0);
