@@ -85,11 +85,14 @@
 .vault-account-entry small { color: var(--utility-muted); font-size: 9px; font-weight: 500; }
 
 @media (max-width: 560px) {
+  .otp-setup-step label > div,
+  .otp-setup-verify .otp-email-code { min-height: 39px; padding-right: 9px; padding-left: 10px; border-radius: 10px; }
   .vault-modal .otp-setup { gap: 10px; }
   .vault-modal .otp-setup-steps li { padding: 7px 6px; font-size: 9px; }
   .vault-modal .otp-setup-step { gap: 9px; }
   .vault-modal .otp-setup-step > header { padding: 9px 10px; }
-  .vault-modal .otp-setup-step label > div { min-height: 41px; }
+  .vault-modal .otp-setup-step label > div { min-height: 38px; }
+  .vault-modal .otp-setup-step input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; }
   .vault-modal .otp-setup-options > button { padding: 8px 8px 8px 30px; }
 }
 

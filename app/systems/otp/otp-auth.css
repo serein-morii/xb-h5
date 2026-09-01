@@ -311,3 +311,16 @@ html.theme-dark { @media (max-width: 560px) {
   .otp-auth-page, .otp-auth-app { background: #0b101b; }
 }
 }
+
+html.theme-dark {
+  .otp-auth-tabs button.is-active,
+  .otp-login-methods button.is-active { background: #2b3650; color: #c5ccff; box-shadow: inset 0 0 0 1px rgba(166,177,255,.34),0 4px 14px rgba(0,0,0,.2); }
+  .otp-long-session > i { border: 1px solid #68758f; background: #465269; box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+  .otp-long-session > i::after { background: #f5f7fc; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  .otp-long-session > input:checked + i { border-color: #a5b0ff; background: #7c8cff; box-shadow: 0 0 0 3px rgba(124,140,255,.18); }
+  .otp-long-session > input:focus-visible + i { outline: 2px solid #b4bdff; outline-offset: 2px; }
+}
+
+@media (max-width: 560px) {
+  .otp-auth-form > label > div:not(.slider-captcha) { min-height: 40px; padding: 0 11px; border-radius: 11px; }
+}
