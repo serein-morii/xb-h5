@@ -1,0 +1,66 @@
+docs/otp-vault-user-guide.md
+  s_1660af5fcf2104::t_455877b5866d16 138
+  s_1660af5fcf2104::t_d13b90307986ce 93
+app/systems/otp/otp-guide.css
+  s_1660af5fcf2104::t_6967a566320a9f 118
+  s_1660af5fcf2104::t_e5d8f6ffd24343 139
+tests/rendered-html.test.mjs
+  s_1660af5fcf2104::t_513a4a1c6c8824 412-413
+  s_1660af5fcf2104::t_8366dc7ab90c92 410-411
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_1660af5fcf2104::t_4d9cfb2a240ecd 678
+  s_1660af5fcf2104::t_8f92646a69dca6 498
+  s_1660af5fcf2104::t_b055c0a8b40a75 721-728
+  s_1660af5fcf2104::t_0beaf79ec5b17d 686
+  s_1660af5fcf2104::t_8c832b6a6f4638 583
+  s_1660af5fcf2104::t_65059234b36db8 668
+  s_1660af5fcf2104::t_30e8d7f5741a18 657
+  s_1660af5fcf2104::t_35090be144f2ed 653
+  s_1660af5fcf2104::t_a32b0317340f12 511
+  s_1660af5fcf2104::t_f557a5fb49fabe 530
+  s_1660af5fcf2104::t_f767f9ea91b542 224
+  s_1660af5fcf2104::t_a047380ec9dbd6 582
+  s_1660af5fcf2104::t_8303f0d940d4e8 536-545
+  s_1660af5fcf2104::t_f30f5a5e8287f2 560
+  s_1660af5fcf2104::t_59bb3799793c79 688
+  s_1660af5fcf2104::t_79f69d298aa260 221
+  s_1660af5fcf2104::t_2fed63070ee6b4 690
+app/systems/otp/VaultSharePage.tsx
+  s_1660af5fcf2104::t_5f48f60fb0231f 40
+  s_1660af5fcf2104::t_6d31db986fad52 100
+  s_1660af5fcf2104::t_c7786c89fffbfe 75-78
+  s_1660af5fcf2104::t_20e05ad475a32a 102
+  s_1660af5fcf2104::t_78b4ea88e39ae4 107
+app/systems/otp/otp-vault.css
+  s_1660af5fcf2104::t_a8e9c76feadda3 147-148
+tests/otp-guide.test.mjs
+  s_1660af5fcf2104::t_0133e3f4e9e6d1 8,15,26-27
+  s_1660af5fcf2104::t_bdd5deb7ec9a45 29-32
+  s_1660af5fcf2104::t_6d8fb483418348 23-25
+app/systems/otp/OtpVaultGuidePage.tsx
+  s_1660af5fcf2104::t_43e46d4daa271f 122
+  s_1660af5fcf2104::t_8cf87d7f681680 129,131
+  s_1660af5fcf2104::t_10dabd6954f3f3 103-107
+  s_1660af5fcf2104::t_37ef8cf801c237 54
+app/systems/otp/vaultApi.ts
+  s_1660af5fcf2104::t_b8881674426963 133
+  s_1660af5fcf2104::t_db788444a43162 85
+  s_1660af5fcf2104::t_e372db5ddcf8c2 140
+  s_1660af5fcf2104::t_c1e631397a6e35 57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "eaec5935bafd1a13b0bdc8414c4a3bdfeababb7c",
+  "prompts": {},
+  "sessions": {
+    "s_1660af5fcf2104": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "effd33d5-99db-4d05-a723-addcf038d5f2",
+        "model": "grok-4.6"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
