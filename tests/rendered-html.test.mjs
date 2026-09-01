@@ -385,8 +385,9 @@ test("keeps the public order tracking route", async () => {
 });
 
 test("keeps OTP display preferences accessible and compact layouts dense", async () => {
-  const [workspace, security, share, api, styles] = await Promise.all([
+  const [workspace, accountSetup, security, share, api, styles] = await Promise.all([
     source("app/systems/otp/OtpVaultWorkspace.tsx"),
+    source("app/systems/otp/VaultAccountSetup.tsx"),
     source("app/systems/otp/VaultSecurityCenter.tsx"),
     source("app/systems/otp/VaultSharePage.tsx"),
     source("app/systems/otp/vaultApi.ts"),
@@ -400,6 +401,12 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(security, /activityTotal - activities\.length/);
   assert.doesNotMatch(security, /activities\.slice\(0, 30\)/);
   assert.match(workspace, /checked=\{prefs\.grouped\}/);
+  assert.match(workspace, /setModal\("importChoice"\)/);
+  assert.match(workspace, /单条录入/);
+  assert.match(workspace, /批量导入/);
+  assert.match(workspace, /当前为\$\{next === "dark" \? "暗黑" : "亮色"\}模式/);
+  assert.doesNotMatch(workspace, /vault-theme-menu/);
+  assert.match(accountSetup, /\{!only \? <header>/);
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
   assert.match(workspace, /vault-duration/);
@@ -426,6 +433,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(share, /vault-view-toggle.*is-active/);
   assert.match(share, /pathLength="100"/);
   assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
+  assert.match(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
   assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
   assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);

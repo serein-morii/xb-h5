@@ -601,6 +601,22 @@ html.theme-dark {
 .vault-settings .vault-setting-row i { width: 43px; height: 25px; margin-left: auto; }
 .vault-settings .vault-setting-row i::after { width: 19px; height: 19px; }
 .vault-settings .vault-setting-row input:checked + i::after { transform: translateX(18px); }
+.vault-account-settings { padding-bottom: 12px; }
+.vault-account-links { padding: 0 12px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.vault-account-link { min-width: 0; min-height: 58px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; border: 1px solid rgba(38,50,77,.07); border-radius: 14px; background: #fafbfe; color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s,background .15s,transform .15s; }
+.vault-account-link:hover { border-color: rgba(102,116,207,.26); background: #f5f6fc; transform: translateY(-1px); }
+.vault-account-link > svg:last-child { color: var(--utility-muted); }
+.vault-account-link .vault-setting-icon { width: 34px; height: 34px; border-radius: 11px; }
+.vault-account-link .vault-setting-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-import-choice-modal { width: min(440px,100%); }
+.vault-import-choice-list { display: grid; gap: 8px; }
+.vault-import-choice-list > button { width: 100%; min-height: 66px; padding: 10px 11px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 11px; border: 1px solid var(--utility-line); border-radius: 14px; background: color-mix(in srgb,var(--utility-paper) 76%,var(--utility-bg)); color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s,background .15s; }
+.vault-import-choice-list > button:hover { border-color: rgba(102,116,207,.3); background: color-mix(in srgb,var(--utility-paper) 58%,#eef0fb); }
+.vault-import-choice-list > button > span:nth-child(2) { min-width: 0; }
+.vault-import-choice-list b,.vault-import-choice-list small { display: block; }
+.vault-import-choice-list b { font-size: 12px; }
+.vault-import-choice-list small { margin-top: 3px; color: var(--utility-muted); font-size: 9px; }
+.vault-import-choice-list > button > svg { color: var(--utility-muted); }
 .vault-settings-note { padding: 3px 5px; display: flex; align-items: center; gap: 9px; color: var(--utility-muted); }
 .vault-settings-note > svg { color: #6273d3; }
 .vault-settings-note b, .vault-settings-note small { display: block; }
@@ -612,6 +628,10 @@ html.theme-dark {
   .vault-settings-group { border-radius: 20px; }
   .vault-settings .vault-setting-row { min-height: 66px; padding: 10px 13px; }
   .vault-setting-icon { width: 37px; height: 37px; }
+  .vault-account-settings { padding-bottom: 10px; }
+  .vault-account-links { padding: 0 10px; gap: 7px; }
+  .vault-account-link { min-height: 54px; padding: 8px; gap: 7px; }
+  .vault-account-link .vault-setting-icon { width: 32px; height: 32px; }
   .vault-settings-note { padding: 2px 4px; }
 }
 
@@ -620,6 +640,8 @@ html.theme-dark {
   .vault-settings-group > header > span { background: #222b3d; color: #9da7ba; }
   .vault-settings .vault-setting-row { border-color: rgba(225,231,248,.08); background: #171e2c; }
   .vault-settings .vault-setting-row:hover { background: #1b2332; }
+  .vault-account-link { border-color: rgba(225,231,248,.08); background: #1b2332; }
+  .vault-account-link:hover { border-color: rgba(157,168,243,.3); background: #20293a; }
   .vault-setting-icon.is-violet { background: rgba(126,100,211,.18); color: #b4a5ef; }
   .vault-setting-icon.is-blue { background: rgba(82,119,207,.18); color: #91adee; }
   .vault-setting-icon.is-green { background: rgba(55,130,91,.18); color: #7fc49d; }
@@ -943,17 +965,20 @@ html.theme-dark { @media (max-width: 560px) {
 .vault-offline-unlock input { width: 100%; min-height: 42px; margin-top: 5px; padding: 0 12px; border: 1px solid var(--utility-line); border-radius: 11px; outline: 0; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; }
 .vault-offline-unlock em { color: #bf4352; font-size: 9px; font-style: normal; }.vault-offline-unlock button { width: 100%; margin-top: 3px; }
 
-.vault-theme-wrap { position: relative; }
-.vault-theme-menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 148px; padding: 6px; display: grid; gap: 4px; border: 1px solid var(--utility-line); border-radius: 12px; background: var(--utility-paper); box-shadow: 0 12px 30px rgba(28, 39, 72, .14); }
-.vault-theme-menu button { min-height: 36px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; background: transparent; color: var(--utility-text); font: inherit; font-size: 12px; cursor: pointer; }
-.vault-theme-menu button.is-active { background: #eef0fb; color: #485cc7; }
 .vault-theme-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; }
 .vault-theme-options button { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--utility-line); border-radius: 12px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }
 .vault-theme-options button.is-active { border-color: #8592dc; background: #eef0fb; color: #485cc7; }
-.vault-setting-row.is-nav { width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; }
-.vault-setting-row.is-nav svg:last-child { margin-left: auto; color: var(--utility-muted); }
-
 .vault-created-actions > :only-child { grid-column: 2; }
 @media (max-width: 560px) {
   .vault-created-actions { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 360px) {
+  .vault-head { gap: 6px; padding: 8px; }
+  .vault-brand { gap: 7px; }
+  .vault-brand-mark { width: 36px; height: 36px; border-radius: 12px; }
+  .vault-head .vault-kicker { display: none; }
+  .vault-head h1 { font-size: 17px; white-space: nowrap; }
+  .vault-head-actions { gap: 3px; }
+  .vault-head-actions > *, .vault-head-actions .vault-logout { width: 32px; min-width: 32px; min-height: 34px; }
 }

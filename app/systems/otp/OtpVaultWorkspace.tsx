@@ -10,7 +10,7 @@ import VaultSecurityCenter from "./VaultSecurityCenter";
 import VaultStepUpDialog from "./VaultStepUpDialog";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode } from "./vaultCrypto";
 import { APP_ROUTES } from "../../lib/pathConventions";
-import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
+import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
 import "./otp-vault.css";
 
@@ -21,7 +21,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "created" | "username" | "password" | "syncShares" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "created" | "username" | "password" | "syncShares" | null;
 type VaultView = "all" | "favorite" | "shares" | "security" | "settings";
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
@@ -225,7 +225,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
   const [pendingRevoke, setPendingRevoke] = useState<{ share: VaultShare; from: "list" | "detail" } | null>(null);
   const [pendingShareDelete, setPendingShareDelete] = useState<VaultShare | null>(null);
   const [pendingSync, setPendingSync] = useState<{ id: number; issuer: string; accountName: string; count: number } | null>(null);
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [shareDetail, setShareDetail] = useState<VaultShare | null>(null);
   const [shareDetailLoading, setShareDetailLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -630,11 +629,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
   const selectedCredentials = ownCredentials.filter((item) => selected.includes(item.id));
   const autoFillUrl = created?.shareUrl && created.accessCode ? `${created.shareUrl}#k=${created.accessCode}` : created?.shareUrl || "";
   const fullShareText = created ? formatShareText(created) : "";
+  const darkThemeActive = document.documentElement.classList.contains("theme-dark");
+  const toggleHeaderTheme = () => {
+    const next = darkThemeActive ? "light" : "dark";
+    void updatePrefs({ ...prefs, theme: next });
+    notify(`当前为${next === "dark" ? "暗黑" : "亮色"}模式`);
+  };
 
   return <div className="vault-page">
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
-      <div className="vault-head-actions"><div className="vault-theme-wrap"><button type="button" className="vault-ghost vault-guide-action" onClick={() => setThemeMenuOpen(!themeMenuOpen)} aria-label="外观">{prefs.theme === "dark" ? <Moon size={18} /> : prefs.theme === "light" ? <Sun size={18} /> : <SunMoon size={18} />}<span>外观</span></button>{themeMenuOpen ? <div className="vault-theme-menu">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => { void updatePrefs({ ...prefs, theme: value }); setThemeMenuOpen(false); }}><Icon size={15} />{label}</button>)}</div> : null}</div><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-ghost vault-import-action" onClick={() => { setLegacyText(""); setModal("import"); }} aria-label="导入文件"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-primary vault-add-action" onClick={() => openCredential()} aria-label="添加凭据"><Plus size={21} /><span>添加</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
+      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label="切换亮色或暗黑模式">{darkThemeActive ? <Moon size={18} /> : <Sun size={18} />}<span>{darkThemeActive ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
     </section>
 
     <nav className="vault-tabs" aria-label="密钥管理导航">
@@ -659,9 +664,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
 	    {view === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} /></section> : null}
 
     {view === "settings" ? <section className="vault-settings"><header className="vault-panel-head"><div><h2>设置</h2><p>账号资料和显示偏好会跟随当前账号</p></div></header>
-      <div className="vault-settings-group"><header><div><b>账号与登录</b><small>分开修改用户名或登录密码</small></div></header>
-        <button type="button" className="vault-setting-row is-nav" onClick={() => setModal("username")}><span className="vault-setting-icon is-blue"><User size={17} /></span><span className="vault-setting-copy"><b>用户名</b><small>{accountName || "未设置"}</small></span><ChevronRight size={16} /></button>
-        <button type="button" className="vault-setting-row is-nav" onClick={() => setModal("password")}><span className="vault-setting-icon is-violet"><LockKeyhole size={17} /></span><span className="vault-setting-copy"><b>登录密码</b><small>用于账号密码登录</small></span><ChevronRight size={16} /></button>
+      <div className="vault-settings-group vault-account-settings"><header><div><b>账号与登录</b></div></header>
+        <div className="vault-account-links">
+          <button type="button" className="vault-account-link" onClick={() => setModal("username")}><span className="vault-setting-icon is-blue"><User size={17} /></span><span className="vault-setting-copy"><b>用户名</b><small>{accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("password")}><span className="vault-setting-icon is-violet"><LockKeyhole size={17} /></span><span className="vault-setting-copy"><b>登录密码</b><small>修改密码</small></span><ChevronRight size={15} /></button>
+        </div>
       </div>
       <div className="vault-settings-group"><header><div><b>外观</b><small>保存在当前账号</small></div></header>
         <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
@@ -728,7 +735,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
       <footer><span>{editingId ? "敏感值留空即保持不变" : "确认信息后加密保存"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}{busy ? "保存中" : "保存"}</button></div></footer>
     </form></div> : null}
 
-    {modal === "import" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-import-form" onSubmit={submitImport}><header><div><small>IMPORT</small><h2>导入文件</h2><p>选择文件或直接粘贴文件内容，确认后加密保存到当前账号</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持包含 OTP 地址的文本文件</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取" : "选择文件"}</span><input type="file" accept=".txt,text/plain" onChange={async (event) => { const file = event.target.files?.[0]; if (file) setLegacyText(await file.text()); }} /></label></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>粘贴文件内容</h3></div></div><label><span>文件内容</span><textarea rows={7} value={legacyText} onChange={(event) => setLegacyText(event.target.value)} placeholder="把文件内容粘贴到这里，也可以直接选择文件自动填充" /></label></section></div><footer><span>{legacyText.trim() ? "内容已准备好，可以开始导入" : "请选择文件或粘贴文件内容"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !legacyText.trim()}>{busy ? "导入中" : "确认导入"}</button></div></footer></form></div> : null}
+    {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写一条账号或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { setLegacyText(""); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button></div></section></div> : null}
+
+    {modal === "import" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-import-form" onSubmit={submitImport}><header><div><small>IMPORT</small><h2>批量导入</h2><p>选择文件或直接粘贴文件内容，确认后加密保存到当前账号</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持包含 OTP 地址的文本文件</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取" : "选择文件"}</span><input type="file" accept=".txt,text/plain" onChange={async (event) => { const file = event.target.files?.[0]; if (file) setLegacyText(await file.text()); }} /></label></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>粘贴文件内容</h3></div></div><label><span>文件内容</span><textarea rows={7} value={legacyText} onChange={(event) => setLegacyText(event.target.value)} placeholder="把文件内容粘贴到这里，也可以直接选择文件自动填充" /></label></section></div><footer><span>{legacyText.trim() ? "内容已准备好，可以开始导入" : "请选择文件或粘贴文件内容"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !legacyText.trim()}>{busy ? "导入中" : "确认导入"}</button></div></footer></form></div> : null}
 
     {modal === "shareDetail" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-share-detail">
       <header><div><small>AUTHORIZATION DETAIL</small><h2>{shareDetail?.name?.trim() || "临时授权详情"}</h2><p>{shareDetail ? `${shareDetail.itemCount} 个凭据 · ${shareDetail.shareMode === "DIRECT" ? "指定用户" : "链接分享"}` : "正在读取授权配置"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
