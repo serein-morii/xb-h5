@@ -67,6 +67,20 @@
 .otp-setup-actions > .otp-setup-primary { background: #5363d2; color: #fff; box-shadow: 0 9px 22px rgba(74, 89, 194, .22); }
 .otp-setup-actions > button:disabled { opacity: .6; cursor: default; }
 
+.otp-setup-confirm-mask { position: fixed; z-index: 280; inset: 0; padding: 8px; display: grid; align-items: end; background: rgba(22, 27, 39, .38); backdrop-filter: blur(3px); }
+.otp-setup-confirm { width: min(460px, 100%); margin: 0 auto; padding: 17px; display: grid; grid-template-columns: 38px 1fr; gap: 11px; border: 1px solid rgba(235, 184, 108, .38); border-radius: 20px; background: rgba(255, 255, 255, .98); box-shadow: 0 -12px 42px rgba(30, 35, 52, .18); animation: otp-confirm-up .2s ease-out both; }
+.otp-setup-confirm-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #fff1dc; color: #b66a16; }
+.otp-setup-confirm-copy { min-width: 0; }
+.otp-setup-confirm-copy > small { color: #b66a16; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.otp-setup-confirm-copy > h3 { margin: 3px 0 5px; color: #262b3d; font-size: 15px; line-height: 1.35; }
+.otp-setup-confirm-copy > p { margin: 0; color: #737a8c; font-size: 10px; line-height: 1.65; }
+.otp-setup-confirm-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; margin-top: 3px; }
+.otp-setup-confirm-actions > button { min-height: 39px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #e1e4ec; border-radius: 11px; background: #f7f8fb; color: #646b7c; font-size: 11px; font-weight: 750; cursor: pointer; }
+.otp-setup-confirm-actions > button.is-danger { border-color: #d98466; background: #b84f32; color: #fff; box-shadow: 0 8px 18px rgba(184, 79, 50, .18); }
+.otp-setup-confirm-actions > button:disabled { opacity: .6; cursor: default; }
+
+@keyframes otp-confirm-up { from { opacity: 0; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
 /* 设置页 modal 中打开时收窄外层留白 */
 .vault-account-modal { width: min(620px, 100%) !important; }
 .vault-modal .otp-setup { gap: 12px; }
@@ -94,6 +108,8 @@
   .vault-modal .otp-setup-step label > div { min-height: 38px; }
   .vault-modal .otp-setup-step input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; }
   .vault-modal .otp-setup-options > button { padding: 8px 8px 8px 30px; }
+  .otp-setup-confirm-mask { padding: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+  .otp-setup-confirm { padding: 15px; border-radius: 18px; }
 }
 
 html.theme-dark {
@@ -131,6 +147,14 @@ html.theme-dark {
   .otp-setup-warning small { color: #c59a6e; }
   .otp-setup-message { background: #3a2321; color: #f0968f; }
   .otp-setup-actions > .otp-setup-ghost { border-color: #333d52; background: #171f2e; color: #aeb6c8; }
+  .otp-setup-confirm-mask { background: rgba(3, 7, 14, .58); }
+  .otp-setup-confirm { border-color: #5f4829; background: rgba(18, 25, 38, .98); box-shadow: 0 -12px 42px rgba(0, 0, 0, .4); }
+  .otp-setup-confirm-icon { background: #38281b; color: #efad61; }
+  .otp-setup-confirm-copy > small { color: #efad61; }
+  .otp-setup-confirm-copy > h3 { color: #f0f3fa; }
+  .otp-setup-confirm-copy > p { color: #98a2b5; }
+  .otp-setup-confirm-actions > button { border-color: #333d52; background: #1a2332; color: #aeb6c8; }
+  .otp-setup-confirm-actions > button.is-danger { border-color: #d07052; background: #ad4b31; color: #fff; }
   .otp-setup-verify { border-color: #293143; background: #0e1523; }
   .otp-setup-verify-tabs { border-color: #293143; }
   .otp-setup-verify-tabs button { color: #7f899e; }

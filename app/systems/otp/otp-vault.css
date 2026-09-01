@@ -1008,3 +1008,9 @@ html.theme-dark { @media (max-width: 560px) {
   .share-code-input input { font-size: 15px; letter-spacing: .12em; }
   .share-code-input input::placeholder { font-size: 11px; }
 }
+
+.vault-toast { top: auto; bottom: max(20px,env(safe-area-inset-bottom)); animation: vault-toast-up .18s ease-out; }
+@keyframes vault-toast-up { from { opacity: 0; transform: translate(-50%,10px); } to { opacity: 1; transform: translate(-50%,0); } }
+@media (max-width: 560px) {
+  .vault-toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
+}

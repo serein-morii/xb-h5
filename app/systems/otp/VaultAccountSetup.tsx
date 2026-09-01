@@ -76,6 +76,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [usernameChanged, setUsernameChanged] = useState(false);
+  const [confirming, setConfirming] = useState<"username" | "password" | null>(null);
 
   useEffect(() => {
     apiRequest<{ publicKey?: string; data?: { publicKey?: string } }>(API_PATHS.auth.publicKey, { auth: false })
@@ -95,10 +96,16 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     setMessage("");
   };
 
-  async function submitUsername(event: FormEvent) {
-    event.preventDefault();
+  async function submitUsername(event?: FormEvent, confirmed = false) {
+    event?.preventDefault();
     const value = username.trim();
     if (value.length < 2 || value.length > 20) return setMessage("用户名长度必须为 2-20 位");
+    if (only === "username" && value !== initialUsername && !confirmed) {
+      setMessage("");
+      setConfirming("username");
+      return;
+    }
+    setConfirming(null);
     setBusy(true); setMessage("");
     try {
       if (value !== initialUsername) {
@@ -123,8 +130,8 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     finally { setEmailSending(false); }
   }
 
-  async function submitPassword(event: FormEvent) {
-    event.preventDefault();
+  async function submitPassword(event?: FormEvent, confirmed = false) {
+    event?.preventDefault();
     let plain = "";
     if (passwordMode === "complex" || passwordMode === "simple") plain = generated;
     if (passwordMode === "custom") {
@@ -139,6 +146,12 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     if (requireVerify && verifyMode === "password" && !oldPassword) return setMessage("请输入原密码");
     if (requireVerify && verifyMode === "email" && !/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
     if (!publicKey) return setMessage("安全加密尚未准备完成，请稍后重试");
+    if (only === "password" && !confirmed) {
+      setMessage("");
+      setConfirming("password");
+      return;
+    }
+    setConfirming(null);
     setBusy(true); setMessage("");
     try {
       const { JSEncrypt } = await import("jsencrypt");
@@ -163,10 +176,10 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
   }
 
   return <div className="otp-setup">
-    <ol className="otp-setup-steps" aria-label="账号设置进度" hidden={Boolean(only)}>
+    {!only ? <ol className="otp-setup-steps" aria-label="账号设置进度">
       <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span><User size={13} /></span>用户名</li>
       <li className={step === "password" ? "is-active" : ""}><span><KeyRound size={13} /></span>登录密码</li>
-    </ol>
+    </ol> : null}
 
     {step === "username" ? <form className="otp-setup-step" onSubmit={submitUsername}>
       {!only ? <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>设置用户名</b><small>不改就用邮箱 @ 前的默认名称</small></div></header> : null}
@@ -175,7 +188,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
       {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
       <div className="otp-setup-actions">
         {cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null}
-        <button className="otp-setup-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : <ArrowRight size={16} />}下一步</button>
+        <button className="otp-setup-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : only === "username" ? <Check size={16} /> : <ArrowRight size={16} />}{only === "username" ? "确认修改" : "下一步"}</button>
       </div>
     </form> : null}
 
@@ -206,9 +219,30 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
       {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
       <div className="otp-setup-actions">
         {only === "password" ? (cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null) : <button type="button" className="otp-setup-ghost" disabled={busy} onClick={() => { setStep("username"); setMessage(""); }}><ArrowLeft size={16} />上一步</button>}
-        <button className={passwordMode === "skip" ? "otp-setup-ghost" : "otp-setup-primary"} disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : passwordMode === "skip" ? null : <Sparkles size={16} />}{passwordMode === "skip" ? "跳过并完成" : "完成设置"}</button>
+        <button className={passwordMode === "skip" ? "otp-setup-ghost" : "otp-setup-primary"} disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : passwordMode === "skip" ? null : only === "password" ? <Check size={16} /> : <Sparkles size={16} />}{passwordMode === "skip" ? "跳过并完成" : only === "password" ? "确认修改" : "完成设置"}</button>
       </div>
     </form> : null}
+
+    {confirming ? <div className="otp-setup-confirm-mask" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !busy) setConfirming(null);
+    }}>
+      <section className="otp-setup-confirm" role="dialog" aria-modal="true" aria-labelledby="otp-setup-confirm-title">
+        <span className="otp-setup-confirm-icon"><ShieldAlert size={19} /></span>
+        <div className="otp-setup-confirm-copy">
+          <small>敏感操作确认</small>
+          <h3 id="otp-setup-confirm-title">{confirming === "username" ? "确认修改用户名？" : "确认更新登录密码？"}</h3>
+          <p>{confirming === "username"
+            ? "修改后，账号密码登录使用的新用户名会立即变化，其他人搜索你的结果也会同步更新。请确认已经记住新用户名。"
+            : "保存后旧密码会立即失效。请确认已经记住或安全保存新密码，随机密码之后无法再次查看。"}</p>
+        </div>
+        <div className="otp-setup-confirm-actions">
+          <button type="button" disabled={busy} onClick={() => setConfirming(null)}>返回检查</button>
+          <button type="button" className="is-danger" disabled={busy} onClick={() => void (confirming === "username" ? submitUsername(undefined, true) : submitPassword(undefined, true))}>
+            {busy ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}确认修改
+          </button>
+        </div>
+      </section>
+    </div> : null}
   </div>;
 }
 

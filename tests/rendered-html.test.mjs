@@ -404,9 +404,14 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(workspace, /setModal\("importChoice"\)/);
   assert.match(workspace, /单条录入/);
   assert.match(workspace, /批量导入/);
-  assert.match(workspace, /当前为\$\{next === "dark" \? "暗黑" : "亮色"\}模式/);
+  assert.match(workspace, /当前模式：\$\{next === "system" \? "跟随系统"/);
   assert.doesNotMatch(workspace, /vault-theme-menu/);
   assert.match(accountSetup, /\{!only \? <header>/);
+  assert.match(accountSetup, /\{!only \? <ol className="otp-setup-steps"/);
+  assert.match(accountSetup, /only === "username" \? "确认修改" : "下一步"/);
+  assert.match(accountSetup, /only === "password" \? "确认修改" : "完成设置"/);
+  assert.match(accountSetup, /className="otp-setup-confirm-mask"/);
+  assert.match(accountSetup, /确认更新登录密码？/);
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /\[1, 3, 7, 30\]\.map/);
   assert.match(workspace, /vault-duration/);
@@ -434,6 +439,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(share, /pathLength="100"/);
   assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
   assert.match(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
+  assert.match(styles, /\.vault-toast \{ top: auto; bottom:/);
   assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
   assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);

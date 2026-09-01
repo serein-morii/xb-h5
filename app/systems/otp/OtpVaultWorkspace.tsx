@@ -629,17 +629,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountEmail,
   const selectedCredentials = ownCredentials.filter((item) => selected.includes(item.id));
   const autoFillUrl = created?.shareUrl && created.accessCode ? `${created.shareUrl}#k=${created.accessCode}` : created?.shareUrl || "";
   const fullShareText = created ? formatShareText(created) : "";
-  const darkThemeActive = document.documentElement.classList.contains("theme-dark");
+  const themeMode = prefs.theme || "system";
   const toggleHeaderTheme = () => {
-    const next = darkThemeActive ? "light" : "dark";
+    const next = themeMode === "system" ? "dark" : themeMode === "dark" ? "light" : "system";
     void updatePrefs({ ...prefs, theme: next });
-    notify(`当前为${next === "dark" ? "暗黑" : "亮色"}模式`);
+    notify(`当前模式：${next === "system" ? "跟随系统" : next === "dark" ? "暗黑" : "亮色"}`);
   };
 
   return <div className="vault-page">
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
-      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label="切换亮色或暗黑模式">{darkThemeActive ? <Moon size={18} /> : <Sun size={18} />}<span>{darkThemeActive ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
+      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-ghost vault-logout" onClick={onLogout} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
     </section>
 
     <nav className="vault-tabs" aria-label="密钥管理导航">
