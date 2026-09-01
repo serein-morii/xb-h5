@@ -54,7 +54,7 @@ export type VaultCredential = {
 };
 
 export type VaultShare = {
-  id: number; status: string; accessCodeEnabled: boolean; itemCount: number; accessCount: number;
+  id: number; name?: string; status: string; accessCodeEnabled: boolean; itemCount: number; accessCount: number;
   maxAccessCount?: number; oneTime: boolean; allowCopy: boolean;
   accessCode?: string; showAccount: boolean; showPassword: boolean; showOtp: boolean; showLoginUrl: boolean; showNote: boolean;
   credentialIds?: number[]; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; expireTime: string; createTime: string; accessRecords?: VaultAccessRecord[];
@@ -82,7 +82,7 @@ export type VaultTransferItem = { issuer: string; accountName: string; password?
 export type VaultBackup = { format: "xb-otp-vault"; version: number; createdAt: string; keyId: string; items: VaultTransferItem[] };
 
 export type ShareStatus = {
-  status: string; accessCodeRequired: boolean; expireTime: string;
+  status: string; name?: string; accessCodeRequired: boolean; expireTime: string;
   itemCount: number; remainingAccessCount?: number;
 };
 
@@ -130,14 +130,14 @@ export const getPasskeyLoginOptions = (identifier: string, longSession: boolean)
 export const finishPasskeyLogin = (requestId: string, credential: Record<string, unknown>) => apiRequest<{ data: { token: string; username: string } }>(`${API_PATHS.auth.passkeyLogin}/finish`, { auth: false, method: "POST", body: { requestId, credential } });
 export const listVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares`);
 export const getVaultShare = (id: number) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`);
-export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest<{ data: { id: number; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string; itemCount: number } }>(`${vault}/shares`, { method: "POST", body });
+export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest<{ data: { id: number; name: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string; itemCount: number } }>(`${vault}/shares`, { method: "POST", body });
 export const updateVaultShare = (id: number, body: Record<string, unknown>) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`, { method: "PUT", body });
 export const revokeVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}/revoke`, { method: "POST" });
 export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}`, { method: "DELETE" });
 
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`${share}/${token}/status`, { auth: false });
 export const openVaultShare = (token: string, accessCode: string) => apiRequest<{ data: { sessionToken: string; sessionExpiresIn: number } }>(`${share}/${token}/open`, { auth: false, method: "POST", body: { accessCode } });
-export const getSharedContent = (token: string, sessionToken: string) => apiRequest<{ data: { items: SharedItem[]; allowCopy: boolean; expireTime: string; serverTime: number } }>(`${share}/${token}/content`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
+export const getSharedContent = (token: string, sessionToken: string) => apiRequest<{ data: { items: SharedItem[]; name?: string; allowCopy: boolean; expireTime: string; serverTime: number } }>(`${share}/${token}/content`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
 
 // ─── 注册与账号自助 ───────────────────────────────────────────
 

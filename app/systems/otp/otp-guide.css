@@ -115,6 +115,7 @@
 .otp-guide-copy-block b { display: block; color: var(--guide-ink); font-size: 10px; }
 .otp-guide-copy-block p { margin-top: 4px; font-size: 10px; line-height: 1.65; }
 .otp-guide-copy-block code { color: #34469f; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.otp-guide-share-sample { margin: 12px 0 0; padding: 14px 16px; overflow-x: auto; border-radius: 13px; background: #171e2c; color: #d7def5; font-size: 11px; line-height: 1.75; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
 .otp-guide-security-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .otp-guide-security-grid section { padding: 17px; border-radius: 15px; background: #f5f6fa; }
@@ -135,6 +136,7 @@ html.theme-dark .otp-guide-page { --guide-accent: #8d9cff; --guide-accent-soft: 
 html.theme-dark .otp-guide-header { background: rgba(16,22,33,.97); }
 html.theme-dark .otp-guide-route > span, html.theme-dark .otp-guide-steps li, html.theme-dark .otp-guide-scan-visual, html.theme-dark .otp-guide-code-card, html.theme-dark .otp-guide-share-flow, html.theme-dark .otp-guide-backup-flow, html.theme-dark .otp-guide-security-grid section { background: #121a28; }
 html.theme-dark .otp-guide-share-flow span, html.theme-dark .otp-guide-backup-flow span, html.theme-dark .otp-guide-faq details, html.theme-dark .otp-guide-copy-block { background: #1b2332; }
+  html.theme-dark .otp-guide-share-sample { background: #101621; color: #d7def5; }
 html.theme-dark .otp-guide-scan-frame { background: #202a42; }
 html.theme-dark .otp-guide-scan-result { color: #8ed1a7; background: #193325; }
 html.theme-dark .otp-guide-scan-result small { color: #7fa78e; }

@@ -407,7 +407,10 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(workspace, /updateVaultShare\(shareDetail\.id/);
   assert.match(workspace, /原授权链接和访问码保持不变/);
   assert.match(workspace, /created\?\.autoFillAllowed \? autoFillUrl : created\?\.shareUrl/);
-  assert.match(workspace, /\["临时凭据授权", copiedShareUrl, .*`访问码：\$\{created\.accessCode\}`.*`有效期：.*\]\.join\("\\n"\)/);
+  assert.match(workspace, /formatShareText/);
+  assert.match(workspace, /copyShareInfo/);
+  assert.match(workspace, /placeholder="例如 王五的授权，不填则为临时凭据授权"/);
+  assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
   assert.match(api, /saveVaultPreferences/);
   assert.match(api, /method: "PUT"/);
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);

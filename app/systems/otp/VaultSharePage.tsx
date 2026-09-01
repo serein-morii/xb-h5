@@ -37,6 +37,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       serverTimeOffset.current = serverNow - receivedAt;
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
       setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); setError("");
+      if (result.data.name) setStatus((current) => current ? { ...current, name: result.data.name } : current);
     } catch (contentError) {
       sessionStorage.removeItem(sessionKey); setSessionToken(""); setItems([]);
       setError(contentError instanceof Error ? contentError.message : "临时访问会话已失效");
@@ -71,6 +72,10 @@ export default function VaultSharePage({ token }: { token: string }) {
     void loadContent(sessionToken);
   }, [items, loadContent, sessionToken, syncedNow]);
   useEffect(() => { localStorage.setItem("otp-vault-share-prefs", JSON.stringify(displayPrefs)); }, [displayPrefs]);
+  useEffect(() => {
+    if (!status?.name) return;
+    document.title = `${status.name}｜OTP Vault`;
+  }, [status?.name]);
 
   const copy = async (value: string, key: string) => {
     if (!allowCopy) return;
@@ -92,14 +97,14 @@ export default function VaultSharePage({ token }: { token: string }) {
 
   const gateVisible = !sessionToken || !items.length;
   return <main className={`share-page ${gateVisible ? "is-gate" : "is-open"}`}>
-    <header className="share-brand"><span className="share-vault-mark">OTP</span><div><b>OTP Vault</b><small>临时凭据授权</small></div></header>
+    <header className="share-brand"><span className="share-vault-mark">OTP</span><div><b>OTP Vault</b><small>{status?.name || "临时凭据授权"}</small></div></header>
     {gateVisible ? <section className="share-access-card">
-      <div className="share-access-intro"><span className="share-lock"><LockKeyhole size={24} /></span><div><small>受保护的临时分享</small><h1>{status?.accessCodeRequired ? "验证后查看" : "查看临时授权"}</h1><p>授权人已为你临时开放凭据，验证前不会传输任何敏感内容。</p></div></div>
+      <div className="share-access-intro"><span className="share-lock"><LockKeyhole size={24} /></span><div><small>受保护的临时分享</small><h1>{status?.name || (status?.accessCodeRequired ? "验证后查看" : "查看临时授权")}</h1><p>授权人已为你临时开放凭据，验证前不会传输任何敏感内容。</p></div></div>
       <div className="share-access-summary"><span><small>授权内容</small><b>{status?.itemCount || 0} 项</b></span><span><small>剩余时间</small><b>{formatDuration(accessExpiresIn)}</b></span></div>
       {status?.accessCodeRequired ? <form onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}><label><span>输入访问码</span><div className="share-code-input"><KeyRound size={17} /><input autoFocus inputMode="text" enterKeyHint="go" spellCheck={false} aria-label="访问码" value={accessCode} onChange={(event) => { setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")); if (error) setError(""); }} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="粘贴或输入访问码" /></div></label><p className="share-access-help">支持直接粘贴，输入完成后按回车</p><button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "继续查看"}</button></form> : <button className="share-open-button" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在建立安全会话" : "打开授权内容"}</button>}
       {error ? <p className="share-error" role="alert">{error}</p> : null}<footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
-      <header><div><span>临时授权已验证</span><h1>凭据内容</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
+      <header><div><span>临时授权已验证</span><h1>{status?.name || "凭据内容"}</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
       <div className="share-toolbar vault-panel-tools"><label className={`vault-view-toggle${displayPrefs.grouped ? " is-active" : ""}`}><Layers3 size={14} /><span>分组</span><small>{displayPrefs.grouped ? "开启" : "关闭"}</small><input type="checkbox" checked={displayPrefs.grouped} onChange={(event) => setDisplayPrefs({ ...displayPrefs, grouped: event.target.checked })} /><i /></label><label className={`vault-view-toggle${displayPrefs.compact ? " is-active" : ""}`}><LayoutGrid size={14} /><span>紧凑</span><small>{displayPrefs.compact ? "开启" : "关闭"}</small><input type="checkbox" checked={displayPrefs.compact} onChange={(event) => setDisplayPrefs({ ...displayPrefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div>
       <div className="share-groups">{groups.map(([name, groupItems]) => <section className="share-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{groupItems.length}</span></header> : null}<div className={`share-item-list${displayPrefs.compact ? " is-compact" : ""}`}>{groupItems.map((item, index) => <article key={`${item.issuer}-${item.accountName || ""}-${index}`}>
           <div className="share-item-title"><span>{item.issuer.slice(0, 2).toUpperCase()}</span><div><b>{item.issuer}</b>{item.accountName ? <small>{item.accountName}</small> : null}</div></div>

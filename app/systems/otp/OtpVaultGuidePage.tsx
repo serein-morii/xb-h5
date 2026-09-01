@@ -51,6 +51,7 @@ export default function OtpVaultGuidePage() {
           <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>第一次使用时，按下面四步完成基本配置。</p></div></header>
           <ol className="otp-guide-steps">{quickSteps.map(([Icon, title, text], index) => <li key={title}><span>{index + 1}</span><Icon size={20} /><div><b>{title}</b><p>{text}</p></div></li>)}</ol>
           <div className="otp-guide-note"><Clock3 size={17} /><p><b>先校准设备时间</b>动态验证码依赖准确时间。请开启系统的自动日期、自动时间和自动时区。</p></div>
+          <div className="otp-guide-copy-block"><b>登录后再开始</b><p>可用邮箱验证码、账号密码或 Passkey 登录。没有账号时先注册邮箱；“保持登录 15 天”只建议在自己的设备上开启。</p></div>
         </section>
 
         <section id="add" className="otp-guide-section">
@@ -99,6 +100,11 @@ export default function OtpVaultGuidePage() {
             <section><span><Link2 size={20} /></span><h3>链接分享</h3><p>接收方无需登录。可以设置访问码、有效期、一次性访问和最大访问次数。</p><small>建议通过不同渠道分别发送链接和访问码。</small></section>
             <section><span><UserCheck size={20} /></span><h3>指定用户</h3><p>搜索接收账号，对方登录后会在“全部”中看到共享凭据。</p><small>最高敏感等级的凭据只能使用此方式。</small></section>
           </div>
+          <div className="otp-guide-copy-block"><b>给授权起个名字</b><p>创建时可填写授权名称，例如“王五的授权”。不填时默认为“临时凭据授权”。这个名称会出现在你的授权列表、对方打开的授权页，以及复制出来的分享文案第一行。</p></div>
+          <pre className="otp-guide-share-sample">{`王五的授权
+https://otp.gooop.top/s/dCOxR#k=W9KKQR
+访问码：W9KKQR
+有效期：2027/9/1 17:22:37`}</pre>
           <div className="otp-guide-permissions"><b>可单独控制的权限</b><div>{["账号", "登录密码", "动态口令", "登录地址", "备注", "允许复制"].map((item) => <span key={item}><Check size={13} />{item}</span>)}</div></div>
           <div className="otp-guide-note"><Settings2 size={17} /><p><b>有效授权可以继续编辑</b>可以调整凭据、剩余有效期、可见字段、复制权限和访问次数。原链接、访问码、分享方式和接收人不会变化。</p></div>
           <div className="otp-guide-copy-block"><b>复制分享信息时</b><p>允许自动填充访问码时，链接会携带 <code>#k=访问码</code>。关闭自动填充后，链接不携带该片段，访问码仍会单独列出。</p></div>
@@ -113,13 +119,16 @@ export default function OtpVaultGuidePage() {
             <section><Smartphone size={22} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。凭据发生变化后需要重新更新离线副本。</p></section>
           </div>
           <div className="otp-guide-backup-flow"><span><Download size={17} />下载备份</span><ArrowRight size={15} /><span><LockKeyhole size={17} />分开保管密码</span><ArrowRight size={15} /><span><ShieldCheck size={17} />新设备校验恢复</span></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“安全”里可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。</p></div>
         </section>
 
         <section id="faq" className="otp-guide-section">
           <header><span><BookOpen size={21} /></span><div><h2>常见问题</h2><p>先按对应检查项排查，通常不需要重新创建账号。</p></div></header>
           <div className="otp-guide-faq">
             <details><summary>扫描不到二维码怎么办？</summary><p>确认相机权限、镜头清洁和画面无反光。仍无法识别时，使用二维码图片识别或手动填写 Secret。</p></details>
+            <details><summary>验证码一直不正确怎么办？</summary><p>先开启设备的自动日期、自动时间和自动时区，再核对 Secret、算法、位数和周期是否与服务方一致。</p></details>
             <details><summary>分享链接打不开怎么办？</summary><p>请发送方检查授权是否已到期、撤销、达到访问上限，以及访问码是否正确。</p></details>
+            <details><summary>授权名称对方能看到吗？</summary><p>能。名称会显示在授权页标题和分享文案第一行，请不要写入敏感信息。</p></details>
             <details><summary>误删凭据还能恢复吗？</summary><p>进入“安全”中的回收站恢复。永久删除后只能从加密备份重新导入。</p></details>
             <details><summary>更换手机怎么迁移？</summary><p>在旧设备创建 .xbvault 加密备份，在新设备登录后校验并恢复。也可以生成迁移二维码导入兼容应用。</p></details>
             <details><summary>发现陌生设备或来源 IP 怎么办？</summary><p>立即在“安全”中撤销设备、退出其他会话并修改登录密码，同时检查最近安全活动。</p></details>
