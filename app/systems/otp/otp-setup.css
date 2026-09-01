@@ -18,9 +18,9 @@
 
 .otp-setup-step label { display: flex; flex-direction: column; gap: 5px; }
 .otp-setup-step label > span { padding-left: 2px; color: #5a6070; font-size: 10px; font-weight: 700; }
-.otp-setup-step label > div { min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: 12px; background: #eef0f5; color: #7c8394; }
+.otp-setup-step label > div { min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 9px; border: 1px solid #e4e7ef; border-radius: 12px; background: #fff; color: #7c8394; }
 .otp-setup-step label > div:focus-within { border-color: #aeb6ec; background: #fff; box-shadow: 0 0 0 3px rgba(88, 104, 217, .08); }
-.otp-setup-step input { flex: 1; min-width: 0; border: 0; background: transparent; color: #262b3d; font-size: 13px; outline: none; }
+.otp-setup-step input { flex: 1; min-width: 0; border: 0; background: transparent !important; color: #262b3d; font-size: 13px; outline: none; }
 .otp-setup-step input::placeholder { color: #9aa0af; }
 .otp-setup-generated label > div button,
 .otp-setup-step label > div > button { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; background: #dde1f6; color: #4e5ec7; cursor: pointer; }
@@ -111,7 +111,7 @@
   .vault-modal .otp-setup-step { gap: 9px; }
   .vault-modal .otp-setup-step > header { padding: 9px 10px; }
   .vault-modal .otp-setup-step label > div { min-height: 38px; }
-  .vault-modal .otp-setup-step input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; }
+  .vault-modal .otp-setup-step input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; }
   .vault-modal .otp-setup-options > button { padding: 8px 8px 8px 30px; }
   .vault-modal .otp-setup-verify-tabs button { padding: 0 4px; font-size: 9px; }
   .otp-setup-passkey { min-height: 40px; padding: 8px 10px; }
@@ -131,8 +131,8 @@ html.theme-dark {
   .otp-setup-step > header b { color: #eef0fa; }
   .otp-setup-step > header small { color: #8f98ab; }
   .otp-setup-step label > span { color: #aeb6c8; }
-  .otp-setup-step label > div { background: #171f2e; }
-  .otp-setup-step label > div:focus-within { border-color: #606fce; background: #1b2435; box-shadow: 0 0 0 3px rgba(113, 129, 237, .11); }
+  .otp-setup-step label > div { border-color: #303b51; background: #171f2e; }
+  .otp-setup-step label > div:focus-within { border-color: #606fce; background: #171f2e; box-shadow: 0 0 0 3px rgba(113, 129, 237, .11); }
   .otp-setup-step input { color: #f0f3fa; }
   .otp-setup-step input::placeholder { color: #657086; }
   .otp-setup-generated label > div button,

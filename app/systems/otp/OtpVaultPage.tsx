@@ -15,12 +15,14 @@ export default function OtpVaultPage() {
   const [access, setAccess] = useState<"loading" | "login" | "allowed" | "denied" | "offline">("loading");
   const [onboard, setOnboard] = useState<{ username: string } | null>(null);
   const [accountName, setAccountName] = useState("");
+  const [accountNick, setAccountNick] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
-  const finishOnboard = (result: { username?: string }) => {
+  const finishOnboard = (result: { username?: string; nickName?: string }) => {
     if (result.username) {
       setAccountName(result.username);
       localStorage.setItem("otp-vault-username", result.username);
     }
+    if (result.nickName) setAccountNick(result.nickName);
     setOnboard(null);
   };
   const checkAccess = useCallback(async () => {
@@ -29,8 +31,9 @@ export default function OtpVaultPage() {
       const result = await otpApiRequest<Record<string, unknown>>(API_PATHS.auth.getInfo);
       const permissions = Array.isArray(result.permissions) ? result.permissions.map(String) : [];
       const roles = Array.isArray(result.roles) ? result.roles.map(String) : [];
-      const user = (result.user || {}) as { userName?: string; email?: string };
+      const user = (result.user || {}) as { userName?: string; nickName?: string; email?: string };
       setAccountName(String(user.userName || ""));
+      setAccountNick(String(user.nickName || user.userName || ""));
       setAccountEmail(String(user.email || ""));
       setAccess(permissions.includes("*:*:*") || permissions.includes("otp:vault:view") || roles.includes("otp_user") || roles.includes("admin") ? "allowed" : "denied");
     } catch { setAccess(!navigator.onLine && hasOfflineVault() ? "offline" : "login"); }
@@ -42,5 +45,5 @@ export default function OtpVaultPage() {
   if (access === "login") return <OtpAuthScreen onAuthenticated={(token, registration) => { setOtpToken(token); if (registration?.username) setOnboard({ username: registration.username }); setAccess("loading"); void checkAccess(); }} />;
   if (access === "denied") return <div className="vault-auth-state"><ShieldAlert size={30} /><h1>没有 OTP Vault 权限</h1><p>当前账号不能访问这个保险库。</p><button type="button" onClick={() => { clearOtpToken(); setAccess("login"); }}>换一个账号</button></div>;
   if (onboard) return <VaultOnboardingPage username={onboard.username} onDone={finishOnboard} />;
-  return <Suspense fallback={<AppStartup system="otp" message="正在打开保险库" />}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountEmail={accountEmail} onAccountNameChange={setAccountName} /></Suspense>;
+  return <Suspense fallback={<AppStartup system="otp" message="正在打开保险库" />}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountNick={accountNick} accountEmail={accountEmail} onAccountNameChange={setAccountName} onAccountNickChange={setAccountNick} onAccountEmailChange={setAccountEmail} /></Suspense>;
 }

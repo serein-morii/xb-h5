@@ -55,7 +55,7 @@ export default function OtpVaultGuidePage() {
     <section className="otp-guide-hero">
       <div>
         <span className="otp-guide-eyebrow"><BookOpen size={14} />OTP VAULT GUIDE</span>
-        <h1>从第一条验证码开始，安全使用 OTP Vault</h1>
+        <h1>把验证码和账号，安心收进自己的保险库</h1>
         <p>无需登录即可阅读。手机和电脑都能跟着完成添加、命名授权、备份恢复和安全检查。</p>
         <div className="otp-guide-pills"><span>约 5 分钟读完</span><span>公开指南</span><span>手机 / 电脑</span></div>
         <div className="otp-guide-actions"><a href="#quick-start">从快速开始阅读</a><a href={APP_ROUTES.otp}>登录或注册</a></div>
@@ -150,7 +150,6 @@ export default function OtpVaultGuidePage() {
           <div className="otp-guide-anatomy" aria-label="分享文案包含的字段">
             <b>复制按钮会带出这些信息</b>
             <ol>{shareParts.map(([title, text]) => <li key={title}><span>{title}</span><small>{text}</small></li>)}</ol>
-            <p>示例中不会放置可打开的真实链接或访问码。</p>
           </div>
           <div className="otp-guide-permissions"><b>可单独控制的权限</b><div>{["账号", "登录密码", "动态口令", "登录地址", "备注", "允许复制"].map((item) => <span key={item}><Check size={13} />{item}</span>)}</div></div>
           <div className="otp-guide-note"><Settings2 size={17} /><p><b>有效授权可以继续编辑</b>可以调整名称、凭据、剩余有效期、可见字段、复制权限和访问次数。原链接、访问码、分享方式和接收人不会变化。</p></div>

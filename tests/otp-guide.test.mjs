@@ -18,6 +18,10 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(routes, /otpGuide: "\/otp\/guide"/);
   assert.match(shell, /guide \? <OtpVaultGuidePage \/>/);
   assert.match(auth, /href=\{APP_ROUTES\.otpGuide\}/);
+  assert.match(auth, /const \[longSession, setLongSession\] = useState\(true\)/);
+  assert.match(share, /setThemePreference/);
+  assert.match(share, /验证码已复制/);
+  assert.match(share, /aria-label="查看"/);
   assert.doesNotMatch(auth, /RSA 加密传输/);
   assert.match(workspace, /vault-guide-action/);
   assert.match(workspace, /formatShareText/);

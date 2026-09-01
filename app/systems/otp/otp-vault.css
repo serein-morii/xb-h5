@@ -105,6 +105,10 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-detail-values b.is-secret { letter-spacing: .12em; }
 .vault-detail-values section.is-otp b { font-size: 26px; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
 .vault-detail-values section.is-otp { background: linear-gradient(135deg, #f5f6fd, #eef0fb); }
+.vault-detail-values section.is-otp .vault-otp-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.vault-detail-values section.is-otp .vault-otp-label em { color: #586bcf; font-size: 11px; font-style: normal; font-weight: 800; font-variant-numeric: tabular-nums; }
+.vault-detail-values section.is-otp .vault-progress { margin-top: 10px; height: 4px; background: rgba(72, 92, 199, .13); }
+.vault-detail-values section.is-otp .vault-progress i { background: linear-gradient(90deg, #4d61ca, #91a0ee); }
 .vault-detail-values button { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 0; border-radius: 9px; background: #fff; color: var(--utility-muted); cursor: pointer; }
 .vault-detail-link { margin-top: 10px; padding: 11px 12px; display: flex; align-items: center; gap: 8px; border-radius: 12px; background: #eef0fb; color: #485cc7; font-size: 10px; text-decoration: none; }
 .vault-detail-link span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -165,6 +169,7 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-access-code-button.is-detail { min-height: 42px; padding: 9px 11px; font-size: 16px; letter-spacing: .1em; }
 .vault-danger { min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #a5483f; color: #fff; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
 .vault-danger:disabled { opacity: .6; cursor: not-allowed; }
+.vault-detail-share-action { display: none; }
 
 .vault-share-form { height: auto; max-height: min(88dvh, 780px); padding: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
 .vault-share-form > header { margin: 0; padding: 18px 20px 15px; border-bottom: 1px solid var(--utility-line); }
@@ -216,19 +221,19 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-single-field { grid-template-columns: 1fr; }
 .vault-share-form .vault-single-field { margin-bottom: 2px; }
 .vault-share-form .vault-single-field input { min-height: 44px; }
-.vault-duration { margin-top: 10px; padding: 11px; display: grid; grid-template-columns: 125px minmax(0,1fr); gap: 8px 10px; border: 1px solid color-mix(in srgb,#6674cf 14%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,#6674cf 4%,var(--utility-paper)); }
-.vault-duration-head { grid-row: 1 / 3; display: flex; align-items: center; gap: 9px; }
+.vault-duration { margin-top: 10px; padding: 12px; display: grid; gap: 8px; border: 1px solid color-mix(in srgb,#6674cf 14%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,#6674cf 4%,var(--utility-paper)); }
+.vault-duration-head { display: flex; align-items: center; gap: 9px; }
 .vault-duration-head > span { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg,#5368d2,#8492e8); color: #fff; box-shadow: 0 7px 15px rgba(72,92,199,.18); }
 .vault-duration-head small,.vault-duration-head b { display: block; }
 .vault-duration-head small { color: var(--utility-muted); font-size: 8px; }
 .vault-duration-head b { margin-top: 3px; color: var(--utility-text); font-size: 13px; }
-.vault-duration-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
-.vault-duration-presets button { min-height: 32px; padding: 0 7px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
+.vault-duration-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.vault-duration-presets button { min-height: 34px; padding: 0 6px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .vault-duration-presets button.is-active { border-color: transparent; background: #6674cf; color: #fff; box-shadow: 0 6px 14px rgba(72,92,199,.2); }
-.vault-duration > label { min-height: 32px; padding: 0 7px 0 10px; display: flex; align-items: center; gap: 7px; border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); }
-.vault-duration > label > span { margin-right: auto; font-size: 8px; }
-.vault-duration > label input { width: 58px !important; min-height: 26px !important; padding: 0 5px !important; border-radius: 7px !important; text-align: center; }
-.vault-duration > label em { color: var(--utility-muted); font-size: 8px; font-style: normal; }
+.vault-duration > label { min-height: 34px; padding: 0 8px 0 10px; display: flex; align-items: center; gap: 7px; border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); }
+.vault-duration > label > span { margin-right: auto; font-size: 10px; }
+.vault-duration > label input { width: 64px !important; min-height: 26px !important; padding: 0 6px !important; border-radius: 7px !important; text-align: center; }
+.vault-duration > label em { color: var(--utility-muted); font-size: 10px; font-style: normal; }
 .vault-access-records { margin-top: 14px; overflow: hidden; border: 1px solid var(--utility-line); border-radius: 15px; }
 .vault-access-records > header { margin: 0; padding: 12px 13px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--utility-line); }
 .vault-access-records > header span, .vault-access-records > header small { display: block; }
@@ -371,6 +376,8 @@ html.theme-dark {
   .vault-detail-overview { border-color: #343f63; background: linear-gradient(135deg, #222b4a, #1b2438); }
   .vault-detail-overview > em { background: #2b354a; color: #b1baff; }
   .vault-detail-values section.is-otp { background: #1c2540; }
+  .vault-detail-values section.is-otp .vault-otp-label em { color: #aeb7ff; }
+  .vault-detail-values section.is-otp .vault-progress { background: #2a3346; }
   .vault-credential-picker { border-color: var(--utility-line); background: #101725; }
   .vault-detail-values section { border-color: rgba(225, 231, 248, .09); }
   .vault-detail-values button { background: #222b3d; color: #a4aec2; }
@@ -445,9 +452,10 @@ html.theme-dark { @media (max-width: 560px) {
 .share-access-summary b { margin-top: 3px; color: #25304a; font-size: 11px; }
 .share-access-card form { margin-top: 17px; }
 .share-access-card form label > span { margin-bottom: 6px; color: #566074; font-size: 9px; font-weight: 750; }
-.share-code-input { height: 52px; padding: 0 13px; border: 1px solid #dde1ed; border-radius: 14px; background: #f8f9fc; box-shadow: inset 0 1px 2px rgba(30,42,78,.04); transition: border-color .18s,background .18s,box-shadow .18s; }
+.share-code-input { position: relative; height: 52px; padding: 0 40px; border: 1px solid #dde1ed; border-radius: 14px; background: #f8f9fc; box-shadow: inset 0 1px 2px rgba(30,42,78,.04); transition: border-color .18s,background .18s,box-shadow .18s; }
 .share-code-input:focus-within { border-color: #6c7bdd; background: #fff; box-shadow: 0 0 0 4px rgba(72, 92, 199, .09); }
-.share-code-input input { color: #172033; font-size: 20px; font-weight: 800; letter-spacing: .24em; font-variant-numeric: tabular-nums; }
+.share-code-input svg { position: absolute; top: 50%; left: 13px; flex: none; color: #6575d3; transform: translateY(-50%); pointer-events: none; }
+.share-code-input input { width: 100%; color: #172033; font-size: 20px; font-weight: 800; letter-spacing: .24em; text-align: center; font-variant-numeric: tabular-nums; }
 .share-access-help { color: #8a92a2; }
 .share-access-card form > button, .share-open-button { min-height: 45px; margin-top: 10px; border-radius: 13px; background: linear-gradient(135deg, #3f54c3, #6c7de1); box-shadow: 0 10px 22px rgba(72, 92, 199, .23), inset 0 1px 0 rgba(255,255,255,.18); font-size: 11px; transition: transform .16s,box-shadow .16s; }
 .share-access-card form > button:not(:disabled):hover,.share-open-button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 13px 27px rgba(72,92,199,.27), inset 0 1px 0 rgba(255,255,255,.2); }
@@ -456,14 +464,14 @@ html.theme-dark { @media (max-width: 560px) {
 
 .share-page.is-open { background: radial-gradient(circle at 90% 0, rgba(100, 117, 218, .15), transparent 28%), #eef1f7; }
 .share-page.is-open .share-brand { max-width: 820px; }
-.share-content { max-width: 820px; padding: 20px; border: 1px solid rgba(38,50,77,.07); border-radius: 24px; background: #fff; box-shadow: 0 14px 42px rgba(34, 44, 76, .075); }
-.share-content > header { padding: 16px; align-items: center; border: 1px solid rgba(72,92,199,.08); border-radius: 20px; background: linear-gradient(135deg, #f1f3ff, #f7f8fc); }
+.share-content { max-width: 820px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.share-content > header { padding: 14px 16px; align-items: center; border: 0; border-radius: 20px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); }
 .share-content > header > div:first-child { min-width: 0; }
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
 .share-content h1 { margin: 4px 0 3px; color: #172033; font-size: 25px; }
 .share-content > header p { color: #747d90; }
-.share-expiry { min-width: 188px; padding: 8px 10px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; border: 1px solid rgba(72,92,199,.1); background: rgba(255,255,255,.58); color: #172033; }
-.share-expiry-ring { position: relative; width: 60px; height: 60px; flex: none; display: grid; place-items: center; color: #586bcf; }
+.share-expiry { min-width: 188px; padding: 4px 2px 4px 10px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; border: 0; background: transparent; color: #172033; }
+.share-expiry-ring { position: relative; width: 52px; height: 52px; flex: none; display: grid; place-items: center; color: #586bcf; }
 .share-expiry-progress { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
 .share-expiry-progress circle { fill: none; }
 .share-expiry-progress .share-expiry-track.is-total { stroke: rgba(72,92,199,.2); stroke-width: 4.5; }
@@ -471,18 +479,19 @@ html.theme-dark { @media (max-width: 560px) {
 .share-expiry-progress .share-expiry-total,.share-expiry-progress .share-expiry-seconds { stroke: #6674cf; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset .8s linear; }
 .share-expiry-progress .share-expiry-total { stroke-width: 4.5; }
 .share-expiry-progress .share-expiry-seconds { stroke-width: 2.4; opacity: .58; }
-.share-expiry-clock { position: relative; }
-.share-expiry-copy { min-width: 0; display: grid; justify-items: start; }
-.share-expiry small { margin: 0 0 2px; color: #7c859a; font-size: 7px; font-weight: 750; letter-spacing: .08em; }
-.share-expiry b { color: #26345d; font-size: 13px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.015em; white-space: nowrap; }
+.share-expiry-clock { position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; margin: 0; transform: translate(-50%, -50%); }
+.share-expiry-copy { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.share-expiry small { margin: 0; color: #7c859a; font-size: 7px; font-weight: 750; letter-spacing: .08em; line-height: 1; }
+.share-expiry b { margin: 0; color: #26345d; font-size: 13px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.015em; white-space: nowrap; }
 .share-groups { margin-top: 14px; display: grid; gap: 14px; }
 .share-group { min-width: 0; }
 .share-group > header { margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
 .share-group > header b { min-width: 0; flex: 1; overflow: hidden; color: var(--share-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .share-group > header span { min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: var(--share-bg); color: var(--share-muted); font-size: 9px; }
 .share-item-list { gap: 12px; margin-top: 0; }
-.share-item-list > article { padding: 16px; border: 1px solid rgba(38,50,77,.075); border-radius: 17px; background: #fff; box-shadow: 0 5px 16px rgba(34, 44, 76, .055); }
+.share-item-list > article { padding: 16px; border: 0; border-radius: 19px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); }
 .share-item-title { min-width: 0; }
+.vault-card .share-item-title { margin-bottom: 0; }
 .share-item-title > span { flex: none; }
 .share-item-title > div { min-width: 0; flex: 1; }
 .share-item-title b,.share-item-title small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -499,7 +508,7 @@ html.theme-dark { @media (max-width: 560px) {
 .share-otp-progress > span { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg, #4d61ca, #91a0ee); transition: width .5s linear; }
 .share-value-row button { background: #f4f5fa; }
 .share-page { --utility-text: var(--share-text); --utility-muted: var(--share-muted); --utility-line: var(--share-line); --utility-paper: var(--share-paper); --utility-bg: var(--share-bg); }
-.share-toolbar { margin-top: 12px; padding: 8px; justify-content: flex-end; border: 1px solid rgba(38,50,77,.075); border-radius: 15px; background: #f6f7fb; }
+.share-toolbar { margin-top: 12px; padding: 0; justify-content: flex-end; border: 0; border-radius: 0; background: transparent; }
 .share-toolbar .vault-view-toggle { background: #fff; transition: border-color .18s,background .18s,color .18s; }
 .share-toolbar .vault-view-toggle small { min-width: 20px; color: #9299a9; font-size: 8px; font-style: normal; text-align: center; }
 .share-toolbar .vault-view-toggle.is-active { border-color: rgba(65,84,195,.52); background: #e9edff; color: #3146ad; box-shadow: inset 0 0 0 1px rgba(72,92,199,.08); }
@@ -511,14 +520,21 @@ html.theme-dark { @media (max-width: 560px) {
 .share-toolbar .vault-search { width: min(310px, 100%); }
 .share-item-list.is-compact { grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; }
 .share-item-list.is-compact > article { padding: 11px; border-radius: 15px; }
-.share-item-list.is-compact .share-item-title { margin-bottom: 8px; }
-.share-item-list.is-compact .share-item-title > span { width: 30px; height: 30px; border-radius: 10px; }
-.share-item-list.is-compact .share-value-row { padding: 6px 0; }
-.share-item-list.is-compact .share-value-row.emphasize { margin: 2px 0 4px; padding: 8px; border-radius: 12px; }
-.share-item-list.is-compact .share-value-row.emphasize b { font-size: 22px; }
-.share-item-list.is-compact .share-otp-progress { height: 3px; margin-top: 5px; }
-.share-item-list.is-compact .share-login-link,.share-item-list.is-compact .share-note { margin-top: 6px; }
+.share-item-list.is-compact .share-item-title { margin-bottom: 0; }
+.share-card-detail { grid-column: 1 / -1; margin-top: 10px; overflow: hidden; border-radius: 14px; background: #f3f5fa; }
+.share-card-detail section { padding: 11px 12px; border-top: 1px solid rgba(38, 50, 77, .08); }
+.share-card-detail section:first-child { border-top: 0; }
+.share-card-detail section > span { display: block; margin-bottom: 5px; color: var(--share-muted); font-size: 9px; }
+.share-card-detail section > div { display: flex; align-items: center; gap: 7px; }
+.share-card-detail b { min-width: 0; flex: 1; overflow-wrap: anywhere; font-size: 13px; }
+.share-card-detail b.is-secret { letter-spacing: .12em; }
+.share-card-detail button { min-height: 28px; padding: 0 8px; flex: none; border: 0; border-radius: 8px; background: #fff; color: var(--share-muted); font: inherit; font-size: 9px; cursor: pointer; }
+.share-card-detail .share-login-link, .share-card-detail .share-note { margin: 10px 12px; }
+.share-item-list .vault-card-actions button svg { transition: transform .18s; }
+.share-item-list .vault-card-actions button.is-expanded svg { transform: rotate(180deg); }
 .share-empty { grid-column: 1 / -1; margin: 20px 0; color: var(--share-muted); font-size: 11px; text-align: center; }
+.share-brand > div { min-width: 0; flex: 1; }
+.share-brand .vault-theme-action { margin-left: auto; width: auto; min-width: 72px; }
 
 @media (max-width: 560px) {
   .share-page.is-gate { min-height: 100dvh; padding: max(17px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom)); display: block; }
@@ -533,44 +549,44 @@ html.theme-dark { @media (max-width: 560px) {
   .share-content > header { position: sticky; z-index: 20; top: max(8px, env(safe-area-inset-top)); padding: 13px; flex-direction: row; align-items: center; border-radius: 18px; box-shadow: 0 7px 22px rgba(34, 44, 76, .1); }
   .share-content h1 { font-size: 20px; }
   .share-content > header p { font-size: 9px; }
-  .share-expiry { width: auto; min-width: 126px; margin-left: auto; padding: 5px 7px; gap: 6px; }
-  .share-expiry-ring { width: 46px; height: 46px; }
+  .share-expiry { width: auto; min-width: 126px; margin-left: auto; padding: 2px 0 2px 8px; gap: 8px; }
+  .share-expiry-ring { width: 44px; height: 44px; }
   .share-expiry small { font-size: 7px; }
   .share-expiry b { font-size: 11px; }
-  .share-toolbar { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-  .share-toolbar .vault-view-toggle { justify-content: center; }
-  .share-toolbar .vault-search { grid-column: 1 / -1; min-width: 0; width: 100%; }
+  .share-toolbar { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .share-toolbar .vault-view-toggle { min-height: 34px; padding: 0 7px; justify-content: center; }
+  .share-toolbar .vault-view-toggle > span { display: none; }
+  .share-toolbar .vault-search { grid-column: auto; min-width: 0; width: auto; flex: 1; }
   .share-item-list { margin-top: 12px; }
   .share-item-list > article { padding: 15px; border-radius: 19px; }
-  .share-value-row.emphasize b { font-size: 29px; }
-  .share-item-list.is-compact > article { padding: 10px; display: grid; grid-template-columns: minmax(0,.9fr) minmax(150px,1.1fr); align-items: start; gap: 6px 8px; }
-  .share-item-list.is-compact .share-item-title { margin: 0; align-self: center; }
-  .share-item-list.is-compact .share-value-row.emphasize { margin: 0; }
-  .share-item-list.is-compact .share-value-row:not(.emphasize),.share-item-list.is-compact .share-login-link,.share-item-list.is-compact .share-note { grid-column: 1 / -1; }
+  .share-brand .vault-theme-action { width: 38px; min-width: 38px; min-height: 38px; padding: 0; }
+  .share-brand .vault-theme-action span { display: none; }
 }
 
 html.theme-dark {
   .share-access-card { background: #171e2c; color: #eef1f8; }
   .share-access-intro h1, .share-access-summary b, .share-code-input input { color: #eef1f8; }
-  .share-access-intro p, .share-access-card footer { color: #939caf; }
-  .share-access-summary, .share-code-input { background: #101725; }
-  .share-access-summary span { border-color: rgba(225,231,248,.1); }
-  .share-code-input { border-color: #303b51; }
-  .share-code-input:focus-within { background: #101725; }
+  .share-access-intro p, .share-access-card footer, .share-access-card form label > span { color: #939caf; }
+  .share-access-summary { background: transparent; }
+  .share-access-summary span, .share-access-summary span:first-child { border-color: rgba(225, 231, 248, .12); background: linear-gradient(145deg, #222b40, #1a2233); }
+  .share-access-summary small { color: #8b95ab; }
+  .share-code-input { background: #101725; border-color: #3a4660; }
+  .share-code-input svg { color: #aeb7ff; }
+  .share-code-input:focus-within { background: #101725; border-color: #6c7bdd; }
   .share-page.is-open { background: #0e1420; }
-  .share-content { background: #171e2c; }
-  .share-content > header { border-color: rgba(225,231,248,.08); background: linear-gradient(135deg, #222b4a, #1b2332); }
+  .share-content { background: transparent; }
+  .share-content > header { border: 0; background: #171e2c; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
   .share-expiry-ring { color: #aeb7ff; }
   .share-expiry-progress .share-expiry-track.is-total { stroke: rgba(174,183,255,.22); }
   .share-expiry-progress .share-expiry-track.is-seconds { stroke: rgba(174,183,255,.1); }
   .share-expiry-progress .share-expiry-total,.share-expiry-progress .share-expiry-seconds { stroke: #9da8f3; }
   .share-expiry b { color: #eef1f8; }
   .share-expiry small { color: #939caf; }
-  .share-content h1, .share-item-title b, .share-value-row.emphasize b { color: #eef1f8; }
+  .share-content h1, .share-item-title b { color: #eef1f8; }
   .share-item-list > article { background: #171e2c; box-shadow: 0 8px 25px rgba(0,0,0,.2); }
-  .share-value-row.emphasize { background: #222b4a; }
-  .share-value-row button { background: #222b3d; }
-  .share-toolbar { border-color: rgba(225,231,248,.08); background: #121a28; }
+  .share-card-detail { background: #101725; }
+  .share-card-detail button { background: #222b3d; color: #939caf; }
+  .share-toolbar { border: 0; background: transparent; }
   .share-toolbar .vault-search, .share-toolbar .vault-view-toggle { background: #171e2c; color: #939caf; }
   .share-toolbar .vault-view-toggle.is-active { border-color: rgba(157,168,243,.62); background: #273154; color: #c8ceff; }
   .share-toolbar .vault-view-toggle.is-active small { color: #c8ceff; }
@@ -763,6 +779,8 @@ html.theme-dark { @media (max-width: 560px) {
   .vault-modal footer button:active, .vault-created-actions button:active, .vault-modal .otp-setup-actions > button:active { transform: scale(.985); }
   .vault-modal footer button:focus-visible, .vault-created-actions button:focus-visible, .vault-modal .otp-setup-actions > button:focus-visible { outline: 2px solid color-mix(in srgb,var(--vault-accent,#6674cf) 32%,transparent); outline-offset: 2px; }
   .vault-modal header > button { width: 34px; height: 34px; border-radius: 11px; background: color-mix(in srgb,var(--utility-paper) 80%,var(--utility-bg)); }
+  .vault-share-detail .vault-detail-close-action { display: none; }
+  .vault-share-detail .vault-detail-share-action { display: inline-flex; }
   .share-access-card form > button, .share-open-button { min-height: 46px; }
 }
 
@@ -1005,7 +1023,8 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
   .vault-step-up-input { min-height: 36px; border-radius: 9px; }
   .vault-step-up-input input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; }
   .vault-offline-unlock input { min-height: 38px; padding: 0 10px; border-radius: 9px; }
-  .share-code-input { height: 40px; padding: 0 10px; border-radius: 10px; }
+  .share-code-input { height: 40px; padding: 0 34px; border-radius: 10px; }
+  .share-code-input svg { left: 10px; }
   .share-code-input input { font-size: 15px; letter-spacing: .12em; }
   .share-code-input input::placeholder { font-size: 11px; }
 }

@@ -23,7 +23,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
   const [captchaOn, setCaptchaOn] = useState(true);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [longSession, setLongSession] = useState(false);
+  const [longSession, setLongSession] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
     finally { setEmailSending(false); }
   }
 
-  // 注册只需邮箱 + 验证码，成功即自动登录，由保险库引导页补全用户名和密码
+  // 注册只需邮箱 + 验证码，成功即自动登录，由保险库引导页补全账号、用户名和密码
   async function submitRegister() {
     const value = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");

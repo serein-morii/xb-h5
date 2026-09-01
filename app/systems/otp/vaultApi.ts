@@ -147,9 +147,17 @@ export const getSharedContent = (token: string, sessionToken: string) => apiRequ
 export const registerOtpAccount = (email: string, emailCode: string) =>
   apiRequest<{ token: string; username: string }>(API_PATHS.auth.registerOtp, { auth: false, method: "POST", body: { email: email.trim(), emailCode: emailCode.trim() } });
 
-/** 修改当前账号的用户名（注册引导 / 设置页共用） */
-export const setVaultUsername = (username: string) =>
-  otpApiRequest<{ data: string }>(`${vaultAccount}/username`, { method: "PUT", body: { username: username.trim() } });
+/** 修改登录账号；设置页需原密码、当前邮箱验证码或 Passkey */
+export const setVaultUsername = (username: string, extra: { oldPassword?: string; emailCode?: string; setup?: boolean } = {}) =>
+  otpApiRequest<{ data: string }>(`${vaultAccount}/username`, { method: "PUT", body: { username: username.trim(), oldPassword: extra.oldPassword || undefined, emailCode: extra.emailCode || undefined, setup: extra.setup ? "true" : undefined } });
+
+/** 修改当前账号的用户名（展示名，不要求唯一） */
+export const setVaultNickname = (nickName: string) =>
+  otpApiRequest<{ data: string }>(`${vaultAccount}/nickname`, { method: "PUT", body: { nickName: nickName.trim() } });
+
+/** 更换绑定邮箱：新邮箱验证码 + 身份验证（原密码 / 当前邮箱验证码 / Passkey） */
+export const setVaultEmail = (email: string, bindCode: string, extra: { oldPassword?: string; emailCode?: string } = {}) =>
+  otpApiRequest<{ data: string }>(`${vaultAccount}/email`, { method: "PUT", body: { email: email.trim(), bindCode: bindCode.trim(), oldPassword: extra.oldPassword || undefined, emailCode: extra.emailCode || undefined } });
 
 /** 设置当前账号的登录密码（password / oldPassword 需为 RSA 公钥加密后的密文） */
 export const setVaultPassword = (encryptedPassword: string, extra: { oldPassword?: string; emailCode?: string; setup?: boolean } = {}) =>

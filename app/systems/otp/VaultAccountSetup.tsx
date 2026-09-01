@@ -1,15 +1,17 @@
-import { ArrowLeft, ArrowRight, Check, Copy, Fingerprint, KeyRound, LoaderCircle, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, Fingerprint, KeyRound, LoaderCircle, Mail, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, User } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { apiRequest, copyToClipboard, sendEmailCode } from "../../lib/api";
 import { getPasskey } from "../../lib/passkey";
 import { API_PATHS } from "../../lib/pathConventions";
-import { finishVaultStepUpPasskey, getVaultStepUpPasskeyOptions, setOtpStepUpToken, setVaultPassword, setVaultUsername } from "./vaultApi";
+import { finishVaultStepUpPasskey, getVaultStepUpPasskeyOptions, setOtpStepUpToken, setVaultEmail, setVaultNickname, setVaultPassword, setVaultUsername } from "./vaultApi";
 import VaultToastMessage from "./VaultToastMessage";
 import "./otp-auth.css";
 import "./otp-setup.css";
 
 export type VaultSetupResult = {
   username?: string;
+  nickName?: string;
+  email?: string;
   passwordSet?: boolean;
   passwordSkipped?: boolean;
   plainPassword?: string;
@@ -51,20 +53,24 @@ function generateSimplePassword() {
 }
 
 /**
- * 注册后 / 设置页共用的账号补全面板：两步引导设置用户名和登录密码。
+ * 注册后 / 设置页共用的账号补全面板：引导设置登录账号、用户名和登录密码。
  * 密码支持随机复杂、随机简单、自定义或跳过；跳过则只能邮箱验证码登录。
  */
-export default function VaultAccountSetup({ initialUsername, onFinish, onCancel, cancellable = false, requireVerify = false, email = "", only }: {
+export default function VaultAccountSetup({ initialUsername, initialNickname = "", onFinish, onCancel, cancellable = false, requireVerify = false, email = "", only }: {
   initialUsername: string;
+  initialNickname?: string;
   onFinish: (result: VaultSetupResult) => void;
   onCancel?: () => void;
   cancellable?: boolean;
   requireVerify?: boolean;
   email?: string;
-  only?: "username" | "password";
+  only?: "username" | "nickname" | "email" | "password";
 }) {
   const [step, setStep] = useState<"username" | "password">(only === "password" ? "password" : "username");
   const [username, setUsername] = useState(initialUsername);
+  const [nickName, setNickName] = useState(initialNickname || initialUsername);
+  const [nextEmail, setNextEmail] = useState("");
+  const [bindCode, setBindCode] = useState("");
   const [passwordMode, setPasswordMode] = useState<PasswordMode>("complex");
   const [generated, setGenerated] = useState(() => generateComplexPassword());
   const [customPassword, setCustomPassword] = useState("");
@@ -78,7 +84,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [usernameChanged, setUsernameChanged] = useState(false);
-  const [confirming, setConfirming] = useState<"username" | "password" | null>(null);
+  const [confirming, setConfirming] = useState<"username" | "nickname" | "password" | null>(null);
 
   useEffect(() => {
     apiRequest<{ publicKey?: string; data?: { publicKey?: string } }>(API_PATHS.auth.publicKey, { auth: false })
@@ -98,10 +104,33 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     setMessage("");
   };
 
+  async function prepareIdentity() {
+    if (verifyMode === "password") {
+      if (!oldPassword) throw new Error("请输入原密码");
+      if (!publicKey) throw new Error("安全加密尚未准备完成，请稍后重试");
+      const { JSEncrypt } = await import("jsencrypt");
+      const encryptor = new JSEncrypt();
+      encryptor.setPublicKey(publicKey);
+      const encryptedOld = encryptor.encrypt(oldPassword);
+      if (!encryptedOld) throw new Error("原密码加密失败");
+      return { oldPassword: encryptedOld };
+    }
+    if (verifyMode === "email") {
+      if (!/^\d{6}$/.test(emailCode.trim())) throw new Error("请输入当前邮箱的 6 位验证码");
+      return { emailCode: emailCode.trim() };
+    }
+    const options = await getVaultStepUpPasskeyOptions();
+    const verified = await finishVaultStepUpPasskey(options.data.requestId, await getPasskey(options.data.publicKey));
+    setOtpStepUpToken(verified.data.token);
+    return {};
+  }
+
   async function submitUsername(event?: FormEvent, confirmed = false) {
     event?.preventDefault();
     const value = username.trim();
-    if (value.length < 2 || value.length > 20) return setMessage("用户名长度必须为 2-20 位");
+    const nick = nickName.trim();
+    if (value.length < 2 || value.length > 20) return setMessage("账号长度必须为 2-20 位");
+    if (only !== "username" && (nick.length < 2 || nick.length > 20)) return setMessage("用户名长度必须为 2-20 位");
     if (only === "username" && value !== initialUsername && !confirmed) {
       setMessage("");
       setConfirming("username");
@@ -111,13 +140,64 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     setBusy(true); setMessage("");
     try {
       if (value !== initialUsername) {
-        await setVaultUsername(value);
+        const identity = only === "username" ? await prepareIdentity() : {};
+        await setVaultUsername(value, { ...identity, setup: only !== "username" });
         setUsernameChanged(true);
+      }
+      if (only !== "username" && nick && nick !== (initialNickname || initialUsername)) {
+        await setVaultNickname(nick);
       }
       if (only === "username") return onFinish({ username: value });
       setStep("password");
     } catch (error) {
+      setMessage(error instanceof Error ? error.message : "账号设置失败");
+    } finally { setBusy(false); }
+  }
+
+  async function submitNickname(event?: FormEvent, confirmed = false) {
+    event?.preventDefault();
+    const value = nickName.trim();
+    if (value.length < 2 || value.length > 20) return setMessage("用户名长度必须为 2-20 位");
+    if (value !== (initialNickname || initialUsername) && !confirmed) {
+      setMessage("");
+      setConfirming("nickname");
+      return;
+    }
+    setConfirming(null);
+    setBusy(true); setMessage("");
+    try {
+      if (value !== (initialNickname || initialUsername)) await setVaultNickname(value);
+      onFinish({ nickName: value });
+    } catch (error) {
       setMessage(error instanceof Error ? error.message : "用户名设置失败");
+    } finally { setBusy(false); }
+  }
+
+  async function requestBindCode() {
+    const value = nextEmail.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
+    if (email && value === email.trim().toLowerCase()) return setMessage("该邮箱已是当前账号的邮箱");
+    setEmailSending(true); setMessage("");
+    try {
+      await sendEmailCode(value, "bind");
+      setCountdown(60); setMessage("验证码已发送到新邮箱，请在 5 分钟内完成验证");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "验证码发送失败"); }
+    finally { setEmailSending(false); }
+  }
+
+  async function submitEmail(event: FormEvent) {
+    event.preventDefault();
+    const value = nextEmail.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
+    if (email && value === email.trim().toLowerCase()) return setMessage("该邮箱已是当前账号的邮箱");
+    if (!/^\d{6}$/.test(bindCode.trim())) return setMessage("请输入新邮箱的 6 位验证码");
+    setBusy(true); setMessage("");
+    try {
+      const identity = await prepareIdentity();
+      await setVaultEmail(value, bindCode.trim(), identity);
+      onFinish({ email: value });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "邮箱更新失败");
     } finally { setBusy(false); }
   }
 
@@ -143,7 +223,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     }
     if (!plain) {
       // 跳过：仅注册引导允许；设置页没有跳过项
-      return onFinish({ username: usernameChanged ? username.trim() : undefined, passwordSkipped: true });
+      return onFinish({ username: usernameChanged ? username.trim() : undefined, nickName: nickName.trim() || undefined, passwordSkipped: true });
     }
     if (requireVerify && verifyMode === "password" && !oldPassword) return setMessage("请输入原密码");
     if (requireVerify && verifyMode === "email" && !/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
@@ -182,16 +262,46 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
     } finally { setBusy(false); }
   }
 
+  const identityBlock = <div className="otp-setup-verify">
+    <div className="otp-setup-verify-tabs"><button type="button" className={verifyMode === "password" ? "is-active" : ""} onClick={() => { setVerifyMode("password"); setMessage(""); }}>原密码</button><button type="button" className={verifyMode === "email" ? "is-active" : ""} onClick={() => { setVerifyMode("email"); setMessage(""); }}>当前邮箱</button><button type="button" className={verifyMode === "passkey" ? "is-active" : ""} onClick={() => { setVerifyMode("passkey"); setMessage(""); }}>Passkey</button></div>
+    {verifyMode === "password" ? <label><span>原密码</span><div><KeyRound size={16} /><input type="password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="当前登录密码" /></div></label> : verifyMode === "email" ? <label><span>当前邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder={email ? `发送到 ${email}` : "6 位验证码"} /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestChangeCode()}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label> : <div className="otp-setup-passkey"><Fingerprint size={19} /><span><b>使用 Passkey 确认身份</b><small>确认修改后，按系统提示使用指纹、面容或设备 PIN。</small></span></div>}
+    <p className="otp-setup-hint">没有原密码时，可使用当前邮箱验证码或已绑定的 Passkey。</p>
+  </div>;
+
   return <div className="otp-setup">
     {!only ? <ol className="otp-setup-steps" aria-label="账号设置进度">
-      <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span><User size={13} /></span>用户名</li>
+      <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span><User size={13} /></span>账号</li>
       <li className={step === "password" ? "is-active" : ""}><span><KeyRound size={13} /></span>登录密码</li>
     </ol> : null}
 
-    {step === "username" ? <form className="otp-setup-step" onSubmit={submitUsername}>
-      {!only ? <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>设置用户名</b><small>不改就用邮箱 @ 前的默认名称</small></div></header> : null}
-      <label><span>用户名</span><div><User size={16} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位用户名" /></div></label>
-      {!only ? <p className="otp-setup-hint">用户名用于账号密码登录和分享时搜索你；随时可以在设置中修改。</p> : null}
+    {only === "nickname" ? <form className="otp-setup-step" onSubmit={submitNickname}>
+      <label><span>用户名</span><div><User size={16} /><input value={nickName} onChange={(event) => setNickName(event.target.value)} maxLength={20} autoComplete="nickname" placeholder="2-20 位用户名" /></div></label>
+      <p className="otp-setup-hint">用户名用于展示，其他人搜索或查看授权时会看到它。</p>
+      <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
+      <div className="otp-setup-actions">
+        {cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null}
+        <button className="otp-setup-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}确认修改</button>
+      </div>
+    </form> : null}
+
+    {only === "email" ? <form className="otp-setup-step" onSubmit={submitEmail}>
+      <label><span>新邮箱</span><div><Mail size={16} /><input type="email" value={nextEmail} onChange={(event) => setNextEmail(event.target.value)} maxLength={50} autoComplete="email" placeholder="请输入新的邮箱地址" /></div></label>
+      <label><span>新邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={bindCode} onChange={(event) => setBindCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder="发送到新邮箱" /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestBindCode()}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label>
+      {identityBlock}
+      <p className="otp-setup-hint">先验证当前身份，再用新邮箱验证码完成更换。更换后可用新邮箱登录。</p>
+      <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
+      <div className="otp-setup-actions">
+        {cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null}
+        <button className="otp-setup-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}确认修改</button>
+      </div>
+    </form> : null}
+
+    {step === "username" && only !== "nickname" && only !== "email" ? <form className="otp-setup-step" onSubmit={submitUsername}>
+      {!only ? <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>设置账号和用户名</b><small>账号用于登录，用户名用于展示</small></div></header> : null}
+      <label><span>账号</span><div><User size={16} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位账号" /></div></label>
+      {only !== "username" ? <label><span>用户名</span><div><User size={16} /><input value={nickName} onChange={(event) => setNickName(event.target.value)} maxLength={20} autoComplete="nickname" placeholder="2-20 位用户名" /></div></label> : null}
+      {!only ? <p className="otp-setup-hint">账号用于账号密码登录和分享时搜索你；用户名是展示名称。都可以在设置中修改。</p> : <p className="otp-setup-hint">修改后，账号密码登录和搜索你时会使用新账号。</p>}
+      {only === "username" ? identityBlock : null}
       <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
       <div className="otp-setup-actions">
         {cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null}
@@ -217,11 +327,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
 
       {passwordMode === "skip" ? <p className="otp-setup-warning"><ShieldAlert size={15} /><span><b>跳过后将无法使用账号密码登录</b><small>下次登录只能通过邮箱验证码；之后想设置密码，可在保险库「设置 → 账号安全」中补设。</small></span></p> : null}
 
-      {requireVerify && passwordMode !== "skip" ? <div className="otp-setup-verify">
-        <div className="otp-setup-verify-tabs"><button type="button" className={verifyMode === "password" ? "is-active" : ""} onClick={() => { setVerifyMode("password"); setMessage(""); }}>原密码</button><button type="button" className={verifyMode === "email" ? "is-active" : ""} onClick={() => { setVerifyMode("email"); setMessage(""); }}>邮箱验证码</button><button type="button" className={verifyMode === "passkey" ? "is-active" : ""} onClick={() => { setVerifyMode("passkey"); setMessage(""); }}>Passkey</button></div>
-        {verifyMode === "password" ? <label><span>原密码</span><div><KeyRound size={16} /><input type="password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="当前登录密码" /></div></label> : verifyMode === "email" ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder={email ? `发送到 ${email}` : "6 位验证码"} /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestChangeCode()}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label> : <div className="otp-setup-passkey"><Fingerprint size={19} /><span><b>使用 Passkey 确认身份</b><small>确认修改后，按系统提示使用指纹、面容或设备 PIN。</small></span></div>}
-        <p className="otp-setup-hint">没有原密码时，可使用邮箱验证码或已绑定的 Passkey。</p>
-      </div> : null}
+      {requireVerify && passwordMode !== "skip" ? identityBlock : null}
 
       <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
       <div className="otp-setup-actions">
@@ -237,14 +343,16 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
         <span className="otp-setup-confirm-icon"><ShieldAlert size={19} /></span>
         <div className="otp-setup-confirm-copy">
           <small>敏感操作确认</small>
-          <h3 id="otp-setup-confirm-title">{confirming === "username" ? "确认修改用户名？" : "确认更新登录密码？"}</h3>
+          <h3 id="otp-setup-confirm-title">{confirming === "username" ? "确认修改账号？" : confirming === "nickname" ? "确认修改用户名？" : "确认更新登录密码？"}</h3>
           <p>{confirming === "username"
-            ? "修改后，账号密码登录使用的新用户名会立即变化，其他人搜索你的结果也会同步更新。请确认已经记住新用户名。"
+            ? "修改后，账号密码登录会使用新账号，其他人搜索你时也会同步更新。请确认已经记住新账号。"
+            : confirming === "nickname"
+            ? "修改后，其他人看到的名称会立即变化。登录账号不会改变。"
             : "保存后旧密码会立即失效。请确认已经记住或安全保存新密码，随机密码之后无法再次查看。"}</p>
         </div>
         <div className="otp-setup-confirm-actions">
           <button type="button" disabled={busy} onClick={() => setConfirming(null)}>返回检查</button>
-          <button type="button" className="is-danger" disabled={busy} onClick={() => void (confirming === "username" ? submitUsername(undefined, true) : submitPassword(undefined, true))}>
+          <button type="button" className="is-danger" disabled={busy} onClick={() => void (confirming === "username" ? submitUsername(undefined, true) : confirming === "nickname" ? submitNickname(undefined, true) : submitPassword(undefined, true))}>
             {busy ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}确认修改
           </button>
         </div>
@@ -253,7 +361,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
   </div>;
 }
 
-/** 注册成功后的全屏引导页：复用登录页视觉，两步补全用户名与密码 */
+/** 注册成功后的全屏引导页：复用登录页视觉，补全账号、用户名与密码 */
 export function VaultOnboardingPage({ username, onDone }: { username: string; onDone: (result: VaultSetupResult) => void }) {
   return <main className="otp-auth-page"><div className="otp-auth-app">
     <section className="otp-auth-hero">
@@ -263,8 +371,8 @@ export function VaultOnboardingPage({ username, onDone }: { username: string; on
     </section>
     <section className="otp-auth-card">
       <span className="otp-auth-handle" aria-hidden="true" />
-      <div className="otp-auth-copy"><h2>完善账号信息</h2><p>设置用户名和登录密码，让下次登录更方便。</p></div>
-      <VaultAccountSetup initialUsername={username} onFinish={onDone} />
+      <div className="otp-auth-copy"><h2>完善账号信息</h2><p>设置登录账号、用户名和登录密码，让下次登录更方便。</p></div>
+      <VaultAccountSetup initialUsername={username} initialNickname={username} onFinish={onDone} />
     </section>
   </div></main>;
 }

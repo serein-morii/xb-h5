@@ -136,7 +136,7 @@ html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
 .otp-login-methods button { position: relative; padding: 2px 1px 9px; border: 0; background: transparent; color: #959aa7; font-size: 11px; font-weight: 700; cursor: pointer; }
 .otp-login-methods button.is-active { color: #4e5ec7; }
 .otp-login-methods button.is-active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; border-radius: 2px; background: #5868d9; }
-.otp-auth-form > label > div:not(.slider-captcha) { border: 1px solid transparent; background: #eef0f5; }
+.otp-auth-form > label > div:not(.slider-captcha) { border: 1px solid #e4e7ef; background: #fff; }
 .otp-auth-form > label > div:not(.slider-captcha):focus-within { border-color: #aeb6ec; background: #fff; box-shadow: 0 0 0 3px rgba(88, 104, 217, .08); }
 .otp-email-code button { flex: none; min-width: 78px; padding: 7px 9px; border: 0; border-radius: 9px; background: #dde1f6; color: #4e5ec7; font-size: 10px; font-weight: 750; cursor: pointer; }
 .otp-email-code button:disabled { color: #9ba0b3; cursor: default; }
@@ -211,7 +211,7 @@ html.theme-dark {
   .otp-login-methods button { color: #7f899e; }
   .otp-login-methods button.is-active { color: #9eabff; }
   .otp-auth-form > label > span { color: #aeb6c8; }
-  .otp-auth-form > label > div:not(.slider-captcha) { background: #171f2e; color: #7f899e; }
+  .otp-auth-form > label > div:not(.slider-captcha) { border-color: #303b51; background: #171f2e; color: #7f899e; }
   .otp-auth-form > label > div:not(.slider-captcha):focus-within { border-color: #606fce; background: #1b2435; box-shadow: 0 0 0 3px rgba(113, 129, 237, .11); }
   .otp-auth-form input { color: #f0f3fa; }
   .otp-auth-form input::placeholder { color: #657086; }
