@@ -1,0 +1,46 @@
+app/systems/otp/VaultSharePage.tsx
+  s_ec331693b00d25::t_38875c8b225641 29,69-70,72
+  s_ec331693b00d25::t_52737095ee225f 1,22-24,73,81,88,104-105,107-111
+  s_ec331693b00d25::t_522a9b999f23b7 28,33,35-38,79,102-103,106
+  s_ec331693b00d25::t_b695acfb9a15e8 25
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_ec331693b00d25::t_52737095ee225f 542
+  s_ec331693b00d25::t_4b35d1e3083956 544
+  s_ec331693b00d25::t_ba96babbb16923 26
+app/systems/otp/OtpApp.tsx
+  s_ec331693b00d25::t_f3ce5736815042 4
+app/systems/otp/vaultApi.ts
+  s_ec331693b00d25::t_ba96babbb16923 73
+  s_ec331693b00d25::t_ae43d06f5a76cb 111
+app/systems/routes.tsx
+  s_ec331693b00d25::t_317064e3079ad0 5,25
+app/systems/otp/otp-vault.css
+  s_ec331693b00d25::t_49736d1708111e 33,46-47,51
+  s_ec331693b00d25::t_4b35d1e3083956 44,330,333,426-427,452,461,464,471-473,475-476,503,510-511,552,557,626-643
+  s_ec331693b00d25::t_522a9b999f23b7 453-454,458-459,462-463,465-466,468,474,477-481,495-501,524,527-528,531-533,555-556,564,566-567
+  s_ec331693b00d25::t_a10c13d0a269f0 279,537-540
+tests/rendered-html.test.mjs
+  s_ec331693b00d25::t_34a0475d336585 414-416,420-421
+  s_ec331693b00d25::t_8f5fc0c8423fcb 388,390,396-398
+  s_ec331693b00d25::t_7978f365340234 387,393,402,409-410,412-413,418-419
+  s_ec331693b00d25::t_ae43d06f5a76cb 399-401
+app/systems/otp/VaultSecurityCenter.tsx
+  s_ec331693b00d25::t_ba96babbb16923 164,170
+  s_ec331693b00d25::t_ae43d06f5a76cb 33-34,63-64,74-79,182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ab580058f7538ceeff87db4c9c6704d509cd1722",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
