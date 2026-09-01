@@ -1,0 +1,67 @@
+app/systems/otp/otp-auth.css
+  s_1660af5fcf2104::t_51a043d902fcd3 313
+  s_1660af5fcf2104::t_5f6f3395d89604 227
+  s_1660af5fcf2104::t_1ef29467cefa78 186,224,245,305,310
+app/systems/otp/otp-vault.css
+  s_1660af5fcf2104::t_c4e54282e9659a 956
+  s_1660af5fcf2104::t_8b3ffadb2e7e2c 425
+  s_1660af5fcf2104::t_cbd8cf819ca90b 946-955
+  s_1660af5fcf2104::t_4305e10fd2197a 211,214
+  s_1660af5fcf2104::t_08daf05582461c 713
+  s_1660af5fcf2104::t_99f77d62b2fae5 12,322,421,552,618,701,710
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_1660af5fcf2104::t_f9b6d532b3eca8 637
+  s_1660af5fcf2104::t_0f7e981c970ad1 661-670
+  s_1660af5fcf2104::t_e721aa8d41ef0a 42
+  s_1660af5fcf2104::t_d751906a7e1b8b 263-267
+  s_1660af5fcf2104::t_f30c2f6e3b96a1 1
+  s_1660af5fcf2104::t_8071f61bb6bcb7 751
+  s_1660af5fcf2104::t_566606f2f9eba0 13
+  s_1660af5fcf2104::t_c369618a875e97 5
+  s_1660af5fcf2104::t_6ca0a25ee877ec 238
+  s_1660af5fcf2104::t_a25c08e2381741 24
+  s_1660af5fcf2104::t_2c519040fb6546 227-228
+  s_1660af5fcf2104::t_758edb6ce25287 478,486-487,772
+  s_1660af5fcf2104::t_33193f4a491937 761
+  s_1660af5fcf2104::t_f14ef1f722100b 774-778
+  s_1660af5fcf2104::t_fa769387733bbc 479-481,483-485
+  s_1660af5fcf2104::t_77533b0bcb11bc 325,482
+app/systems/otp/VaultAccountSetup.tsx
+  s_1660af5fcf2104::t_8b7b7676477685 172
+  s_1660af5fcf2104::t_457389ea352115 55,62,64
+  s_1660af5fcf2104::t_712b1d06a04fc4 108
+  s_1660af5fcf2104::t_51c995f0a7be38 208
+  s_1660af5fcf2104::t_980fcd4722e796 166
+app/systems/otp/VaultSharePage.tsx
+  s_1660af5fcf2104::t_6e815ee182d40e 109
+app/systems/otp/vaultApi.ts
+  s_1660af5fcf2104::t_d61a8a15731704 73-74
+  s_1660af5fcf2104::t_50cb2b8985a542 53
+  s_1660af5fcf2104::t_a9db90f84506f8 101
+app/systems/otp/otp-setup.css
+  s_ec331693b00d25::t_3674426fc20733 96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f4899e493d88bb860eaa2614e45a6da404901a38",
+  "prompts": {},
+  "sessions": {
+    "s_1660af5fcf2104": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "effd33d5-99db-4d05-a723-addcf038d5f2",
+        "model": "grok-4.6"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    },
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
