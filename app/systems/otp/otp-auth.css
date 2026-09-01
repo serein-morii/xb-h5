@@ -183,7 +183,7 @@ html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
   .otp-auth-copy h2 { font-size: 27px; }
 }
 
-@media (prefers-color-scheme: dark) {
+html.theme-dark {
   .otp-auth-page {
     --xb-surface: #20283a;
     --xb-surface-muted: #151c2a;
@@ -221,8 +221,9 @@ html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
   .otp-auth-card > footer { color: #6f788b; }
 }
 
-@media (prefers-color-scheme: dark) and (max-width: 560px) {
+html.theme-dark { @media (max-width: 560px) {
   .otp-auth-page { background: #111827; }
+}
 }
 
 .otp-long-session { position: relative; min-height: 43px; padding: 5px 3px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
@@ -241,7 +242,7 @@ html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
 .otp-session-warning b { font-size: 9px; }
 .otp-session-warning small { margin-top: 3px; color: #9b7540; font-size: 8px; line-height: 1.5; }
 
-@media (prefers-color-scheme: dark) {
+html.theme-dark {
   .otp-long-session b { color: #dfe4ef; }
   .otp-long-session > i { background: #3a4355; }
   .otp-session-warning { border-color: #5f4829; background: #30251f; color: #f0b36f; }
@@ -301,11 +302,12 @@ html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
 .otp-login-methods button.is-active { background: #fff; box-shadow: 0 4px 12px rgba(28, 39, 72, .08); }
 .otp-login-methods button.is-active::after { display: none; }
 
-@media (prefers-color-scheme: dark) {
+html.theme-dark {
   .otp-login-methods { background: #0b111d; }
   .otp-login-methods button.is-active { background: #20293a; box-shadow: none; }
 }
 
-@media (prefers-color-scheme: dark) and (max-width: 560px) {
+html.theme-dark { @media (max-width: 560px) {
   .otp-auth-page, .otp-auth-app { background: #0b101b; }
+}
 }

@@ -93,7 +93,7 @@
   .vault-modal .otp-setup-options > button { padding: 8px 8px 8px 30px; }
 }
 
-@media (prefers-color-scheme: dark) {
+html.theme-dark {
   .otp-setup-steps li { border-color: #293143; background: #0e1523; color: #7f899e; }
   .otp-setup-steps li > span { background: #1d2637; }
   .otp-setup-steps li.is-active { border-color: #3c4879; background: #1a2238; color: #9eabff; }

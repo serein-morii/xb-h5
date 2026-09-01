@@ -52,16 +52,16 @@ function generateSimplePassword() {
  * 注册后 / 设置页共用的账号补全面板：两步引导设置用户名和登录密码。
  * 密码支持随机复杂、随机简单、自定义或跳过；跳过则只能邮箱验证码登录。
  */
-export default function VaultAccountSetup({ initialUsername, onFinish, onCancel, cancellable = false, requireVerify = false, email = "" }: {
+export default function VaultAccountSetup({ initialUsername, onFinish, onCancel, cancellable = false, requireVerify = false, email = "", only }: {
   initialUsername: string;
   onFinish: (result: VaultSetupResult) => void;
   onCancel?: () => void;
   cancellable?: boolean;
-  /** 设置页改密必须验原密码或邮箱验证码；注册引导不用 */
   requireVerify?: boolean;
   email?: string;
+  only?: "username" | "password";
 }) {
-  const [step, setStep] = useState<"username" | "password">("username");
+  const [step, setStep] = useState<"username" | "password">(only === "password" ? "password" : "username");
   const [username, setUsername] = useState(initialUsername);
   const [passwordMode, setPasswordMode] = useState<PasswordMode>("complex");
   const [generated, setGenerated] = useState(() => generateComplexPassword());
@@ -105,6 +105,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
         await setVaultUsername(value);
         setUsernameChanged(true);
       }
+      if (only === "username") return onFinish({ username: value });
       setStep("password");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "用户名设置失败");
@@ -162,13 +163,13 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
   }
 
   return <div className="otp-setup">
-    <ol className="otp-setup-steps" aria-label="账号设置进度">
+    <ol className="otp-setup-steps" aria-label="账号设置进度" hidden={Boolean(only)}>
       <li className={step === "username" ? "is-active" : step === "password" ? "is-done" : ""}><span><User size={13} /></span>用户名</li>
       <li className={step === "password" ? "is-active" : ""}><span><KeyRound size={13} /></span>登录密码</li>
     </ol>
 
     {step === "username" ? <form className="otp-setup-step" onSubmit={submitUsername}>
-      <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>{requireVerify ? "修改用户名" : "设置用户名"}</b><small>{requireVerify ? `当前账号：${initialUsername}` : "不改就用邮箱 @ 前的默认名称"}</small></div></header>
+      <header><span className="otp-setup-step-icon"><User size={17} /></span><div><b>{only === "username" || requireVerify ? "用户名" : "设置用户名"}</b><small>{only === "username" || requireVerify ? "用于登录和被搜索到" : "不改就用邮箱 @ 前的默认名称"}</small></div></header>
       <label><span>用户名</span><div><User size={16} /><input value={username} onChange={(event) => setUsername(event.target.value)} maxLength={20} autoComplete="username" placeholder="2-20 位用户名" /></div></label>
       <p className="otp-setup-hint">用户名用于账号密码登录和分享时搜索你；随时可以在设置中修改。</p>
       {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
@@ -204,7 +205,7 @@ export default function VaultAccountSetup({ initialUsername, onFinish, onCancel,
 
       {message ? <p className="otp-setup-message" role="status">{message}</p> : null}
       <div className="otp-setup-actions">
-        <button type="button" className="otp-setup-ghost" disabled={busy} onClick={() => { setStep("username"); setMessage(""); }}><ArrowLeft size={16} />上一步</button>
+        {only === "password" ? (cancellable && onCancel ? <button type="button" className="otp-setup-ghost" onClick={onCancel}>取消</button> : null) : <button type="button" className="otp-setup-ghost" disabled={busy} onClick={() => { setStep("username"); setMessage(""); }}><ArrowLeft size={16} />上一步</button>}
         <button className={passwordMode === "skip" ? "otp-setup-ghost" : "otp-setup-primary"} disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : passwordMode === "skip" ? null : <Sparkles size={16} />}{passwordMode === "skip" ? "跳过并完成" : "完成设置"}</button>
       </div>
     </form> : null}

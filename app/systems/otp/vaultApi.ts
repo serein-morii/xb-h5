@@ -50,7 +50,7 @@ export type VaultCredential = {
   currentOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
-  shared?: boolean; shareId?: number; sharedBy?: string; allowCopy?: boolean; shareExpireTime?: string;
+  shared?: boolean; shareId?: number; sharedBy?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
 };
 
 export type VaultShare = {
@@ -70,7 +70,8 @@ export type VaultRecipient = {
 
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
-  autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; zeroKnowledgeEnabled?: boolean;
+  autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; theme?: "light" | "dark" | "system";
+  zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
 };
 
@@ -97,6 +98,7 @@ export const listVaultCredentials = () => otpApiRequest<{ data: VaultCredential[
 export const getVaultCredential = (id: number) => otpApiRequest<{ data: VaultCredential }>(`${vault}/credentials/${id}`);
 export const nextVaultHotp = (id: number) => otpApiRequest<{ data: VaultCredential }>(`${vault}/credentials/${id}/hotp/next`, { method: "POST" });
 export const saveVaultCredential = (id: number | null, body: Record<string, unknown>) => otpApiRequest<{ data: VaultCredential }>(id ? `${vault}/credentials/${id}` : `${vault}/credentials`, { method: id ? "PUT" : "POST", body });
+export const syncVaultCredentialShares = (id: number) => otpApiRequest<{ data: { synced: number } }>(`${vault}/credentials/${id}/sync-shares`, { method: "POST" });
 export const deleteVaultCredential = (id: number) => otpApiRequest(`${vault}/credentials/${id}`, { method: "DELETE" });
 export const listDeletedVaultCredentials = () => otpApiRequest<{ data: VaultCredential[] }>(`${vault}/trash`);
 export const restoreVaultCredential = (id: number) => otpApiRequest(`${vault}/trash/${id}/restore`, { method: "POST" });
