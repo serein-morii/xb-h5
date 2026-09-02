@@ -1,0 +1,40 @@
+app/lib/pathConventions.ts
+  s_ec331693b00d25::t_dca85baafda314 109
+app/systems/order/admin/access.tsx
+  s_ec331693b00d25::t_dca85baafda314 71,87
+app/systems/order/admin/core.ts
+  s_ec331693b00d25::t_dca85baafda314 36,69,87,257
+app/systems/order/admin/shell.tsx
+  s_ec331693b00d25::t_dca85baafda314 519
+app/systems/order/admin/mobileMenu.config.ts
+  s_ec331693b00d25::t_dca85baafda314 49,152,306
+app/systems/order/admin/risk-ip-access.tsx
+  s_ec331693b00d25::t_fd5b9bf80dad72 179,193-194
+  s_ec331693b00d25::t_63d385dcb23a68 1-178,180-192,195-223
+app/systems/order/admin/system-pages.tsx
+  s_ec331693b00d25::t_dca85baafda314 24-26,59,65,132-135
+  s_ec331693b00d25::t_21de78e48957c9 136-138
+app/unified-theme.css
+  s_ec331693b00d25::t_a850001ff2142e 16074-16244
+  s_ec331693b00d25::t_418b1b79dcdf9d 16073
+app/systems/order/admin/crud.tsx
+  s_ec331693b00d25::t_424fb270e0620d 88,90
+app/systems/order/admin/mobileEntryPromotions.config.ts
+  s_ec331693b00d25::t_dca85baafda314 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3dac793c014eee62301a8f9b7802523e66349d4a",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
