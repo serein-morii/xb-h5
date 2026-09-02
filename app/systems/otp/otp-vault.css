@@ -1076,30 +1076,29 @@ html.theme-dark .vault-toast.is-error svg { color: #ffaaa3; }
   .vault-page .vault-toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
 }
 
-.vault-share-list { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
-.vault-share-list > article.vault-share-card { min-width: 0; min-height: 178px; padding: 14px; display: flex; align-items: stretch; flex-direction: column; gap: 12px; border-radius: 16px; background: color-mix(in srgb,var(--utility-paper) 78%,var(--utility-bg)); }
-.vault-share-card-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; }
-.vault-share-card-head > div { min-width: 0; }
-.vault-share-card-head b,.vault-share-card-head small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vault-share-card-head b { color: var(--utility-text); font-size: 12px; }
-.vault-share-card-head small { margin-top: 3px; color: var(--utility-muted); font-size: 8px; }
-.vault-share-card-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: #eef0fb; color: var(--vault-accent); }
-.vault-share-card-head .vault-status { justify-self: end; white-space: nowrap; }
-.vault-share-card-meta { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); overflow: hidden; border: 1px solid var(--utility-line); border-radius: 11px; background: color-mix(in srgb,var(--utility-paper) 82%,var(--utility-bg)); }
-.vault-share-card-meta > span { min-width: 0; padding: 9px 8px; border-left: 1px solid var(--utility-line); }
-.vault-share-card-meta > span:first-child { border-left: 0; }
-.vault-share-card-meta small,.vault-share-card-meta b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vault-share-card-meta small { color: var(--utility-muted); font-size: 7px; }
-.vault-share-card-meta b { margin-top: 4px; color: var(--utility-text); font-size: 9px; }
-.vault-share-card .vault-share-actions { justify-content: flex-start; gap: 5px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--utility-line); }
-.vault-share-card .vault-share-actions button { flex: 1; justify-content: center; min-width: 0; padding: 0 5px; }
-html.theme-dark .vault-share-card-icon { background: #222b4a; color: #aeb7ff; }
-html.theme-dark .vault-share-card-meta { background: #141b29; }
+.share-page.is-open .share-brand,.share-content { max-width: 1120px; }
+.share-item-list,.share-item-list.is-compact { grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; }
+.share-item-list > article.share-credential-card { min-width: 0; }
+.share-login-summary { min-width: 0; min-height: 53px; margin: 14px 0 9px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px solid rgba(72,92,199,.1); border-radius: 12px; background: linear-gradient(135deg,#f5f6fd,#eef0fb); }
+.share-login-summary > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: rgba(72,92,199,.1); color: #586bcf; }
+.share-login-summary > div { min-width: 0; }
+.share-login-summary small,.share-login-summary b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-login-summary small { color: #7c8498; font-size: 8px; }
+.share-login-summary b { margin-top: 3px; color: #28334d; font-size: 11px; }
+.share-login-summary em { padding: 4px 6px; border-radius: 999px; background: #fff; color: #6673bd; font-size: 8px; font-style: normal; font-weight: 750; white-space: nowrap; }
+.vault-card.is-compact .share-login-summary { grid-area: code; width: auto; min-width: 118px; min-height: 36px; margin: 0; padding: 4px 6px; gap: 5px; }
+.vault-card.is-compact .share-login-summary > span { width: 24px; height: 24px; border-radius: 7px; }
+.vault-card.is-compact .share-login-summary small { display: none; }
+.vault-card.is-compact .share-login-summary b { margin: 0; font-size: 9px; }
+.vault-card.is-compact .share-login-summary em { padding: 3px 5px; font-size: 7px; }
+html.theme-dark .share-login-summary { border-color: rgba(174,183,255,.11); background: linear-gradient(135deg,#20283d,#1b2234); }
+html.theme-dark .share-login-summary > span { background: rgba(174,183,255,.1); color: #aeb7ff; }
+html.theme-dark .share-login-summary b { color: #dfe4f5; }
+html.theme-dark .share-login-summary em { background: rgba(255,255,255,.06); color: #b8c0ed; }
 
 @media (max-width: 820px) {
-  .vault-share-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .share-item-list,.share-item-list.is-compact { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 560px) {
-  .vault-share-list { grid-template-columns: 1fr; }
-  .vault-share-list > article.vault-share-card { min-height: 0; padding: 12px; }
+  .share-item-list,.share-item-list.is-compact { grid-template-columns: 1fr; }
 }
