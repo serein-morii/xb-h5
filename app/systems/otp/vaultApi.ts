@@ -71,6 +71,7 @@ export type VaultRecipient = {
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
   autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; theme?: "light" | "dark" | "system";
+  concealOtp?: boolean; listSort?: string;
   zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
 };

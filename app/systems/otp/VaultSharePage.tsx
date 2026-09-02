@@ -8,6 +8,7 @@ import "./otp-vault.css";
 
 export default function VaultSharePage({ token }: { token: string }) {
   const sessionKey = `otp-vault-share:${token}`;
+  const autoFillRef = useRef(/^#k=[A-Za-z0-9]{4,12}$/.test(location.hash));
   const [status, setStatus] = useState<ShareStatus | null>(null);
   const [accessCode, setAccessCode] = useState(() => {
     const match = location.hash.match(/^#k=([A-Za-z0-9]{4,12})$/);
@@ -19,6 +20,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [expireTime, setExpireTime] = useState("");
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [autoOpening, setAutoOpening] = useState(autoFillRef.current);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [toast, setToast] = useState("");
@@ -56,7 +58,8 @@ export default function VaultSharePage({ token }: { token: string }) {
     }
   }, [sessionKey, token]);
 
-  const open = useCallback(async (code: string) => {
+  const open = useCallback(async (code: string, automatic = false) => {
+    if (automatic) setAutoOpening(true);
     setBusy(true); setError("");
     try {
       const result = await openVaultShare(token, code);
@@ -65,16 +68,19 @@ export default function VaultSharePage({ token }: { token: string }) {
       if (location.hash) history.replaceState(null, "", location.pathname + location.search);
       await loadContent(session);
     } catch (openError) { setError(openError instanceof Error ? openError.message : "访问验证失败"); }
-    finally { setBusy(false); }
+    finally {
+      setBusy(false);
+      if (automatic) { autoFillRef.current = false; setAutoOpening(false); }
+    }
   }, [loadContent, sessionKey, token]);
 
   useEffect(() => {
     getShareStatus(token).then((result) => {
       setStatus(result.data);
-      if (result.data.status !== "ACTIVE") return;
-      if (sessionToken) void loadContent(sessionToken);
-      else if (!result.data.accessCodeRequired || accessCode) void open(accessCode);
-    }).catch((loadError) => setError(loadError instanceof Error ? loadError.message : "授权链接不存在"));
+      if (result.data.status !== "ACTIVE") { autoFillRef.current = false; setAutoOpening(false); return; }
+      if (sessionToken) { autoFillRef.current = false; setAutoOpening(false); void loadContent(sessionToken); }
+      else if (!result.data.accessCodeRequired || accessCode) void open(accessCode, autoFillRef.current);
+    }).catch((loadError) => { autoFillRef.current = false; setAutoOpening(false); setError(loadError instanceof Error ? loadError.message : "授权链接不存在"); });
   }, []);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   useEffect(() => { if (!sessionToken) return; const timer = window.setInterval(() => void loadContent(sessionToken), 10_000); return () => window.clearInterval(timer); }, [loadContent, sessionToken]);
@@ -110,6 +116,15 @@ export default function VaultSharePage({ token }: { token: string }) {
   }, [items, query]);
   const groups = useMemo(() => displayPrefs.grouped ? [...new Set(filteredItems.map((item) => item.issuer))].map((name) => [name, filteredItems.filter((item) => item.issuer === name)] as const) : [["", filteredItems] as const], [displayPrefs.grouped, filteredItems]);
 
+  if (autoOpening) return <main className="share-page is-handoff"><section className="share-handoff-card" aria-live="polite">
+    <div className="share-handoff-emblem"><span><ShieldCheck size={27} /></span><i /><i /></div>
+    <small>SECURE HANDOFF</small>
+    <h1>正在安全打开授权</h1>
+    <p>访问码已自动填写，正在验证授权并准备临时凭据。</p>
+    <div className="share-handoff-steps" aria-label="打开授权进度"><span className="is-done"><Check size={13} />读取访问码</span><i /><span className="is-active"><LoaderCircle className="spin" size={13} />验证授权</span><i /><span>打开内容</span></div>
+    <div className="share-handoff-progress"><i /></div>
+    <footer><LockKeyhole size={13} />访问码验证后会立即从地址栏移除</footer>
+  </section></main>;
   if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
   if (!status && error) return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>无法打开授权</h1><p>{error}</p></section></main>;
   if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;

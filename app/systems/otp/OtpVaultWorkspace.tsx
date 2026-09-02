@@ -1,4 +1,4 @@
-import { BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, User, X } from "lucide-react";
+import { ArrowUpDown, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	createVaultShare, deleteVaultCredential, deleteVaultShare, getVaultCredential, getVaultShare, importLegacyVault, listVaultCredentials, listVaultShares,
@@ -46,14 +46,23 @@ function durationHeadline(seconds: number) {
 function readLastUsed(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(LAST_USED_KEY) || "{}"); } catch { return {}; }
 }
-function concealOtpEnabled() {
-  return localStorage.getItem(CONCEAL_KEY) === "1";
+function readDeviceDisplayPrefs() {
+  try {
+    const conceal = localStorage.getItem(CONCEAL_KEY);
+    const sort = localStorage.getItem(SORT_KEY);
+    return {
+      concealOtp: conceal == null ? undefined : conceal === "1",
+      listSort: sort === "account" || sort === "favorite" || sort === "recent" || sort === "newest" || sort === "name" ? sort : undefined,
+    };
+  } catch {
+    return { concealOtp: undefined as boolean | undefined, listSort: undefined as string | undefined };
+  }
 }
 function canUseSystemShare() {
   return typeof navigator.share === "function" && window.matchMedia("(max-width: 820px), (pointer: coarse) and (hover: none)").matches;
 }
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
-const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system" };
+const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name" };
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
 
@@ -229,9 +238,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<VaultView>("all");
   const [issuer, setIssuer] = useState("");
-  const [sort, setSort] = useState(() => localStorage.getItem(SORT_KEY) || "name");
   const [filtersOpen, setFiltersOpen] = useState(false);
-	const [prefs, setPrefs] = useState<VaultPrefs>(() => { try { return { ...defaultPrefs, ...JSON.parse(localStorage.getItem("handy-vault-prefs") || "{}") }; } catch { return defaultPrefs; } });
+	const [prefs, setPrefs] = useState<VaultPrefs>(() => {
+	  const device = readDeviceDisplayPrefs();
+	  try { return { ...defaultPrefs, ...JSON.parse(localStorage.getItem("handy-vault-prefs") || "{}"), ...(device.concealOtp == null ? {} : { concealOtp: device.concealOtp }), ...(device.listSort ? { listSort: device.listSort } : {}) }; }
+	  catch { return { ...defaultPrefs, ...(device.concealOtp == null ? {} : { concealOtp: device.concealOtp }), ...(device.listSort ? { listSort: device.listSort } : {}) }; }
+	});
 	const [zeroKnowledgeKey, setZeroKnowledgeKey] = useState<CryptoKey | null>(null);
   const [now, setNow] = useState(Date.now());
   const [modal, setModal] = useState<Modal>(null);
@@ -257,7 +269,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	const [recipientLoading, setRecipientLoading] = useState(false);
 	const [created, setCreated] = useState<{ name?: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
-  const [concealOtp, setConcealOtp] = useState(concealOtpEnabled);
   const [revealedOtp, setRevealedOtp] = useState<number | null>(null);
   const [lastUsed, setLastUsed] = useState(readLastUsed);
   const otpRefreshAt = useRef(0);
@@ -294,9 +305,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     finally { if (!quiet) setLoading(false); }
 	  }, [zeroKnowledgeKey]);
   useEffect(() => { void load(); void getVaultPreferences().then((result) => {
-    const next = { ...defaultPrefs, ...(result.data || {}) };
+    const remote = { ...defaultPrefs, ...(result.data || {}) };
+    const device = readDeviceDisplayPrefs();
+    const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
     setThemePreference(next.theme || "system");
+    if (device.concealOtp == null && !device.listSort) return;
+    void saveVaultPreferences(next).then((saved) => {
+      localStorage.removeItem(CONCEAL_KEY);
+      localStorage.removeItem(SORT_KEY);
+      setPrefs({ ...defaultPrefs, ...(saved.data || {}) });
+    }).catch(() => undefined);
   }).catch(() => undefined); }, [load]);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
 	useEffect(() => { if (!prefs.autoRefresh) return; const timer = window.setInterval(() => void load(true), 10_000); return () => window.clearInterval(timer); }, [load, prefs.autoRefresh]);
@@ -342,7 +361,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	    void load(true);
 	  }, [credentials, load, now]);
 	useEffect(() => { localStorage.setItem("handy-vault-prefs", JSON.stringify(prefs)); }, [prefs]);
-	useEffect(() => { localStorage.setItem(SORT_KEY, sort); }, [sort]);
 	useEffect(() => {
 		let timer = 0;
 		const reset = () => { window.clearTimeout(timer); timer = window.setTimeout(clearOtpStepUpToken, Math.max(1, prefs.autoLockMinutes) * 60_000); };
@@ -384,14 +402,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const value = query.trim().toLowerCase();
     const result = credentials.filter((item) => (!value || `${item.issuer} ${item.accountName} ${item.note || ""}`.toLowerCase().includes(value)) && (!issuer || item.issuer === issuer) && (view !== "favorite" || item.favorite) && (prefs.showShared || !item.shared));
     result.sort((a, b) => {
-      if (sort === "account") return a.accountName.localeCompare(b.accountName, "zh-CN");
-      if (sort === "favorite") return Number(b.favorite) - Number(a.favorite) || a.issuer.localeCompare(b.issuer, "zh-CN");
-      if (sort === "recent") return (lastUsed[String(b.id)] || 0) - (lastUsed[String(a.id)] || 0) || a.issuer.localeCompare(b.issuer, "zh-CN");
-      if (sort === "newest") return String(b.updateTime || "").localeCompare(String(a.updateTime || "")) || a.issuer.localeCompare(b.issuer, "zh-CN");
+      if (prefs.listSort === "account") return a.accountName.localeCompare(b.accountName, "zh-CN");
+      if (prefs.listSort === "favorite") return Number(b.favorite) - Number(a.favorite) || a.issuer.localeCompare(b.issuer, "zh-CN");
+      if (prefs.listSort === "recent") return (lastUsed[String(b.id)] || 0) - (lastUsed[String(a.id)] || 0) || a.issuer.localeCompare(b.issuer, "zh-CN");
+      if (prefs.listSort === "newest") return String(b.updateTime || "").localeCompare(String(a.updateTime || "")) || a.issuer.localeCompare(b.issuer, "zh-CN");
       return a.issuer.localeCompare(b.issuer, "zh-CN") || a.accountName.localeCompare(b.accountName, "zh-CN");
     });
     return result;
-  }, [credentials, issuer, lastUsed, prefs.showShared, query, sort, view]);
+  }, [credentials, issuer, lastUsed, prefs.listSort, prefs.showShared, query, view]);
   const issuers = useMemo(() => [...new Set(credentials.map((item) => item.issuer))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
   const ownCredentials = useMemo(() => credentials.filter((item) => !item.shared), [credentials]);
   const groups = useMemo(() => prefs.grouped ? [...new Set(filtered.map((item) => item.issuer))].map((name) => [name, filtered.filter((item) => item.issuer === name)] as const) : [["", filtered] as const], [filtered, prefs.grouped]);
@@ -663,7 +681,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const left = item.otpValidUntil ? Math.max(0, Math.ceil((item.otpValidUntil - now) / 1000)) : 0;
     const progress = item.periodSeconds ? Math.max(0, Math.min(100, left / item.periodSeconds * 100)) : 0;
     const mark = issuerStyle(item.issuer, item.loginUrl);
-    const concealed = concealOtp && revealedOtp !== item.id;
+    const concealed = Boolean(prefs.concealOtp) && revealedOtp !== item.id;
     const otpLabel = item.currentOtp ? item.currentOtp.replace(/(.{3})/, "$1 ") : "";
     const nextOtpLabel = item.nextOtp ? item.nextOtp.replace(/(.{3})/, "$1 ") : "";
     return <article className={`vault-card${prefs.compact ? " is-compact" : ""}${item.shared ? " is-shared" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => void openDetail(item)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openDetail(item); } }}>
@@ -698,7 +716,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
     {view === "all" || view === "favorite" ? <section className="vault-panel">
       <header className="vault-panel-head"><div><h2>{view === "favorite" ? "收藏" : "验证码"}</h2><p>点开卡片查看账号、密码和更多信息</p></div><div className="vault-panel-tools"><label className="vault-view-toggle"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div></div></header>
-      <div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer ? <button type="button" onClick={() => setIssuer("")}>清除筛选</button> : null}</div>
+      <div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer ? <button type="button" onClick={() => setIssuer("")}>清除筛选</button> : null}</div>
       {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{groups.map(([name, items]) => <section className="vault-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{items.length}</span></header> : null}<div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div></section>)}</div> : <div className="vault-empty"><KeyRound size={28} /><b>{view === "favorite" ? "还没有收藏凭据" : "没有找到凭据"}</b><p>{view === "favorite" ? "点击凭据右上角的星标即可收藏。" : "可以添加一项，或导入文件。"}</p></div>}
     </section> : null}
 
@@ -725,7 +743,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <div className="vault-settings-group"><header><div><b>外观</b><small>保存在当前账号</small></div></header>
         <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
       </div>
-      <div className="vault-settings-group"><header><div><b>界面显示</b><small>验证码与账号列表</small></div><span>6 项</span></header>{([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={prefs[key]} onChange={(event) => updatePrefs({ ...prefs, [key]: event.target.checked })} /><i /></label>)}<label className="vault-setting-row"><span className="vault-setting-icon is-violet"><EyeOff size={17} /></span><span className="vault-setting-copy"><b>隐蔽验证码</b><small>列表中先显示掩码，点按后再显示并复制</small></span><input type="checkbox" checked={concealOtp} onChange={(event) => { const next = event.target.checked; setConcealOtp(next); setRevealedOtp(null); localStorage.setItem(CONCEAL_KEY, next ? "1" : "0"); }} /><i /></label></div>
+      <div className="vault-settings-group"><header><div><b>界面显示</b><small>验证码与账号列表，保存在当前账号</small></div><span>7 项</span></header>{([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}<label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label></div>
     </section> : null}
 
     <nav className="vault-mobile-nav" aria-label="密钥管理导航">

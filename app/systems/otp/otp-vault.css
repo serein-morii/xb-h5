@@ -440,6 +440,28 @@ html.theme-dark { @media (max-width: 560px) {
 
 /* 临时分享页采用独立 App 视觉，不复用后台卡片结构。 */
 .share-page.is-gate { position: relative; min-height: 100dvh; overflow: hidden; padding: 24px; display: grid; grid-template-columns: minmax(0,1fr); align-content: center; background: radial-gradient(circle at 15% -8%, rgba(142, 157, 255, .55), transparent 33%), radial-gradient(circle at 88% 22%, rgba(76, 200, 201, .17), transparent 25%), radial-gradient(circle at 50% 105%, rgba(95, 112, 218, .2), transparent 34%), linear-gradient(155deg, #111a35, #273c76 62%, #172347); }
+.share-page.is-handoff { box-sizing: border-box; min-height: 100dvh; padding: 24px; display: grid; place-items: center; overflow: hidden; background: radial-gradient(circle at 18% 4%, rgba(139,153,255,.48), transparent 31%), radial-gradient(circle at 86% 76%, rgba(82,203,197,.2), transparent 28%), linear-gradient(155deg,#101831,#263a75 60%,#16213f); }
+.share-page.is-handoff::before { content: ""; position: fixed; inset: 0; opacity: .15; background-image: linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px); background-size: 34px 34px; mask-image: radial-gradient(circle at center,#000,transparent 72%); pointer-events: none; }
+.share-handoff-card { box-sizing: border-box; position: relative; width: min(420px,100%); padding: 32px 28px 22px; overflow: hidden; border: 1px solid rgba(255,255,255,.66); border-radius: 26px; background: rgba(251,252,255,.97); color: #172033; text-align: center; box-shadow: 0 28px 72px rgba(4,9,28,.3),inset 0 1px 0 #fff; }
+.share-handoff-card::before { content: ""; position: absolute; inset: 0 44px auto; height: 3px; border-radius: 0 0 99px 99px; background: linear-gradient(90deg,transparent,#7282e5 26%,#58c1be 74%,transparent); }
+.share-handoff-emblem { position: relative; width: 78px; height: 78px; margin: 0 auto 15px; display: grid; place-items: center; }
+.share-handoff-emblem > span { position: relative; z-index: 2; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 17px; background: linear-gradient(145deg,#4055c4,#7484e2); color: #fff; box-shadow: 0 12px 26px rgba(72,92,199,.28),inset 0 1px 0 rgba(255,255,255,.3); }
+.share-handoff-emblem > i { position: absolute; inset: 7px; border: 1px solid rgba(101,117,211,.24); border-radius: 24px; animation: share-handoff-pulse 2.2s ease-out infinite; }
+.share-handoff-emblem > i:last-child { inset: 0; animation-delay: .75s; }
+.share-handoff-card > small { display: block; color: #6575d3; font-size: 8px; font-weight: 850; letter-spacing: .17em; }
+.share-handoff-card h1 { margin: 6px 0 7px; font-size: 24px; letter-spacing: -.04em; }
+.share-handoff-card > p { margin: 0 auto; max-width: 310px; color: #747d90; font-size: 10px; line-height: 1.7; }
+.share-handoff-steps { margin-top: 23px; display: grid; grid-template-columns: auto minmax(18px,1fr) auto minmax(18px,1fr) auto; align-items: center; color: #9aa1b1; font-size: 8px; font-weight: 700; white-space: nowrap; }
+.share-handoff-steps > span { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.share-handoff-steps > span.is-done { color: #4b9b87; }
+.share-handoff-steps > span.is-active { color: #5869ce; }
+.share-handoff-steps > i { height: 1px; margin: 0 7px; overflow: hidden; background: #dfe3ed; }
+.share-handoff-steps > i:first-of-type { background: linear-gradient(90deg,#62aa96,#8792db); }
+.share-handoff-progress { height: 4px; margin-top: 14px; overflow: hidden; border-radius: 99px; background: #e9ebf3; }
+.share-handoff-progress > i { width: 42%; height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg,#5669d2,#64c1bd); animation: share-handoff-travel 1.45s ease-in-out infinite; }
+.share-handoff-card footer { margin-top: 17px; padding-top: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; border-top: 1px solid #e8eaf1; color: #8c94a4; font-size: 8px; }
+@keyframes share-handoff-pulse { 0% { opacity: 0; transform: scale(.72); } 32% { opacity: .7; } 100% { opacity: 0; transform: scale(1.08); } }
+@keyframes share-handoff-travel { 0% { transform: translateX(-105%); } 55%,100% { transform: translateX(240%); } }
 .share-page.is-gate::before { content: ""; position: fixed; inset: 0; opacity: .18; background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px); background-size: 34px 34px; mask-image: linear-gradient(to bottom, #000, transparent 68%); pointer-events: none; }
 .share-page.is-gate .share-brand { position: relative; z-index: 1; width: 100%; max-width: 420px; margin: 0 auto 12px; color: #fff; }
 .share-page.is-gate .share-brand b { font-size: 13px; letter-spacing: -.01em; }
@@ -624,6 +646,8 @@ html.theme-dark {
 .vault-settings .vault-setting-row i { width: 43px; height: 25px; margin-left: auto; }
 .vault-settings .vault-setting-row i::after { width: 19px; height: 19px; }
 .vault-settings .vault-setting-row input:checked + i::after { transform: translateX(18px); }
+.vault-setting-select { margin-left: auto; min-width: 0; max-width: 148px; min-height: 34px; padding: 0 26px 0 10px; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.vault-setting-row:has(.vault-setting-select) { cursor: default; }
 .vault-account-settings { padding-bottom: 12px; }
 .vault-account-links { padding: 0 12px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
 .vault-account-link { min-width: 0; min-height: 58px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; border: 1px solid rgba(38,50,77,.07); border-radius: 14px; background: #fafbfe; color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s,background .15s,transform .15s; }
@@ -668,6 +692,7 @@ html.theme-dark {
   .vault-setting-icon.is-violet { background: rgba(126,100,211,.18); color: #b4a5ef; }
   .vault-setting-icon.is-blue { background: rgba(82,119,207,.18); color: #91adee; }
   .vault-setting-icon.is-green { background: rgba(55,130,91,.18); color: #7fc49d; }
+  .vault-setting-select { border-color: rgba(225,231,248,.12); background: #222b3d; color: #e8edf8; }
   .vault-setting-row i,.vault-view-toggle i { background: #465269; box-shadow: inset 0 0 0 1px #68758f; }
   .vault-setting-row i::after,.vault-view-toggle i::after { background: #f5f7fc; box-shadow: 0 2px 6px rgba(0,0,0,.42); }
   .vault-setting-row input:checked + i,.vault-view-toggle input:checked + i { background: #7c8cff; box-shadow: inset 0 0 0 1px #a5b0ff,0 0 0 3px rgba(124,140,255,.16); }
@@ -1071,6 +1096,26 @@ html.theme-dark .vault-toast svg { color: #aeb7ff; }
 html.theme-dark .vault-toast.is-error { border-color: rgba(255,137,137,.2); background: rgba(45,31,38,.97); color: #ffd7d3; }
 html.theme-dark .vault-toast.is-error svg { color: #ffaaa3; }
 @keyframes vault-toast-up { from { opacity: 0; transform: translate(-50%,10px); } to { opacity: 1; transform: translate(-50%,0); } }
+
+html.theme-dark .share-handoff-card { border-color: rgba(225,231,248,.13); background: rgba(23,30,44,.97); color: #eef1f8; box-shadow: 0 28px 76px rgba(0,0,0,.48); }
+html.theme-dark .share-handoff-card > p,html.theme-dark .share-handoff-card footer { color: #939caf; }
+html.theme-dark .share-handoff-card footer { border-color: rgba(225,231,248,.1); }
+html.theme-dark .share-handoff-steps { color: #717c91; }
+html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress { background: #2a3346; }
+
+@media (max-width: 560px) {
+  .share-page.is-handoff { padding: max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom)); }
+  .share-handoff-card { padding: 27px 18px 19px; border-radius: 23px; }
+  .share-handoff-emblem { width: 70px; height: 70px; margin-bottom: 12px; }
+  .share-handoff-emblem > span { width: 48px; height: 48px; border-radius: 15px; }
+  .share-handoff-card h1 { font-size: 22px; }
+  .share-handoff-steps { margin-top: 20px; font-size: 7px; }
+  .share-handoff-steps > i { margin: 0 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-handoff-emblem > i,.share-handoff-progress > i { animation-duration: 4s; }
+}
 @media (max-width: 560px) {
   .vault-toast { bottom: max(14px,env(safe-area-inset-bottom)); }
   .vault-page .vault-toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
