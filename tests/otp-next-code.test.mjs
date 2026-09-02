@@ -29,9 +29,12 @@ test("shows and copies the next time-window code for private credentials", async
   assert.match(styles, /\.vault-card-next\s*\{[^}]*padding:[^}]*background:/s);
   assert.match(styles, /\.vault-card-next b\s*\{[^}]*font-size:\s*12px;/s);
   assert.match(styles, /\.vault-next-copy\s*\{[^}]*width:\s*22px;[^}]*height:\s*22px;/s);
+  assert.match(styles, /\.vault-detail-values section\.is-otp \.vault-detail-next \{[^}]*width: max-content;[^}]*margin: 9px 0 0 auto;/);
+  assert.match(styles, /\.vault-detail-next b \{ margin-left: 0;/);
   assert.doesNotMatch(styles, /\.vault-card\.is-compact \.vault-card-next small \{ display: none; \}/);
   assert.match(styles, /\.vault-card\.is-compact \.vault-card-next \+ span \{ display: none; \}/);
-  assert.match(styles, /\.vault-page \.vault-card\.is-compact \.vault-card-actions > button:first-child \{ display: none; \}/);
+  assert.doesNotMatch(styles, /\.vault-page \.vault-card\.is-compact \.vault-card-actions > button:first-child \{ display: none; \}/);
+  assert.match(styles, /\.vault-card\.is-compact \.vault-card-actions \{[^}]*gap: 2px;/);
   assert.match(styles, /minmax\(255px,1fr\)/);
   assert.match(styles, /@media \(max-width: 560px\)[\s\S]*?\.vault-card\.is-compact \.vault-card-actions button \{ width: 30px; height: 30px; \}/);
 });
