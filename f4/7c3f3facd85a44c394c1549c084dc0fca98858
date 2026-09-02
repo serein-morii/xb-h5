@@ -1,0 +1,28 @@
+app/systems/otp/otp-vault.css
+  s_ec331693b00d25::t_f5468db27c3968 716,719,726,728
+  s_ec331693b00d25::t_969fb47f14800c 1078-1105
+  s_ec331693b00d25::t_d1814d195fdd63 110,113
+tests/otp-share-grid.test.mjs
+  s_ec331693b00d25::t_969fb47f14800c 1-20
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_ec331693b00d25::t_969fb47f14800c 707-709
+tests/otp-next-code.test.mjs
+  s_ec331693b00d25::t_f5468db27c3968 36-37
+  s_ec331693b00d25::t_d1814d195fdd63 32-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f47c3f3facd85a44c394c1549c084dc0fca98858",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
