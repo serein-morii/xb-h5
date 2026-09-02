@@ -33,6 +33,7 @@ import {
   Code2,
   BookOpen,
   MessageSquareCode,
+  ShieldBan,
   SlidersHorizontal,
 } from "lucide-react";
 import { apiRequest } from "../../../lib/api";
@@ -65,6 +66,7 @@ export type MenuKey =
   | "sysMenus"
   | "sysDictTypes"
   | "sysConfigs"
+  | "sysRiskIps"
   | "sysNotices"
   | "opsOnline"
   | "opsJobs"
@@ -82,7 +84,7 @@ export const ALL_MENU_KEYS: MenuKey[] = [
   "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "products",
   "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks",
   "systemCenter", "operationsCenter", "mobileMenu",
-  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
+  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices",
   "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
   "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
 ];
@@ -252,6 +254,7 @@ export const NAV_ITEMS: Array<{
   { key: "sysMenus", label: "菜单", description: "目录、页面与按钮", icon: MenuIcon },
   { key: "sysDictTypes", label: "字典", description: "字典类型与数据项", icon: BookKey },
   { key: "sysConfigs", label: "参数", description: "系统参数设置", icon: Settings2 },
+  { key: "sysRiskIps", label: "风险 IP", description: "全局来源访问控制", icon: ShieldBan },
   { key: "sysNotices", label: "公告", description: "通知与公告", icon: Bell },
   { key: "opsOnline", label: "在线用户", description: "会话查看与强退", icon: Wifi },
   { key: "opsServer", label: "服务监控", description: "CPU、内存与磁盘", icon: Server },

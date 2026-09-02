@@ -516,7 +516,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   }, [active, mobileMenu.directoryChildren, mobileMenu.parentByChild]);
   const SYSTEM_HUB_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>([
     "systemCenter", "operationsCenter", "mobileMenu",
-    "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
+    "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices",
     "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
     "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
   ]), []);

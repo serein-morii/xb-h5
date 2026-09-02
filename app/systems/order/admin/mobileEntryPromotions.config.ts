@@ -34,7 +34,7 @@ export type MobileEntryPromotionsConfig = {
 };
 
 const SYSTEM_CHILDREN: MenuKey[] = [
-  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices", "mobileMenu",
+  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices", "mobileMenu",
 ];
 
 const OPERATIONS_CHILDREN: MenuKey[] = [

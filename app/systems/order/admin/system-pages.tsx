@@ -21,6 +21,9 @@ const OperationsCenterPage = lazy(() =>
 const MobileMenuSettingsPage = lazy(() =>
   import("./mobile-menu-settings").then((m) => ({ default: m.MobileMenuSettingsPage })),
 );
+const RiskIpAccessPage = lazy(() =>
+  import("./risk-ip-access").then((m) => ({ default: m.RiskIpAccessPage })),
+);
 
 /** sys* 系列 → system-management 的 module key */
 const SYSTEM_MODULE_MAP: Partial<Record<MenuKey, string>> = {
@@ -53,12 +56,13 @@ function Loading() {
   return <div className="home-empty"><LoaderCircle className="spin" size={22} />正在加载模块</div>;
 }
 
-type HubKind = "system" | "operations" | "menuEditor" | "unknown";
+type HubKind = "system" | "operations" | "menuEditor" | "riskIps" | "unknown";
 
 function classify(active: MenuKey): HubKind {
   if (active === "systemCenter" || active in SYSTEM_MODULE_MAP) return "system";
   if (active === "operationsCenter" || active in OPS_VIEW_MAP) return "operations";
   if (active === "mobileMenu") return "menuEditor";
+  if (active === "sysRiskIps") return "riskIps";
   return "unknown";
 }
 
@@ -122,6 +126,13 @@ export function SystemHubPage({
     return (
       <Suspense fallback={<Loading />}>
         <MobileMenuSettingsPage notify={notify} onBack={onExit} backLabel={exitLabel} />
+      </Suspense>
+    );
+  }
+  if (kind === "riskIps") {
+    return (
+      <Suspense fallback={<Loading />}>
+        <RiskIpAccessPage notify={notify} onBack={onExit} backLabel={exitLabel} />
       </Suspense>
     );
   }

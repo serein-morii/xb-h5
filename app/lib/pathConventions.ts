@@ -106,6 +106,7 @@ export const API_PATHS = {
   administration: {
     root: "/administration",
     config: "/administration/config",
+    riskIps: "/administration/risk-ips",
     dictionaryEntries: "/administration/dictionaries/entries",
     dictionaryTypes: "/administration/dictionaries/types",
     mobileMenu: "/administration/mobile-menu",

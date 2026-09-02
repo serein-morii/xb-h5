@@ -68,6 +68,7 @@ export const MENU_CAPABILITIES: Record<MenuKey, string> = {
   sysMenus: "system.menus.view",
   sysDictTypes: "system.dictTypes.view",
   sysConfigs: "system.configs.view",
+  sysRiskIps: "system.configs.view",
   sysNotices: "system.notices.view",
   opsOnline: "operations.online.view",
   opsJobs: "operations.jobs.view",
@@ -83,7 +84,7 @@ export const MENU_CAPABILITIES: Record<MenuKey, string> = {
 };
 
 const SYSTEM_MODULE_KEYS: ReadonlyArray<MenuKey> = [
-  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices", "mobileMenu",
+  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices", "mobileMenu",
 ];
 const OPS_MODULE_KEYS: ReadonlyArray<MenuKey> = [
   "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",

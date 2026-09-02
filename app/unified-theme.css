@@ -16070,3 +16070,175 @@ html.theme-dark .utility-shell {
   .account-passkeys-list article { padding: 8px; }
   .login-secondary-links { flex-wrap: wrap; gap: 5px 8px; }
 }
+
+/* 风险 IP 管理：移动端优先的连续表面，不使用毛玻璃。 */
+.risk-ip-mobile-page { width: min(100%, 680px); }
+.risk-ip-mobile-hero { min-height: 126px; }
+.risk-ip-current-panel {
+  min-width: 0;
+  margin: 12px 0;
+  padding: 12px 13px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--xb-line);
+  border-radius: 14px;
+  background: var(--xb-surface);
+}
+.risk-ip-current-panel > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--xb-accent);
+  background: var(--xb-accent-soft);
+}
+.risk-ip-current-panel > div { min-width: 0; }
+.risk-ip-current-panel small,
+.risk-ip-current-panel strong { display: block; }
+.risk-ip-current-panel small { color: var(--xb-text-secondary); font-size: 9px; }
+.risk-ip-current-panel strong {
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--xb-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.risk-ip-current-panel > button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--xb-line);
+  border-radius: 11px;
+  color: var(--xb-text-secondary);
+  background: var(--xb-surface-muted);
+  cursor: pointer;
+}
+.risk-ip-current-panel > button:active { transform: scale(.97); }
+.risk-ip-mobile-filter {
+  margin-bottom: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+  align-items: end;
+  gap: 9px;
+  border: 1px solid var(--xb-line);
+  border-radius: 14px;
+  background: var(--xb-surface);
+}
+.risk-ip-mobile-filter label { min-width: 0; display: grid; gap: 6px; }
+.risk-ip-mobile-filter label > span { color: var(--xb-text-secondary); font-size: 10px; font-weight: 750; }
+.risk-ip-mobile-filter :is(input, select) {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--xb-line);
+  border-radius: 11px;
+  outline: 0;
+  color: var(--xb-text);
+  background: var(--xb-surface-muted);
+  font: inherit;
+  font-size: 13px;
+}
+.risk-ip-mobile-filter :is(input, select):focus {
+  border-color: var(--xb-accent);
+  box-shadow: 0 0 0 3px var(--xb-accent-soft);
+}
+.risk-ip-mobile-filter .button { min-height: 44px; white-space: nowrap; }
+.risk-ip-mobile-card { padding: 13px; box-shadow: none; }
+.risk-ip-mobile-card .data-card-head { align-items: center; }
+.risk-ip-mobile-card .data-icon { width: 39px; height: 39px; border-radius: 11px; }
+.risk-ip-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.risk-ip-mobile-switch {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 0 9px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--xb-line);
+  border-radius: 11px;
+  color: var(--xb-text-secondary);
+  background: var(--xb-surface-muted);
+  cursor: pointer;
+}
+.risk-ip-mobile-switch > span {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--xb-text-tertiary);
+  transition: background .16s ease;
+}
+.risk-ip-mobile-switch > span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--xb-surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+  transition: transform .16s ease;
+}
+.risk-ip-mobile-switch b { font-size: 10px; white-space: nowrap; }
+.risk-ip-mobile-switch.is-allowed { color: var(--xb-accent); }
+.risk-ip-mobile-switch.is-allowed > span { background: var(--xb-accent); }
+.risk-ip-mobile-switch.is-allowed > span::after { transform: translateX(12px); }
+.risk-ip-mobile-switch.is-blocked { color: var(--state-danger); }
+.risk-ip-mobile-switch:disabled { cursor: not-allowed; opacity: .55; }
+.risk-ip-mobile-switch:focus-visible { outline: 3px solid var(--xb-accent-soft); outline-offset: 2px; }
+.risk-ip-mobile-details {
+  margin-top: 12px;
+  padding-top: 11px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px;
+  gap: 9px 12px;
+  border-top: 1px solid var(--xb-line);
+}
+.risk-ip-mobile-details > div { min-width: 0; display: grid; gap: 4px; }
+.risk-ip-mobile-details .is-wide { grid-column: 1 / -1; }
+.risk-ip-mobile-details span { color: var(--xb-text-secondary); font-size: 9px; }
+.risk-ip-mobile-details b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--xb-text);
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.risk-ip-mobile-error {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--state-danger) 28%, var(--xb-line));
+  border-radius: 14px;
+  background: var(--xb-surface);
+}
+.risk-ip-mobile-error b { font-size: 13px; }
+.risk-ip-mobile-error p { margin: 6px 0 12px; color: var(--xb-text-secondary); font-size: 11px; line-height: 1.5; }
+.risk-ip-mobile-note { margin: 11px 2px 0; color: var(--xb-text-secondary); font-size: 9px; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .risk-ip-mobile-filter { grid-template-columns: minmax(0, 1fr) 118px; }
+  .risk-ip-mobile-filter label:first-child { grid-column: 1 / -1; }
+  .risk-ip-mobile-filter .button { padding-inline: 12px; }
+}
+
+@media (max-width: 350px) {
+  .risk-ip-mobile-filter { grid-template-columns: minmax(0, 1fr); }
+  .risk-ip-mobile-filter label:first-child { grid-column: auto; }
+  .risk-ip-mobile-switch { min-width: 82px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .risk-ip-mobile-switch > span,
+  .risk-ip-mobile-switch > span::after { transition: none; }
+}
