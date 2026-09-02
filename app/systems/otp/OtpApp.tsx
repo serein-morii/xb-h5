@@ -28,7 +28,9 @@ export default function OtpApp() {
     let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!manifest) { manifest = document.createElement("link"); manifest.rel = "manifest"; document.head.appendChild(manifest); }
     manifest.href = "/manifest.webmanifest";
-    if (import.meta.env.PROD && "serviceWorker" in navigator) void navigator.serviceWorker.register("/otp-sw.js");
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" });
+    }
   }, []);
 
   return (

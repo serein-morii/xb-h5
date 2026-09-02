@@ -23,9 +23,9 @@ const quickSteps = [
 ] as const;
 
 const loginWays = [
-  [Mail, "邮箱验证码", "用已绑定邮箱收取 6 位验证码"],
-  [LockKeyhole, "账号密码", "适合自己的设备，密码经加密传输"],
-  [Fingerprint, "Passkey", "用本机指纹、面容或系统 PIN"],
+  [Mail, "邮箱验证码", "已注册邮箱可直接收取 6 位验证码"],
+  [LockKeyhole, "账号密码", "使用账号和密码登录保险库"],
+  [Fingerprint, "Passkey", "用本机指纹、面容或系统 PIN 快速登录"],
 ] as const;
 
 const shareParts = [
@@ -36,12 +36,12 @@ const shareParts = [
 ] as const;
 
 const featureHighlights = [
-  [QrCode, "录入不费劲", "支持单条扫码、图片识别、标准链接和批量迁移二维码"],
-  [Layers3, "多了也清楚", "搜索、分组、收藏和默认紧凑显示适合大量凭据"],
-  [Fingerprint, "验证更顺手", "登录、改密和敏感操作都可使用 Passkey"],
-  [Link2, "分享有边界", "按字段、对象、时间、次数和复制权限控制临时授权"],
-  [Download, "恢复有准备", "加密备份、完整性校验和离线应急覆盖换机与断网"],
-  [Smartphone, "手机优先", "小巧输入、底部反馈和窄布局兼顾单手操作"],
+  [QrCode, "多种录入方式", "支持扫码、图片识别、标准链接和批量迁移二维码"],
+  [Layers3, "整理大量凭据", "使用搜索、分组、收藏和紧凑模式快速定位"],
+  [Fingerprint, "Passkey 验证", "登录、修改密码和敏感操作均可使用 Passkey"],
+  [Link2, "精细授权", "按字段、对象、时间、次数和复制权限控制分享范围"],
+  [Download, "备份与恢复", "通过加密备份、完整性校验和离线副本应对换机与断网"],
+  [Smartphone, "适配手机操作", "输入、反馈和内容布局均针对窄屏进行调整"],
 ] as const;
 
 export default function OtpVaultGuidePage() {
@@ -54,16 +54,15 @@ export default function OtpVaultGuidePage() {
 
     <section className="otp-guide-hero">
       <div>
-        <span className="otp-guide-eyebrow"><BookOpen size={14} />OTP VAULT GUIDE</span>
-        <h1>把验证码和账号，安心收进自己的保险库</h1>
-        <p>无需登录即可阅读。手机和电脑都能跟着完成添加、命名授权、备份恢复和安全检查。</p>
-        <div className="otp-guide-pills"><span>约 5 分钟读完</span><span>公开指南</span><span>手机 / 电脑</span></div>
-        <div className="otp-guide-actions"><a href="#quick-start">从快速开始阅读</a><a href={APP_ROUTES.otp}>登录或注册</a></div>
+        <h1>从添加第一条凭据开始</h1>
+        <p>按实际操作顺序，了解凭据录入、动态口令、临时授权和备份恢复。</p>
+        <div className="otp-guide-summary"><span><Clock3 size={14} />约 5 分钟</span><span><Smartphone size={14} />手机和电脑</span></div>
+        <div className="otp-guide-actions"><a href="#quick-start">开始设置</a><a href={APP_ROUTES.otp}>打开 OTP Vault</a></div>
       </div>
-      <figure className="otp-guide-hero-visual" aria-label="OTP Vault 使用流程图">
-        <div className="otp-guide-vault-mark"><KeyRound size={30} /></div>
-        <div className="otp-guide-route"><span><QrCode size={17} />录入</span><ArrowRight size={15} /><span><Clock3 size={17} />使用</span><ArrowRight size={15} /><span><ShieldCheck size={17} />保护</span></div>
-        <figcaption>凭据全流程都在 OTP Vault 内完成</figcaption>
+      <figure className="otp-guide-hero-visual" aria-label="首次使用建议顺序">
+        <div className="otp-guide-visual-title"><span>建议顺序</span><b>先能用，再做好保护</b></div>
+        <div className="otp-guide-route"><span><QrCode size={17} /><b>录入</b><small>添加凭据</small></span><ArrowRight size={15} /><span><Clock3 size={17} /><b>使用</b><small>复制口令</small></span><ArrowRight size={15} /><span><Download size={17} /><b>备份</b><small>保存副本</small></span></div>
+        <figcaption>需要共享时，再创建有期限的临时授权</figcaption>
       </figure>
     </section>
 
@@ -75,11 +74,11 @@ export default function OtpVaultGuidePage() {
           <header><span><Layers3 size={21} /></span><div><h2>一张图看懂 OTP Vault</h2><p>先安全收进来，再用于登录；需要协作时临时开放，最后用备份兜底。</p></div></header>
           <div className="otp-guide-lifecycle" aria-label="OTP Vault 完整使用流程图">
             <div className="otp-guide-lifecycle-rail">
-              <article><em>01</em><span><QrCode size={19} /></span><div><b>收集凭据</b><small>扫码 · 图片 · 手动 · 批量导入</small></div></article>
+              <article><em>01</em><span><QrCode size={19} /></span><div><b>收集凭据</b><small>扫码、图片、手动或批量导入</small></div></article>
               <ArrowRight size={17} />
               <article><em>02</em><span><ShieldCheck size={19} /></span><div><b>核对保存</b><small>系统、账号、算法与周期</small></div></article>
               <ArrowRight size={17} />
-              <article><em>03</em><span><Clock3 size={19} /></span><div><b>日常使用</b><small>搜索 · 分组 · 复制动态口令</small></div></article>
+              <article><em>03</em><span><Clock3 size={19} /></span><div><b>日常使用</b><small>搜索、分组并复制动态口令</small></div></article>
             </div>
             <div className="otp-guide-lifecycle-branches">
               <section><span><Link2 size={18} /></span><div><b>需要协作</b><p>创建最小权限的限时链接，或直接授权给指定账号。</p></div><small>按需分享</small></section>
@@ -91,9 +90,10 @@ export default function OtpVaultGuidePage() {
         </section>
 
         <section id="quick-start" className="otp-guide-section">
-          <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>第一次使用时，先登录，再按下面四步完成基本配置。</p></div></header>
+          <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>先选择登录方式，再按顺序完成录入、使用和备份。</p></div></header>
           <div className="otp-guide-methods">{loginWays.map(([Icon, title, text]) => <section key={title}><Icon size={18} /><b>{title}</b><p>{text}</p></section>)}</div>
           <ol className="otp-guide-steps">{quickSteps.map(([Icon, title, text], index) => <li key={title}><span>{index + 1}</span><Icon size={20} /><div><b>{title}</b><p>{text}</p></div></li>)}</ol>
+          <div className="otp-guide-copy-block"><b>邮箱还没有注册</b><p>验证码校验完成后，页面会询问是否创建账号。确认后会保留邮箱，并转到注册流程重新获取注册验证码。</p></div>
           <div className="otp-guide-note"><Clock3 size={17} /><p><b>先校准设备时间</b>动态验证码依赖准确时间。请开启系统的自动日期、自动时间和自动时区。“保持登录 15 天”只建议在自己的设备上开启。</p></div>
         </section>
 

@@ -43,6 +43,6 @@ export async function buildMigrationQrs(items: VaultTransferItem[]) {
     ]);
     const data = btoa(String.fromCharCode(...payload)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const uri = `otpauth-migration://offline?data=${encodeURIComponent(data)}`;
-    return { index: batchIndex + 1, total: groups.length, uri, image: await QRCode.toDataURL(uri, { width: 360, margin: 2, errorCorrectionLevel: "M" }) };
+    return { index: batchIndex + 1, total: groups.length, image: await QRCode.toDataURL(uri, { width: 360, margin: 2, errorCorrectionLevel: "M" }) };
   }));
 }

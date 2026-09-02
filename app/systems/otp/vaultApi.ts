@@ -47,7 +47,7 @@ export type VaultCredential = {
   id: number; issuer: string; accountName: string; passwordConfigured: boolean; otpConfigured: boolean;
   password?: string;
 	clientPasswordCiphertext?: string; clientOtpSecretCiphertext?: string; zeroKnowledge?: boolean;
-  currentOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
+  currentOtp?: string; nextOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
   shared?: boolean; shareId?: number; sharedBy?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
@@ -88,7 +88,7 @@ export type ShareStatus = {
 };
 
 export type SharedItem = {
-  issuer: string; accountName?: string; password?: string; otp?: string;
+  issuer: string; accountName?: string; password?: string; otp?: string; nextOtp?: string;
   otpValidUntil?: number; otpPeriodSeconds?: number; loginUrl?: string; note?: string;
 };
 
@@ -107,7 +107,13 @@ export const importLegacyVault = (text: string, ownerUsername = "") => otpApiReq
 export const listVaultRecipients = (keyword: string) => otpApiRequest<{ data: VaultRecipient[] }>(`${vault}/recipients?keyword=${encodeURIComponent(keyword)}`);
 export const getVaultPreferences = () => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`);
 export const saveVaultPreferences = (body: VaultPrefs) => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`, { method: "PUT", body });
-export const exportVaultBackup = () => otpApiRequest<{ data: VaultBackup }>(`${vault}/backup`);
+async function exportWithFreshVerification<T>(path: string) {
+  clearOtpStepUpToken();
+  try { return await otpApiRequest<T>(path); }
+  finally { clearOtpStepUpToken(); }
+}
+export const exportVaultBackup = () => exportWithFreshVerification<{ data: VaultBackup }>(`${vault}/backup`);
+export const exportVaultMigration = () => exportWithFreshVerification<{ data: { items: VaultTransferItem[] } }>(`${vault}/migration`);
 export const previewVaultImport = (items: VaultTransferItem[]) => otpApiRequest<{ data: { total: number; items: Array<{ issuer: string; accountName: string; status: "NEW" | "DUPLICATE" | "CONFLICT" }> } }>(`${vault}/import/preview`, { method: "POST", body: { items } });
 export const commitVaultImport = (items: VaultTransferItem[], replaceExisting: boolean) => otpApiRequest<{ data: { total: number; created: number; updated: number; skipped: number } }>(`${vault}/import`, { method: "POST", body: { items, replaceExisting } });
 export const listVaultActivities = (pageNum = 1) => otpApiRequest<{ rows: VaultActivity[]; total: number }>(`${vault}/activities?pageNum=${pageNum}&pageSize=20`);

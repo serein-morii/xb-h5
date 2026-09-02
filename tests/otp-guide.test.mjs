@@ -37,6 +37,9 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(guide, /设备与回收站/);
   assert.match(guide, /otp-guide-anatomy/);
   assert.match(guide, /otp-guide-methods/);
+  assert.match(guide, /从添加第一条凭据开始/);
+  assert.match(guide, /邮箱还没有注册/);
+  assert.doesNotMatch(guide, /无需登录即可阅读|公开指南/);
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
   assert.doesNotMatch(guide, /dCOxR|W9KKQR/);
   assert.match(styles, /@media \(max-width: 600px\)/);

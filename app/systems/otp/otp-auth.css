@@ -93,6 +93,28 @@
 .otp-auth-card > footer a { display: inline-flex; align-items: center; gap: 5px; color: #5263cf; text-decoration: none; font-weight: 750; }
 .otp-auth-card > footer a:focus-visible { border-radius: 5px; outline: 2px solid currentColor; outline-offset: 3px; }
 html.theme-dark .otp-auth-card > footer a { color: #9eabff; }
+.otp-register-modal-mask { position: fixed; inset: 0; z-index: 1200; padding: 18px; display: grid; place-items: center; background: rgba(10, 16, 32, .46); backdrop-filter: blur(8px); animation: otp-register-mask-in .16s ease-out; }
+.otp-register-modal { position: relative; width: min(390px, 100%); padding: 24px; border: 1px solid rgba(82, 99, 207, .18); border-radius: 22px; background: #fff; color: #27304a; box-shadow: 0 26px 80px rgba(19, 29, 59, .25); animation: otp-register-modal-in .2s ease-out; }
+.otp-register-modal-close { position: absolute; top: 13px; right: 13px; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: #f2f4f9; color: #7a8295; cursor: pointer; }
+.otp-register-modal-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; color: #fff; background: linear-gradient(135deg, #4659c6, #7b89ea); box-shadow: 0 10px 24px rgba(82, 99, 207, .25); }
+.otp-register-modal > div { margin-top: 17px; }
+.otp-register-modal > div > small { color: #6978d5; font-size: 8px; font-weight: 850; letter-spacing: .13em; }
+.otp-register-modal h2 { margin: 5px 0 0; font-size: 20px; }
+.otp-register-modal p { margin: 9px 0 0; color: #727b91; font-size: 11px; line-height: 1.65; }
+.otp-register-modal p b { color: #39466f; overflow-wrap: anywhere; }
+.otp-register-modal footer { margin-top: 22px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 9px; }
+.otp-register-modal footer button { min-height: 42px; border: 1px solid #d9deea; border-radius: 12px; color: #5d6578; background: #fff; font: inherit; font-size: 11px; font-weight: 780; cursor: pointer; }
+.otp-register-modal footer button:last-child { border-color: #5263cf; color: #fff; background: #5263cf; box-shadow: 0 8px 18px rgba(82, 99, 207, .22); }
+.otp-register-modal button:focus-visible { outline: 2px solid #6575da; outline-offset: 2px; }
+html.theme-dark .otp-register-modal-mask { background: rgba(2, 6, 14, .7); }
+html.theme-dark .otp-register-modal { border-color: #38436a; background: #171e2c; color: #edf0ff; box-shadow: 0 28px 80px rgba(0, 0, 0, .5); }
+html.theme-dark .otp-register-modal-close { background: #222b3d; color: #a8b0c2; }
+html.theme-dark .otp-register-modal p { color: #a0a9bd; }
+html.theme-dark .otp-register-modal p b { color: #dce1ff; }
+html.theme-dark .otp-register-modal footer button { border-color: #39445c; color: #b7bfd0; background: #20293a; }
+html.theme-dark .otp-register-modal footer button:last-child { border-color: #7181ed; color: #fff; background: #5a6ad8; }
+@keyframes otp-register-mask-in { from { opacity: 0; } }
+@keyframes otp-register-modal-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 
 @media (max-width: 560px) {
   .otp-auth-page { padding: 0; display: block; }
@@ -226,7 +248,7 @@ html.theme-dark { @media (max-width: 560px) {
 }
 }
 
-.otp-long-session { position: relative; min-height: 43px; padding: 5px 3px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.otp-long-session { position: relative; width: 100%; min-height: 43px; padding: 5px 3px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; cursor: pointer; }
 .otp-long-session > input { position: absolute; opacity: 0; pointer-events: none; }
 .otp-long-session > i { position: relative; width: 40px; height: 23px; flex: none; border-radius: 999px; background: #cbd0dc; transition: .18s; }
 .otp-long-session > i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(21, 29, 50, .2); transition: .18s; }
