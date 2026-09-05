@@ -47,6 +47,16 @@ export function applyThemePreference(preference: ThemePreference = readThemePref
   return resolved;
 }
 
+export function getThemePreference(): ThemePreference {
+  try {
+    const stored = window.localStorage.getItem(THEME_CACHE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+  } catch {
+    // 读取失败按跟随系统处理
+  }
+  return "system";
+}
+
 export function setThemePreference(preference: ThemePreference): ResolvedTheme {
   try {
     window.localStorage.setItem(THEME_CACHE_KEY, preference);

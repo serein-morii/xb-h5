@@ -3,7 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { apiRequest, clearStoredToken, getStoredToken, setStoredToken } from "../../lib/api";
 import { AppStartup } from "../../components/AppStartup";
 import { getStartupConfig } from "../../lib/startup";
-import { setThemePreference } from "../../lib/theme";
+import { getThemePreference, setThemePreference } from "../../lib/theme";
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest } from "../order/admin/access";
 import LoginScreen from "./LoginScreen";
@@ -76,7 +76,7 @@ export default function SystemCenterApp() {
   useEffect(() => {
     if (!ready) return;
     // 系统中心独立入口：进入时按系统偏好应用明暗主题，否则模块的暗色样式不会生效
-    setThemePreference("system");
+    setThemePreference(getThemePreference());
     const timer = window.setTimeout(() => setShowSplash(false), getStartupConfig("order").minimumMs);
     return () => window.clearTimeout(timer);
   }, [ready]);
