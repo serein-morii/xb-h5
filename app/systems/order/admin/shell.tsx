@@ -13,7 +13,7 @@ import {
   Copy,
   X,
 } from "lucide-react";
-import { API_PATHS } from "../../../lib/pathConventions";
+import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   apiRequest,
@@ -24,6 +24,7 @@ import {
 import ThemeSettings from "../../../components/ThemeSettings";
 import { AppStartup } from "../../../components/AppStartup";
 import { PasskeyManager, type PasskeyRequest } from "../../../components/PasskeyManager";
+import NotificationCenter, { MessagePopupHost, NotificationBellButton, useMessageUnread, type MessageRequest } from "../../../components/NotificationCenter";
 import { getStartupConfig } from "../../../lib/startup";
 import {
   OnboardingOverlay,
@@ -81,6 +82,14 @@ const LogisticsPage = lazy(() => import("./logistics").then((module) => ({ defau
 const OrdersPage = lazy(() => import("./orders").then((module) => ({ default: module.OrdersPage })));
 const ProductsPage = lazy(() => import("./products"));
 const SystemHubPage = lazy(() => import("./system-pages").then((module) => ({ default: module.SystemHubPage })));
+
+/** 系统管理/运行中心已拆到独立子系统：点击旧菜单项时无缝跳转 /system。 */
+function SystemCenterRedirect() {
+  useEffect(() => {
+    window.location.assign(APP_ROUTES.systemCenter);
+  }, []);
+  return <div className="module-page"><div className="home-empty"><LoaderCircle className="spin" size={22} />正在前往系统中心…</div></div>;
+}
 
 export function TrackingPage() {
   const [servicesConfig, setServicesConfig] = useState(getTrackingServices);
@@ -337,6 +346,9 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   // 登录后若邮箱为空，自动弹"绑定邮箱"页（不再用 Toast 提示）。
   // 用户可关闭；下次登录仍会再弹，直到真正去绑定邮箱。
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
+  // 通知中心：铃铛 + 弹层，站内信分类展示（OTP 安全 / 系统通知）
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unread = useMessageUnread(apiRequest as MessageRequest);
   // 邮箱与系统引导互斥：首次登录且没绑邮箱时，先弹邮箱；引导等邮箱弹窗关闭后再触发。
   // 邮箱关掉/绑好 → 解除门控 → 引导才出来。
   const [tourGatedByEmail, setTourGatedByEmail] = useState(false);
@@ -514,12 +526,15 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     setActiveDirectory(null);
     setActive("home");
   }, [active, mobileMenu.directoryChildren, mobileMenu.parentByChild]);
-  const SYSTEM_HUB_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>([
-    "systemCenter", "operationsCenter", "mobileMenu",
-    "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices",
+  // 系统中心已拆分为独立子系统（/system）：sys*/ops*/systemCenter/operationsCenter/sysRiskIps
+  // 一律跳转过去；mobileMenu 是订单工作台自己的菜单布局设置，保留在本系统内。
+  const SYSTEM_CENTER_REDIRECT_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>([
+    "systemCenter", "operationsCenter", "sysRiskIps",
+    "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysNotices",
     "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
     "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
   ]), []);
+  const SYSTEM_HUB_KEYS: ReadonlySet<MenuKey> = useMemo(() => new Set<MenuKey>(["mobileMenu"]), []);
   const activeDirectoryChildren = activeDirectory ? mobileMenu.directoryChildren[activeDirectory] : undefined;
   const activeDirectoryItem = findDirectoryItem(activeDirectory);
   const parentDirectoryKey = !activeDirectoryChildren?.length ? mobileMenu.parentByChild[visibleActive] : undefined;
@@ -528,7 +543,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   // 系统/运行中心子页自带返回；其余挂在目录下的业务页由 shell 统一补返回条。
   const showShellDirectoryBack = !!parentDirectoryKey && !SYSTEM_HUB_KEYS.has(visibleActive);
   const renderPage = activeDirectoryChildren?.length && activeDirectoryItem ? <MenuDirectoryPage directory={activeDirectoryItem} children={activeDirectoryChildren} onSelect={navigate} onOpenAll={() => { setActiveDirectory(null); setMenuOpen(true); }} />
-    : visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} />
+    : visibleActive === "home" ? <DashboardPage username={username} userInfo={userInfo} onNavigate={navigate} notify={notify} bellSlot={<NotificationBellButton count={unread.count} onClick={() => setNotifOpen(true)} label="订单通知中心" />} />
     : visibleActive === "orders" ? <OrdersPage notify={notify} onNavigate={navigate} />
     : visibleActive === "orderEntry" ? <AdminOrderEntry username={username} notify={notify} />
     : visibleActive === "batchOrder" ? <BatchOrderEntry />
@@ -538,6 +553,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : visibleActive === "tracking" ? <TrackingPage />
     : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
     : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
+    : SYSTEM_CENTER_REDIRECT_KEYS.has(visibleActive) ? <SystemCenterRedirect />
     : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToParentOrHome} exitLabel={exitLabel} />
     : <CrudModule config={configs[visibleActive as keyof typeof configs]} dictionaries={dictionaries} notify={notify} />;
 
@@ -545,6 +561,8 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
 
   return <AccessContext.Provider value={access}><DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
+      <MessagePopupHost request={apiRequest as MessageRequest} />
+      <NotificationCenter request={apiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} />
       <main className="product-main" data-onboard={`page-${active}`}>
         {showShellDirectoryBack ? (
           <div className="product-main-back-row">

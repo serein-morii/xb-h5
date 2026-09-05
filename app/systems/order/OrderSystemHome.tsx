@@ -1,4 +1,4 @@
-import { ArrowRight, Boxes, FileSearch, Link2, MonitorCog, ShoppingBag, Store } from "lucide-react";
+import { ArrowRight, Boxes, FileSearch, Link2, MonitorCog, Settings2, ShoppingBag, Store } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import "../system-home.css";
 
@@ -8,7 +8,8 @@ const entries = [
   { href: APP_ROUTES.toolStoreQuery, title: "专属查询", desc: "按店铺隔离查询订单。", icon: Store },
   { href: APP_ROUTES.toolOrderLink, title: "短链生成", desc: "生成买家专属下单链接。", icon: Link2 },
   { href: APP_ROUTES.tools, title: "公开工具", desc: "运费计算、运费对比等工具。", icon: Boxes },
-  { href: APP_ROUTES.manage, title: "管理后台", desc: "订单、店铺、账单和系统配置。", icon: MonitorCog },
+  { href: APP_ROUTES.manage, title: "管理后台", desc: "订单、店铺、账单与物流管理。", icon: MonitorCog },
+  { href: APP_ROUTES.systemCenter, title: "系统中心", desc: "账号权限、系统配置与运行监控，独立于各业务系统。", icon: Settings2 },
 ];
 
 export default function OrderSystemHome() {

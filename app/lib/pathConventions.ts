@@ -23,6 +23,7 @@ export const APP_ROUTES = {
   beadStudio: "/bead-studio",
   otp: "/otp",
   otpGuide: "/otp/guide",
+  systemCenter: "/system",
 } as const;
 
 export const LOCAL_ROUTES = [
@@ -50,6 +51,7 @@ export const LOCAL_ROUTES = [
   APP_ROUTES.beadStudio,
   APP_ROUTES.otp,
   APP_ROUTES.otpGuide,
+  APP_ROUTES.systemCenter,
 ];
 
 export const API_PATHS = {
@@ -119,6 +121,12 @@ export const API_PATHS = {
     vault: "/otp/vault",
     vaultAccount: "/otp/vault/account",
     share: "/otp/share",
+  },
+  message: {
+    root: "/message",
+    unreadCount: "/message/unread-count",
+    readAll: "/message/read-all",
+    broadcast: "/message/broadcast",
   },
   operations: {
     cache: "/operations/cache",

@@ -1,0 +1,266 @@
+/* ============================================================
+   系统中心 · 企业级控制台
+   设计令牌统一收口：侧边导航（深色）+ 顶栏 + 内容卡片。
+   内嵌模块（系统管理 / 运行中心 / 风险 IP / 站内信 / 账号恢复）
+   通过 .sc-content 作用域覆盖，统一到同一套视觉语言。
+   ============================================================ */
+
+.sc-root {
+  --sc-sidebar-w: 234px;
+  --sc-bg: #f2f4f8;
+  --sc-surface: #ffffff;
+  --sc-line: #e4e8f0;
+  --sc-text: #1c2434;
+  --sc-muted: #69738a;
+  --sc-accent: #4f63d2;
+  --sc-accent-soft: rgba(79, 99, 210, 0.1);
+  --sc-sidebar-bg: #151b2b;
+  --sc-sidebar-line: rgba(255, 255, 255, 0.08);
+  --sc-sidebar-text: #a6afc6;
+  --sc-radius: 14px;
+
+  min-height: 100vh;
+  display: flex;
+  background: var(--sc-bg);
+  color: var(--sc-text);
+}
+
+/* ---------- 侧边导航 ---------- */
+.sc-sidebar {
+  position: sticky; top: 0;
+  width: var(--sc-sidebar-w);
+  height: 100vh;
+  flex: none;
+  display: flex; flex-direction: column;
+  background: var(--sc-sidebar-bg);
+  z-index: 60;
+}
+.sc-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--sc-sidebar-line);
+}
+.sc-brand-mark {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #5d6fe0, #3b4bb8);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(59, 75, 184, 0.45);
+}
+.sc-brand b { display: block; color: #fff; font-size: 14.5px; letter-spacing: 0.02em; }
+.sc-brand small { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.38); font-size: 8.5px; font-weight: 700; letter-spacing: 0.16em; }
+.sc-sidebar-close { display: none; margin-left: auto; border: 0; background: transparent; color: var(--sc-sidebar-text); cursor: pointer; }
+
+.sc-nav { flex: 1; overflow-y: auto; padding: 12px 10px 16px; }
+.sc-nav section + section { margin-top: 14px; }
+.sc-nav-title {
+  margin: 0 0 5px; padding: 0 10px;
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255, 255, 255, 0.32); font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+}
+.sc-nav-title em {
+  font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em;
+  color: #f0c36c; background: rgba(240, 195, 108, 0.14);
+  border-radius: 999px; padding: 1px 6px;
+}
+.sc-nav button {
+  width: 100%; min-height: 37px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 10px; margin-bottom: 2px;
+  border: 0; border-radius: 9px; background: transparent;
+  color: var(--sc-sidebar-text); font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; text-align: left;
+  position: relative;
+  transition: background 0.14s, color 0.14s;
+}
+.sc-nav button:hover { background: rgba(255, 255, 255, 0.06); color: #e8ebf5; }
+.sc-nav button.is-active { background: var(--sc-accent); color: #fff; font-weight: 600; box-shadow: 0 6px 16px rgba(59, 75, 184, 0.4); }
+.sc-nav button svg { flex: none; opacity: 0.85; }
+.sc-nav button.is-active svg { opacity: 1; }
+
+.sc-sidebar-foot {
+  padding: 12px 10px 14px;
+  border-top: 1px solid var(--sc-sidebar-line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sc-foot-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--sc-sidebar-text);
+  font: inherit; font-size: 12.5px; cursor: pointer; text-decoration: none;
+  transition: background 0.14s, color 0.14s;
+}
+.sc-foot-link:hover { background: rgba(255, 255, 255, 0.06); color: #e8ebf5; }
+.sc-logout:hover { color: #ff8f9f; }
+
+/* ---------- 主列：顶栏 + 内容 ---------- */
+.sc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.sc-topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 26px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--sc-line);
+}
+.sc-hamburger { display: none; border: 1px solid var(--sc-line); background: #fff; border-radius: 9px; padding: 7px; cursor: pointer; color: var(--sc-text); }
+.sc-topbar-title { flex: 1; min-width: 0; }
+.sc-topbar-title h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+.sc-topbar-title p { margin: 2px 0 0; font-size: 11.5px; color: var(--sc-muted); }
+.sc-topbar-user { display: flex; align-items: center; gap: 9px; flex: none; }
+.sc-topbar-user b { display: block; font-size: 12.5px; }
+.sc-topbar-user small { display: block; margin-top: 1px; color: var(--sc-muted); font-size: 10.5px; }
+.sc-avatar {
+  width: 33px; height: 33px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #5d6fe0, #3b4bb8);
+  color: #fff; font-size: 13px; font-weight: 700;
+}
+
+.sc-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 26px 46px;
+}
+.sc-loading {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 80px 16px; color: var(--sc-muted); font-size: 13.5px;
+}
+
+/* ---------- 内嵌模块统一：作用域覆盖 ---------- */
+
+/* 页头：压平成企业风格的信息条 */
+.sc-content .module-hero,
+.sc-content .compact-hero {
+  min-height: 0;
+  padding: 16px 20px;
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius);
+  background: var(--sc-surface);
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
+  overflow: visible;
+}
+.sc-content .module-hero::after { display: none; }
+.sc-content .module-hero h1 { margin: 4px 0 3px; font-size: 17px; letter-spacing: -0.01em; }
+.sc-content .module-hero p { margin: 0; font-size: 12px; color: var(--sc-muted); }
+.sc-content .module-hero .eyebrow { font-size: 9px; letter-spacing: 0.16em; color: var(--sc-accent); font-weight: 800; }
+.sc-content .hero-tool-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: var(--sc-accent-soft); color: var(--sc-accent);
+  box-shadow: none;
+}
+.sc-content .module-hero .button,
+.sc-content .button-primary { box-shadow: none; }
+
+/* 功能宫格 */
+.sc-content .menu-groups { gap: 16px; }
+.sc-content .menu-group { gap: 10px; }
+.sc-content .menu-group-title b { font-size: 12.5px; color: var(--sc-text); }
+.sc-content .menu-group-title small { color: var(--sc-muted); font-size: 10px; }
+.sc-content .menu-grid { gap: 9px; }
+.sc-content .menu-grid button {
+  border: 1px solid var(--sc-line);
+  border-radius: 12px;
+  background: var(--sc-surface);
+  box-shadow: none;
+  transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+.sc-content .menu-grid button:hover {
+  border-color: rgba(79, 99, 210, 0.4);
+  box-shadow: 0 6px 18px rgba(23, 32, 51, 0.08);
+  transform: translateY(-1px);
+}
+.sc-content .menu-grid button b { color: var(--sc-text); }
+.sc-content .menu-grid button small { color: var(--sc-muted); }
+
+/* 通用卡片（站内信 / 账号恢复） */
+.sc-content .sysbroadcast-card {
+  border: 1px solid var(--sc-line);
+  border-radius: var(--sc-radius);
+  background: var(--sc-surface);
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
+  padding: 18px 20px;
+}
+.sc-content .sysbroadcast-card input,
+.sc-content .sysbroadcast-card select,
+.sc-content .sysbroadcast-card textarea { border-color: var(--sc-line); border-radius: 10px; }
+.sc-content .sysbroadcast-card input:focus,
+.sc-content .sysbroadcast-card select:focus,
+.sc-content .sysbroadcast-card textarea:focus { border-color: var(--sc-accent); box-shadow: 0 0 0 3px var(--sc-accent-soft); }
+.sc-content .sysbroadcast-send {
+  background: var(--sc-accent); box-shadow: 0 4px 12px rgba(79, 99, 210, 0.3);
+  border-radius: 10px;
+}
+.sc-content .sysbroadcast-send:hover { background: #4356c4; }
+.sc-content .sysbroadcast-preview-toggle { border-color: var(--sc-line); border-radius: 10px; }
+.sc-content .sysbroadcast-preview-toggle.is-active { background: var(--sc-text); border-color: var(--sc-text); }
+.sc-content .sysbroadcast-preview { background: #f7f8fc; border-color: rgba(79, 99, 210, 0.3); border-radius: 11px; }
+.sc-content .sysbroadcast-records article { border-top-color: var(--sc-line); }
+
+/* ---------- 权限兜底页 ---------- */
+.sc-denied {
+  margin: 14vh auto 0; max-width: 420px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: var(--sc-muted);
+}
+.sc-denied svg { color: #b6bcc9; }
+.sc-denied h2 { margin: 0; font-size: 18px; color: var(--sc-text); }
+.sc-denied p { margin: 0; font-size: 13px; line-height: 1.6; }
+.sc-denied-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.sc-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--sc-line); background: var(--sc-surface); color: var(--sc-text);
+  border-radius: 10px; padding: 8px 14px; font: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+}
+.sc-ghost:hover { border-color: rgba(79, 99, 210, 0.45); color: var(--sc-accent); }
+
+/* ---------- 移动端：抽屉侧边栏 ---------- */
+.sc-scrim { display: none; }
+
+@media (max-width: 960px) {
+  .sc-sidebar {
+    position: fixed; inset: 0 auto 0 0;
+    transform: translateX(-102%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 60px rgba(9, 14, 28, 0.5);
+  }
+  .sc-sidebar.is-open { transform: translateX(0); }
+  .sc-sidebar-close { display: grid; place-items: center; }
+  .sc-scrim {
+    display: block; position: fixed; inset: 0; z-index: 55;
+    background: rgba(13, 18, 30, 0.5);
+    animation: sc-fade 0.15s ease;
+  }
+  .sc-hamburger { display: grid; place-items: center; }
+  .sc-topbar { padding: 10px 14px; }
+  .sc-topbar-title p { display: none; }
+  .sc-topbar-user div { display: none; }
+  .sc-content { padding: 14px 12px 40px; }
+}
+@keyframes sc-fade { from { opacity: 0; } }
+
+/* ---------- 暗色主题跟随 ---------- */
+@media (prefers-color-scheme: dark) {
+  .sc-root:not(.sc-force-light) {
+    --sc-bg: #10151f;
+    --sc-surface: #171e2c;
+    --sc-line: rgba(225, 231, 248, 0.09);
+    --sc-text: #e8ebf5;
+    --sc-muted: #8b93a5;
+    --sc-sidebar-bg: #0c101a;
+  }
+  .sc-topbar { background: rgba(23, 30, 44, 0.86); }
+}
+html.theme-dark .sc-root {
+  --sc-bg: #10151f;
+  --sc-surface: #171e2c;
+  --sc-line: rgba(225, 231, 248, 0.09);
+  --sc-text: #e8ebf5;
+  --sc-muted: #8b93a5;
+  --sc-sidebar-bg: #0c101a;
+}
+html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }

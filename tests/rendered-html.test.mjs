@@ -39,10 +39,11 @@ test("super admin bypasses capability checks and shell guards cached pages", asy
 });
 
 test("mobile menu hierarchy stays two levels and exposes directory children", () => {
+  // 系统管理/运行中心拆到独立 /system 子系统后，默认层级为空（一级平铺），
+  // 两级目录能力仍保留给后台自定义配置。
   const hierarchy = resolveMobileMenuHierarchy(DEFAULT_MOBILE_ENTRY_PROMOTIONS);
-  assert.equal(hierarchy.parentOf("mobileMenu"), "systemCenter");
-  assert.ok(hierarchy.childrenOf("systemCenter").includes("sysUsers"));
-  assert.ok(hierarchy.childrenOf("systemCenter").includes("mobileMenu"));
+  assert.equal(hierarchy.parentOf("mobileMenu"), undefined);
+  assert.deepEqual(hierarchy.childrenOf("systemCenter"), []);
 
   const normalized = normalizeMobileMenuHierarchy([
     { key: "sysUsers", parentKey: "systemCenter" },
@@ -287,7 +288,11 @@ test("builds a self-contained static SPA for Nginx", async () => {
 });
 
 test("keeps every public route in the client-side route table", async () => {
-  const app = await source("app/App.tsx");
+  // 路径集中在 pathConventions（APP_ROUTES），标题分散在各系统 routes.tsx
+  const [app, pathConventions] = await Promise.all([
+    source("app/App.tsx"),
+    source("app/lib/pathConventions.ts"),
+  ]);
   const routes = [
     ["/", "喜八移动订单管理"],
     ["/order", "订单查询｜喜八"],
@@ -301,14 +306,14 @@ test("keeps every public route in the client-side route table", async () => {
     ["/tools/freight-compare", "运费对比｜喜八Tools"],
   ];
 
+  const routeTable = app + pathConventions;
   for (const [pathname, title] of routes) {
-    assert.match(app, new RegExp(`"${pathname.replaceAll("/", "\\/")}"`));
-    assert.match(app, new RegExp(title));
+    assert.match(routeTable, new RegExp(`"${pathname.replaceAll("/", "\\/")}"`));
+    assert.match(routeTable, new RegExp(title));
   }
-  assert.match(app, /ToolsLayout/);
   assert.match(app, /lazy\(/);
   assert.match(app, /Suspense/);
-  assert.match(app, /normalizePath/);
+  assert.match(app, /resolveSubsystemPath/);
   assert.match(app, /window\.location\.pathname/);
 });
 
@@ -323,6 +328,8 @@ test("contains all order module entries and authentication endpoints", async () 
     "app/systems/order/admin/crud.tsx",
     "app/systems/order/admin/orderCopyMenu.config.ts",
     "app/components/SliderCaptcha.tsx",
+    // API 路径常量已收敛到 pathConventions
+    "app/lib/pathConventions.ts",
   );
   const api = await source("app/lib/api.ts");
 

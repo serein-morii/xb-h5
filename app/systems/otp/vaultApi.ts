@@ -5,9 +5,23 @@ const OTP_TOKEN_KEY = "otp-vault-token";
 const OTP_STEP_UP_KEY = "otp-vault-step-up";
 type ApiOptions = NonNullable<Parameters<typeof apiRequest>[1]>;
 
-export const getOtpToken = () => localStorage.getItem(OTP_TOKEN_KEY) || "";
-export const setOtpToken = (token: string) => localStorage.setItem(OTP_TOKEN_KEY, token);
-export const clearOtpToken = () => localStorage.removeItem(OTP_TOKEN_KEY);
+// 登录 token 存 localStorage 以支持「保持登录 15 天」：关闭浏览器后依然有效。
+// step-up 授权仍存 sessionStorage（短时敏感，关闭标签页即失效）。
+export const getOtpToken = () => {
+  const stored = localStorage.getItem(OTP_TOKEN_KEY) || sessionStorage.getItem(OTP_TOKEN_KEY) || "";
+  // 兼容迁移期写进 sessionStorage 的 token：读出后归位 localStorage
+  if (stored && !localStorage.getItem(OTP_TOKEN_KEY)) localStorage.setItem(OTP_TOKEN_KEY, stored);
+  if (stored) sessionStorage.removeItem(OTP_TOKEN_KEY);
+  return stored;
+};
+export const setOtpToken = (token: string) => {
+  localStorage.setItem(OTP_TOKEN_KEY, token);
+  sessionStorage.removeItem(OTP_TOKEN_KEY);
+};
+export const clearOtpToken = () => {
+  localStorage.removeItem(OTP_TOKEN_KEY);
+  sessionStorage.removeItem(OTP_TOKEN_KEY);
+};
 export const getOtpStepUpToken = () => sessionStorage.getItem(OTP_STEP_UP_KEY) || "";
 export const setOtpStepUpToken = (token: string) => sessionStorage.setItem(OTP_STEP_UP_KEY, token);
 export const clearOtpStepUpToken = () => sessionStorage.removeItem(OTP_STEP_UP_KEY);
@@ -71,7 +85,7 @@ export type VaultRecipient = {
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
   autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; theme?: "light" | "dark" | "system";
-  concealOtp?: boolean; listSort?: string;
+  concealOtp?: boolean; listSort?: string; defaultFavorites?: boolean;
   zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
 };
@@ -95,8 +109,12 @@ export type SharedItem = {
 
 const { vault, vaultAccount, share } = API_PATHS.otp;
 
+export type EmailCodePolicy = { expiresIn: number; resendAfter: number };
+
 export const listVaultCredentials = () => otpApiRequest<{ data: VaultCredential[] }>(`${vault}/credentials`);
-export const getVaultCredential = (id: number) => otpApiRequest<{ data: VaultCredential }>(`${vault}/credentials/${id}`);
+/** 共享凭据走显式语义路由；负数 ID 兼容旧数据不再使用。 */
+export const getVaultCredential = (id: number) =>
+  otpApiRequest<{ data: VaultCredential }>(id < 0 ? `${vault}/shared/${-id}` : `${vault}/credentials/${id}`);
 export const nextVaultHotp = (id: number) => otpApiRequest<{ data: VaultCredential }>(`${vault}/credentials/${id}/hotp/next`, { method: "POST" });
 export const saveVaultCredential = (id: number | null, body: Record<string, unknown>) => otpApiRequest<{ data: VaultCredential }>(id ? `${vault}/credentials/${id}` : `${vault}/credentials`, { method: id ? "PUT" : "POST", body });
 export const syncVaultCredentialShares = (id: number) => otpApiRequest<{ data: { synced: number } }>(`${vault}/credentials/${id}/sync-shares`, { method: "POST" });
@@ -126,6 +144,8 @@ export const updateVaultDevice = (deviceKey: string, body: { displayName?: strin
 export const verifyVaultSecurity = (body: { password?: string; emailCode?: string }) => otpApiRequest<{ data: { token: string; expiresIn: number; keyId: string } }>(`${vaultAccount}/security/verify`, { method: "POST", body });
 export const getVaultStepUpPasskeyOptions = () => otpApiRequest<{ data: { requestId: string; publicKey: Record<string, unknown> } }>(`${vaultAccount}/security/passkey/options`, { method: "POST" });
 export const finishVaultStepUpPasskey = (requestId: string, credential: Record<string, unknown>) => otpApiRequest<{ data: { token: string; expiresIn: number; keyId: string } }>(`${vaultAccount}/security/passkey/finish`, { method: "POST", body: { requestId, credential } });
+/** 自助注销账号：不可逆。需先通过 Step-Up；缺失时后端返回 428 由请求封装自动补验证。 */
+export const deleteVaultAccount = () => otpApiRequest(`${vaultAccount}`, { method: "DELETE" });
 export const lockVaultSecurity = () => otpApiRequest(`${vaultAccount}/security/lock`, { method: "POST" });
 export const getVaultSecurityStatus = () => otpApiRequest<{ data: VaultSecurityStatus }>(`${vaultAccount}/security/status`);
 export const rotateVaultKey = () => otpApiRequest<{ data: { credentials: number; shares: number; shareItems: number; keyId: string } }>(`${vaultAccount}/security/key-rotation`, { method: "POST" });

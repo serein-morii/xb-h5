@@ -57,8 +57,12 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
     setEmailSending(true); setMessage("");
     try {
-      await sendEmailCode(value, type);
-      setEmail(value); setCountdown(60); setMessage(`验证码已发送，请在 5 分钟内完成${type === "otp-login" ? "登录" : "注册"}`);
+      const result = await sendEmailCode(value, type);
+      // 有效期与重发间隔以后端下发的策略为准，避免双写漂移
+      const expiresIn = Number((result as { expiresIn?: number }).expiresIn || 300);
+      const resendAfter = Number((result as { resendAfter?: number }).resendAfter || 60);
+      setEmail(value); setCountdown(resendAfter);
+      setMessage(`验证码已发送，请在 ${Math.round(expiresIn / 60)} 分钟内完成${type === "otp-login" ? "登录" : "注册"}`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "验证码发送失败"); }
     finally { setEmailSending(false); }
   }

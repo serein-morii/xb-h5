@@ -179,8 +179,10 @@ export default function VaultAccountSetup({ initialUsername, initialNickname = "
     if (email && value === email.trim().toLowerCase()) return setMessage("该邮箱已是当前账号的邮箱");
     setEmailSending(true); setMessage("");
     try {
-      await sendEmailCode(value, "bind");
-      setCountdown(60); setMessage("验证码已发送到新邮箱，请在 5 分钟内完成验证");
+      const result = await sendEmailCode(value, "bind") as { expiresIn?: number; resendAfter?: number };
+      // 倒计时与有效期跟随后端下发策略
+      setCountdown(Number(result.resendAfter || 60));
+      setMessage(`验证码已发送到新邮箱，请在 ${Math.round(Number(result.expiresIn || 300) / 60)} 分钟内完成验证`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "验证码发送失败"); }
     finally { setEmailSending(false); }
   }
@@ -206,8 +208,9 @@ export default function VaultAccountSetup({ initialUsername, initialNickname = "
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("当前账号未绑定可用邮箱，请改用原密码或 Passkey 验证");
     setEmailSending(true); setMessage("");
     try {
-      await sendEmailCode(value, "otp-change");
-      setCountdown(60); setMessage("验证码已发送，请在 5 分钟内完成验证");
+      const result = await sendEmailCode(value, "otp-change") as { expiresIn?: number; resendAfter?: number };
+      setCountdown(Number(result.resendAfter || 60));
+      setMessage(`验证码已发送，请在 ${Math.round(Number(result.expiresIn || 300) / 60)} 分钟内完成验证`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "验证码发送失败"); }
     finally { setEmailSending(false); }
   }

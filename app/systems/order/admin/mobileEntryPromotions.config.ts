@@ -1,4 +1,5 @@
-import { API_PATHS } from "../../../lib/pathConventions";
+// Node 直接裸跑测试（--test）时 ESM 需要显式扩展名；Vite 两种写法都能解析
+import { API_PATHS } from "../../../lib/pathConventions.ts";
 /**
  * 移动菜单两级目录配置。
  *
@@ -33,21 +34,13 @@ export type MobileEntryPromotionsConfig = {
   directories: MobileMenuCustomDirectory[];
 };
 
-const SYSTEM_CHILDREN: MenuKey[] = [
-  "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices", "mobileMenu",
-];
-
-const OPERATIONS_CHILDREN: MenuKey[] = [
-  "opsOnline", "opsJobs", "opsJobLogs", "opsOperLogs", "opsLoginLogs",
-  "opsServer", "opsCache", "opsDruid", "opsGenerator", "opsSwagger", "opsMessages",
-];
-
+/**
+ * 默认不再有固定父子目录：系统管理/运行中心已拆分为独立的「系统中心」子系统，
+ * 订单工作台的菜单保持一级平铺；后台配置仍可自定义两级目录（directories + entries）。
+ */
 export const DEFAULT_MOBILE_ENTRY_PROMOTIONS: MobileEntryPromotionsConfig = {
   version: 3,
-  entries: [
-    ...SYSTEM_CHILDREN.map((key) => ({ key, parentKey: "systemCenter" as MenuKey })),
-    ...OPERATIONS_CHILDREN.map((key) => ({ key, parentKey: "operationsCenter" as MenuKey })),
-  ],
+  entries: [],
   directories: [],
 };
 

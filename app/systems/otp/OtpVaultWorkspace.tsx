@@ -1,13 +1,14 @@
-import { ArrowUpDown, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, User, X } from "lucide-react";
+import { ArrowUpDown, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, User, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	createVaultShare, deleteVaultCredential, deleteVaultShare, getVaultCredential, getVaultShare, importLegacyVault, listVaultCredentials, listVaultShares,
-	listVaultRecipients, getVaultPreferences, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
-	nextVaultHotp, clearOtpStepUpToken, updateVaultShare,
+	listVaultRecipients, getVaultPreferences, otpApiRequest, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
+	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
 import VaultSecurityCenter from "./VaultSecurityCenter";
 import VaultStepUpDialog from "./VaultStepUpDialog";
+import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode } from "./vaultCrypto";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
@@ -21,8 +22,8 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "logoutConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
-type VaultView = "all" | "favorite" | "shares" | "security" | "settings";
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
+type VaultView = "all" | "shares" | "security" | "settings";
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
 const LAST_USED_KEY = "otp-vault-last-used";
@@ -62,7 +63,7 @@ function canUseSystemShare() {
   return typeof navigator.share === "function" && window.matchMedia("(max-width: 820px), (pointer: coarse) and (hover: none)").matches;
 }
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
-const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name" };
+const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false };
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
 
@@ -269,7 +270,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	const [recipientLoading, setRecipientLoading] = useState(false);
 	const [created, setCreated] = useState<{ name?: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
+  // 通知中心：OTP 安全审查通知（分享被打开、验证失败等）与系统通知，分类展示
+  const [notifOpen, setNotifOpen] = useState(false);
+  const unread = useMessageUnread(otpApiRequest as MessageRequest);
   const [revealedOtp, setRevealedOtp] = useState<number | null>(null);
+  // 凭据页内「全部 / 收藏」切换；初始值跟随「我的」里的 defaultFavorites 偏好
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // 注销账号多步确认：warn（后果告知）→ confirm（输入账号名）→ 428 身份验证 → 后端注销
+  const [deleteStep, setDeleteStep] = useState<"warn" | "confirm">("warn");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [lastUsed, setLastUsed] = useState(readLastUsed);
   const otpRefreshAt = useRef(0);
   const scanVideoRef = useRef<HTMLVideoElement>(null);
@@ -279,6 +288,25 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const modalOpen = modal !== null;
 
   const notify = (text: string, error = false) => { setNotice({ text, error }); window.setTimeout(() => setNotice(null), 3200); };
+  // 自助注销账号：先清掉本地 step-up，首次请求会收到 428 并自动弹出身份验证（密码/邮箱码/Passkey），
+  // 验证通过后重试一次性消费授权完成注销；成功后清空本地登录态并回到登录页。
+  const deleteAccount = async () => {
+    setBusy(true);
+    try {
+      clearOtpStepUpToken();
+      await deleteVaultAccount();
+      closeModal();
+      clearOtpToken();
+      clearOtpStepUpToken();
+      setDeleteStep("warn");
+      setDeleteConfirmText("");
+      onLogout();
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== "已取消安全验证") {
+        notify(error instanceof Error ? error.message : "账号注销失败", true);
+      }
+    } finally { setBusy(false); }
+  };
   const applyDurationDays = (days: number) => {
     const next = days >= LONG_TERM_DAYS ? LONG_TERM_DAYS : Math.min(365, Math.max(1, days));
     setDurationDraft(null);
@@ -309,6 +337,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const device = readDeviceDisplayPrefs();
     const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
+    setFavoritesOnly(Boolean(next.defaultFavorites));
     setThemePreference(next.theme || "system");
     if (device.concealOtp == null && !device.listSort) return;
     void saveVaultPreferences(next).then((saved) => {
@@ -400,7 +429,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
-    const result = credentials.filter((item) => (!value || `${item.issuer} ${item.accountName} ${item.note || ""}`.toLowerCase().includes(value)) && (!issuer || item.issuer === issuer) && (view !== "favorite" || item.favorite) && (prefs.showShared || !item.shared));
+    const result = credentials.filter((item) => (!value || `${item.issuer} ${item.accountName} ${item.note || ""}`.toLowerCase().includes(value)) && (!issuer || item.issuer === issuer) && (!favoritesOnly || item.favorite) && (prefs.showShared || !item.shared));
     result.sort((a, b) => {
       if (prefs.listSort === "account") return a.accountName.localeCompare(b.accountName, "zh-CN");
       if (prefs.listSort === "favorite") return Number(b.favorite) - Number(a.favorite) || a.issuer.localeCompare(b.issuer, "zh-CN");
@@ -409,7 +438,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       return a.issuer.localeCompare(b.issuer, "zh-CN") || a.accountName.localeCompare(b.accountName, "zh-CN");
     });
     return result;
-  }, [credentials, issuer, lastUsed, prefs.listSort, prefs.showShared, query, view]);
+  }, [credentials, favoritesOnly, issuer, lastUsed, prefs.listSort, prefs.showShared, query]);
   const issuers = useMemo(() => [...new Set(credentials.map((item) => item.issuer))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
   const ownCredentials = useMemo(() => credentials.filter((item) => !item.shared), [credentials]);
   const groups = useMemo(() => prefs.grouped ? [...new Set(filtered.map((item) => item.issuer))].map((name) => [name, filtered.filter((item) => item.issuer === name)] as const) : [["", filtered] as const], [filtered, prefs.grouped]);
@@ -707,17 +736,20 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   return <div className="vault-page">
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
-      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button><button type="button" className="vault-ghost vault-logout" onClick={() => setModal("logoutConfirm")} aria-label="退出登录"><LogOut size={13} /><span>退出</span></button></div>
+      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={18} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button></div>
     </section>
 
+    <MessagePopupHost request={otpApiRequest as MessageRequest} />
+    <NotificationCenter request={otpApiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "", label: "全部" }, { key: "OTP", label: "OTP" }, { key: "SYSTEM", label: "系统" }]} defaultCategory="OTP" />
+
     <nav className="vault-tabs" aria-label="密钥管理导航">
-      {([['all', KeyRound, '全部'], ['favorite', Star, '收藏'], ['shares', Link2, '授权'], ['security', ShieldCheck, '安全'], ['settings', Settings2, '设置']] as const).map(([key, Icon, label]) => <button type="button" className={view === key ? "is-active" : ""} onClick={() => changeView(key)} key={key}><Icon size={15} />{label}</button>)}
+      {([['all', KeyRound, '凭据'], ['shares', Link2, '授权'], ['security', ShieldCheck, '安全'], ['settings', Settings2, '我的']] as const).map(([key, Icon, label]) => <button type="button" className={view === key ? "is-active" : ""} onClick={() => changeView(key)} key={key}><Icon size={15} />{label}</button>)}
     </nav>
 
-    {view === "all" || view === "favorite" ? <section className="vault-panel">
-      <header className="vault-panel-head"><div><h2>{view === "favorite" ? "收藏" : "验证码"}</h2><p>点开卡片查看账号、密码和更多信息</p></div><div className="vault-panel-tools"><label className="vault-view-toggle"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div></div></header>
+    {view === "all" ? <section className="vault-panel">
+      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="收藏筛选"><button type="button" className={!favoritesOnly ? "is-active" : ""} onClick={() => setFavoritesOnly(false)}>全部</button><button type="button" className={favoritesOnly ? "is-active" : ""} onClick={() => setFavoritesOnly(true)}>收藏</button></div></span><p>{favoritesOnly ? `只显示收藏的凭据 · ${filtered.length} 项` : `点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div><div className="vault-panel-tools"><label className="vault-view-toggle"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div></div></header>
       <div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer ? <button type="button" onClick={() => setIssuer("")}>清除筛选</button> : null}</div>
-      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{groups.map(([name, items]) => <section className="vault-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{items.length}</span></header> : null}<div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div></section>)}</div> : <div className="vault-empty"><KeyRound size={28} /><b>{view === "favorite" ? "还没有收藏凭据" : "没有找到凭据"}</b><p>{view === "favorite" ? "点击凭据右上角的星标即可收藏。" : "可以添加一项，或导入文件。"}</p></div>}
+      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{groups.map(([name, items]) => <section className="vault-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{items.length}</span></header> : null}<div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div></section>)}</div> : <div className="vault-empty"><KeyRound size={28} /><b>{favoritesOnly ? "还没有收藏凭据" : "没有找到凭据"}</b><p>{favoritesOnly ? "点击凭据右上角的星标即可收藏。" : "可以添加一项，或导入文件。"}</p></div>}
     </section> : null}
 
     {view === "shares" ? <section className="vault-panel">
@@ -731,23 +763,25 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
 	    {view === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} /></section> : null}
 
-    {view === "settings" ? <section className="vault-settings"><header className="vault-panel-head"><div><h2>设置</h2><p>账号资料和显示偏好会跟随当前账号</p></div></header>
+    {view === "settings" ? <section className="vault-settings"><header className="vault-panel-head"><div><h2>我的</h2><p>账号资料和显示偏好会跟随当前账号</p></div></header>
       <div className="vault-settings-group vault-account-settings"><header><div><b>账号与登录</b></div></header>
         <div className="vault-account-links">
           <button type="button" className="vault-account-link" onClick={() => setModal("nickname")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>用户名</b><small>{accountNick || accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
           <button type="button" className="vault-account-link" onClick={() => setModal("username")}><span className="vault-setting-icon is-blue"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>{accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
           <button type="button" className="vault-account-link" onClick={() => setModal("email")}><span className="vault-setting-icon is-violet"><Mail size={17} /></span><span className="vault-setting-copy"><b>邮箱</b><small>{accountEmail || "未绑定"}</small></span><ChevronRight size={15} /></button>
           <button type="button" className="vault-account-link" onClick={() => setModal("password")}><span className="vault-setting-icon is-violet"><LockKeyhole size={17} /></span><span className="vault-setting-copy"><b>登录密码</b><small>修改密码</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("logoutConfirm")}><span className="vault-setting-icon is-blue"><LogOut size={17} /></span><span className="vault-setting-copy"><b>退出登录</b><small>只结束本设备的登录状态</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link is-danger" onClick={() => { setDeleteStep("warn"); setDeleteConfirmText(""); setModal("deleteAccountConfirm"); }}><span className="vault-setting-icon is-red"><UserX size={17} /></span><span className="vault-setting-copy"><b>注销账号</b><small>永久删除账号与全部数据，不可恢复</small></span><ChevronRight size={15} /></button>
         </div>
       </div>
       <div className="vault-settings-group"><header><div><b>外观</b><small>保存在当前账号</small></div></header>
         <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
       </div>
-      <div className="vault-settings-group"><header><div><b>界面显示</b><small>验证码与账号列表，保存在当前账号</small></div><span>7 项</span></header>{([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}<label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label></div>
+      <div className="vault-settings-group"><header><div><b>界面显示</b><small>验证码与账号列表，保存在当前账号</small></div><span>8 项</span></header>{([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet'], ['defaultFavorites', Star, '默认显示收藏', '打开后进入凭据页默认只看收藏，关闭则显示全部', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}<label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label></div>
     </section> : null}
 
     <nav className="vault-mobile-nav" aria-label="密钥管理导航">
-      {([['all', KeyRound, '全部'], ['favorite', Star, '收藏'], ['shares', Link2, '授权'], ['security', ShieldCheck, '安全'], ['settings', Settings2, '设置']] as const).map(([key, Icon, label]) => <button type="button" className={view === key ? "is-active" : ""} onClick={() => changeView(key)} key={key}><Icon size={18} /><span>{label}</span></button>)}
+      {([['all', KeyRound, '凭据'], ['shares', Link2, '授权'], ['security', ShieldCheck, '安全'], ['settings', Settings2, '我的']] as const).map(([key, Icon, label]) => <button type="button" className={view === key ? "is-active" : ""} onClick={() => changeView(key)} key={key}><Icon size={18} /><span>{label}</span></button>)}
     </nav>
 
     {modal === "detail" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-detail">
@@ -848,6 +882,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
     {modal === "shareDeleteConfirm" && pendingShareDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingShareDelete(null); setModal(null); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE AUTHORIZATION</small><h2>删除授权记录</h2><p>删除后将不再显示在临时授权列表</p></div><button type="button" onClick={() => { setPendingShareDelete(null); setModal(null); }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingShareDelete.name?.trim() || "临时凭据授权"}</b><small>{pendingShareDelete.itemCount} 个凭据 · {pendingShareDelete.shareMode === "DIRECT" ? `指定给 ${pendingShareDelete.recipientUsername}` : pendingShareDelete.accessCodeEnabled ? "访问码保护" : "链接访问"} · 该授权已撤销，访问记录会继续保留</small></div></div></section></div><footer><span>删除后无法从列表恢复</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingShareDelete(null); setModal(null); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void confirmShareDelete()}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
 
+    {modal === "deleteAccountConfirm" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) closeModal(); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE ACCOUNT · {deleteStep === "warn" ? "STEP 1/2" : "STEP 2/2"}</small><h2>注销账号</h2><p>注销与退出不同：此操作不可恢复</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll">{deleteStep === "warn" ? <>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要注销</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><UserX size={21} /></span><div><b>{accountName || "当前账号"}</b><small>{accountEmail || "该账号将永久删除"}</small></div></div></section>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>将会发生什么</h3></div></div><p className="vault-section-help">保险库中的全部凭据与密文将永久删除；你创建的所有分享授权将被撤销并删除；全部登录会话立即失效，此后无法再登录。</p><p className="vault-section-help">账号提交注销后，可以联系管理员恢复登录，但已删除的保险库数据无法找回。</p></section>
+      </> : <>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>再次确认</h3></div></div><p className="vault-section-help">这是最后一次确认。请输入你的账号 <b>{accountName || "当前账号"}</b> 以解锁注销按钮。</p><label><span>输入账号名</span><div><input autoFocus value={deleteConfirmText} onChange={(event) => setDeleteConfirmText(event.target.value)} placeholder={accountName || "当前账号"} autoComplete="off" /></div></label></section>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>04</span><h3>身份验证</h3></div></div><p className="vault-section-help">点击「确认注销」后，还需要完成一次登录密码 / 邮箱验证码 / Passkey 验证才会真正注销。</p></section>
+      </>}</div><footer><span>{deleteStep === "warn" ? "请仔细阅读上面的后果" : deleteConfirmText && deleteConfirmText === (accountName || "") ? "账号名已确认" : "输入账号名后才能继续"}</span><div>{deleteStep === "warn" ? <button type="button" className="vault-danger" onClick={() => setDeleteStep("confirm")}>继续注销</button> : <><button type="button" className="vault-ghost" onClick={() => setDeleteStep("warn")}>返回</button><button type="button" className="vault-danger" disabled={busy || deleteConfirmText !== (accountName || "")} onClick={() => void deleteAccount()}>{busy ? "正在注销" : "确认注销"}</button></>}</div></footer></section></div> : null}
     {modal === "logoutConfirm" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>SIGN OUT</small><h2>退出登录</h2><p>退出后需要重新验证身份才能打开保险库</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要退出</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><LogOut size={21} /></span><div><b>{accountName || "当前账号"}</b><small>{accountEmail || "本机会话将立即结束"}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">退出不会删除保险库中的凭据，只结束当前设备的登录状态。</p></section></div><footer><span>确认后立即退出</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button type="button" className="vault-danger" onClick={onLogout}>确认退出</button></div></footer></section></div> : null}
 
     {modal === "created" && created ? <div className="vault-modal-mask"><section className="vault-modal small vault-created"><header><div><small>READY</small><h2>{created.name?.trim() || "授权已创建"}</h2></div><button type="button" onClick={closeModal}><X size={18} /></button></header><span className="vault-created-icon"><Check size={24} /></span><div className="vault-created-countdown"><Clock3 size={15} /><span><small>剩余有效时间</small><b>{formatRemaining(created.expireTime, now)}</b></span></div>{created.shareMode === "DIRECT" ? <div className="vault-direct-created"><User size={20} /><span><small>已授权给</small><b>{created.recipientUsername}</b><p>对方登录后可在“全部”中查看，到期或撤销后自动移除。</p></span></div> : <><label><span>授权链接</span><div className="vault-copy-row"><input readOnly value={created.shareUrl || ""} /><button type="button" onClick={() => void copy(created.shareUrl || "")}><Copy size={15} /></button></div></label>{created.accessCode ? <label><span>访问码</span><button type="button" className="vault-access-code vault-access-code-button" onClick={() => void copy(created.accessCode || "", "访问码已复制")}>{created.accessCode}<Copy size={15} /></button></label> : null}<div className="vault-created-actions">{canUseSystemShare() ? <button type="button" className="vault-primary" onClick={() => void shareOrCopy(fullShareText)}>系统分享</button> : created.autoFillAllowed ? <button type="button" className="vault-ghost" onClick={() => void copy(autoFillUrl, "自动填充链接已复制")}>复制自动填充链接</button> : null}<button type="button" className="vault-primary" onClick={() => void copy(fullShareText, "完整分享信息已复制")}>复制链接和访问码</button></div><p>访问码以后仍可从临时授权详情查看，访问结果也会记录在详情中。</p></>}</section></div> : null}

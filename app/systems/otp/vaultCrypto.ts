@@ -93,7 +93,8 @@ export async function generateOfflineCode(item: VaultTransferItem, now = Date.no
     for (let index = 0; index < 5; index++) { code += alphabet[binary % alphabet.length]; binary = Math.floor(binary / alphabet.length); }
     return code;
   }
-  const digits = item.digits === 8 ? 8 : 6;
+  // 与后端 normalizeDigits 对齐：支持 6-8 位，非法值回落 6
+  const digits = Math.min(8, Math.max(6, item.digits || 6));
   return String((binary >>> 0) % 10 ** digits).padStart(digits, "0");
 }
 

@@ -10,7 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { API_PATHS } from "../../../lib/pathConventions";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiRequest, copyToClipboard } from "../../../lib/api";
 import { buildOrderLink, formatOrderLinkCopy } from "../tools/order-link/format";
 import type { DataRow, MenuKey } from "./core";
@@ -145,7 +145,7 @@ export const greetByHour = (h: number) => {
   return "夜深了";
 };
 
-export function DashboardPage({ username, userInfo, onNavigate, notify }: { username: string; userInfo: DataRow | null; onNavigate: (key: MenuKey) => void; notify: (message: string, type?: "success" | "error" | "info") => void }) {
+export function DashboardPage({ username, userInfo, onNavigate, notify, bellSlot }: { username: string; userInfo: DataRow | null; onNavigate: (key: MenuKey) => void; notify: (message: string, type?: "success" | "error" | "info") => void; bellSlot?: ReactNode }) {
   const access = useAccess();
   const [data, setData] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [loading, setLoading] = useState(true);
@@ -266,6 +266,7 @@ export function DashboardPage({ username, userInfo, onNavigate, notify }: { user
       </div>
       <div className="home-intro-actions">
         <button className="home-create-order" type="button" onClick={() => onNavigate("orderEntry")}><Plus size={18} />快速录单</button>
+        {bellSlot}
         <button className="home-refresh" type="button" onClick={load} aria-label="刷新首页"><RefreshCw className={loading ? "spin" : ""} size={18} /></button>
       </div>
     </header>
