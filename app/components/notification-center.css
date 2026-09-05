@@ -273,3 +273,8 @@ html.theme-dark .notif-popup header h2 { color: #e8ebf5; }
 html.theme-dark .notif-popup-body .notif-item-content { background: #10151f; }
 html.theme-dark .notif-popup-dismiss { background: transparent; border-color: rgba(225, 231, 248, 0.14); color: #a6afc6; }
 html.theme-dark .notif-popup-confirm { background: #4c5cc5; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-panel, .notif-popup, .notif-mask, .notif-popup-mask { animation: none; }
+  .notif-item-caret, .notif-bell { transition: none; }
+}
