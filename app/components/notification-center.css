@@ -123,9 +123,13 @@
 /* 铃铛按钮 */
 .notif-bell {
   position: relative; width: 45px; height: 38px; border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.08); background: #e8e8e4; color: #4a4f46;
+  border: 1px solid var(--xb-accent-line, rgba(15, 23, 42, 0.08));
+  background: var(--xb-accent-soft, rgba(79, 99, 210, 0.1));
+  color: var(--xb-accent, #4c5cc5);
   display: grid; place-items: center; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
+.notif-bell:hover { border-color: var(--xb-accent, #4c5cc5); }
 .notif-bell svg { width: 16px; height: 16px; }
 .notif-bell-badge {
   position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px;
@@ -267,7 +271,7 @@ html.theme-dark .notif-item-content code { background: rgba(225, 231, 248, 0.08)
 html.theme-dark .notif-item-content pre { background: rgba(225, 231, 248, 0.08); }
 html.theme-dark .notif-item-content blockquote { border-left-color: #3b4667; color: #8b93a5; }
 html.theme-dark .notif-item-content a { color: #a9b3ff; }
-html.theme-dark .notif-bell { background: #171e2c; border-color: rgba(225, 231, 248, 0.09); color: #a6afc6; }
+html.theme-dark .notif-bell { background: var(--xb-accent-soft, rgba(79, 99, 210, 0.14)); border-color: var(--xb-accent-line, rgba(225, 231, 248, 0.14)); color: var(--xb-accent, #a9b3ff); }
 html.theme-dark .notif-bell-badge { box-shadow: 0 0 0 2px #171e2c; }
 html.theme-dark .notif-popup { background: #171e2c; }
 html.theme-dark .notif-popup header h2 { color: #e8ebf5; }
