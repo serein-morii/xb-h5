@@ -41,7 +41,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [loginMethod, setLoginMethod] = useState<"account" | "email" | "passkey">("account");
+  const [loginMethod, setLoginMethod] = useState<"account" | "email" | "passkey">("email");
   const [email, setEmail] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [emailSending, setEmailSending] = useState(false);
@@ -168,7 +168,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         <section className="otp-auth-card">
           <span className="otp-auth-handle" aria-hidden="true" />
           <div className="otp-auth-copy"><h2>欢迎回来</h2><p>{loginMethod === "account" ? "使用账号密码登录订单系统。" : loginMethod === "passkey" ? "通过此设备的生物识别或系统 PIN 登录。" : "使用绑定邮箱的验证码登录。"}</p></div>
-          <div className="otp-login-methods"><button type="button" className={loginMethod === "account" ? "is-active" : ""} onClick={() => switchLoginMethod("account")}>账号密码</button><button type="button" className={loginMethod === "email" ? "is-active" : ""} onClick={() => switchLoginMethod("email")}>邮箱验证码</button><button type="button" className={loginMethod === "passkey" ? "is-active" : ""} onClick={() => switchLoginMethod("passkey")}>Passkey</button></div>
+          <div className="otp-login-methods"><button type="button" className={loginMethod === "email" ? "is-active" : ""} onClick={() => switchLoginMethod("email")}>邮箱验证码</button><button type="button" className={loginMethod === "account" ? "is-active" : ""} onClick={() => switchLoginMethod("account")}>账号密码</button><button type="button" className={loginMethod === "passkey" ? "is-active" : ""} onClick={() => switchLoginMethod("passkey")}>Passkey</button></div>
           <form className="otp-auth-form" onSubmit={submit}>
             {loginMethod === "account" || loginMethod === "passkey" ? <label><span>{loginMethod === "passkey" ? "账号或邮箱" : "账号"}</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder={loginMethod === "passkey" ? "输入账号或邮箱" : "请输入账号"} /></div></label> : null}
             {loginMethod === "email" ? <label><span>邮箱</span><div><Send size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="请输入已绑定邮箱" /></div></label> : null}

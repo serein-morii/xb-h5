@@ -5,7 +5,7 @@ import { AppStartup } from "../../components/AppStartup";
 import { getStartupConfig } from "../../lib/startup";
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest } from "../order/admin/access";
-import { LoginScreen } from "../order/admin/login";
+import LoginScreen from "./LoginScreen";
 import { Toast } from "../order/admin/ui";
 import type { ToastState } from "../order/admin/core";
 import "./system-center.css";

@@ -74,4 +74,12 @@ test("order admin exposes notification center from menu sheet and branded login"
   assert.match(login, /otp-login-methods/);
   assert.match(login, /requestEmailCode/);
   assert.match(login, /loginByEmail\(value, emailCode\.trim\(\)\)/);
+  // 系统中心登录页独立维护：默认邮箱验证码方式，不共用订单登录组件
+  const app = await source("app/systems/system/SystemCenterApp.tsx");
+  assert.match(app, /import LoginScreen from "\.\/LoginScreen"/);
+  assert.doesNotMatch(app, /order\/admin\/login/);
+  const systemLogin = await source("app/systems/system/LoginScreen.tsx");
+  assert.match(systemLogin, /login-system-page/);
+  assert.match(systemLogin, /PLATFORM CONSOLE/);
+  assert.match(systemLogin, /"email"\);$/m);
 });
