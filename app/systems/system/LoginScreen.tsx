@@ -11,6 +11,7 @@ import { SliderCaptcha } from "../../components/SliderCaptcha";
 import { getPasskey } from "../../lib/passkey";
 import VaultToastMessage from "../otp/VaultToastMessage";
 import { ForgotPasswordSheet } from "../order/admin/login";
+import "../otp/otp-vault.css";
 import "../otp/otp-auth.css";
 
 type LoginMethod = "email" | "account" | "passkey";

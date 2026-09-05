@@ -28,6 +28,7 @@ import { Sheet } from "./ui";
 import { SliderCaptcha } from "../../../components/SliderCaptcha";
 import { getPasskey } from "../../../lib/passkey";
 import VaultToastMessage from "../../otp/VaultToastMessage";
+import "../../otp/otp-vault.css";
 import "../../otp/otp-auth.css";
 
 export function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) => void }) {
