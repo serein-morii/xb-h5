@@ -121,15 +121,16 @@
 
 /* 铃铛按钮 */
 .notif-bell {
-  position: relative; width: 40px; height: 40px; border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.1); background: #fff; color: #333c52;
+  position: relative; width: 45px; height: 38px; border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08); background: #e8e8e4; color: #4a4f46;
   display: grid; place-items: center; cursor: pointer;
 }
+.notif-bell svg { width: 16px; height: 16px; }
 .notif-bell-badge {
-  position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px;
+  position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px;
   border-radius: 999px; background: #e11d48; color: #fff;
-  font-size: 9.5px; font-weight: 700; font-style: normal;
-  display: grid; place-items: center; padding: 0 4px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  display: grid; place-items: center; padding: 0 3.5px;
   box-shadow: 0 0 0 2px #fff;
 }
 .notif-bell-floating {

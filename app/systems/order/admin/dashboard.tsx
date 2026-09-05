@@ -3,7 +3,6 @@ import {
   ChevronRight,
   Copy,
   LoaderCircle,
-  Plus,
   RefreshCw,
   ShoppingBag,
   Truck,
@@ -265,7 +264,6 @@ export function DashboardPage({ username, userInfo, onNavigate, notify, bellSlot
         <p>{subtitle}</p>
       </div>
       <div className="home-intro-actions">
-        <button className="home-create-order" type="button" onClick={() => onNavigate("orderEntry")}><Plus size={18} />快速录单</button>
         {bellSlot}
         <button className="home-refresh" type="button" onClick={load} aria-label="刷新首页"><RefreshCw className={loading ? "spin" : ""} size={18} /></button>
       </div>
