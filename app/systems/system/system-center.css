@@ -529,3 +529,33 @@ html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }
   .sc-content > * { animation: none; }
   .sc-sidebar { transition: none; }
 }
+
+/* ---------- 站内信维护页手机端精致排版 ---------- */
+@media (max-width: 600px) {
+  /* 页头：图标隐藏、信息密度优先 */
+  .sc-content .module-hero .hero-tool-icon { display: none; }
+
+  /* 表单：两列网格（标题独占一行），不再四行堆叠 */
+  .sc-content .sysbroadcast-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 10px;
+  }
+  .sc-content .sysbroadcast-grid > label:first-child { grid-column: 1 / -1; }
+  .sc-content .sysbroadcast-card textarea { min-height: 132px; }
+
+  /* 弹窗开关整行卡片化 */
+  .sc-content .sysbroadcast-popup {
+    border: 1px solid var(--sc-line); border-radius: 11px;
+    padding: 10px 12px; background: var(--sc-surface);
+  }
+
+  /* 操作区：发送按钮通栏在顶部 */
+  .sc-content .sysbroadcast-actions { flex-direction: column-reverse; align-items: stretch; gap: 8px; }
+  .sc-content .sysbroadcast-actions-left { display: flex; gap: 8px; }
+  .sc-content .sysbroadcast-actions-left .sysbroadcast-preview-toggle { flex: 1; justify-content: center; }
+
+  /* 投递记录：卡片间距与删除确认可读性 */
+  .sysbroadcast-records { padding: 12px 11px 4px; }
+  .sysbroadcast-row { gap: 9px; }
+  .sysbroadcast-cell-meta { gap: 4px 12px; font-size: 10.5px; }
+}
