@@ -380,3 +380,6 @@ html.theme-dark {
 .login-order-page .otp-auth-forgot:hover { color: #23875c; }
 .login-order-page .otp-auth-signal { color: rgba(214, 240, 224, 0.78); }
 .login-order-page .otp-auth-app .otp-auth-card { border-color: rgba(255, 255, 255, 0.4); }
+
+/* 系统中心登录页：底部备案留白 */
+.login-system-page { padding-bottom: 64px; }
