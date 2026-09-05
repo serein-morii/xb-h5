@@ -740,7 +740,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </section>
 
     <MessagePopupHost request={otpApiRequest as MessageRequest} />
-    <NotificationCenter request={otpApiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "", label: "全部" }, { key: "OTP", label: "OTP" }, { key: "SYSTEM", label: "系统" }]} defaultCategory="OTP" />
+    <NotificationCenter request={otpApiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "", label: "全部" }, { key: "OTP", label: "OTP" }, { key: "SYSTEM", label: "系统" }]} />
 
     <nav className="vault-tabs" aria-label="密钥管理导航">
       {([['all', KeyRound, '凭据'], ['shares', Link2, '授权'], ['security', ShieldCheck, '安全'], ['settings', Settings2, '我的']] as const).map(([key, Icon, label]) => <button type="button" className={view === key ? "is-active" : ""} onClick={() => changeView(key)} key={key}><Icon size={15} />{label}</button>)}

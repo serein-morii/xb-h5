@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>站内信排版验收</title></head><body><button id="theme">切换明暗</button><p id="results"></p><main class="notif-popup" style="margin:16px auto"><header><small>NOTICE</small><h2>通知中心 · 内容预览</h2></header><div class="notif-popup-body"><div id="html" class="notif-item-content"></div><div id="md" class="notif-item-content" style="margin-top:12px"></div></div><footer><button class="notif-popup-confirm">确认</button></footer></main><script type="module">
+import { renderRichText, sanitizeRichHtml } from '/app/lib/richText.ts';
+import '/app/components/notification-center.css';
+document.body.style.cssText='margin:0;padding:14px;font-family:system-ui;background:#e9edf5;box-sizing:border-box';
+document.querySelector('#theme').onclick=()=>{document.documentElement.classList.toggle('theme-dark');document.body.style.background=document.documentElement.classList.contains('theme-dark')?'#10151f':'#e9edf5'};
+document.querySelector('#html').innerHTML=renderRichText('<style>.card{background:linear-gradient(135deg,#e9edff,#edf9f5);padding:14px;border-radius:10px;color:#253957}.card h2{color:#465db6}.badge{background:#d4e8de;color:#286347;padding:3px 6px;border-radius:5px}</style><section class="card"><span class="badge">功能升级</span><h2>消息，现在更清晰</h2><p>保留 HTML 模板的配色、圆角与留白。</p><table><tr><th>功能</th><th>状态</th></tr><tr><td>分类与详情</td><td>已更新</td></tr></table></section>','html');
+document.querySelector('#md').innerHTML=renderRichText('# 本次更新\n\n正文更小巧，重点更清晰。\n\n## 使用方式\n\n- 通知默认展示全部\n- 点开查看 **完整内容**\n\n> 安全通知和系统更新都可以在这里找到。\n\n[查看使用指南](https://example.com/guide)\n\n`https://example.com/code`','markdown');
+const checks=[];const check=(name,passed)=>checks.push({name,passed});
+check('HTML class style preserved',getComputedStyle(document.querySelector('#html h2')).color==='rgb(70, 93, 182)');
+check('no stylesheet leakage',!document.querySelector('#html style'));
+const attack=sanitizeRichHtml('<unknown><p onclick="alert(1)" id="clobber"><a href="javascript:alert(1)">bad</a></p></unknown><style>p{position:fixed;background:url(https://example.com)}</style>');
+check('nested unsafe attributes removed',! /onclick|javascript:|clobber|position:|url\(/.test(attack));
+check('markdown links not nested',document.querySelectorAll('#md a').length===1 && document.querySelector('#md a').getAttribute('href')==='https://example.com/guide');
+check('code stays literal',document.querySelector('#md code').textContent==='https://example.com/code');
+check('compact body size',getComputedStyle(document.querySelector('#md')).fontSize==='12px');
+document.querySelector('#results').textContent=checks.map(x=>`${x.passed?'PASS':'FAIL'} ${x.name}`).join(' · ');
+</script></body></html>

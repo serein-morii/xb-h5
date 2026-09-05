@@ -105,13 +105,26 @@
 .notif-detail h3 { margin: 0; font-size: 15px; color: #172033; line-height: 1.45; }
 .notif-detail-empty { margin: 0; font-size: 12.5px; color: #a5abb8; }
 .notif-item-content {
-  font-size: 12.5px; line-height: 1.62; color: #3d4456;
+  min-width: 0; font-size: 12px; line-height: 1.7; color: #3d4456;
   background: #f8f9fc; border: 1px solid rgba(15, 23, 42, 0.05);
   border-radius: 11px; padding: 11px 12px;
-  overflow-wrap: anywhere;
+  overflow-wrap: anywhere; overflow-x: auto;
 }
+.notif-item-content * { box-sizing: border-box; max-width: 100%; }
+.notif-item-content > :first-child { margin-top: 0; }
+.notif-item-content > :last-child { margin-bottom: 0; }
 .notif-item-content p { margin: 0 0 7px; } .notif-item-content p:last-child { margin: 0; }
-.notif-item-content h1, .notif-item-content h2, .notif-item-content h3 { margin: 5px 0; font-size: 14px; }
+.notif-item-content :is(h1,h2,h3,h4,h5,h6) { margin: 12px 0 6px; line-height: 1.45; font-weight: 650; color: inherit; letter-spacing: -.015em; }
+.notif-item-content h1 { font-size: 17px; }
+.notif-item-content h2 { font-size: 15px; }
+.notif-item-content h3 { font-size: 13px; }
+.notif-item-content :is(h4,h5,h6) { font-size: 12px; }
+.notif-item-content li + li { margin-top: 3px; }
+.notif-item-content hr { margin: 12px 0; border: 0; border-top: 1px solid rgba(128,140,163,.22); }
+.notif-item-content table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.notif-item-content :is(th,td) { padding: 7px 8px; border: 1px solid rgba(128,140,163,.22); text-align: left; overflow-wrap: anywhere; }
+.notif-item-content th { background: rgba(128,140,163,.09); font-weight: 650; }
+.notif-item-content a { text-underline-offset: 3px; }
 .notif-item-content ul, .notif-item-content ol { margin: 6px 0; padding-left: 18px; }
 .notif-item-content code { background: rgba(15, 23, 42, 0.06); border-radius: 5px; padding: 1px 5px; font-size: 11px; }
 .notif-item-content pre { background: rgba(15, 23, 42, 0.06); border-radius: 8px; padding: 9px; overflow-x: auto; }

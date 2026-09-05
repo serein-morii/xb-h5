@@ -14,11 +14,11 @@ const escapeHtml = (value: string) =>
 
 /** 允许保留的 HTML 标签（sanitize 白名单） */
 const ALLOWED_TAGS = new Set([
-  "p", "br", "hr", "span", "div", "section",
+  "p", "br", "hr", "span", "div", "section", "center", "font",
   "strong", "b", "em", "i", "u", "s", "del", "mark", "small", "sub", "sup",
   "h1", "h2", "h3", "h4", "h5", "h6",
   "ul", "ol", "li", "blockquote", "pre", "code",
-  "a", "img", "table", "thead", "tbody", "tr", "th", "td",
+  "a", "img", "table", "thead", "tbody", "tfoot", "caption", "tr", "th", "td",
 ]);
 
 const SAFE_URL = /^(https?:|mailto:|\/|#)/i;
@@ -38,6 +38,8 @@ const SAFE_STYLE_PROPERTIES = new Set([
   "display", "flex-direction", "align-items", "justify-content", "gap", "flex-wrap",
   "width", "max-width", "min-width", "height", "max-height", "min-height",
   "vertical-align", "overflow-wrap", "box-sizing",
+  "border-collapse", "border-spacing", "table-layout", "box-shadow",
+  "grid-template-columns", "align-self", "flex", "row-gap", "column-gap",
 ]);
 
 const UNSAFE_STYLE_VALUE = /(url\s*\(|expression|javascript:|@import|position\s*:|fixed|sticky|z-index|calc\s*\(|var\s*\()/i;
@@ -69,9 +71,33 @@ function sanitizeUrl(value: string | null): string | null {
 export function sanitizeRichHtml(html: string): string {
   if (typeof window === "undefined" || typeof DOMParser === "undefined") return escapeHtml(html);
   const doc = new DOMParser().parseFromString(html, "text/html");
+  // Resolve embedded template CSS only against this detached document. Never mount
+  // author styles in the application, where selectors could affect other UI.
+  const originalStyles = new Map<Element, string>();
+  doc.querySelectorAll("[style]").forEach((node) => originalStyles.set(node, node.getAttribute("style") || ""));
+  if (typeof CSSStyleSheet !== "undefined") {
+    for (const style of Array.from(doc.querySelectorAll("style"))) {
+      try {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(style.textContent || "");
+        for (const rule of Array.from(sheet.cssRules)) {
+          if (!(rule instanceof CSSStyleRule)) continue;
+          const safe = sanitizeStyleAttr(rule.style.cssText);
+          if (!safe) continue;
+          try {
+            doc.querySelectorAll(rule.selectorText).forEach((node) => {
+              node.setAttribute("style", `${node.getAttribute("style") || ""};${safe}`);
+            });
+          } catch { /* Unsupported selectors do not prevent reading the message. */ }
+        }
+      } catch { /* Invalid template CSS is ignored. */ }
+    }
+  }
+  originalStyles.forEach((style, node) => node.setAttribute("style", `${node.getAttribute("style") || ""};${style}`));
   doc.querySelectorAll("script,style,iframe,frame,object,embed,link,meta,form,input,button,svg,math,audio,video,source,base").forEach((node) => node.remove());
   const walk = (node: Element) => {
     for (const child of Array.from(node.children)) {
+      walk(child);
       if (!ALLOWED_TAGS.has(child.tagName.toLowerCase())) {
         // 未知标签：保留其文本内容，丢弃标签与属性
         child.replaceWith(...Array.from(child.childNodes));
@@ -79,7 +105,7 @@ export function sanitizeRichHtml(html: string): string {
       }
       for (const attribute of Array.from(child.attributes)) {
         const name = attribute.name.toLowerCase();
-        const drop = name.startsWith("on")
+        const drop = !["style", "href", "src", "alt", "title", "colspan", "rowspan", "align", "color", "face"].includes(name)
           || ((name === "href" || name === "src") && !sanitizeUrl(child.getAttribute(name)));
         if (drop) { child.removeAttribute(attribute.name); continue; }
         if (name === "style") {
@@ -101,11 +127,11 @@ export function sanitizeRichHtml(html: string): string {
         child.setAttribute("loading", "lazy");
         child.setAttribute("alt", child.getAttribute("alt") || "图片");
       }
-      walk(child);
     }
   };
   walk(doc.body);
-  return doc.body.innerHTML;
+  const bodyStyle = sanitizeStyleAttr(doc.body.getAttribute("style"));
+  return bodyStyle ? `<div style="${escapeHtml(bodyStyle)}">${doc.body.innerHTML}</div>` : doc.body.innerHTML;
 }
 
 /** 极简 Markdown：标题/粗体/斜体/行内代码/代码块/链接/列表/引用/分隔线，输入已转义。 */
@@ -172,15 +198,18 @@ export function markdownToSafeHtml(markdown: string): string {
 }
 
 function inlineMarkdown(value: string): string {
+  const tokens: string[] = [];
+  const stash = (html: string) => { tokens.push(html); return `\uE000${tokens.length - 1}\uE000`; };
   return value
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\uE000/g, "&#57344;")
+    .replace(/`([^`]+)`/g, (_match, code: string) => stash(`<code>${code}</code>`))
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/gi, (_match, label: string, url: string) =>
+      stash(`<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${label}</a>`))
+    .replace(/https?:\/\/[^\s<]+/g, (url) => stash(`<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${url}</a>`))
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/__([^_]+)__/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
-    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/gi, (_match, text: string, url: string) =>
-      `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${text}</a>`)
-    .replace(/(https?:\/\/[^\s<]+)/g, (url) =>
-      /^\s*(href|src)=/i.test(url) ? url : `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${url}</a>`);
+    .replace(/\uE000(\d+)\uE000/g, (_match, index: string) => tokens[Number(index)] || "");
 }
 
 /** 统一入口：任意内容类型 → 安全 HTML。 */

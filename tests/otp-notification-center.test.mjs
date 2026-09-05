@@ -101,7 +101,7 @@ test("richText renderer escapes by default and sanitizes html", async () => {
   const richText = await source("app/lib/richText.ts");
   assert.match(richText, /escapeHtml/);
   assert.match(richText, /ALLOWED_TAGS/);
-  assert.match(richText, /name\.startsWith\("on"\)/);
+  assert.match(richText, /const drop = !\[/);
   assert.match(richText, /javascript:/);
   assert.match(richText, /SAFE_URL/);
 });
@@ -125,10 +125,10 @@ test("order admin shell mounts floating bell and notification center", async () 
   assert.match(shell, /useMessageUnread\(apiRequest/);
 });
 
-test("otp workspace mounts notification center defaulting to OTP category", async () => {
+test("otp workspace mounts notification center defaulting to all categories", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   assert.match(workspace, /NotificationCenter/);
-  assert.match(workspace, /defaultCategory="OTP"/);
+  assert.doesNotMatch(workspace, /defaultCategory="OTP"/);
   assert.match(workspace, /vault-notif-badge/);
 });
 
