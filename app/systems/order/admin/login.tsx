@@ -1,5 +1,6 @@
 import {
   Briefcase,
+  ShoppingBag,
   Building2,
   ChevronRight,
   Fingerprint,
@@ -24,9 +25,11 @@ import {
 } from "../../../lib/api";
 import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
 import type { DataRow } from "./core";
-import { AppLogo, Sheet, Toast } from "./ui";
+import { Sheet } from "./ui";
 import { SliderCaptcha } from "../../../components/SliderCaptcha";
 import { getPasskey } from "../../../lib/passkey";
+import VaultToastMessage from "../../otp/VaultToastMessage";
+import "../../otp/otp-auth.css";
 
 export function LoginScreen({ onLogin }: { onLogin: (token: string, username: string) => void }) {
   const [username, setUsername] = useState("");
@@ -112,35 +115,33 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
   }
 
   return (
-    <main className="login-page">
-      <div className="login-orb login-orb-one" /><div className="login-orb login-orb-two" />
-      <section className="login-card">
-        <AppLogo />
-        <div className="login-copy"><span className="eyebrow">移动工作台</span><h1>欢迎回来</h1><p>在手机上高效处理订单、发货和账单。</p></div>
-        <form onSubmit={submit} className="login-form">
-          <label><span>账号</span><div className="input-shell"><User size={18} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></div></label>
-          <label><span>密码</span><div className="input-shell"><LockKeyhole size={18} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label>
-          {captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
-          <label className="remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>记住账号</span></label>
-          <button className="login-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={19} /> : <ShieldCheck size={19} />}{loading ? "正在登录" : "安全登录"}</button>
-        </form>
-        <p className="login-footnote"><span /> 账号密码将通过 RSA 加密传输</p>
-        <div className="login-secondary-links">
-          <button type="button" className="login-link-button" onClick={() => setEmailLoginOpen(true)}>
-            <Send size={14} />使用邮箱登录
-          </button>
-          <span className="login-link-divider" />
-          <button type="button" className="login-link-button" disabled={loading} onClick={() => void loginWithPasskey()}>
-            <Fingerprint size={14} />Passkey 登录
-          </button>
-          <span className="login-link-divider" />
-          <button type="button" className="login-link-button" onClick={() => setForgotOpen(true)}>
-            <LockKeyhole size={14} />忘记密码
-          </button>
-        </div>
-          <a className="public-tools-entry" href={APP_ROUTES.tools}><Sparkles size={16} /><span><b>进入工具箱</b><small>订单查询 · 运费计算 · 运费对比</small></span><ChevronRight size={16} /></a>
-        <a className="icp-link login-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
-      </section>
+    <main className="otp-auth-page login-order-page">
+      <div className="otp-auth-app">
+        <section className="otp-auth-hero">
+          <span className="otp-auth-mark"><ShoppingBag size={25} /></span>
+          <div className="otp-auth-brand"><small>ORDER SYSTEM</small><h1>喜八订单管理</h1><p>移动工作台 · 订单、发货与账单</p></div>
+          <div className="otp-auth-signal"><ShieldCheck size={14} />RSA 加密通道已就绪</div>
+        </section>
+        <section className="otp-auth-card">
+          <span className="otp-auth-handle" aria-hidden="true" />
+          <div className="otp-auth-copy"><h2>欢迎回来</h2><p>账号密码登录，也可以使用邮箱验证码或 Passkey。</p></div>
+          <form onSubmit={submit} className="otp-auth-form">
+            <label><span>账号</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></div></label>
+            <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label>
+            {captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
+            <label className="otp-long-session"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><i /><span><b>记住账号</b><small>下次打开自动填入</small></span></label>
+            <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
+            <button className="otp-auth-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}{loading ? "正在登录" : "安全登录"}</button>
+          </form>
+          <div className="otp-auth-alt">
+            <button type="button" onClick={() => setEmailLoginOpen(true)}><Send size={14} />邮箱登录</button>
+            <button type="button" disabled={loading} onClick={() => void loginWithPasskey()}><Fingerprint size={14} />Passkey</button>
+            <button type="button" onClick={() => setForgotOpen(true)}><LockKeyhole size={14} />忘记密码</button>
+          </div>
+          <footer><a className="otp-auth-alt-link" href={APP_ROUTES.tools}><Sparkles size={13} />进入工具箱 · 订单查询 / 运费计算 / 运费对比<ChevronRight size={13} /></a></footer>
+        </section>
+      </div>
+      <a className="icp-link otp-auth-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
       <EmailLoginSheet
         open={emailLoginOpen}
         onClose={() => setEmailLoginOpen(false)}
@@ -150,7 +151,6 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
         }}
       />
       <ForgotPasswordSheet open={forgotOpen} onClose={() => setForgotOpen(false)} />
-      <Toast toast={message ? { message, type: "error" } : null} />
     </main>
   );
 }

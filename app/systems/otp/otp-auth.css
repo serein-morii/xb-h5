@@ -346,3 +346,39 @@ html.theme-dark {
 @media (max-width: 560px) {
   .otp-auth-form > label > div:not(.slider-captcha) { min-height: 40px; padding: 0 11px; border-radius: 11px; }
 }
+
+/* ---------- 订单系统登录页复用 OTP 风格的补充样式 ---------- */
+.otp-auth-alt {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-top: 13px;
+}
+.otp-auth-alt button {
+  min-height: 40px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  border: 1px solid rgba(38, 50, 77, 0.12); border-radius: 12px;
+  background: #fff; color: #46506a;
+  font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.otp-auth-alt button:hover { border-color: rgba(79, 99, 210, 0.45); color: #4c5cc5; }
+.otp-auth-alt button:disabled { opacity: 0.55; cursor: default; }
+.otp-auth-card footer { margin-top: 13px; }
+.otp-auth-alt-link {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 12px;
+  border: 1px dashed rgba(38, 50, 77, 0.16); border-radius: 12px;
+  color: #6f788b; font-size: 11px; text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+.otp-auth-alt-link:hover { color: #4c5cc5; border-color: rgba(79, 99, 210, 0.4); }
+.otp-auth-icp {
+  position: fixed; left: 0; right: 0; bottom: max(10px, env(safe-area-inset-bottom));
+  display: flex; justify-content: center;
+  color: #a5abb8; font-size: 10.5px; text-decoration: none;
+}
+@media (max-width: 560px) {
+  .otp-auth-alt { grid-template-columns: 1fr; }
+  .otp-auth-alt button { min-height: 42px; }
+}
