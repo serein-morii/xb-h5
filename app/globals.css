@@ -13005,3 +13005,6 @@ body.slider-captcha-open { overflow: hidden; }
   .slider-captcha-backdrop,
   .slider-captcha-dialog { animation: none; }
 }
+
+/* 菜单头部操作组（铃铛 + 用户） */
+.menu-header-actions { display: flex; align-items: center; gap: 8px; }

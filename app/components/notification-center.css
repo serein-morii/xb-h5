@@ -11,6 +11,7 @@
 @keyframes notif-fade { from { opacity: 0; } }
 
 .notif-panel {
+  position: relative;
   width: min(390px, 100%);
   max-height: 80vh;
   display: flex; flex-direction: column;
@@ -217,3 +218,20 @@
   .notif-popup footer { padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); }
   .notif-popup footer button { min-height: 40px; }
 }
+
+/* ---------- 精致细节 ---------- */
+.notif-item-actions .notif-icon-action { opacity: 0.55; transition: opacity 0.14s, background 0.14s, color 0.14s; }
+.notif-item:hover .notif-item-actions .notif-icon-action,
+.notif-item-actions .notif-icon-action:focus-visible { opacity: 1; }
+.notif-item.is-unread .notif-item-actions .notif-icon-action { opacity: 1; }
+.notif-bell:focus-visible,
+.notif-icon-action:focus-visible,
+.notif-back:focus-visible,
+.notif-tabs button:focus-visible,
+.notif-item-main:focus-visible,
+.notif-popup-confirm:focus-visible,
+.notif-popup-dismiss:focus-visible { outline: 2px solid #4c5cc5; outline-offset: 2px; }
+.notif-list { scrollbar-width: thin; }
+.notif-list::-webkit-scrollbar { width: 5px; }
+.notif-list::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(15, 23, 42, 0.14); }
+.notif-item-main:focus-visible { outline-offset: -2px; border-radius: 11px; }

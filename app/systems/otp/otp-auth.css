@@ -359,3 +359,24 @@ html.theme-dark {
   display: flex; justify-content: center;
   color: #a5abb8; font-size: 10.5px; text-decoration: none;
 }
+
+/* ---------- 订单系统登录页品牌化：同结构、订单绿 ---------- */
+.login-order-page {
+  --xb-accent: #2f8f60;
+  --xb-accent-pressed: #26764f;
+  --xb-accent-soft: #e7f4ec;
+  background: radial-gradient(circle at 20% 0, rgba(76, 175, 122, 0.22), transparent 32%),
+    linear-gradient(155deg, #0f1f18, #16352a 55%, #10241d);
+  padding-bottom: 64px;
+}
+.login-order-page .otp-auth-page::before { opacity: 0.16; }
+.login-order-page .otp-auth-mark { background: linear-gradient(135deg, #2f8f60, #67b98c); box-shadow: 0 10px 22px rgba(31, 107, 71, 0.3); border-color: rgba(255, 255, 255, 0.2); }
+.login-order-page .otp-auth-submit { background: #2f8f60; box-shadow: 0 10px 22px rgba(31, 107, 71, 0.26); }
+.login-order-page .otp-auth-submit:hover { background: #287c53; }
+.login-order-page .otp-login-methods button.is-active { color: #23875c; }
+.login-order-page .otp-login-methods button.is-active::after { background: #2f8f60; }
+.login-order-page .otp-auth-card > header small,
+.login-order-page .otp-auth-alt-link:hover,
+.login-order-page .otp-auth-forgot:hover { color: #23875c; }
+.login-order-page .otp-auth-signal { color: rgba(214, 240, 224, 0.78); }
+.login-order-page .otp-auth-app .otp-auth-card { border-color: rgba(255, 255, 255, 0.4); }

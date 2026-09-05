@@ -62,3 +62,16 @@ test("otp keeps logout inside 我的 page instead of the header", async () => {
   assert.match(workspace, /<h2>我的<\/h2>/);
   assert.match(workspace, /\['settings', Settings2, '我的'\]/);
 });
+
+test("order admin exposes notification center from menu sheet and branded login", async () => {
+  const [shell, login] = await Promise.all([
+    source("app/systems/order/admin/shell.tsx"),
+    source("app/systems/order/admin/login.tsx"),
+  ]);
+  assert.match(shell, /notifCount=\{unread\.count\}/);
+  assert.match(shell, /onOpenNotif=\{\(\) => \{ setMenuOpen\(false\); setNotifOpen\(true\); \}\}/);
+  assert.match(login, /login-order-page/);
+  assert.match(login, /otp-login-methods/);
+  assert.match(login, /requestEmailCode/);
+  assert.match(login, /loginByEmail\(value, emailCode\.trim\(\)\)/);
+});

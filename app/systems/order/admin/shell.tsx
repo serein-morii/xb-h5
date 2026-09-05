@@ -133,7 +133,7 @@ function MenuDirectoryPage({ directory, children, onSelect, onOpenAll }: { direc
   );
 }
 
-export function MenuSheet({ open, active, activeDirectory, username, userInfo, onClose, onSelect, onOpenDirectory, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig, hierarchyConfig }: { open: boolean; active: MenuKey; activeDirectory: MobileMenuDirectoryKey | null; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onOpenDirectory: (key: MobileMenuDirectoryKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig; hierarchyConfig: MobileEntryPromotionsConfig }) {
+export function MenuSheet({ open, active, activeDirectory, username, userInfo, onClose, onSelect, onOpenDirectory, onLogout, onUserInfoChanged, onReplayTour, notify, menuConfig, hierarchyConfig, notifCount, onOpenNotif }: { open: boolean; active: MenuKey; activeDirectory: MobileMenuDirectoryKey | null; username: string; userInfo: DataRow | null; onClose: () => void; onSelect: (key: MenuKey) => void; onOpenDirectory: (key: MobileMenuDirectoryKey) => void; onLogout: () => void; onUserInfoChanged: () => void; onReplayTour: () => void; notify: (message: string, type?: "success" | "error" | "info") => void; menuConfig: MobileMenuConfig; hierarchyConfig: MobileEntryPromotionsConfig; notifCount: number; onOpenNotif: () => void }) {
   const access = useAccess();
   const [view, setView] = useState<"menu" | "profile" | "settings">("menu");
   const [menuQuery, setMenuQuery] = useState("");
@@ -175,7 +175,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
   const dept = userInfo?.dept;
   const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
   const userEmail = String(userInfo?.email || "");
-  const userButton = <button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button>;
+  const userButton = <span className="menu-header-actions"><NotificationBellButton count={notifCount} onClick={onOpenNotif} label="通知中心" /><button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button></span>;
   // 点"修改密码"：未绑定邮箱先弹 BindEmailSheet，绑定成功后再弹改密弹窗
   function handleChangePwdClick() {
     if (!userEmail) {
@@ -603,7 +603,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
           );
         })}
       </nav>
-      <MenuSheet open={menuOpen} active={active} activeDirectory={activeDirectory} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={navigate} onOpenDirectory={openDirectory} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} menuConfig={menuConfig} hierarchyConfig={entryPromotions} />
+      <MenuSheet open={menuOpen} active={active} activeDirectory={activeDirectory} username={username} userInfo={userInfo} onClose={() => setMenuOpen(false)} onSelect={navigate} onOpenDirectory={openDirectory} onLogout={onLogout} onUserInfoChanged={refreshUserInfo} onReplayTour={replaySystemTour} notify={notify} menuConfig={menuConfig} hierarchyConfig={entryPromotions} notifCount={unread.count} onOpenNotif={() => { setMenuOpen(false); setNotifOpen(true); }} />
       <BindEmailSheet
         open={bindEmailOpen}
         currentEmail={String(userInfo?.email || "")}

@@ -69,7 +69,7 @@ test("credentials list endpoint is rate limited", async () => {
 });
 
 test("in-site message module: typed categories, rich content, unread count", async () => {
-  const [service, impl, controller, sql] = await Promise.all([
+  const [service, , controller, sql] = await Promise.all([
     source("../xb/src/main/java/com/xb/modules/message/service/MessageService.java"),
     source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java"),
     source("../xb/src/main/java/com/xb/modules/message/api/UserMessageController.java"),
