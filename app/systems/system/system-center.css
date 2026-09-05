@@ -176,6 +176,34 @@
 .sc-content .menu-grid button b { color: var(--sc-text); }
 .sc-content .menu-grid button small { color: var(--sc-muted); }
 
+/* 表单 label 纵向布局：文字在上、控件在下 */
+.sc-content .sysbroadcast-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sc-muted);
+}
+.sc-content .sysbroadcast-card label > span { color: var(--sc-muted); font-weight: 600; }
+/* 弹窗开关保持横向卡片布局 */
+.sc-content .sysbroadcast-card label.sysbroadcast-popup {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 9px;
+  margin-top: 4px;
+  color: var(--sc-text);
+}
+
+/* 站内信表单网格：桌面两列（标题/正文/开关独占整行由标记控制） */
+.sc-content .sysbroadcast-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+.sc-content .sysbroadcast-grid > label:first-child { grid-column: 1 / -1; }
+
 /* 通用卡片（站内信 / 账号恢复） */
 .sc-content .sysbroadcast-card {
   border: 1px solid var(--sc-line);
@@ -197,7 +225,7 @@
 .sc-content .sysbroadcast-send:hover { background: #4356c4; }
 .sc-content .sysbroadcast-preview-toggle { border-color: var(--sc-line); border-radius: 10px; }
 .sc-content .sysbroadcast-preview-toggle.is-active { background: var(--sc-text); border-color: var(--sc-text); }
-.sc-content .sysbroadcast-preview { background: #f7f8fc; border-color: rgba(79, 99, 210, 0.3); border-radius: 11px; }
+.sc-content .sysbroadcast-preview { background: var(--sc-bg); border-color: rgba(79, 99, 210, 0.3); border-radius: 11px; }
 .sc-content .sysbroadcast-records article { border-top-color: var(--sc-line); }
 
 /* ---------- 权限兜底页 ---------- */
@@ -559,3 +587,51 @@ html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }
   .sysbroadcast-row { gap: 9px; }
   .sysbroadcast-cell-meta { gap: 4px 12px; font-size: 10.5px; }
 }
+
+/* ---------- 站内信/账号恢复 暗色细节 ---------- */
+html.theme-dark .sc-content .sysbroadcast-popup span,
+html.theme-dark .sc-content .sysrestore-row-main b,
+html.theme-dark .sc-content .sysbroadcast-record-main b { color: var(--sc-text); }
+html.theme-dark .sc-content .sysbroadcast-popup small,
+html.theme-dark .sc-content .sysrestore-row-main small,
+html.theme-dark .sc-content .sysrestore-restored-note { color: var(--sc-muted); }
+html.theme-dark .sc-content .sysrestore-result { border-color: rgba(74, 222, 128, 0.3); background: rgba(74, 222, 128, 0.08); }
+html.theme-dark .sc-content .sysrestore-result b { color: #6ee7a0; }
+html.theme-dark .sc-content .sysrestore-result small { color: #9ad0ae; }
+html.theme-dark .sc-content .sysbroadcast-cell code { background: var(--sc-accent-soft); }
+html.theme-dark .sc-content .notif-chip-popup { background: rgba(240, 195, 108, 0.18); color: #f0c36c; }
+
+/* ---------- 弹窗开关：隐藏原生 checkbox，滑块轨道 ---------- */
+.sc-content .sysbroadcast-popup input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  border: 0;
+  padding: 0;
+}
+.sc-content .sysbroadcast-popup i {
+  flex: none;
+  width: 38px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: rgba(120, 128, 150, 0.45);
+  position: relative;
+  transition: background 0.18s;
+}
+.sc-content .sysbroadcast-popup i::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s;
+}
+.sc-content .sysbroadcast-popup input:checked + i { background: var(--sc-accent); }
+.sc-content .sysbroadcast-popup input:checked + i::after { transform: translateX(16px); }
+.sc-content .sysbroadcast-popup input:focus-visible + i { outline: 2px solid var(--sc-accent); outline-offset: 2px; }

@@ -3,12 +3,17 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { apiRequest, clearStoredToken, getStoredToken, setStoredToken } from "../../lib/api";
 import { AppStartup } from "../../components/AppStartup";
 import { getStartupConfig } from "../../lib/startup";
+import { setThemePreference } from "../../lib/theme";
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { AccessContext, canOpenMenu, createAccessState, EMPTY_ACCESS, fetchAccessManifest } from "../order/admin/access";
 import LoginScreen from "./LoginScreen";
+import { MessagePopupHost, type MessageRequest } from "../../components/NotificationCenter";
 import { Toast } from "../order/admin/ui";
 import type { ToastState } from "../order/admin/core";
 import "./system-center.css";
+import { installDevPreview } from "./devPreview";
+
+installDevPreview();
 
 const SystemManagementCenter = lazy(() => import("../order/admin/system-management"));
 const OperationsCenterPage = lazy(() => import("../order/admin/operations-center"));
@@ -70,6 +75,8 @@ export default function SystemCenterApp() {
   }, []);
   useEffect(() => {
     if (!ready) return;
+    // 系统中心独立入口：进入时按系统偏好应用明暗主题，否则模块的暗色样式不会生效
+    setThemePreference("system");
     const timer = window.setTimeout(() => setShowSplash(false), getStartupConfig("order").minimumMs);
     return () => window.clearTimeout(timer);
   }, [ready]);
@@ -147,6 +154,7 @@ export default function SystemCenterApp() {
 
   return <AccessContext.Provider value={access}>
     <div className="sc-root">
+      <MessagePopupHost request={apiRequest as MessageRequest} />
       {sidebarOpen ? <div className="sc-scrim" onClick={() => setSidebarOpen(false)} aria-hidden="true" /> : null}
       <aside className={`sc-sidebar${sidebarOpen ? " is-open" : ""}`}>
         <div className="sc-brand">
