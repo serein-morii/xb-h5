@@ -36,7 +36,7 @@ export function RiskIpAccessPage({
   backLabel = "系统中心",
 }: {
   notify: Notify;
-  onBack: () => void;
+  onBack?: () => void;
   backLabel?: string;
 }) {
   const access = useAccess();
@@ -127,7 +127,7 @@ export function RiskIpAccessPage({
     <div className="module-page risk-ip-mobile-page">
       <div className="module-hero compact-hero risk-ip-mobile-hero">
         <div>
-          <MobileBackButton label={backLabel} onClick={onBack} />
+          {onBack ? <MobileBackButton label={backLabel} onClick={onBack} /> : null}
           <h1>风险 IP 控制</h1>
           <p>记录每个来源 IP，并控制它是否可以访问系统</p>
         </div>

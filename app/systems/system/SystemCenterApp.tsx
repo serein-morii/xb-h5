@@ -187,7 +187,7 @@ export default function SystemCenterApp() {
         <main className="sc-content">
           {!access.ready ? <div className="sc-loading"><LoaderCircle className="spin" size={22} />正在同步权限</div>
             : activeArea === "operations" ? <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><OperationsCenterPage notify={notify} /></Suspense>
-            : activeArea === "riskIps" ? <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><RiskIpAccessPage notify={notify} onBack={() => switchArea("system")} backLabel="系统管理" /></Suspense>
+            : activeArea === "riskIps" ? <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><RiskIpAccessPage notify={notify} /></Suspense>
             : activeArea === "messages" ? <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><MessageBroadcast notify={notify} /></Suspense>
             : activeArea === "restore" ? <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><RestoreAccount notify={notify} /></Suspense>
             : <Suspense fallback={<div className="sc-loading"><LoaderCircle className="spin" size={22} />正在加载模块</div>}><SystemManagementCenter notify={notify} /></Suspense>}

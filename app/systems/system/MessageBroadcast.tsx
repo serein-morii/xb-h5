@@ -1,4 +1,4 @@
-import { Check, Eye, LoaderCircle, MonitorUp, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, Eye, LoaderCircle, MonitorUp, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
@@ -19,6 +19,13 @@ const EMPTY_FORM = { title: "", category: "SYSTEM", contentType: "markdown", con
  * 站内信维护：管理员编辑并群发「系统通知 / 升级公告」。
  * 支持按系统模块（角色）定向投递；下方投递记录可再次编辑（可选择重置为未读重新提醒）或删除。
  */
+function formatTime(value?: string) {
+  if (!value) return "--";
+  const time = new Date(String(value).replace(/-/g, "/"));
+  if (Number.isNaN(time.getTime())) return value;
+  return time.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 export default function MessageBroadcast({ notify }: { notify: Notify }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingGroup, setEditingGroup] = useState<BroadcastGroup | null>(null);
@@ -141,27 +148,42 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
       {preview ? <div className="sysbroadcast-preview"><b>预览</b><div className="notif-item-content" dangerouslySetInnerHTML={{ __html: previewHtml }} /></div> : null}
     </form>
 
-    <section className="sysbroadcast-card sysbroadcast-records">
-      <header><b>投递记录</b><small>点击「编辑」可修改已发出的通知并可选重新提醒</small></header>
+    <section className="sysbroadcast-records">
+      <header className="sysbroadcast-records-head">
+        <div><b>投递记录</b><small>共 {records.length} 次群发 · 点击「编辑」可修改内容或重新提醒</small></div>
+        <button type="button" className="sysbroadcast-preview-toggle" onClick={loadRecords}><RefreshCw size={14} />刷新</button>
+      </header>
       {recordsLoading ? <p className="sysbroadcast-empty">正在加载投递记录…</p>
-        : !records.length ? <p className="sysbroadcast-empty">还没有群发过通知。</p>
-        : records.map((group) => (
-          <article key={group.groupKey}>
-            <div className="sysbroadcast-record-main">
-              <b>{group.title}</b>
-              <small>
-                {new Date(String(group.createTime || "").replace(/-/g, "/")).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                {" · "}{Number(group.recipientCount || 0)} 人
-                {" · "}{group.targetRole ? `定向 ${group.targetRole}` : "全部用户"}
-                {group.popup ? " · 弹窗" : ""}
-              </small>
-            </div>
-            <div className="sysbroadcast-record-actions">
-              <button type="button" className="notif-icon-action" title="编辑" onClick={() => startEdit(group)}><Pencil size={13} /></button>
-              <button type="button" className={`notif-icon-action notif-danger${confirmDeleteKey === group.groupKey ? " is-confirm" : ""}`} title={confirmDeleteKey === group.groupKey ? "再点一次确认删除" : "删除"} onClick={() => void removeGroup(group)}><Trash2 size={13} /></button>
-            </div>
-          </article>
-        ))}
+        : !records.length ? <p className="sysbroadcast-empty">还没有群发过通知，填写上方表单发出第一条。</p>
+        : <div className="sysbroadcast-list">
+          <div className="sysbroadcast-row sysbroadcast-row-head" aria-hidden="true">
+            <span>通知</span><span>投递范围</span><span>发送时间</span><span>人数</span><span className="sysbroadcast-cell-actions">操作</span>
+          </div>
+          {records.map((group) => (
+            <article className={`sysbroadcast-row${editingGroup?.groupKey === group.groupKey ? " is-editing" : ""}`} key={group.groupKey}>
+              <div className="sysbroadcast-cell sysbroadcast-cell-title" data-label="通知">
+                <b>{group.title}</b>
+                <span className="sysbroadcast-cell-tags">
+                  <small className={`notif-chip notif-chip-${(group.category || "SYSTEM").toLowerCase()}`}>{group.category === "OTP" ? "OTP" : "系统"}</small>
+                  {group.popup ? <small className="notif-chip notif-chip-popup">弹窗</small> : null}
+                  <small className="sysbroadcast-format">{group.contentType === "html" ? "HTML" : group.contentType === "markdown" ? "MD" : "文本"}</small>
+                </span>
+              </div>
+              <div className="sysbroadcast-cell" data-label="投递范围">{group.targetRole ? <code>{group.targetRole}</code> : "全部用户"}</div>
+              <div className="sysbroadcast-cell" data-label="发送时间">{formatTime(group.createTime)}</div>
+              <div className="sysbroadcast-cell sysbroadcast-cell-count" data-label="人数">{Number(group.recipientCount || 0)}</div>
+              <div className="sysbroadcast-cell sysbroadcast-cell-actions">
+                <button type="button" className="sysbroadcast-op" onClick={() => startEdit(group)}><Pencil size={13} />编辑</button>
+                <button type="button" className={`sysbroadcast-op is-danger${confirmDeleteKey === group.groupKey ? " is-confirm" : ""}`} onClick={() => void removeGroup(group)}><Trash2 size={13} />{confirmDeleteKey === group.groupKey ? "确认删除" : "删除"}</button>
+              </div>
+              <div className="sysbroadcast-cell sysbroadcast-cell-meta">
+                <span>范围 <b>{group.targetRole ? group.targetRole : "全部用户"}</b></span>
+                <span>时间 <b>{formatTime(group.createTime)}</b></span>
+                <span>人数 <b>{Number(group.recipientCount || 0)}</b></span>
+              </div>
+            </article>
+          ))}
+        </div>}
     </section>
   </div>;
 }
