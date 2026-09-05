@@ -2,7 +2,6 @@ import {
   Briefcase,
   ShoppingBag,
   Building2,
-  ChevronRight,
   Fingerprint,
   LoaderCircle,
   LockKeyhole,
@@ -42,7 +41,11 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [emailLoginOpen, setEmailLoginOpen] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"account" | "email" | "passkey">("account");
+  const [email, setEmail] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailCountdown, setEmailCountdown] = useState(0);
   const [forgotOpen, setForgotOpen] = useState(false);
   // 读取因登录过期跳转带来的 flash 提示（由 apiRequest 在 401 时写入 sessionStorage）
   useEffect(() => {
@@ -60,6 +63,12 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
   }, [message]);
 
   useEffect(() => {
+    if (emailCountdown <= 0) return;
+    const timer = window.setTimeout(() => setEmailCountdown((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [emailCountdown]);
+
+  useEffect(() => {
     const saved = window.localStorage.getItem("xb-mobile-username");
     if (saved) setUsername(saved);
     apiRequest<DataRow>(API_PATHS.auth.publicKey, { auth: false }).then((result) => {
@@ -67,9 +76,43 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
       }).catch((error) => setMessage(error instanceof Error ? error.message : "系统初始化失败"));
   }, []);
 
+  function switchLoginMethod(next: "account" | "email" | "passkey") {
+    setLoginMethod(next);
+    setPassword(""); setEmailCode(""); setUuid(""); setCode("");
+    setMessage(""); setCaptchaReset((value) => value + 1);
+  }
+
+  async function requestEmailCode() {
+    const value = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
+    setEmailSending(true); setMessage("");
+    try {
+      const result = await sendEmailCode(value, "login") as { resendAfter?: number };
+      setEmailCountdown(Number(result.resendAfter || 60));
+      setMessage("验证码已发送，请到邮箱查收");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "验证码发送失败"); }
+    finally { setEmailSending(false); }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setMessage("");
+    if (loginMethod === "passkey") return void loginWithPasskey();
+    if (loginMethod === "email") {
+      const value = email.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return setMessage("请输入正确的邮箱地址");
+      if (!/^\d{6}$/.test(emailCode.trim())) return setMessage("请输入 6 位邮箱验证码");
+      setLoading(true);
+      try {
+        const result = await loginByEmail(value, emailCode.trim());
+        const token = String(result.token || "");
+        if (!token) throw new Error("登录成功但未返回凭证");
+        onLogin(token, value);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "登录失败");
+      } finally { setLoading(false); }
+      return;
+    }
     if (!username.trim() || !password) return setMessage("请输入账号和密码");
     if (captchaOn && !code.trim()) return setMessage("请先完成滑块验证");
     if (!publicKey) return setMessage("登录加密尚未准备完成，请稍后重试");
@@ -119,166 +162,30 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
       <div className="otp-auth-app">
         <section className="otp-auth-hero">
           <span className="otp-auth-mark"><ShoppingBag size={25} /></span>
-          <div className="otp-auth-brand"><small>ORDER SYSTEM</small><h1>喜八订单管理</h1><p>移动工作台 · 订单、发货与账单</p></div>
+          <div className="otp-auth-brand"><small>ORDER SYSTEM</small><h1>喜八订单管理</h1><p>订单、发货与账单的移动工作台</p></div>
           <div className="otp-auth-signal"><ShieldCheck size={14} />RSA 加密通道已就绪</div>
         </section>
         <section className="otp-auth-card">
           <span className="otp-auth-handle" aria-hidden="true" />
-          <div className="otp-auth-copy"><h2>欢迎回来</h2><p>账号密码登录，也可以使用邮箱验证码或 Passkey。</p></div>
-          <form onSubmit={submit} className="otp-auth-form">
-            <label><span>账号</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder="请输入账号" /></div></label>
-            <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label>
-            {captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
-            <label className="otp-long-session"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><i /><span><b>记住账号</b><small>下次打开自动填入</small></span></label>
+          <div className="otp-auth-copy"><h2>欢迎回来</h2><p>{loginMethod === "account" ? "使用账号密码登录订单系统。" : loginMethod === "passkey" ? "通过此设备的生物识别或系统 PIN 登录。" : "使用绑定邮箱的验证码登录。"}</p></div>
+          <div className="otp-login-methods"><button type="button" className={loginMethod === "account" ? "is-active" : ""} onClick={() => switchLoginMethod("account")}>账号密码</button><button type="button" className={loginMethod === "email" ? "is-active" : ""} onClick={() => switchLoginMethod("email")}>邮箱验证码</button><button type="button" className={loginMethod === "passkey" ? "is-active" : ""} onClick={() => switchLoginMethod("passkey")}>Passkey</button></div>
+          <form className="otp-auth-form" onSubmit={submit}>
+            {loginMethod === "account" || loginMethod === "passkey" ? <label><span>{loginMethod === "passkey" ? "账号或邮箱" : "账号"}</span><div><User size={17} /><input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" placeholder={loginMethod === "passkey" ? "输入账号或邮箱" : "请输入账号"} /></div></label> : null}
+            {loginMethod === "email" ? <label><span>邮箱</span><div><Send size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="请输入已绑定邮箱" /></div></label> : null}
+            {loginMethod === "email" ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={17} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder="6 位验证码" /><button type="button" disabled={emailSending || emailCountdown > 0} onClick={() => void requestEmailCode()}>{emailSending ? "发送中" : emailCountdown > 0 ? `${emailCountdown}s` : "获取验证码"}</button></div></label> : null}
+            {loginMethod === "account" ? <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" /></div></label> : null}
+            {loginMethod === "account" && captchaOn ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={loading} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
+            {loginMethod === "account" ? <label className="otp-long-session"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><i /><span><b>记住账号</b><small>下次打开自动填入</small></span></label> : null}
+            {loginMethod === "account" ? <button type="button" className="otp-auth-forgot" onClick={() => setForgotOpen(true)}>忘记密码？</button> : null}
             <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
-            <button className="otp-auth-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : <ShieldCheck size={18} />}{loading ? "正在登录" : "安全登录"}</button>
+            <button className="otp-auth-submit" disabled={loading} type="submit">{loading ? <LoaderCircle className="spin" size={18} /> : loginMethod === "passkey" ? <Fingerprint size={18} /> : <ShieldCheck size={18} />}{loading ? "正在处理" : loginMethod === "passkey" ? "使用 Passkey 登录" : loginMethod === "email" ? "验证并登录" : "安全登录"}</button>
           </form>
-          <div className="otp-auth-alt">
-            <button type="button" onClick={() => setEmailLoginOpen(true)}><Send size={14} />邮箱登录</button>
-            <button type="button" disabled={loading} onClick={() => void loginWithPasskey()}><Fingerprint size={14} />Passkey</button>
-            <button type="button" onClick={() => setForgotOpen(true)}><LockKeyhole size={14} />忘记密码</button>
-          </div>
-          <footer><a className="otp-auth-alt-link" href={APP_ROUTES.tools}><Sparkles size={13} />进入工具箱 · 订单查询 / 运费计算 / 运费对比<ChevronRight size={13} /></a></footer>
+          <footer><a href={APP_ROUTES.tools}><Sparkles size={13} />进入工具箱 · 订单查询 / 运费计算</a></footer>
         </section>
       </div>
       <a className="icp-link otp-auth-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a>
-      <EmailLoginSheet
-        open={emailLoginOpen}
-        onClose={() => setEmailLoginOpen(false)}
-        onLogin={(token, email) => {
-          setEmailLoginOpen(false);
-          onLogin(token, email);
-        }}
-      />
       <ForgotPasswordSheet open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </main>
-  );
-}
-
-/**
- * 邮箱登录 Sheet：邮箱 + 验证码（无密码），用于辅助登录入口
- */
-export function EmailLoginSheet({
-  open,
-  onClose,
-  onLogin,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onLogin: (token: string, username: string) => void;
-}) {
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [sending, setSending] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
-  useEffect(() => {
-    if (!open) {
-      setEmail("");
-      setCode("");
-      setMessage(null);
-      setCountdown(0);
-    }
-  }, [open]);
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = window.setTimeout(() => setCountdown((current) => current - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [countdown]);
-  async function requestCode() {
-    if (!email.trim()) return setMessage({ type: "error", text: "请输入邮箱" });
-    if (countdown > 0) return;
-    setSending(true);
-    setMessage(null);
-    try {
-      await sendEmailCode(email, "login");
-      setMessage({ type: "info", text: "验证码已发送，请到邮箱查收" });
-      setCountdown(60);
-    } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "发送失败" });
-    } finally {
-      setSending(false);
-    }
-  }
-  async function submit() {
-    if (!email.trim() || !code.trim()) return setMessage({ type: "error", text: "请输入邮箱和验证码" });
-    setSubmitting(true);
-    setMessage(null);
-    try {
-      const result = await loginByEmail(email, code);
-      const token = String(result.token || "");
-      if (!token) throw new Error("登录成功但未返回凭证");
-      onLogin(token, email.trim());
-    } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "登录失败" });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-  return (
-    <Sheet
-      open={open}
-      title="邮箱登录"
-      onClose={onClose}
-      headerAction={
-        <button className="sheet-header-save" type="submit" form="email-login-form" disabled={submitting}>
-          {submitting ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />}
-          {submitting ? "登录中" : "登录"}
-        </button>
-      }
-    >
-      <form
-        id="email-login-form"
-        className="mobile-form email-auth-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          submit();
-        }}
-      >
-        <label>
-          <span>邮箱</span>
-          <div className="input-shell">
-            <Send size={18} />
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              placeholder="请输入注册时使用的邮箱"
-            />
-          </div>
-        </label>
-        <label>
-          <span>验证码</span>
-          <div className="input-shell email-code-shell">
-            <ShieldCheck size={18} />
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="6 位数字"
-            />
-            <button
-              type="button"
-              className="email-code-button"
-              onClick={requestCode}
-              disabled={sending || countdown > 0}
-            >
-              {sending ? <LoaderCircle className="spin" size={16} /> : countdown > 0 ? `${countdown}s` : "获取验证码"}
-            </button>
-          </div>
-        </label>
-        {message ? (
-          <p className={`tool-error email-auth-alert ${message.type === "info" ? "is-info" : ""}`}>
-            <ShieldCheck size={14} />
-            {message.text}
-          </p>
-        ) : null}
-        <p className="email-auth-tip">未注册邮箱无法登录，请联系管理员开通账号</p>
-      </form>
-    </Sheet>
   );
 }
 

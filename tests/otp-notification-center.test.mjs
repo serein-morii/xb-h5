@@ -166,21 +166,29 @@ test("popup announcements: ack on confirm, re-pop when dismissed", async () => {
   assert.match(controller, /Boolean\.parseBoolean\(body\.get\("popup"\)\)/);
 });
 
-test("broadcast supports role targeting, delivery records with edit/delete", async () => {
-  const [form, controller, mapper, sql] = await Promise.all([
+test("broadcast targets business systems (ORDER/OTP/ADMIN), records editable", async () => {
+  const [form, service, controller, mapper, sql] = await Promise.all([
     source("app/systems/system/MessageBroadcast.tsx"),
+    source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java"),
     source("../xb/src/main/java/com/xb/modules/message/api/UserMessageController.java"),
     source("../xb/src/main/java/com/xb/modules/message/mapper/UserMessageMapper.java"),
     source("../xb/sql/20260905_user_message_broadcast.sql"),
   ]);
   assert.match(form, /投递范围/);
-  assert.match(form, /roleKey/);
+  assert.match(form, /订单系统/);
+  assert.match(form, /OTP 系统/);
+  assert.match(form, /target: "ALL"/);
   assert.match(form, /投递记录/);
   assert.match(form, /broadcast\/list/);
+  assert.match(service, /resolveTargets/);
+  assert.match(service, /case "ORDER" -> mapper\.selectOrderSystemUserIds/);
+  assert.match(service, /case "OTP" -> mapper\.selectUserIdsByRoleKey\("otp_user"\)/);
+  assert.match(controller, /body\.get\("target"\)/);
   assert.match(controller, /@GetMapping\("\/broadcast\/list"\)/);
   assert.match(controller, /@PutMapping\("\/broadcast\/\{groupKey\}"\)/);
   assert.match(controller, /@DeleteMapping\("\/broadcast\/\{groupKey\}"\)/);
-  assert.match(mapper, /selectUserIdsByRoleKey/);
+  assert.match(mapper, /selectOrderSystemUserIds/);
+  assert.match(mapper, /selectAdminUserIds/);
   assert.match(mapper, /updateBroadcastGroup/);
   assert.match(sql, /target_role/);
   assert.match(sql, /group_key/);

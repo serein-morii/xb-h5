@@ -6,14 +6,24 @@ import { renderRichText } from "../../lib/richText";
 
 type Notify = (message: string, type?: "success" | "error" | "info") => void;
 
-type RoleRow = { roleId?: number; roleName?: string; roleKey?: string; status?: string; delFlag?: string };
-
 type BroadcastGroup = {
   groupKey: string; title: string; category?: string; contentType?: string; popup?: boolean;
   link?: string; content?: string; targetRole?: string | null; createTime?: string; recipientCount?: number;
 };
 
-const EMPTY_FORM = { title: "", category: "SYSTEM", contentType: "markdown", content: "", link: "", popup: false, roleKey: "" };
+const EMPTY_FORM = { title: "", category: "SYSTEM", contentType: "markdown", content: "", link: "", popup: false, target: "ALL" };
+
+/** 投递目标：按业务系统模块。 */
+const TARGETS = [
+  { value: "ALL", label: "全部用户" },
+  { value: "ORDER", label: "订单系统" },
+  { value: "OTP", label: "OTP 系统" },
+  { value: "ADMIN", label: "仅管理员" },
+] as const;
+
+function targetLabel(value?: string | null) {
+  return TARGETS.find((item) => item.value === value)?.label || "全部用户";
+}
 
 /**
  * 站内信维护：管理员编辑并群发「系统通知 / 升级公告」。
@@ -30,7 +40,6 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingGroup, setEditingGroup] = useState<BroadcastGroup | null>(null);
   const [resetRead, setResetRead] = useState(true);
-  const [roles, setRoles] = useState<RoleRow[]>([]);
   const [records, setRecords] = useState<BroadcastGroup[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
@@ -48,13 +57,6 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
 
   useEffect(() => {
     loadRecords();
-    // 角色列表用于「按系统模块定向」：OTP 用户 / 各业务角色等
-    apiRequest<{ rows?: RoleRow[]; data?: RoleRow[] }>(`${API_PATHS.identity.roles}?pageNum=1&pageSize=100&status=0`)
-      .then((result) => {
-        const rows = Array.isArray(result.rows) ? result.rows : Array.isArray(result.data) ? result.data : [];
-        setRoles(rows.filter((row) => row.roleKey && String(row.status ?? "0") === "0"));
-      })
-      .catch(() => setRoles([]));
   }, [loadRecords]);
 
   function setField<K extends keyof typeof EMPTY_FORM>(key: K, value: (typeof EMPTY_FORM)[K]) {
@@ -70,7 +72,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
       content: group.content || "",
       link: group.link || "",
       popup: Boolean(group.popup),
-      roleKey: group.targetRole || "",
+      target: group.targetRole || "ALL",
     });
     setPreview(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -90,14 +92,14 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
       if (editingGroup) {
         const result = await apiRequest<{ data?: { updated?: number } }>(`${API_PATHS.message.root}/broadcast/${editingGroup.groupKey}`, {
           method: "PUT",
-          body: { ...form, roleKey: form.roleKey || undefined, resetRead },
+          body: { ...form, resetRead },
         });
         notify(`已更新 ${Number(result.data?.updated ?? 0)} 条投递${resetRead ? "，并重置为未读提醒" : ""}`, "success");
         cancelEdit();
       } else {
         const result = await apiRequest<{ data?: { sent?: number } }>(`${API_PATHS.message.root}/broadcast`, {
           method: "POST",
-          body: { ...form, roleKey: form.roleKey || undefined },
+          body: { ...form },
         });
         notify(`通知已投递给 ${Number(result.data?.sent ?? 0)} 位用户`, "success");
         setForm({ ...EMPTY_FORM });
@@ -133,7 +135,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
         <label><span>标题 *</span><input value={form.title} onChange={(event) => setField("title", event.target.value)} maxLength={60} placeholder="例如：OTP Vault 新版本上线" /></label>
         <label><span>分类</span><select value={form.category} onChange={(event) => setField("category", event.target.value)}><option value="SYSTEM">系统通知</option><option value="OTP">OTP 安全</option></select></label>
         <label><span>内容格式</span><select value={form.contentType} onChange={(event) => setField("contentType", event.target.value)}><option value="text">纯文本</option><option value="markdown">Markdown</option><option value="html">HTML</option></select></label>
-        <label><span>投递范围</span><select value={form.roleKey} onChange={(event) => setField("roleKey", event.target.value)}><option value="">全部有效用户</option>{roles.map((role) => <option key={String(role.roleKey)} value={String(role.roleKey)}>{role.roleName || role.roleKey}（{role.roleKey}）</option>)}</select></label>
+        <label><span>投递范围</span><select value={form.target} onChange={(event) => setField("target", event.target.value)}>{TARGETS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
       </div>
       <label><span>正文（{form.contentType === "html" ? "HTML 源码" : form.contentType === "markdown" ? "Markdown" : "纯文本"}）*</span><textarea rows={8} value={form.content} onChange={(event) => setField("content", event.target.value)} placeholder={form.contentType === "text" ? "通知正文…" : "支持标题、**加粗**、列表、链接等格式…"} /></label>
       <label className="sysbroadcast-popup"><input type="checkbox" checked={form.popup} onChange={(event) => setField("popup", event.target.checked)} /><i /><span><MonitorUp size={14} />打开页面时弹窗展示</span><small>用户点击「确认」后不再弹出；直接关闭或忽略则下次打开仍会弹。</small></label>
@@ -169,7 +171,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
                   <small className="sysbroadcast-format">{group.contentType === "html" ? "HTML" : group.contentType === "markdown" ? "MD" : "文本"}</small>
                 </span>
               </div>
-              <div className="sysbroadcast-cell" data-label="投递范围">{group.targetRole ? <code>{group.targetRole}</code> : "全部用户"}</div>
+              <div className="sysbroadcast-cell" data-label="投递范围"><b>{targetLabel(group.targetRole)}</b></div>
               <div className="sysbroadcast-cell" data-label="发送时间">{formatTime(group.createTime)}</div>
               <div className="sysbroadcast-cell sysbroadcast-cell-count" data-label="人数">{Number(group.recipientCount || 0)}</div>
               <div className="sysbroadcast-cell sysbroadcast-cell-actions">
@@ -177,7 +179,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
                 <button type="button" className={`sysbroadcast-op is-danger${confirmDeleteKey === group.groupKey ? " is-confirm" : ""}`} onClick={() => void removeGroup(group)}><Trash2 size={13} />{confirmDeleteKey === group.groupKey ? "确认删除" : "删除"}</button>
               </div>
               <div className="sysbroadcast-cell sysbroadcast-cell-meta">
-                <span>范围 <b>{group.targetRole ? group.targetRole : "全部用户"}</b></span>
+                <span>范围 <b>{targetLabel(group.targetRole)}</b></span>
                 <span>时间 <b>{formatTime(group.createTime)}</b></span>
                 <span>人数 <b>{Number(group.recipientCount || 0)}</b></span>
               </div>

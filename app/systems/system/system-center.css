@@ -443,3 +443,60 @@ html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }
   .sc-content .opsc-root,
   .sc-content .sysm-center { max-width: 100%; min-width: 0; overflow-x: auto; }
 }
+
+/* ---------- 手机端全面适配（≤600px） ---------- */
+@media (max-width: 600px) {
+  .sc-topbar { padding: 9px 12px; gap: 10px; }
+  .sc-topbar-title h1 { font-size: 15px; }
+  .sc-topbar-user small { display: none; }
+  .sc-avatar { width: 30px; height: 30px; font-size: 12px; }
+  .sc-content { padding: 12px 11px 34px; overflow-x: hidden; }
+
+  /* 页头卡片压缩：顶栏已有标题，这里只保留导语 */
+  .sc-content .module-hero,
+  .sc-content .compact-hero { padding: 13px 14px; border-radius: 13px; gap: 10px; }
+  .sc-content .module-hero h1 { font-size: 15.5px; }
+  .sc-content .module-hero p { font-size: 11.5px; }
+  .sc-content .hero-tool-icon { width: 34px; height: 34px; border-radius: 10px; }
+
+  /* 功能宫格单列 + 触控高度 */
+  .sc-content .menu-grid { grid-template-columns: 1fr; gap: 8px; }
+  .sc-content .menu-grid button { padding: 12px 13px; min-height: 62px; }
+  .sc-content .menu-grid button b { font-size: 13.5px; }
+  .sc-content .menu-grid button small { font-size: 10.5px; }
+
+  /* 工具栏：搜索 15px 防 iOS 缩放，按钮触控化 */
+  .sc-content .toolbar-card { margin: 8px 0; gap: 6px; }
+  .sc-content .quick-search input { font-size: 15px; }
+  .sc-content .quick-search { min-height: 42px; }
+  .sc-content .round-add { width: 46px; height: 46px; border-radius: 15px; }
+
+  /* 通用按钮触控目标 */
+  .sc-content .button { min-height: 42px; }
+
+  /* 卡片列表紧凑 */
+  .sc-content .mobile-card-list { gap: 8px; }
+
+  /* 表格模块：横向滚动 + 触控惯性 + 紧凑单元格 */
+  .sc-content .opsc-table-wrap,
+  .sc-content [class*="table-wrap"] { -webkit-overflow-scrolling: touch; border-radius: 12px; }
+  .sc-content .opsc-table th, .sc-content .opsc-table td { padding: 9px 10px; }
+  .sc-content .opsc-table { font-size: 11.5px; }
+
+  /* 表单：防 iOS 聚焦缩放 + 触控按钮 */
+  .sc-content .sysbroadcast-card { padding: 14px 14px; gap: 11px; }
+  .sc-content .sysbroadcast-card input,
+  .sc-content .sysbroadcast-card select,
+  .sc-content .sysbroadcast-card textarea { font-size: 15px; }
+  .sc-content .sysbroadcast-card select { min-height: 42px; }
+  .sc-content .sysbroadcast-send { min-height: 44px; flex: 1; justify-content: center; }
+  .sc-content .sysbroadcast-actions { flex-direction: column-reverse; align-items: stretch; }
+  .sc-content .sysbroadcast-actions-left { justify-content: flex-start; }
+  .sc-content .sysbroadcast-preview-toggle { min-height: 38px; }
+  .sc-content .sysbroadcast-popup { font-size: 12px; }
+
+  /* 模块溢出兜底 */
+  .sc-content .module-page,
+  .sc-content .opsc-root,
+  .sc-content .sysm-center { max-width: 100%; min-width: 0; overflow-x: auto; }
+}
