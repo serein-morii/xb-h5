@@ -1,5 +1,7 @@
 export const SHARE_ITEM_LIMIT = 50;
 export const PENDING_SAVE_KEY = "otp-vault-pending-save";
+const SHARE_CODE_PREFIX = "otp-vault-share-code:";
+const SHARE_RETURN = /^\/s\/[A-Za-z0-9_-]{5,16}(?:#k=[A-Za-z0-9]{4,12})?$/;
 
 export type CredentialTab = "all" | "favorite" | "received";
 
@@ -19,6 +21,25 @@ export function matchesCredentialTab(item: { shared?: boolean; favorite?: boolea
   return showShared || !item.shared;
 }
 
-export function shareLoginNext(token: string) {
-  return `/otp?next=${encodeURIComponent(`/s/${token}`)}`;
+export function shareAccessCodeKey(token: string) {
+  return `${SHARE_CODE_PREFIX}${token}`;
+}
+
+export function rememberShareAccessCode(token: string, accessCode: string) {
+  const code = accessCode.trim().toUpperCase();
+  if (code) sessionStorage.setItem(shareAccessCodeKey(token), code);
+}
+
+export function readShareAccessCode(token: string) {
+  return sessionStorage.getItem(shareAccessCodeKey(token)) || "";
+}
+
+export function shareLoginNext(token: string, accessCode = "") {
+  const code = accessCode.trim().toUpperCase();
+  const path = code ? `/s/${token}#k=${code}` : `/s/${token}`;
+  return `/otp?next=${encodeURIComponent(path)}`;
+}
+
+export function shareReturnPath(next: string) {
+  return SHARE_RETURN.test(next) ? next : "";
 }

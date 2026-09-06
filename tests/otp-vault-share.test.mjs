@@ -7,6 +7,7 @@ import {
   matchesCredentialTab,
   selectShareItems,
   shareLoginNext,
+  shareReturnPath,
   toggleShareSelection,
 } from "../app/systems/otp/otpVaultShare.ts";
 
@@ -39,6 +40,10 @@ test("credential tabs keep received items in all and favorites", () => {
 test("unauthenticated save returns to the share link after login", () => {
   assert.equal(PENDING_SAVE_KEY, "otp-vault-pending-save");
   assert.equal(shareLoginNext("Ab3De"), "/otp?next=%2Fs%2FAb3De");
+  assert.equal(shareLoginNext("Ab3De", "A1B2C"), `/otp?next=${encodeURIComponent("/s/Ab3De#k=A1B2C")}`);
+  assert.equal(shareReturnPath("/s/Ab3De"), "/s/Ab3De");
+  assert.equal(shareReturnPath("/s/Ab3De#k=A1B2C"), "/s/Ab3De#k=A1B2C");
+  assert.equal(shareReturnPath("/otp"), "");
 });
 
 test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () => {
@@ -52,8 +57,10 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /单次最多(?:授权|选择) \$\{SHARE_ITEM_LIMIT\}/);
   assert.match(workspace, /credentialTab === "received"/);
   assert.match(sharePage, /PENDING_SAVE_KEY/);
+  assert.match(sharePage, /shareLoginNext\(token, accessCode\)/);
+  assert.match(sharePage, /rememberShareAccessCode/);
   assert.match(sharePage, /已经转存过了，无需再次转存/);
-  assert.match(vaultPage, /next/);
+  assert.match(vaultPage, /shareReturnPath/);
 });
 
 test("share detail lists save records with kick and ban, and share form can forbid saving", async () => {

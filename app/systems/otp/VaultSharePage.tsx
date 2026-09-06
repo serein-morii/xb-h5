@@ -2,7 +2,7 @@ import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, openVaultShare, saveInboundShare, type SharedItem, type ShareStatus } from "./vaultApi";
-import { PENDING_SAVE_KEY, shareLoginNext } from "./otpVaultShare";
+import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareLoginNext } from "./otpVaultShare";
 import { issuerStyle } from "./issuerStyle";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { scheduleClipboardClear } from "./otpDailyUse";
@@ -11,12 +11,12 @@ import "./otp-vault.css";
 
 export default function VaultSharePage({ token }: { token: string }) {
   const sessionKey = `otp-vault-share:${token}`;
-  const autoFillRef = useRef(/^#k=[A-Za-z0-9]{4,12}$/.test(location.hash));
-  const [status, setStatus] = useState<ShareStatus | null>(null);
   const [accessCode, setAccessCode] = useState(() => {
     const match = location.hash.match(/^#k=([A-Za-z0-9]{4,12})$/);
-    return match ? decodeURIComponent(match[1]).toUpperCase() : "";
+    return match ? decodeURIComponent(match[1]).toUpperCase() : readShareAccessCode(token);
   });
+  const autoFillRef = useRef(Boolean(accessCode));
+  const [status, setStatus] = useState<ShareStatus | null>(null);
   const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(sessionKey) || "");
   const [items, setItems] = useState<SharedItem[]>([]);
   const [allowCopy, setAllowCopy] = useState(false);
@@ -59,9 +59,11 @@ export default function VaultSharePage({ token }: { token: string }) {
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
       setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); setError("");
       if (result.data.name) setStatus((current) => current ? { ...current, name: result.data.name } : current);
+      return true;
     } catch (contentError) {
       sessionStorage.removeItem(sessionKey); setSessionToken(""); setItems([]);
       setError(contentError instanceof Error ? contentError.message : "临时访问会话已失效");
+      return false;
     }
   }, [sessionKey, token]);
 
@@ -77,7 +79,8 @@ export default function VaultSharePage({ token }: { token: string }) {
   const saveToInbox = useCallback(async () => {
     if (!getOtpToken()) {
       sessionStorage.setItem(PENDING_SAVE_KEY, token);
-      window.location.href = shareLoginNext(token);
+      rememberShareAccessCode(token, accessCode);
+      window.location.href = shareLoginNext(token, accessCode);
       return;
     }
     if (!sessionToken) { setError("请先打开授权内容再转存"); return; }
@@ -90,12 +93,13 @@ export default function VaultSharePage({ token }: { token: string }) {
     } catch (saveError) {
       if (saveError && typeof saveError === "object" && "code" in saveError && saveError.code === 401 && !getOtpToken()) {
         sessionStorage.setItem(PENDING_SAVE_KEY, token);
-        window.location.href = shareLoginNext(token);
+        rememberShareAccessCode(token, accessCode);
+        window.location.href = shareLoginNext(token, accessCode);
         return;
       }
       setError(saveError instanceof Error ? saveError.message : "转存失败");
     } finally { setSaving(false); }
-  }, [sessionToken, token]);
+  }, [accessCode, sessionToken, token]);
 
   const open = useCallback(async (code: string, automatic = false) => {
     if (automatic) setAutoOpening(true);
@@ -104,6 +108,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       const result = await openVaultShare(token, code);
       const session = result.data.sessionToken;
       sessionStorage.setItem(sessionKey, session); setSessionToken(session);
+      rememberShareAccessCode(token, code);
       if (location.hash) history.replaceState(null, "", location.pathname + location.search);
       await loadContent(session);
     } catch (openError) { setError(openError instanceof Error ? openError.message : "访问验证失败"); }
@@ -117,8 +122,13 @@ export default function VaultSharePage({ token }: { token: string }) {
     getShareStatus(token).then((result) => {
       setStatus(result.data);
       if (result.data.status !== "ACTIVE") { autoFillRef.current = false; setAutoOpening(false); return; }
-      if (sessionToken) { autoFillRef.current = false; setAutoOpening(false); void loadContent(sessionToken); }
-      else if (!result.data.accessCodeRequired || accessCode) void open(accessCode, autoFillRef.current);
+      const reopen = () => {
+        if (!result.data.accessCodeRequired || accessCode) void open(accessCode, true);
+        else { autoFillRef.current = false; setAutoOpening(false); }
+      };
+      if (sessionToken) {
+        void loadContent(sessionToken).then((ok) => { if (!ok) reopen(); });
+      } else reopen();
     }).catch((loadError) => { autoFillRef.current = false; setAutoOpening(false); setError(loadError instanceof Error ? loadError.message : "授权链接不存在"); });
   }, []);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
