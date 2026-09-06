@@ -383,3 +383,17 @@ html.theme-dark {
 
 /* 系统中心登录页：底部备案留白 */
 .login-system-page { padding-bottom: 64px; }
+
+/* 登录、注册成功等偏空的页面标题收小。 */
+.otp-auth-brand h1 { font-size: 20px; }
+.otp-auth-copy h2 { font-size: 18px; }
+.otp-auth-hero-copy h1 { font-size: 22px; }
+@media (min-width: 561px) {
+  .otp-auth-brand h1 { font-size: 20px; }
+  .otp-auth-copy h2 { font-size: 18px; }
+}
+@media (max-width: 560px) {
+  .otp-auth-brand h1 { font-size: 18px; }
+  .otp-auth-copy h2 { font-size: 17px; }
+  .otp-auth-hero-copy h1 { font-size: 20px; }
+}

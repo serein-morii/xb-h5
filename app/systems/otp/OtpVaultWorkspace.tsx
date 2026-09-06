@@ -1,7 +1,7 @@
-import { ArrowUpDown, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, User, UserX, X } from "lucide-react";
+import { ArrowUpDown, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-	createVaultShare, deleteVaultCredential, deleteVaultShare, getVaultCredential, getVaultShare, importLegacyVault, listVaultCredentials, listVaultShares,
+	createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, getVaultCredential, getVaultShare, importLegacyVault, listVaultCredentials, listVaultShares,
 	listVaultRecipients, getVaultPreferences, otpApiRequest, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
 } from "./vaultApi";
@@ -9,7 +9,9 @@ import VaultAccountSetup from "./VaultAccountSetup";
 import VaultSecurityCenter from "./VaultSecurityCenter";
 import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
-import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode } from "./vaultCrypto";
+import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
+import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
+import OtpInstallHint from "./OtpInstallHint";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
@@ -29,7 +31,6 @@ type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => Barcode
 const LAST_USED_KEY = "otp-vault-last-used";
 const CONCEAL_KEY = "otp-vault-conceal-otp";
 const SORT_KEY = "otp-vault-sort";
-const CLIPBOARD_CLEAR_MS = 30_000;
 const LONG_TERM_DAYS = 20 * 365;
 const LONG_TERM_SECONDS = LONG_TERM_DAYS * 86400;
 const DURATION_PRESETS = [
@@ -274,6 +275,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [notifOpen, setNotifOpen] = useState(false);
   const unread = useMessageUnread(otpApiRequest as MessageRequest);
   const [revealedOtp, setRevealedOtp] = useState<number | null>(null);
+  const [clockDriftMs, setClockDriftMs] = useState(0);
   // 凭据页内「全部 / 收藏」切换；初始值跟随「我的」里的 defaultFavorites 偏好
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   // 注销账号多步确认：warn（后果告知）→ confirm（输入账号名）→ 428 身份验证 → 后端注销
@@ -332,8 +334,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     } catch (error) { notify(error instanceof Error ? error.message : "加载失败", true); }
     finally { if (!quiet) setLoading(false); }
 	  }, [zeroKnowledgeKey]);
-  useEffect(() => { void load(); void getVaultPreferences().then((result) => {
+  const syncOfflineCopy = useCallback(() => {
+    void refreshOfflineVault(zeroKnowledgeKey, async () => (await exportVaultLocalSync()).data).catch(() => undefined);
+  }, [zeroKnowledgeKey]);
+  useEffect(() => { syncOfflineCopy(); }, [syncOfflineCopy]);
+  useEffect(() => { void load(); const sent = Date.now(); void getVaultPreferences().then((result) => {
+    const received = Date.now();
     const remote = { ...defaultPrefs, ...(result.data || {}) };
+    const serverTime = Number((result.data as VaultPrefs & { serverTime?: number } | undefined)?.serverTime);
+    if (serverTime) setClockDriftMs(measureClockDriftMs(sent, received, serverTime));
     const device = readDeviceDisplayPrefs();
     const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
@@ -563,7 +572,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         await load(true);
         return;
       }
-      notify(editingId ? "凭据已更新" : "凭据已添加"); setModal(null); await load(true);
+      notify(editingId ? "凭据已更新" : "凭据已添加"); setModal(null); await load(true); syncOfflineCopy();
     }
     catch (error) { notify(error instanceof Error ? error.message : "保存失败", true); }
     finally { setBusy(false); }
@@ -571,7 +580,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   async function removeCredential() {
     if (!pendingDelete) return;
     setBusy(true);
-    try { await deleteVaultCredential(pendingDelete.id); notify("凭据已删除，相关授权已撤回"); setPendingDelete(null); setModal(null); await load(true); } catch (error) { notify(error instanceof Error ? error.message : "删除失败", true); }
+    try { await deleteVaultCredential(pendingDelete.id); notify("凭据已删除，相关授权已撤回"); setPendingDelete(null); setModal(null); await load(true); syncOfflineCopy(); } catch (error) { notify(error instanceof Error ? error.message : "删除失败", true); }
     finally { setBusy(false); }
   }
   async function confirmRevoke() {
@@ -617,7 +626,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setBusy(true);
     try {
       const result = await importLegacyVault(legacyText);
-      notify(`已导入 ${result.data.total} 项到 ${result.data.ownerUsername}`); setModal(null); setLegacyText(""); await load(true);
+      notify(`已导入 ${result.data.total} 项到 ${result.data.ownerUsername}`); setModal(null); setLegacyText(""); await load(true); syncOfflineCopy();
     } catch (error) { notify(error instanceof Error ? error.message : "导入失败", true); }
     finally { setBusy(false); }
   }
@@ -661,12 +670,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		finally { setBusy(false); }
 	}
   const copy = async (value: string, message = "已复制") => {
-    await navigator.clipboard.writeText(value);
+    await copyAndScheduleClear(value);
     notify(message);
-    window.clearTimeout((copy as { timer?: number }).timer);
-    (copy as { timer?: number }).timer = window.setTimeout(() => {
-      void navigator.clipboard.readText().then((current) => { if (current === value) return navigator.clipboard.writeText(""); }).catch(() => undefined);
-    }, CLIPBOARD_CLEAR_MS);
   };
   const copyOtp = async (item: VaultCredential) => {
     if (!item.currentOtp || (item.shared && !item.allowCopy)) return;
@@ -739,6 +744,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <div className="vault-head-actions"><button type="button" className="vault-ghost vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={18} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button></div>
     </section>
 
+    <OtpInstallHint />
+    {shouldWarnClockDrift(clockDriftMs) ? <p className="vault-clock-banner" role="status"><TriangleAlert size={14} />设备时间偏差约 {Math.max(1, Math.round(Math.abs(clockDriftMs) / 1000))} 秒，验证码可能不准。请打开自动时间。</p> : null}
     <MessagePopupHost request={otpApiRequest as MessageRequest} />
     <NotificationCenter request={otpApiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "", label: "全部" }, { key: "OTP", label: "OTP" }, { key: "SYSTEM", label: "系统" }]} />
 
@@ -749,7 +756,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {view === "all" ? <section className="vault-panel">
       <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="收藏筛选"><button type="button" className={!favoritesOnly ? "is-active" : ""} onClick={() => setFavoritesOnly(false)}>全部</button><button type="button" className={favoritesOnly ? "is-active" : ""} onClick={() => setFavoritesOnly(true)}>收藏</button></div></span><p>{favoritesOnly ? `只显示收藏的凭据 · ${filtered.length} 项` : `点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div><div className="vault-panel-tools"><label className="vault-view-toggle"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div></div></header>
       <div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer ? <button type="button" onClick={() => setIssuer("")}>清除筛选</button> : null}</div>
-      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{groups.map(([name, items]) => <section className="vault-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{items.length}</span></header> : null}<div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div></section>)}</div> : <div className="vault-empty"><KeyRound size={28} /><b>{favoritesOnly ? "还没有收藏凭据" : "没有找到凭据"}</b><p>{favoritesOnly ? "点击凭据右上角的星标即可收藏。" : "可以添加一项，或导入文件。"}</p></div>}
+      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{groups.map(([name, items]) => <section className="vault-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{items.length}</span></header> : null}<div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div></section>)}</div> : <div className="vault-empty"><KeyRound size={20} /><b>{favoritesOnly ? "还没有收藏凭据" : "没有找到凭据"}</b><p>{favoritesOnly ? "点击凭据右上角的星标即可收藏。" : "可以添加一项，或导入文件。"}</p></div>}
     </section> : null}
 
     {view === "shares" ? <section className="vault-panel">

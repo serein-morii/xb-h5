@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { AppStartup } from "../../components/AppStartup";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
+import OtpInstallHint from "./OtpInstallHint";
 import VaultSharePage from "./VaultSharePage";
 import "./otp-vault.css";
 import "./otp-auth.css";
@@ -35,6 +36,7 @@ export default function OtpApp() {
 
   return (
     <Suspense fallback={<Fallback />}>
+      {guide ? <OtpInstallHint /> : null}
       {guide ? <OtpVaultGuidePage /> : share ? <VaultSharePage token={share[1]} /> : <OtpVaultPage />}
     </Suspense>
   );

@@ -43,7 +43,7 @@ export default function OtpVaultPage() {
   if (access === "loading") return <AppStartup system="otp" message="正在验证访问权限" />;
   if (access === "offline") return <Suspense fallback={null}><OtpOfflineVault onExit={() => setAccess("login")} /></Suspense>;
   if (access === "login") return <OtpAuthScreen onAuthenticated={(token, registration) => { setOtpToken(token); if (registration?.username) setOnboard({ username: registration.username }); setAccess("loading"); void checkAccess(); }} />;
-  if (access === "denied") return <div className="vault-auth-state"><ShieldAlert size={30} /><h1>没有 OTP Vault 权限</h1><p>当前账号不能访问这个保险库。</p><button type="button" onClick={() => { clearOtpToken(); setAccess("login"); }}>换一个账号</button></div>;
+  if (access === "denied") return <div className="vault-auth-state"><ShieldAlert size={20} /><h1>没有 OTP Vault 权限</h1><p>当前账号不能访问这个保险库。</p><button type="button" onClick={() => { clearOtpToken(); setAccess("login"); }}>换一个账号</button></div>;
   if (onboard) return <VaultOnboardingPage username={onboard.username} onDone={finishOnboard} />;
   return <Suspense fallback={<AppStartup system="otp" message="正在打开保险库" />}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountNick={accountNick} accountEmail={accountEmail} onAccountNameChange={setAccountName} onAccountNickChange={setAccountNick} onAccountEmailChange={setAccountEmail} /></Suspense>;
 }

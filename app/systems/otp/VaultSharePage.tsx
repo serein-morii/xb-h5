@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { getSharedContent, getShareStatus, openVaultShare, type SharedItem, type ShareStatus } from "./vaultApi";
 import { issuerStyle } from "./issuerStyle";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
+import { scheduleClipboardClear } from "./otpDailyUse";
 import VaultToastMessage from "./VaultToastMessage";
 import "./otp-vault.css";
 
@@ -98,6 +99,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   const copy = async (value: string, key: string, message = "已复制") => {
     if (!allowCopy) return;
     await navigator.clipboard.writeText(value);
+    scheduleClipboardClear(value, (next) => navigator.clipboard.writeText(next), () => navigator.clipboard.readText());
     setCopied(key);
     setToast(message);
     window.setTimeout(() => setCopied(""), 1600);
@@ -126,8 +128,8 @@ export default function VaultSharePage({ token }: { token: string }) {
     <footer><LockKeyhole size={13} />访问码验证后会立即从地址栏移除</footer>
   </section></main>;
   if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
-  if (!status && error) return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>无法打开授权</h1><p>{error}</p></section></main>;
-  if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={32} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
+  if (!status && error) return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开授权</h1><p>{error}</p></section></main>;
+  if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
 
   const gateVisible = !sessionToken || !items.length;
   return <main className={`share-page ${gateVisible ? "is-gate" : "is-open"}`}>

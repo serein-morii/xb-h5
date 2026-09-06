@@ -13,7 +13,7 @@ import {
 } from "./vaultApi";
 import {
   createZeroKnowledgeKey, decryptVaultBackup, decryptZeroKnowledgeValue, encryptVaultBackup,
-  encryptZeroKnowledgeValue, hasOfflineVault, removeOfflineVault, saveOfflineVault, unlockZeroKnowledgeKey,
+  encryptZeroKnowledgeValue, hasOfflineDeviceCopy, hasOfflineVault, materializeBackupItems, removeOfflineVault, saveOfflineDeviceCopy, saveOfflineVault, unlockZeroKnowledgeKey,
 } from "./vaultCrypto";
 import { createPasskey } from "../../lib/passkey";
 import { buildMigrationQrs } from "./vaultQr";
@@ -42,7 +42,7 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
   const [preview, setPreview] = useState<Array<{ issuer: string; accountName: string; status: "NEW" | "DUPLICATE" | "CONFLICT" }>>([]);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [qrs, setQrs] = useState<Array<{ index: number; total: number; image: string }>>([]);
-  const [offlineEnabled, setOfflineEnabled] = useState(hasOfflineVault());
+  const [offlineEnabled, setOfflineEnabled] = useState(hasOfflineVault() || hasOfflineDeviceCopy());
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [section, setSection] = useState<"protect" | "backup" | "activity">("protect");
@@ -112,8 +112,13 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
     setMessage("加密恢复包已下载，请与恢复密码分开保存"); await load();
   });
   const enableOffline = () => run("offline", async () => {
-    saveOfflineVault(await createEncrypted()); setOfflineEnabled(true);
-    setMessage("离线应急保险库已更新，仅能使用当前恢复密码解锁");
+    const result = await exportVaultBackup();
+    const backup = { ...result.data, items: await materializeBackupItems(result.data.items, zeroKnowledgeKey) };
+    if (backup.items.some((item) => item.clientOtpSecretCiphertext && !item.otpSecret)) throw new Error("请先解锁零知识保护再启用离线副本");
+    saveOfflineVault(await encryptVaultBackup(backup, backupPassword));
+    await saveOfflineDeviceCopy(backup);
+    setOfflineEnabled(true);
+    setMessage("离线应急保险库已更新，本机副本会在凭据变更后自动刷新");
   });
   const readRestoreFile = async (file?: File) => { if (file) { setRestoreText(await file.text()); setRestoreItems([]); setPreview([]); } };
   const verifyRecovery = () => run("verify-recovery", async () => {

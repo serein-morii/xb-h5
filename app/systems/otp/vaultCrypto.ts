@@ -72,7 +72,100 @@ export async function decryptVaultBackup(text: string, password: string): Promis
 export const saveOfflineVault = (encrypted: string) => localStorage.setItem(OFFLINE_KEY, encrypted);
 export const readOfflineVault = () => localStorage.getItem(OFFLINE_KEY) || "";
 export const hasOfflineVault = () => Boolean(readOfflineVault());
-export const removeOfflineVault = () => localStorage.removeItem(OFFLINE_KEY);
+const DEVICE_BLOB_KEY = "otp-vault-offline-device";
+const DEVICE_DB = "otp-vault-offline";
+const DEVICE_STORE = "keys";
+const DEVICE_KEY_ID = "aes";
+
+type DeviceEnvelope = { format: "xb-otp-device"; version: 1; iv: string; data: string; createdAt: string };
+
+export const readOfflineDeviceVault = () => localStorage.getItem(DEVICE_BLOB_KEY) || "";
+export const hasOfflineDeviceCopy = () => Boolean(readOfflineDeviceVault());
+
+export const removeOfflineVault = () => {
+  localStorage.removeItem(OFFLINE_KEY);
+  localStorage.removeItem(DEVICE_BLOB_KEY);
+  if (typeof indexedDB === "undefined") return;
+  try { indexedDB.deleteDatabase(DEVICE_DB); } catch { /* ignore */ }
+};
+
+function openDeviceDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DEVICE_DB, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(DEVICE_STORE);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("无法打开本机密钥库"));
+  });
+}
+
+async function readStoredDeviceKey(): Promise<CryptoKey | null> {
+  if (typeof indexedDB === "undefined") return null;
+  try {
+    const db = await openDeviceDb();
+    return await new Promise((resolve, reject) => {
+      const request = db.transaction(DEVICE_STORE, "readonly").objectStore(DEVICE_STORE).get(DEVICE_KEY_ID);
+      request.onsuccess = () => resolve((request.result as CryptoKey | undefined) || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch { return null; }
+}
+
+async function getOrCreateOfflineDeviceKey() {
+  const existing = await readStoredDeviceKey();
+  if (existing) return existing;
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  const db = await openDeviceDb();
+  await new Promise<void>((resolve, reject) => {
+    const request = db.transaction(DEVICE_STORE, "readwrite").objectStore(DEVICE_STORE).put(key, DEVICE_KEY_ID);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+  return key;
+}
+
+export async function saveOfflineDeviceCopy(backup: VaultBackup) {
+  const key = await getOrCreateOfflineDeviceKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv as BufferSource }, key, encoder.encode(JSON.stringify(backup)));
+  const envelope: DeviceEnvelope = { format: "xb-otp-device", version: 1, iv: encode64(iv), data: encode64(new Uint8Array(encrypted)), createdAt: new Date().toISOString() };
+  localStorage.setItem(DEVICE_BLOB_KEY, JSON.stringify(envelope));
+}
+
+export async function tryUnlockOfflineVault(): Promise<VaultBackup | null> {
+  const raw = readOfflineDeviceVault();
+  const key = await readStoredDeviceKey();
+  if (!raw || !key) return null;
+  try {
+    const envelope = JSON.parse(raw) as DeviceEnvelope;
+    if (envelope.format !== "xb-otp-device" || envelope.version !== 1) return null;
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decode64(envelope.iv) as BufferSource }, key, decode64(envelope.data));
+    const backup = JSON.parse(new TextDecoder().decode(plain)) as VaultBackup;
+    if (backup.format !== "xb-otp-vault" || !Array.isArray(backup.items)) return null;
+    return backup;
+  } catch { return null; }
+}
+
+export async function materializeBackupItems(items: VaultTransferItem[], zeroKnowledgeKey: CryptoKey | null) {
+  return Promise.all(items.map(async (item) => {
+    if (!item.clientPasswordCiphertext && !item.clientOtpSecretCiphertext) return item;
+    if (!zeroKnowledgeKey) return item;
+    return {
+      ...item,
+      password: item.clientPasswordCiphertext ? await decryptZeroKnowledgeValue(item.clientPasswordCiphertext, zeroKnowledgeKey) : item.password,
+      otpSecret: item.clientOtpSecretCiphertext ? await decryptZeroKnowledgeValue(item.clientOtpSecretCiphertext, zeroKnowledgeKey) : item.otpSecret,
+      clientPasswordCiphertext: undefined,
+      clientOtpSecretCiphertext: undefined,
+    };
+  }));
+}
+
+export async function refreshOfflineVault(zeroKnowledgeKey: CryptoKey | null, exportBackup: () => Promise<VaultBackup>) {
+  if (!hasOfflineVault() && !hasOfflineDeviceCopy()) return;
+  const backup = await exportBackup();
+  const items = await materializeBackupItems(backup.items || [], zeroKnowledgeKey);
+  if (items.some((item) => item.clientOtpSecretCiphertext && !item.otpSecret)) return;
+  await saveOfflineDeviceCopy({ ...backup, items });
+}
 
 export async function generateOfflineCode(item: VaultTransferItem, now = Date.now()) {
   if (!item.otpSecret) return "";

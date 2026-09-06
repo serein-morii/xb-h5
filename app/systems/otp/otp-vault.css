@@ -1199,3 +1199,48 @@ html.theme-dark .share-login-summary em { background: rgba(255,255,255,.06); col
   background: #fff; color: var(--vault-accent);
   box-shadow: 0 2px 8px rgba(38, 50, 77, 0.16);
 }
+
+.otp-install-hint {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border: 1px solid rgba(72, 92, 199, .16);
+  border-radius: 14px; background: #eef1fb; color: #243056;
+}
+.otp-install-hint-icon {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center;
+  border-radius: 9px; background: #485cc7; color: #fff;
+}
+.otp-install-hint b, .otp-install-hint small { display: block; }
+.otp-install-hint b { font-size: 12px; }
+.otp-install-hint small { margin-top: 2px; color: #5c6688; font-size: 11px; line-height: 1.45; }
+.otp-install-hint-action, .otp-install-hint-close {
+  flex: none; border: 0; background: transparent; cursor: pointer; color: #485cc7;
+}
+.otp-install-hint-action {
+  min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px;
+  border-radius: 999px; background: #485cc7; color: #fff; font: inherit; font-size: 12px; font-weight: 700;
+}
+.otp-install-hint-close { width: 28px; height: 28px; display: grid; place-items: center; color: #6f788b; }
+.otp-auth-card .otp-install-hint { margin: 0 18px 12px; }
+.vault-clock-banner {
+  margin: 0; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px;
+  border: 1px solid rgba(180, 83, 9, .18); border-radius: 14px;
+  background: #fff7ed; color: #9a3412; font-size: 12px; line-height: 1.5;
+}
+.vault-clock-banner svg { flex: none; margin-top: 1px; }
+html.theme-dark .otp-install-hint { background: #232a44; border-color: rgba(158, 171, 255, .16); color: #e8ebf5; }
+html.theme-dark .otp-install-hint small { color: #a6afc6; }
+html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(251, 191, 36, .2); color: #fdba74; }
+
+/* 空状态、拦截页、分享门页的标题收小，避免一整页只有一句大字。 */
+.vault-empty { min-height: 132px; gap: 5px; font-size: 12px; }
+.vault-empty b { color: var(--utility-text); font-size: 14px; font-weight: 700; }
+.vault-empty p { font-size: 11px; }
+.vault-empty.compact { min-height: 64px; font-size: 12px; }
+.vault-auth-state h1 { font-size: 18px; font-weight: 750; letter-spacing: -.02em; }
+.vault-auth-state p { font-size: 12px; }
+.vault-offline-unlock h2 { font-size: 16px; }
+.vault-panel-head h2 { font-size: 16px; }
+.share-expired h1,
+.share-handoff-card h1,
+.share-access-intro h1 { font-size: 18px; letter-spacing: -.02em; }
+.share-content h1 { font-size: 18px; }

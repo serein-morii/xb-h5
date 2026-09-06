@@ -1,0 +1,62 @@
+export const CLOCK_DRIFT_WARN_MS = 2000;
+export const CLIPBOARD_CLEAR_MS = 30_000;
+export const INSTALL_DISMISS_KEY = "otp-vault-install-dismissed";
+export const iosInstallHint = "点击底部分享按钮，选择「添加到主屏幕」";
+
+export function measureClockDriftMs(clientSent: number, clientReceived: number, serverTime: number) {
+  const rtt = Math.max(0, clientReceived - clientSent);
+  return serverTime + rtt / 2 - clientReceived;
+}
+
+export function shouldWarnClockDrift(driftMs: number) {
+  return Math.abs(driftMs) >= CLOCK_DRIFT_WARN_MS;
+}
+
+export function isStandaloneDisplay(win: Window = window) {
+  return win.matchMedia("(display-mode: standalone)").matches
+    || Boolean((win.navigator as Navigator & { standalone?: boolean }).standalone);
+}
+
+export function isIosDevice(ua = typeof navigator === "undefined" ? "" : navigator.userAgent) {
+  return /iPad|iPhone|iPod/.test(ua) || (typeof navigator !== "undefined" && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+export function shouldShowInstallHint({ standalone, dismissed }: { standalone: boolean; dismissed: boolean }) {
+  return !standalone && !dismissed;
+}
+
+export function readInstallDismissed() {
+  try { return localStorage.getItem(INSTALL_DISMISS_KEY) === "1"; } catch { return false; }
+}
+
+export function dismissInstallHint() {
+  try { localStorage.setItem(INSTALL_DISMISS_KEY, "1"); } catch { /* ignore quota */ }
+}
+
+type ClipboardWriter = (value: string) => Promise<unknown>;
+type ClipboardReader = () => Promise<string>;
+type TimerApi = { setTimeout: (fn: () => void, delay: number) => number; clearTimeout: (id: number) => void };
+
+export function scheduleClipboardClear(
+  value: string,
+  writeText: ClipboardWriter,
+  readText: ClipboardReader,
+  delay = CLIPBOARD_CLEAR_MS,
+  timerApi: TimerApi = window,
+) {
+  const id = timerApi.setTimeout(() => {
+    void readText()
+      .then((current) => { if (current === value) return writeText(""); })
+      .catch(() => undefined);
+  }, delay);
+  return () => timerApi.clearTimeout(id);
+}
+
+export async function copyAndScheduleClear(value: string) {
+  await navigator.clipboard.writeText(value);
+  scheduleClipboardClear(
+    value,
+    (next) => navigator.clipboard.writeText(next),
+    () => navigator.clipboard.readText(),
+  );
+}

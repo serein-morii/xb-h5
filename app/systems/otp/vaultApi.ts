@@ -132,6 +132,7 @@ async function exportWithFreshVerification<T>(path: string) {
   finally { clearOtpStepUpToken(); }
 }
 export const exportVaultBackup = () => exportWithFreshVerification<{ data: VaultBackup }>(`${vault}/backup`);
+export const exportVaultLocalSync = () => otpApiRequest<{ data: VaultBackup }>(`${vault}/backup/local-sync`);
 export const exportVaultMigration = () => exportWithFreshVerification<{ data: { items: VaultTransferItem[] } }>(`${vault}/migration`);
 export const previewVaultImport = (items: VaultTransferItem[]) => otpApiRequest<{ data: { total: number; items: Array<{ issuer: string; accountName: string; status: "NEW" | "DUPLICATE" | "CONFLICT" }> } }>(`${vault}/import/preview`, { method: "POST", body: { items } });
 export const commitVaultImport = (items: VaultTransferItem[], replaceExisting: boolean) => otpApiRequest<{ data: { total: number; created: number; updated: number; skipped: number } }>(`${vault}/import`, { method: "POST", body: { items, replaceExisting } });
