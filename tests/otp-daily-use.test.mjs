@@ -27,7 +27,7 @@ test("clock drift uses RTT midpoint and warns at 2 seconds", () => {
 });
 
 test("install hint hides in standalone and after dismiss", () => {
-  assert.equal(INSTALL_DISMISS_KEY, "otp-vault-install-coach-v2");
+  assert.equal(INSTALL_DISMISS_KEY, "otp-vault-install-coach-v3");
   assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false }), true);
@@ -111,16 +111,19 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   assert.match(crypto, /otp-vault-offline-device/);
   assert.match(css, /otp-install-hint/);
   assert.match(css, /\.otp-install-hint[\s\S]{0,220}position:\s*fixed/);
-  assert.match(css, /body:has\(\.otp-auth-page\) \.otp-install-hint/);
-  assert.match(css, /:has\(\.otp-auth-page\)[\s\S]{0,120}position:\s*(static|relative)/);
+  assert.match(css, /\.otp-install-hint[\s\S]{0,280}bottom:\s*max\(/);
+  assert.doesNotMatch(css, /body:has\(\.otp-auth-page\) \.otp-install-hint/);
+  assert.doesNotMatch(css, /body:has\(\.otp-guide-page\) \.otp-install-hint/);
+  assert.match(css, /body:has\(\.otp-install-hint\)[\s\S]{0,220}padding-bottom/);
   assert.match(css, /otp-install-steps/);
   const hint = await source("app/systems/otp/OtpInstallHint.tsx");
   assert.match(hint, /installCoachCopy/);
-  assert.match(hint, /otp-install-spotlight/);
   assert.match(hint, /iosVersionFromUa/);
-  assert.match(hint, /指出分享按钮/);
+  assert.match(hint, /怎么添加/);
+  assert.match(hint, /kind === "ios" \|\| kind === "wechat"/);
   assert.match(hint, /otp-install-steps/);
-  assert.match(css, /otp-install-spotlight/);
+  assert.doesNotMatch(hint, /otp-install-spotlight/);
+  assert.doesNotMatch(css, /otp-install-spotlight/);
   assert.match(css, /vault-clock-banner/);
   assert.match(controller, /\/backup\/local-sync/);
   assert.match(controller, /require\(/);

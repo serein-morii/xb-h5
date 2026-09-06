@@ -1,6 +1,6 @@
 export const CLOCK_DRIFT_WARN_MS = 2000;
 export const CLIPBOARD_CLEAR_MS = 30_000;
-export const INSTALL_DISMISS_KEY = "otp-vault-install-coach-v2";
+export const INSTALL_DISMISS_KEY = "otp-vault-install-coach-v3";
 export const iosInstallHint = "点右下角三个点打开分享，选择「添加到桌面」";
 
 export type InstallCoachKind = "ios" | "wechat" | "browser";
