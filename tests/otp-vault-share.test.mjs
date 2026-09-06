@@ -9,9 +9,11 @@ import {
   parseShareClipboard,
   receivedShareSourceLabel,
   selectShareItems,
+  shareHandoffAfterRestore,
   shareLoginNext,
   shareReturnPath,
   shouldOfferClipboardShare,
+  shouldShowShareHandoff,
   toggleShareSelection,
 } from "../app/systems/otp/otpVaultShare.ts";
 
@@ -178,4 +180,19 @@ test("vault scans clipboard on focus visibility and paste, never on an interval"
   assert.doesNotMatch(workspace, /识别剪贴板/);
   assert.match(workspace, /clipboardReadBlocked/);
   assert.match(workspace, /pointerdown/);
+});
+
+test("second access-code open does not stay on verifying handoff when a session already exists", () => {
+  assert.equal(shouldShowShareHandoff(true, false), true);
+  assert.equal(shouldShowShareHandoff(true, true), false);
+  assert.equal(shouldShowShareHandoff(false, false), false);
+  assert.equal(shareHandoffAfterRestore(true), "show-content");
+  assert.equal(shareHandoffAfterRestore(false), "reopen");
+});
+
+test("share page leaves 验证授权 after a restored session loads", async () => {
+  const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
+  assert.match(sharePage, /shouldShowShareHandoff/);
+  assert.match(sharePage, /shareHandoffAfterRestore\(ok\) === "show-content"/);
+  assert.match(sharePage, /setAutoOpening\(false\)/);
 });

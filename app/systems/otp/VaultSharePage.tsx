@@ -2,7 +2,7 @@ import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, openVaultShare, saveInboundShare, type SharedItem, type ShareStatus } from "./vaultApi";
-import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareLoginNext } from "./otpVaultShare";
+import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareHandoffAfterRestore, shareLoginNext, shouldShowShareHandoff } from "./otpVaultShare";
 import { issuerStyle } from "./issuerStyle";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { scheduleClipboardClear } from "./otpDailyUse";
@@ -23,7 +23,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [expireTime, setExpireTime] = useState("");
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
-  const [autoOpening, setAutoOpening] = useState(autoFillRef.current);
+  const [autoOpening, setAutoOpening] = useState(() => shouldShowShareHandoff(autoFillRef.current, Boolean(sessionStorage.getItem(sessionKey))));
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [toast, setToast] = useState("");
@@ -127,7 +127,12 @@ export default function VaultSharePage({ token }: { token: string }) {
         else { autoFillRef.current = false; setAutoOpening(false); }
       };
       if (sessionToken) {
-        void loadContent(sessionToken).then((ok) => { if (!ok) reopen(); });
+        void loadContent(sessionToken).then((ok) => {
+          if (shareHandoffAfterRestore(ok) === "show-content") {
+            autoFillRef.current = false;
+            setAutoOpening(false);
+          } else reopen();
+        });
       } else reopen();
     }).catch((loadError) => { autoFillRef.current = false; setAutoOpening(false); setError(loadError instanceof Error ? loadError.message : "授权链接不存在"); });
   }, []);
@@ -181,7 +186,7 @@ export default function VaultSharePage({ token }: { token: string }) {
     <div className="share-handoff-progress"><i /></div>
     <footer><LockKeyhole size={13} />访问码验证后会立即从地址栏移除</footer>
   </section></main>;
-  if (!status && !error) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
+  if ((!status && !error) || (sessionToken && !items.length && !error)) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
   if (!status && error) return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开授权</h1><p>{error}</p></section></main>;
   if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
 

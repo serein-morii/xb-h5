@@ -54,6 +54,14 @@ export function matchesCredentialTab(item: { shared?: boolean; favorite?: boolea
   return showShared || !item.shared;
 }
 
+export function shouldShowShareHandoff(hasAccessCode: boolean, hasExistingSession: boolean) {
+  return Boolean(hasAccessCode) && !hasExistingSession;
+}
+
+export function shareHandoffAfterRestore(contentLoaded: boolean): "show-content" | "reopen" {
+  return contentLoaded ? "show-content" : "reopen";
+}
+
 export function shareAccessCodeKey(token: string) {
   return `${SHARE_CODE_PREFIX}${token}`;
 }
