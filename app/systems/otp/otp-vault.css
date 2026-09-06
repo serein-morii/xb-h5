@@ -746,10 +746,10 @@ html.theme-dark {
 .vault-card-top-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .vault-shared-badge { padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
 .vault-code.is-readonly { cursor: default; }
-.vault-shared-expiry { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--utility-muted); font-size: 9px; white-space: nowrap; }
 .vault-card-foot { align-items: center; justify-content: flex-start; gap: 7px; }
 .vault-card-foot > span:first-child { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-card-foot > span:last-child { flex: none; }
+.vault-card-foot > span:empty { display: none; }
 .vault-card-next { flex: none; padding: 3px 4px 3px 6px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(86,102,158,.1); border-radius: 8px; background: rgba(238,241,248,.58); color: #66718b; }
 .vault-card-next small { font-size: 8px; font-weight: 750; }
 .vault-card-next b { color: #65708c; font-size: 12px; letter-spacing: .07em; font-variant-numeric: tabular-nums; }
@@ -783,7 +783,6 @@ html.theme-dark .vault-next-copy:hover { border-color: rgba(190,200,235,.24); ba
 .vault-card.is-compact .vault-card-actions button { width: 22px; height: 22px; justify-content: center; }
 .vault-card.is-compact .vault-card-actions button span { display: none; }
 .vault-card.is-compact .vault-card-actions .vault-compact-favorite { display: inline-flex; }
-.vault-card.is-compact .vault-shared-expiry { margin-left: 0; font-size: 8px; }
 @media (min-width: 561px) { .vault-grid.is-compact { grid-template-columns: repeat(auto-fill,minmax(255px,1fr)); gap: 8px; } }
 @media (max-width: 560px) {
   .vault-card.is-compact { column-gap: 8px; padding: 10px 11px; }
