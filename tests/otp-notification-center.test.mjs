@@ -229,6 +229,10 @@ test("broadcasts expire and can be taken offline so unread does not stay forever
   assert.match(form, /datetime-local/);
   assert.match(form, /确认下线/);
   assert.match(form, /setOfflineGroup/);
+  assert.match(form, /CloudOff/);
+  assert.match(form, /Radio/);
+  assert.match(form, /is-offline-action/);
+  assert.match(form, /is-online-action/);
   assert.match(service, /userVisible/);
   assert.match(service, /DEFAULT_OFFLINE_DAYS = 7/);
   assert.match(service, /getOfflineTime/);

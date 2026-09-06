@@ -1,4 +1,4 @@
-import { Check, Eye, LoaderCircle, MonitorUp, Pencil, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { Check, CloudOff, Eye, LoaderCircle, MonitorUp, Pencil, Plus, Radio, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
@@ -248,7 +248,10 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
               <div className="sysbroadcast-card-actions">
                 <button type="button" className="sysbroadcast-op" onClick={() => setReadersGroup(group)}><Eye size={13} />阅读</button>
                 <button type="button" className="sysbroadcast-op" onClick={() => startEdit(group)}><Pencil size={13} />编辑</button>
-                <button type="button" className="sysbroadcast-op" disabled={busy} onClick={() => void toggleOffline(group)}>{online ? "下线" : "上线"}</button>
+                <button type="button" className={`sysbroadcast-op ${online ? "is-offline-action" : "is-online-action"}`} disabled={busy} onClick={() => void toggleOffline(group)}>
+                  {online ? <CloudOff size={13} /> : <Radio size={13} />}
+                  {online ? "下线" : "上线"}
+                </button>
                 <button type="button" className="sysbroadcast-op is-danger" onClick={() => setDeleteGroup(group)}><Trash2 size={13} />删除</button>
               </div>
             </article>;

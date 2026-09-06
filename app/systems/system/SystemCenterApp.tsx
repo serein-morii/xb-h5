@@ -117,7 +117,7 @@ export default function SystemCenterApp() {
     { key: "operations", label: "运行中心", description: "在线用户、监控、任务与审计日志", icon: Activity, group: "ops", available: canOpenMenu(access, "operationsCenter") },
     // 站内信与账号恢复属于平台服务：广播/恢复接口仅超管可调用
     { key: "messages", label: "站内信", description: "系统通知群发、弹窗公告与投递记录", icon: BellRing, group: "service", adminOnly: true, available: access.superAdmin },
-    { key: "restore", label: "账号恢复", description: "恢复用户自助注销的账号", icon: UserCheck, group: "service", adminOnly: true, available: access.superAdmin },
+    { key: "restore", label: "账号恢复", description: "恢复或永久删除已注销账号", icon: UserCheck, group: "service", adminOnly: true, available: access.superAdmin },
   ]);
   const areas = allAreas.filter((item) => item.available);
   const GROUP_TITLES: Record<AreaMeta["group"], string> = { platform: "平台管理", ops: "运维监控", service: "平台服务" };
@@ -159,7 +159,7 @@ export default function SystemCenterApp() {
       <aside className={`sc-sidebar${sidebarOpen ? " is-open" : ""}`}>
         <div className="sc-brand">
           <span className="sc-brand-mark"><Settings2 size={19} /></span>
-          <div><b>系统中心</b><small>XB PLATFORM CONSOLE</small></div>
+          <div><b>系统中心</b><small>控制台</small></div>
           <button type="button" className="sc-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="关闭菜单"><X size={17} /></button>
         </div>
         <nav className="sc-nav" aria-label="系统中心导航">
