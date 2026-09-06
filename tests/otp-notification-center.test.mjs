@@ -279,7 +279,7 @@ test("popup announcement card is larger for HTML and Markdown", async () => {
   assert.match(component, /notif-popup-content/);
   assert.match(css, /min\(720px, 100%\)/);
   assert.match(css, /notif-popup-content/);
-  assert.match(css, /min-height: 180px/);
+  assert.match(css, /\.notif-popup-content \* \{ max-width: none; \}/);
 });
 
 test("account recovery can permanently purge deleted users", async () => {
