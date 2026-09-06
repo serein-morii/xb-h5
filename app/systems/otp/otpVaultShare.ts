@@ -2,6 +2,27 @@ export const SHARE_ITEM_LIMIT = 50;
 export const PENDING_SAVE_KEY = "otp-vault-pending-save";
 const SHARE_CODE_PREFIX = "otp-vault-share-code:";
 const SHARE_RETURN = /^\/s\/[A-Za-z0-9_-]{5,16}(?:#k=[A-Za-z0-9]{4,12})?$/;
+const SHARE_LINK = /(?:https?:\/\/[^\s]+)?\/s\/([A-Za-z0-9_-]{5,16})(?:#k=([A-Za-z0-9]{4,12}))?/i;
+const SHARE_CODE_LINE = /访问码[:：]\s*([A-Za-z0-9]{4,12})/;
+
+export type ParsedShareLink = { token: string; accessCode: string };
+
+export function parseShareClipboard(text: string): ParsedShareLink | null {
+  const source = text.trim();
+  if (!source) return null;
+  const match = source.match(SHARE_LINK);
+  if (!match) return null;
+  const fromHash = match[2] || "";
+  const fromLine = source.match(SHARE_CODE_LINE)?.[1] || "";
+  return { token: match[1], accessCode: (fromHash || fromLine).toUpperCase() };
+}
+
+export function shouldOfferClipboardShare(parsed: ParsedShareLink | null, ignoredTokens: Iterable<string> = [], viewingToken = "") {
+  if (!parsed?.token) return false;
+  if (viewingToken && viewingToken === parsed.token) return false;
+  for (const token of ignoredTokens) if (token === parsed.token) return false;
+  return true;
+}
 
 export type CredentialTab = "all" | "favorite" | "received";
 export type ShareTab = "sent" | "received";

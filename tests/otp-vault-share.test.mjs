@@ -5,10 +5,12 @@ import {
   PENDING_SAVE_KEY,
   SHARE_ITEM_LIMIT,
   matchesCredentialTab,
+  parseShareClipboard,
   receivedShareSourceLabel,
   selectShareItems,
   shareLoginNext,
   shareReturnPath,
+  shouldOfferClipboardShare,
   toggleShareSelection,
 } from "../app/systems/otp/otpVaultShare.ts";
 
@@ -132,4 +134,36 @@ test("share save sits in a collapsible bottom dock named 转存", async () => {
   assert.match(sharePage, /登录后转存/);
   assert.match(styles, /\.share-save-dock\s*\{[^}]*position:\s*fixed;/s);
   assert.match(styles, /\.share-save-fab\s*\{[^}]*width:\s*44px;/s);
+});
+
+test("clipboard parser extracts share token and access code from urls and copied text", () => {
+  assert.deepEqual(parseShareClipboard("https://otp.example/s/Ab3De"), { token: "Ab3De", accessCode: "" });
+  assert.deepEqual(parseShareClipboard("https://otp.example/s/Ab3De#k=A1B2C"), { token: "Ab3De", accessCode: "A1B2C" });
+  assert.deepEqual(parseShareClipboard("给同事的临时访问\nhttps://otp.example/s/Ab3De#k=A1B2C\n访问码：A1B2C\n有效期：2026/09/07 12:00:00"), { token: "Ab3De", accessCode: "A1B2C" });
+  assert.deepEqual(parseShareClipboard("https://otp.example/s/Ab3De\n访问码：Xy9K2"), { token: "Ab3De", accessCode: "XY9K2" });
+  assert.equal(parseShareClipboard("https://example.com/blog"), null);
+  assert.equal(parseShareClipboard("s/abc"), null);
+});
+
+test("clipboard share prompt skips ignored tokens and the share page already open", () => {
+  const parsed = { token: "Ab3De", accessCode: "A1B2C" };
+  assert.equal(shouldOfferClipboardShare(parsed, []), true);
+  assert.equal(shouldOfferClipboardShare(null, []), false);
+  assert.equal(shouldOfferClipboardShare(parsed, ["Ab3De"]), false);
+  assert.equal(shouldOfferClipboardShare(parsed, [], "Ab3De"), false);
+});
+
+test("vault scans clipboard on focus visibility and paste, never on an interval", async () => {
+  const [workspace, share] = await Promise.all([
+    source("app/systems/otp/OtpVaultWorkspace.tsx"),
+    source("app/systems/otp/otpVaultShare.ts"),
+  ]);
+  assert.match(share, /parseShareClipboard/);
+  assert.match(workspace, /visibilitychange/);
+  assert.match(workspace, /addEventListener\("focus"/);
+  assert.match(workspace, /addEventListener\("paste"/);
+  assert.match(workspace, /clipboard\.readText/);
+  assert.doesNotMatch(workspace, /setInterval\([^)]*clipboard/);
+  assert.match(workspace, /检测到授权/);
+  assert.match(workspace, /忽略/);
 });

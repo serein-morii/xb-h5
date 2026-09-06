@@ -1,8 +1,8 @@
-import { ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
+import { ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
-	listVaultRecipients, getVaultPreferences, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
+	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
+	listVaultRecipients, getVaultPreferences, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
@@ -11,7 +11,7 @@ import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
-import { SHARE_ITEM_LIMIT, matchesCredentialTab, receivedShareSourceLabel, selectShareItems, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
+import { PENDING_SAVE_KEY, SHARE_ITEM_LIMIT, matchesCredentialTab, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shouldOfferClipboardShare, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
@@ -31,6 +31,8 @@ type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => Barcode
 const LAST_USED_KEY = "otp-vault-last-used";
 const CONCEAL_KEY = "otp-vault-conceal-otp";
 const SORT_KEY = "otp-vault-sort";
+const CLIPBOARD_IGNORED_KEY = "otp-vault-clipboard-ignored";
+type ClipboardOffer = { token: string; accessCode: string; name: string; accessCodeRequired: boolean };
 const LONG_TERM_DAYS = 20 * 365;
 const LONG_TERM_SECONDS = LONG_TERM_DAYS * 86400;
 const DURATION_PRESETS = [
@@ -238,6 +240,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [receivedShares, setReceivedShares] = useState<VaultShare[]>([]);
   const [shareTab, setShareTab] = useState<ShareTab>("sent");
   const [pendingRelease, setPendingRelease] = useState<VaultShare | null>(null);
+  const [clipboardOffer, setClipboardOffer] = useState<ClipboardOffer | null>(null);
+  const [clipboardSaving, setClipboardSaving] = useState(false);
+  const clipboardBusy = useRef(false);
+  const clipboardIgnored = useRef<Set<string>>(new Set());
+  const clipboardOfferRef = useRef<ClipboardOffer | null>(null);
+  clipboardOfferRef.current = clipboardOffer;
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -339,6 +347,81 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     } catch (error) { notify(error instanceof Error ? error.message : "加载失败", true); }
     finally { if (!quiet) setLoading(false); }
 	  }, [zeroKnowledgeKey]);
+  const persistClipboardIgnored = (token: string) => {
+    clipboardIgnored.current.add(token);
+    sessionStorage.setItem(CLIPBOARD_IGNORED_KEY, JSON.stringify([...clipboardIgnored.current]));
+  };
+  const considerClipboardText = useCallback(async (text: string) => {
+    const parsed = parseShareClipboard(text);
+    if (!shouldOfferClipboardShare(parsed, clipboardIgnored.current)) return;
+    if (!parsed || clipboardOfferRef.current?.token === parsed.token || clipboardBusy.current) return;
+    clipboardBusy.current = true;
+    try {
+      const status = await getShareStatus(parsed.token);
+      if (status.data.status !== "ACTIVE") return;
+      const inbound = await getInboundShareStatus(parsed.token);
+      if (inbound.data.own || inbound.data.saved) return;
+      setClipboardOffer({
+        token: parsed.token,
+        accessCode: parsed.accessCode,
+        name: status.data.name?.trim() || "临时凭据授权",
+        accessCodeRequired: Boolean(status.data.accessCodeRequired),
+      });
+    } catch { /* 无效、过期或无权读取时保持安静 */ }
+    finally { clipboardBusy.current = false; }
+  }, []);
+  const scanClipboard = useCallback(async () => {
+    if (document.visibilityState !== "visible" || typeof navigator.clipboard?.readText !== "function") return;
+    try { await considerClipboardText(await navigator.clipboard.readText()); }
+    catch { /* 浏览器拒绝读取剪贴板时等下一次机会 */ }
+  }, [considerClipboardText]);
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(CLIPBOARD_IGNORED_KEY) || "[]");
+      if (Array.isArray(stored)) clipboardIgnored.current = new Set(stored.filter((item): item is string => typeof item === "string"));
+    } catch { clipboardIgnored.current = new Set(); }
+    const onFocus = () => { void scanClipboard(); };
+    const onVisible = () => { if (document.visibilityState === "visible") void scanClipboard(); };
+    const onPaste = (event: ClipboardEvent) => {
+      const text = event.clipboardData?.getData("text") || "";
+      if (text) void considerClipboardText(text);
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    document.addEventListener("paste", onPaste);
+    void scanClipboard();
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("paste", onPaste);
+    };
+  }, [considerClipboardText, scanClipboard]);
+  const ignoreClipboardOffer = () => {
+    if (!clipboardOffer) return;
+    persistClipboardIgnored(clipboardOffer.token);
+    setClipboardOffer(null);
+  };
+  const saveClipboardOffer = async () => {
+    if (!clipboardOffer) return;
+    if (clipboardOffer.accessCodeRequired && !clipboardOffer.accessCode) {
+      sessionStorage.setItem(PENDING_SAVE_KEY, clipboardOffer.token);
+      window.location.href = `/s/${clipboardOffer.token}`;
+      return;
+    }
+    setClipboardSaving(true);
+    try {
+      rememberShareAccessCode(clipboardOffer.token, clipboardOffer.accessCode);
+      const opened = await openVaultShare(clipboardOffer.token, clipboardOffer.accessCode);
+      const result = await saveInboundShare(clipboardOffer.token, opened.data.sessionToken);
+      persistClipboardIgnored(clipboardOffer.token);
+      setClipboardOffer(null);
+      notify(result.data.alreadySaved ? "已经转存过了，无需再次转存" : "已转存");
+      setShareTab("received");
+      changeView("shares");
+      await load(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "转存失败", true); }
+    finally { setClipboardSaving(false); }
+  };
   const syncOfflineCopy = useCallback(() => {
     void refreshOfflineVault(zeroKnowledgeKey, async () => (await exportVaultLocalSync()).data).catch(() => undefined);
   }, [zeroKnowledgeKey]);
@@ -983,6 +1066,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {modal === "password" ? <div className="vault-modal-mask"><section className="vault-modal share vault-share-form vault-account-modal"><header><div><small>PASSWORD</small><h2>登录密码</h2><p>验证身份后立即生效</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><VaultAccountSetup initialUsername={accountName} email={accountEmail} only="password" requireVerify cancellable onCancel={closeModal} onFinish={() => { setModal(null); notify("密码已更新，下次可用账号密码登录"); }} /></div></section></div> : null}
 
     <VaultStepUpDialog email={accountEmail} />
+    {clipboardOffer ? <div className="share-save-dock vault-clipboard-dock" role="status">
+      <span><b>检测到授权</b><small>「{clipboardOffer.name}」可以转存到「我收到的」</small></span>
+      <button type="button" className="vault-clipboard-ignore" onClick={ignoreClipboardOffer}>忽略</button>
+      <button type="button" disabled={clipboardSaving} onClick={() => void saveClipboardOffer()}>{clipboardSaving ? <LoaderCircle className="spin" size={15} /> : <FolderDown size={15} />}{clipboardSaving ? "转存中" : "转存"}</button>
+    </div> : null}
     {notice ? <div className={`vault-toast${notice.error ? " is-error" : ""}`} role={notice.error ? "alert" : "status"} aria-live={notice.error ? "assertive" : "polite"}>{notice.error ? <ShieldAlert size={15} /> : <Check size={15} />}<span>{notice.text}</span></div> : null}
   </div>;
 }

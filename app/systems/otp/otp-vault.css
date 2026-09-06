@@ -514,6 +514,11 @@ html.theme-dark { @media (max-width: 560px) {
 .share-save-dock:not(.is-collapsed) > button:last-child, .share-save-dock > a { flex: none; min-height: 32px; padding: 0 11px; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: #485cc7; color: #fff; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
 .share-save-dock:not(.is-collapsed) > button:last-child:disabled { opacity: .6; cursor: not-allowed; }
 .share-save-fab { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 999px; background: #485cc7; color: #fff; box-shadow: 0 10px 24px rgba(72, 92, 199, .32); cursor: pointer; }
+.vault-clipboard-dock { z-index: 118; bottom: max(16px, env(safe-area-inset-bottom)); }
+.vault-clipboard-ignore { flex: none; min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: #6a7388; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+@media (max-width: 560px) {
+  .vault-clipboard-dock { bottom: max(72px, calc(env(safe-area-inset-bottom) + 62px)); }
+}
 .share-content > header { padding: 14px 16px; align-items: center; border: 0; border-radius: 20px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); }
 .share-content > header > div:first-child { min-width: 0; }
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
