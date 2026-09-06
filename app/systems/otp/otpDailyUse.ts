@@ -16,7 +16,7 @@ export function installCoachCopy(kind: InstallCoachKind) {
     return {
       title: "添加到桌面",
       detail: "装到主屏幕后，像 App 一样打开，不用再找浏览器。",
-      action: "怎么添加",
+      action: "指出分享按钮",
       steps: [
         "点底部中间的分享按钮",
         "下滑列表，点「添加到主屏幕」",

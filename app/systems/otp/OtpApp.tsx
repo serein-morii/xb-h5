@@ -29,6 +29,9 @@ export default function OtpApp() {
     let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!manifest) { manifest = document.createElement("link"); manifest.rel = "manifest"; document.head.appendChild(manifest); }
     manifest.href = "/manifest.webmanifest";
+    let appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+    if (!appleIcon) { appleIcon = document.createElement("link"); appleIcon.rel = "apple-touch-icon"; document.head.appendChild(appleIcon); }
+    appleIcon.href = "/otp-icon-180.png";
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" });
     }

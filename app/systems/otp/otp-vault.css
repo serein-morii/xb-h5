@@ -1242,6 +1242,33 @@ html.theme-dark .share-login-summary em { background: rgba(255,255,255,.06); col
     bottom: calc(62px + max(10px, env(safe-area-inset-bottom)));
   }
 }
+.otp-install-spotlight {
+  position: fixed; inset: 0; z-index: 400;
+  display: grid; align-content: end; justify-items: center;
+  padding: 20px 20px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(8, 12, 28, .72);
+}
+.otp-install-spotlight-card {
+  width: min(360px, 100%); margin-bottom: 18px; padding: 18px 16px 14px;
+  border-radius: 18px; background: #fff; color: #172033; text-align: center;
+  box-shadow: 0 18px 50px rgba(0,0,0,.28);
+}
+.otp-install-spotlight-card b { display: block; font-size: 16px; }
+.otp-install-spotlight-card p { margin: 8px 0 14px; color: #5c6688; font-size: 13px; line-height: 1.55; }
+.otp-install-spotlight-card button {
+  min-height: 40px; padding: 0 16px; border: 0; border-radius: 12px;
+  background: #3f54c3; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.otp-install-spotlight-arrow {
+  width: 22px; height: 22px; margin-bottom: 4px;
+  border-right: 3px solid #fff; border-bottom: 3px solid #fff;
+  transform: rotate(45deg);
+  animation: otp-install-arrow 1s ease-in-out infinite;
+}
+@keyframes otp-install-arrow {
+  0%, 100% { transform: rotate(45deg) translate(-4px, -4px); opacity: .7; }
+  50% { transform: rotate(45deg) translate(4px, 4px); opacity: 1; }
+}
 .vault-clock-banner {
   margin: 0; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px;
   border: 1px solid rgba(180, 83, 9, .18); border-radius: 14px;

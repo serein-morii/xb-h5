@@ -39,7 +39,7 @@ test("install coach copy is explicit for iOS, WeChat and browsers", () => {
   assert.equal(installCoachKind("Mozilla/5.0 (Linux; Android 14) Chrome/120"), "browser");
   const ios = installCoachCopy("ios");
   assert.equal(ios.title, "添加到桌面");
-  assert.match(ios.action, /怎么添加/);
+  assert.match(ios.action, /指出分享按钮/);
   assert.equal(ios.steps.length, 3);
   assert.match(ios.steps[0], /分享/);
   assert.match(ios.steps[1], /添加到主屏幕/);
@@ -103,8 +103,10 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   assert.match(css, /otp-install-steps/);
   const hint = await source("app/systems/otp/OtpInstallHint.tsx");
   assert.match(hint, /installCoachCopy/);
-  assert.match(hint, /怎么添加/);
+  assert.match(hint, /otp-install-spotlight/);
+  assert.match(hint, /指出分享按钮/);
   assert.match(hint, /otp-install-steps/);
+  assert.match(css, /otp-install-spotlight/);
   assert.match(css, /vault-clock-banner/);
   assert.match(controller, /\/backup\/local-sync/);
   assert.match(controller, /require\(/);
