@@ -5,6 +5,8 @@ import {
   CLOCK_DRIFT_WARN_MS,
   CLIPBOARD_CLEAR_MS,
   INSTALL_DISMISS_KEY,
+  installCoachCopy,
+  installCoachKind,
   iosInstallHint,
   measureClockDriftMs,
   scheduleClipboardClear,
@@ -24,11 +26,29 @@ test("clock drift uses RTT midpoint and warns at 2 seconds", () => {
 });
 
 test("install hint hides in standalone and after dismiss", () => {
-  assert.equal(INSTALL_DISMISS_KEY, "otp-vault-install-dismissed");
+  assert.equal(INSTALL_DISMISS_KEY, "otp-vault-install-coach-v2");
   assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false }), true);
   assert.match(iosInstallHint, /添加到主屏幕/);
+});
+
+test("install coach copy is explicit for iOS, WeChat and browsers", () => {
+  assert.equal(installCoachKind("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"), "ios");
+  assert.equal(installCoachKind("Mozilla/5.0 MicroMessenger/8.0.5"), "wechat");
+  assert.equal(installCoachKind("Mozilla/5.0 (Linux; Android 14) Chrome/120"), "browser");
+  const ios = installCoachCopy("ios");
+  assert.equal(ios.title, "添加到桌面");
+  assert.match(ios.action, /怎么添加/);
+  assert.equal(ios.steps.length, 3);
+  assert.match(ios.steps[0], /分享/);
+  assert.match(ios.steps[1], /添加到主屏幕/);
+  const wechat = installCoachCopy("wechat");
+  assert.match(wechat.detail, /Safari|Chrome/);
+  assert.match(wechat.steps.join(""), /Safari/);
+  const browser = installCoachCopy("browser");
+  assert.match(browser.action, /立即安装|怎么添加/);
+  assert.match(browser.steps.join(""), /安装|主屏幕|桌面/);
 });
 
 test("clipboard clear only wipes if the copied value is still there", async () => {
@@ -67,8 +87,8 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
     source("app/systems/otp/otp-vault.css"),
     source("../xb/src/main/java/com/xb/modules/otp/api/OtpVaultController.java"),
   ]);
-  assert.match(auth, /OtpInstallHint/);
-  assert.match(workspace, /OtpInstallHint/);
+  assert.doesNotMatch(auth, /OtpInstallHint/);
+  assert.doesNotMatch(workspace, /OtpInstallHint/);
   assert.match(workspace, /shouldWarnClockDrift/);
   assert.match(workspace, /请打开自动时间/);
   assert.match(share, /scheduleClipboardClear/);
@@ -79,6 +99,12 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   assert.match(api, /backup\/local-sync/);
   assert.match(crypto, /otp-vault-offline-device/);
   assert.match(css, /otp-install-hint/);
+  assert.match(css, /\.otp-install-hint[\s\S]{0,220}position:\s*fixed/);
+  assert.match(css, /otp-install-steps/);
+  const hint = await source("app/systems/otp/OtpInstallHint.tsx");
+  assert.match(hint, /installCoachCopy/);
+  assert.match(hint, /怎么添加/);
+  assert.match(hint, /otp-install-steps/);
   assert.match(css, /vault-clock-banner/);
   assert.match(controller, /\/backup\/local-sync/);
   assert.match(controller, /require\(/);

@@ -5,7 +5,6 @@ import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "..
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
 import { finishPasskeyLogin, getPasskeyLoginOptions, registerOtpAccount } from "./vaultApi";
 import { getPasskey } from "../../lib/passkey";
-import OtpInstallHint from "./OtpInstallHint";
 import VaultToastMessage from "./VaultToastMessage";
 import "./otp-auth.css";
 
@@ -150,7 +149,6 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
 		<VaultToastMessage message={message} onDismiss={() => setMessage("")} />
 		<button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" && loginMethod === "passkey" ? <Fingerprint size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" && loginMethod === "passkey" ? "使用 Passkey 登录" : mode === "login" ? "进入保险库" : "创建账号并进入"}</button>
       </form>
-      <OtpInstallHint />
       <footer><a href={APP_ROUTES.otpGuide}><BookOpen size={13} />使用指南</a></footer>
     </section>
   </div>{registrationPrompt ? <div className="otp-register-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) setRegistrationPrompt(false); }}><section className="otp-register-modal" role="alertdialog" aria-modal="true" aria-labelledby="otp-register-prompt-title" aria-describedby="otp-register-prompt-detail"><button type="button" className="otp-register-modal-close" onClick={() => setRegistrationPrompt(false)} aria-label="关闭"><X size={17} /></button><span className="otp-register-modal-icon"><UserPlus size={23} /></span><div><small>CREATE ACCOUNT</small><h2 id="otp-register-prompt-title">该邮箱尚未注册</h2><p id="otp-register-prompt-detail">是否使用 <b>{email.trim().toLowerCase()}</b> 创建 OTP Vault 账户？</p></div><footer><button type="button" onClick={() => setRegistrationPrompt(false)}>暂不注册</button><button type="button" autoFocus onClick={() => switchMode("register")}>创建账户</button></footer></section></div> : null}</main>;

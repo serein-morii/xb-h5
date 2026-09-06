@@ -2,8 +2,8 @@ import { Share, Smartphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   dismissInstallHint,
-  iosInstallHint,
-  isIosDevice,
+  installCoachCopy,
+  installCoachKind,
   isStandaloneDisplay,
   readInstallDismissed,
   shouldShowInstallHint,
@@ -17,7 +17,9 @@ export default function OtpInstallHint() {
     dismissed: typeof window !== "undefined" && readInstallDismissed(),
   }));
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const ios = typeof navigator !== "undefined" && isIosDevice();
+  const kind = typeof navigator === "undefined" ? "browser" : installCoachKind();
+  const copy = installCoachCopy(kind);
+  const [open, setOpen] = useState(kind === "ios" || kind === "wechat");
 
   useEffect(() => {
     const onPrompt = (event: Event) => {
@@ -36,14 +38,18 @@ export default function OtpInstallHint() {
     setInstallEvent(null);
     close();
   };
+  const nativeInstall = Boolean(installEvent) && kind === "browser";
 
-  return <aside className="otp-install-hint" role="status">
-    <span className="otp-install-hint-icon"><Smartphone size={16} /></span>
+  return <aside className={`otp-install-hint${open ? " is-open" : ""}`} role="dialog" aria-label="添加到桌面">
+    <span className="otp-install-hint-icon"><Smartphone size={18} /></span>
     <div>
-      <b>添加到主屏幕</b>
-      <small>{ios ? iosInstallHint : installEvent ? "安装后可像 App 一样直接打开保险库" : "用浏览器菜单把 OTP Vault 加到主屏幕，打开更快"}</small>
+      <b>{copy.title}</b>
+      <small>{copy.detail}</small>
     </div>
-    {installEvent ? <button type="button" className="otp-install-hint-action" onClick={() => void install()}><Share size={13} />安装</button> : null}
+    {nativeInstall
+      ? <button type="button" className="otp-install-hint-action" onClick={() => void install()}><Share size={13} />立即安装</button>
+      : <button type="button" className="otp-install-hint-action" onClick={() => setOpen((value) => !value)}>{open ? "收起" : "怎么添加"}</button>}
     <button type="button" className="otp-install-hint-close" onClick={close} aria-label="关闭"><X size={14} /></button>
+    {open ? <ol className="otp-install-steps">{copy.steps.map((step, index) => <li key={step}><em>{index + 1}</em><span>{step}</span></li>)}</ol> : null}
   </aside>;
 }

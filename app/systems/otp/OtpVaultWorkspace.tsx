@@ -11,7 +11,6 @@ import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
-import OtpInstallHint from "./OtpInstallHint";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
@@ -744,7 +743,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <div className="vault-head-actions"><button type="button" className="vault-ghost vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={18} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a><button type="button" className="vault-primary vault-import-action" onClick={() => setModal("importChoice")} aria-label="添加或导入凭据"><FileUp size={20} /><span>导入</span></button></div>
     </section>
 
-    <OtpInstallHint />
     {shouldWarnClockDrift(clockDriftMs) ? <p className="vault-clock-banner" role="status"><TriangleAlert size={14} />设备时间偏差约 {Math.max(1, Math.round(Math.abs(clockDriftMs) / 1000))} 秒，验证码可能不准。请打开自动时间。</p> : null}
     <MessagePopupHost request={otpApiRequest as MessageRequest} />
     <NotificationCenter request={otpApiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "", label: "全部" }, { key: "OTP", label: "OTP" }, { key: "SYSTEM", label: "系统" }]} />

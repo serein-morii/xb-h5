@@ -1,7 +1,52 @@
 export const CLOCK_DRIFT_WARN_MS = 2000;
 export const CLIPBOARD_CLEAR_MS = 30_000;
-export const INSTALL_DISMISS_KEY = "otp-vault-install-dismissed";
+export const INSTALL_DISMISS_KEY = "otp-vault-install-coach-v2";
 export const iosInstallHint = "点击底部分享按钮，选择「添加到主屏幕」";
+
+export type InstallCoachKind = "ios" | "wechat" | "browser";
+
+export function installCoachKind(ua = typeof navigator === "undefined" ? "" : navigator.userAgent): InstallCoachKind {
+  if (/MicroMessenger/i.test(ua)) return "wechat";
+  if (isIosDevice(ua)) return "ios";
+  return "browser";
+}
+
+export function installCoachCopy(kind: InstallCoachKind) {
+  if (kind === "ios") {
+    return {
+      title: "添加到桌面",
+      detail: "装到主屏幕后，像 App 一样打开，不用再找浏览器。",
+      action: "怎么添加",
+      steps: [
+        "点底部中间的分享按钮",
+        "下滑列表，点「添加到主屏幕」",
+        "确认添加，之后从桌面图标打开",
+      ],
+    };
+  }
+  if (kind === "wechat") {
+    return {
+      title: "添加到桌面",
+      detail: "微信里无法安装。请用 Safari 或 Chrome 打开后再添加到桌面。",
+      action: "怎么添加",
+      steps: [
+        "点右上角 ···，选择在 Safari 中打开",
+        "在 Safari 点底部分享",
+        "选择「添加到主屏幕」",
+      ],
+    };
+  }
+  return {
+    title: "添加到桌面",
+    detail: "安装后可从桌面直接打开保险库，不必每次打开浏览器。",
+    action: "怎么添加",
+    steps: [
+      "点浏览器菜单里的「安装应用」或「添加到主屏幕」",
+      "确认安装，桌面会出现 OTP Vault 图标",
+      "之后从桌面打开即可",
+    ],
+  };
+}
 
 export function measureClockDriftMs(clientSent: number, clientReceived: number, serverTime: number) {
   const rtt = Math.max(0, clientReceived - clientSent);

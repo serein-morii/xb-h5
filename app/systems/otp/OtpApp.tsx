@@ -36,8 +36,10 @@ export default function OtpApp() {
 
   return (
     <Suspense fallback={<Fallback />}>
-      {guide ? <OtpInstallHint /> : null}
-      {guide ? <OtpVaultGuidePage /> : share ? <VaultSharePage token={share[1]} /> : <OtpVaultPage />}
+      {share ? <VaultSharePage token={share[1]} /> : <>
+        <OtpInstallHint />
+        {guide ? <OtpVaultGuidePage /> : <OtpVaultPage />}
+      </>}
     </Suspense>
   );
 }
