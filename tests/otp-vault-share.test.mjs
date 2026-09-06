@@ -65,18 +65,30 @@ test("share detail lists save records with kick and ban, and share form can forb
   assert.doesNotMatch(workspace, /转存操作列表/);
   assert.match(workspace, /移除/);
   assert.doesNotMatch(workspace, /踢掉/);
+  assert.match(workspace, /移除后对方可再次转存/);
+  assert.match(workspace, /禁止后对方不能自行转存/);
   assert.match(workspace, /禁止/);
   assert.match(workspace, /该链接已被分享者禁止转存/);
   assert.match(workspace, /禁止转存/);
   assert.match(workspace, /forbidSave/);
   assert.match(workspace, /kickVaultShareSave/);
   assert.match(workspace, /banVaultShareSave/);
+  assert.match(workspace, /restoreVaultShareSave/);
+  assert.match(workspace, />恢复</);
+  assert.match(workspace, /record.status === "ACTIVE" \? .*移除.* : .*恢复/);
   assert.match(workspace, /<b>\{record\.nickname \|\| record\.username \|\| "未知用户"\}<\/b><time>/);
   assert.match(workspace, /className="vault-save-actions"/);
+  assert.match(workspace, /saveActionConfirm/);
+  assert.match(workspace, /确认移除/);
+  assert.match(workspace, /确认禁止/);
+  assert.match(workspace, /setPendingSaveAction/);
+  assert.doesNotMatch(workspace, /onClick=\{\(\) => void manageShareSave\(record\.id, "kick"\)\}/);
+  assert.doesNotMatch(workspace, /onClick=\{\(\) => void manageShareSave\(record\.id, "ban"\)\}/);
   assert.match(api, /saveRecords\?: VaultShareSaveRecord\[\]/);
   assert.match(api, /forbidSave\?: boolean/);
   assert.match(api, /\/saves\/\$\{saveId\}\/kick/);
   assert.match(api, /\/saves\/\$\{saveId\}\/ban/);
+  assert.match(api, /\/saves\/\$\{saveId\}\/restore/);
 });
 
 test("share save sits in a collapsible bottom dock named 转存", async () => {

@@ -481,7 +481,9 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(share, /vault-view-toggle.*is-active/);
   assert.match(share, /pathLength="100"/);
   assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
-  assert.match(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
+  assert.match(styles, /\.vault-account-links \{[^}]*display: grid/);
+  assert.doesNotMatch(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
+  assert.match(styles, /\.vault-account-profile/);
   assert.match(styles, /\.vault-toast \{ top: auto; bottom:/);
   assert.match(styles, /html\.theme-dark \.vault-theme-options button\.is-active/);
   assert.match(styles, /\.vault-toast\.is-error \{ border-color: rgba\(190,79,68/);

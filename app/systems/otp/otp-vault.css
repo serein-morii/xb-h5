@@ -673,14 +673,18 @@ html.theme-dark {
 .vault-settings .vault-setting-row input:checked + i::after { transform: translateX(18px); }
 .vault-setting-select { margin-left: auto; min-width: 0; max-width: 148px; min-height: 34px; padding: 0 26px 0 10px; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .vault-setting-row:has(.vault-setting-select) { cursor: default; }
-.vault-account-settings { padding-bottom: 12px; }
-.vault-account-links { padding: 0 12px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-.vault-account-link { min-width: 0; min-height: 58px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; border: 1px solid rgba(38,50,77,.07); border-radius: 14px; background: #fafbfe; color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s,background .15s,transform .15s; }
-.vault-account-link:hover { border-color: rgba(102,116,207,.26); background: #f5f6fc; transform: translateY(-1px); }
-.vault-account-link > svg:last-child { color: var(--utility-muted); }
-.vault-account-link .vault-setting-icon { width: 34px; height: 34px; border-radius: 11px; }
-.vault-account-link.is-danger { border-color: rgba(210, 69, 92, 0.22); }
-.vault-account-link.is-danger:hover { border-color: rgba(210, 69, 92, 0.45); background: #fdf2f4; }
+.vault-account-settings { padding-bottom: 0; }
+.vault-account-profile { display: flex; align-items: center; gap: 12px; }
+.vault-account-avatar { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 16px; background: #eaf2ff; color: #4f72c9; font-size: 16px; font-weight: 750; }
+.vault-account-profile b, .vault-account-profile small { display: block; }
+.vault-account-profile b { font-size: 15px; }
+.vault-account-profile small { margin-top: 4px; color: var(--utility-muted); font-size: 10px; }
+.vault-account-links { display: grid; }
+.vault-account-link { width: 100%; min-width: 0; min-height: 68px; padding: 11px 16px; display: flex; align-items: center; gap: 12px; border: 0; border-top: 1px solid rgba(38,50,77,.07); border-radius: 0; background: #fff; color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: background .15s; }
+.vault-account-link:hover { background: #fafbfe; }
+.vault-account-link > svg:last-child { margin-left: auto; color: var(--utility-muted); }
+.vault-account-link .vault-setting-icon { width: 38px; height: 38px; border-radius: 12px; }
+.vault-account-link.is-danger:hover { background: #fdf2f4; }
 .vault-account-link.is-danger b { color: #c22f47; }
 .vault-account-link .vault-setting-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-import-choice-modal { width: min(440px,100%); }
@@ -703,10 +707,10 @@ html.theme-dark {
   .vault-settings-group { border-radius: 20px; }
   .vault-settings .vault-setting-row { min-height: 66px; padding: 10px 13px; }
   .vault-setting-icon { width: 37px; height: 37px; }
-  .vault-account-settings { padding-bottom: 10px; }
-  .vault-account-links { padding: 0 10px; gap: 7px; }
-  .vault-account-link { min-height: 54px; padding: 8px; gap: 7px; }
-  .vault-account-link .vault-setting-icon { width: 32px; height: 32px; }
+  .vault-account-settings { padding-bottom: 0; }
+  .vault-account-avatar { width: 40px; height: 40px; border-radius: 14px; font-size: 14px; }
+  .vault-account-link { min-height: 62px; padding: 9px 13px; gap: 10px; }
+  .vault-account-link .vault-setting-icon { width: 34px; height: 34px; }
   .vault-settings-note { padding: 2px 4px; }
 }
 
@@ -715,8 +719,9 @@ html.theme-dark {
   .vault-settings-group > header > span { background: #222b3d; color: #9da7ba; }
   .vault-settings .vault-setting-row { border-color: rgba(225,231,248,.08); background: #171e2c; }
   .vault-settings .vault-setting-row:hover { background: #1b2332; }
-  .vault-account-link { border-color: rgba(225,231,248,.08); background: #1b2332; }
-  .vault-account-link:hover { border-color: rgba(157,168,243,.3); background: #20293a; }
+  .vault-account-avatar { background: rgba(82,119,207,.18); color: #91adee; }
+  .vault-account-link { border-color: rgba(225,231,248,.08); background: #171e2c; }
+  .vault-account-link:hover { background: #1b2332; }
   .vault-setting-icon.is-violet { background: rgba(126,100,211,.18); color: #b4a5ef; }
   .vault-setting-icon.is-blue { background: rgba(82,119,207,.18); color: #91adee; }
   .vault-setting-icon.is-green { background: rgba(55,130,91,.18); color: #7fc49d; }

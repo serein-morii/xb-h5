@@ -169,6 +169,7 @@ export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest
 export const updateVaultShare = (id: number, body: Record<string, unknown>) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`, { method: "PUT", body });
 export const kickVaultShareSave = (shareId: number, saveId: number) => otpApiRequest(`${vault}/shares/${shareId}/saves/${saveId}/kick`, { method: "POST" });
 export const banVaultShareSave = (shareId: number, saveId: number) => otpApiRequest(`${vault}/shares/${shareId}/saves/${saveId}/ban`, { method: "POST" });
+export const restoreVaultShareSave = (shareId: number, saveId: number) => otpApiRequest(`${vault}/shares/${shareId}/saves/${saveId}/restore`, { method: "POST" });
 export const revokeVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}/revoke`, { method: "POST" });
 export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}`, { method: "DELETE" });
 

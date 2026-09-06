@@ -59,6 +59,8 @@ test("otp keeps logout inside 我的 page instead of the header", async () => {
   assert.match(workspace, /deleteConfirmText !== \(accountName \|\| ""\)/);
   assert.match(workspace, /deleteVaultAccount/);
   assert.match(workspace, /vault-account-link is-danger/);
+  assert.match(workspace, /vault-account-profile/);
+  assert.match(workspace, /vault-account-avatar/);
   assert.match(workspace, /<h2>我的<\/h2>/);
   assert.match(workspace, /\['settings', Settings2, '我的'\]/);
 });
