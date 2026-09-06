@@ -1247,15 +1247,23 @@ body:has(.otp-guide-page) .otp-install-hint { position: relative; left: auto; ri
 }
 .otp-install-spotlight {
   position: fixed; inset: 0; z-index: 400;
-  display: grid; align-content: end; justify-items: center;
-  padding: 20px 20px calc(10px + env(safe-area-inset-bottom));
+  display: grid; align-content: end; justify-items: end;
+  padding: 20px 18px calc(10px + env(safe-area-inset-bottom));
   background: rgba(8, 12, 28, .72);
 }
+.otp-install-spotlight.is-tr {
+  align-content: start; justify-items: end;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 20px;
+}
+.otp-install-spotlight.is-br { align-content: end; justify-items: end; }
 .otp-install-spotlight-card {
-  width: min(360px, 100%); margin-bottom: 18px; padding: 18px 16px 14px;
+  width: min(360px, calc(100% - 8px)); margin: 0 0 14px; padding: 18px 16px 14px;
   border-radius: 18px; background: #fff; color: #172033; text-align: center;
   box-shadow: 0 18px 50px rgba(0,0,0,.28);
 }
+.otp-install-spotlight.is-tr .otp-install-spotlight-card { margin: 14px 0 0; order: 2; }
+.otp-install-spotlight.is-tr .otp-install-spotlight-arrow { order: 1; margin: 8px 10px 0 0; animation-name: otp-install-arrow-tr; }
+.otp-install-spotlight.is-br .otp-install-spotlight-arrow { margin: 0 10px 6px 0; }
 .otp-install-spotlight-card b { display: block; font-size: 16px; }
 .otp-install-spotlight-card p { margin: 8px 0 14px; color: #5c6688; font-size: 13px; line-height: 1.55; }
 .otp-install-spotlight-card button {
@@ -1271,6 +1279,10 @@ body:has(.otp-guide-page) .otp-install-hint { position: relative; left: auto; ri
 @keyframes otp-install-arrow {
   0%, 100% { transform: rotate(45deg) translate(-4px, -4px); opacity: .7; }
   50% { transform: rotate(45deg) translate(4px, 4px); opacity: 1; }
+}
+@keyframes otp-install-arrow-tr {
+  0%, 100% { transform: rotate(-135deg) translate(-4px, -4px); opacity: .7; }
+  50% { transform: rotate(-135deg) translate(4px, 4px); opacity: 1; }
 }
 .vault-clock-banner {
   margin: 0; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px;

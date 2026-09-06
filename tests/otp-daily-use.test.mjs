@@ -30,25 +30,29 @@ test("install hint hides in standalone and after dismiss", () => {
   assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true }), false);
   assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false }), true);
-  assert.match(iosInstallHint, /添加到主屏幕/);
+  assert.match(iosInstallHint, /添加到桌面/);
 });
 
 test("install coach copy is explicit for iOS, WeChat and browsers", () => {
-  assert.equal(installCoachKind("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"), "ios");
+  assert.equal(installCoachKind("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1"), "ios");
+  assert.equal(installCoachKind("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) CriOS/120.0.0.0"), "browser");
   assert.equal(installCoachKind("Mozilla/5.0 MicroMessenger/8.0.5"), "wechat");
   assert.equal(installCoachKind("Mozilla/5.0 (Linux; Android 14) Chrome/120"), "browser");
   const ios = installCoachCopy("ios");
   assert.equal(ios.title, "添加到桌面");
   assert.match(ios.action, /指出分享按钮/);
   assert.equal(ios.steps.length, 3);
-  assert.match(ios.steps[0], /分享/);
-  assert.match(ios.steps[1], /添加到主屏幕/);
+  assert.match(ios.steps[0], /右下角/);
+  assert.match(ios.steps[0], /三个点/);
+  assert.match(ios.steps.join(""), /添加到桌面|添加到主屏幕/);
   const wechat = installCoachCopy("wechat");
   assert.match(wechat.detail, /Safari|Chrome/);
   assert.match(wechat.steps.join(""), /Safari/);
   const browser = installCoachCopy("browser");
-  assert.match(browser.action, /立即安装|怎么添加/);
-  assert.match(browser.steps.join(""), /安装|主屏幕|桌面/);
+  assert.match(browser.action, /立即安装|指出分享按钮|怎么添加/);
+  assert.match(browser.steps[0], /右上角/);
+  assert.match(browser.steps.join(""), /分享/);
+  assert.match(browser.steps.join(""), /添加到桌面|添加到主屏幕/);
 });
 
 test("clipboard clear only wipes if the copied value is still there", async () => {
