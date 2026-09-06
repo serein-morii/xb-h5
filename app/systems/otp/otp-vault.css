@@ -1236,6 +1236,9 @@ html.theme-dark .share-login-summary em { background: rgba(255,255,255,.06); col
   border-radius: 50%; background: rgba(255,255,255,.18); font-size: 10px; font-style: normal; font-weight: 800;
 }
 .otp-auth-card .otp-install-hint { margin: 0; }
+body:has(.otp-auth-page) .otp-install-hint { position: relative; left: auto; right: auto; bottom: auto; margin: 10px 12px 0; z-index: 1; box-shadow: 0 8px 22px rgba(28, 40, 110, .2); }
+body:has(.otp-auth-page) .otp-install-hint small { display: none; }
+body:has(.otp-guide-page) .otp-install-hint { position: relative; left: auto; right: auto; bottom: auto; margin: 10px 12px 0; z-index: 1; }
 .vault-page .otp-install-hint { left: 12px; right: 12px; }
 @media (max-width: 560px) {
   .vault-page .otp-install-hint {

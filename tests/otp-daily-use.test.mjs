@@ -100,6 +100,8 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   assert.match(crypto, /otp-vault-offline-device/);
   assert.match(css, /otp-install-hint/);
   assert.match(css, /\.otp-install-hint[\s\S]{0,220}position:\s*fixed/);
+  assert.match(css, /body:has\(\.otp-auth-page\) \.otp-install-hint/);
+  assert.match(css, /:has\(\.otp-auth-page\)[\s\S]{0,120}position:\s*(static|relative)/);
   assert.match(css, /otp-install-steps/);
   const hint = await source("app/systems/otp/OtpInstallHint.tsx");
   assert.match(hint, /installCoachCopy/);
