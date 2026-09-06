@@ -56,6 +56,25 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(vaultPage, /next/);
 });
 
+test("share detail lists save records with kick and ban, and share form can forbid saving", async () => {
+  const [workspace, api] = await Promise.all([
+    source("app/systems/otp/OtpVaultWorkspace.tsx"),
+    source("app/systems/otp/vaultApi.ts"),
+  ]);
+  assert.match(workspace, /转存操作列表/);
+  assert.match(workspace, /踢掉/);
+  assert.match(workspace, /禁止/);
+  assert.match(workspace, /该链接已被分享者禁止转存/);
+  assert.match(workspace, /禁止转存/);
+  assert.match(workspace, /forbidSave/);
+  assert.match(workspace, /kickVaultShareSave/);
+  assert.match(workspace, /banVaultShareSave/);
+  assert.match(api, /saveRecords\?: VaultShareSaveRecord\[\]/);
+  assert.match(api, /forbidSave\?: boolean/);
+  assert.match(api, /\/saves\/\$\{saveId\}\/kick/);
+  assert.match(api, /\/saves\/\$\{saveId\}\/ban/);
+});
+
 test("share save sits in a collapsible bottom dock named 转存", async () => {
   const [sharePage, styles] = await Promise.all([
     source("app/systems/otp/VaultSharePage.tsx"),

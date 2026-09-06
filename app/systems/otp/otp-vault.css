@@ -256,6 +256,11 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-access-records article small { margin-top: 3px; }
 .vault-access-records article em { margin-top: 2px; color: #a5483f; }
 .vault-access-records article time { text-align: right; }
+.vault-save-records article { grid-template-columns: auto minmax(0, 1fr) auto; }
+.vault-save-actions { display: inline-flex; gap: 6px; }
+.vault-save-actions button { min-height: 28px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 8px; background: #eef0f8; color: #5a6478; font: inherit; font-size: 10px; cursor: pointer; }
+.vault-save-actions button:hover { background: #e4e7f3; color: #26345d; }
+.vault-save-actions button:disabled { opacity: .55; cursor: not-allowed; }
 .vault-access-records > p { margin: 0; padding: 25px; color: var(--utility-muted); font-size: 10px; text-align: center; }
 
 .share-access-card { overflow: hidden; }
