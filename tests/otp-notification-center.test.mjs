@@ -181,6 +181,8 @@ test("broadcast targets business systems (ORDER/OTP/ADMIN), records editable", a
   assert.match(form, /OTP 系统/);
   assert.match(form, /target: "ALL"/);
   assert.match(form, /投递记录/);
+  assert.match(form, /下线时间/);
+  assert.match(form, /立即下线/);
   assert.match(form, /broadcast\/list/);
   assert.match(service, /resolveTargets/);
   assert.match(service, /case "ORDER" -> mapper\.selectOrderSystemUserIds/);
@@ -213,6 +215,25 @@ test("broadcast read receipts stay after inbox delete and show in admin", async 
   assert.match(mapper, /user_deleted = 0/);
   assert.match(sql, /first_read_time/);
   assert.match(sql, /user_deleted/);
+});
+
+test("broadcasts expire and can be taken offline so unread does not stay forever", async () => {
+  const [form, service, controller, mapper, sql] = await Promise.all([
+    source("app/systems/system/MessageBroadcast.tsx"),
+    source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java"),
+    source("../xb/src/main/java/com/xb/modules/message/api/UserMessageController.java"),
+    source("../xb/src/main/java/com/xb/modules/message/mapper/UserMessageMapper.java"),
+    source("../xb/sql/20260906_message_offline.sql"),
+  ]);
+  assert.match(form, /sc-sheet-mask/);
+  assert.match(form, /datetime-local/);
+  assert.match(service, /userVisible/);
+  assert.match(service, /DEFAULT_OFFLINE_DAYS = 7/);
+  assert.match(service, /getOfflineTime/);
+  assert.match(controller, /body\.get\("offlineTime"\)/);
+  assert.match(mapper, /offline_time = #\{offlineTime\}/);
+  assert.match(sql, /offline_time/);
+  assert.match(sql, /INTERVAL 7 DAY/);
 });
 
 test("html messages keep inline styles via sanitized allowlist", async () => {
