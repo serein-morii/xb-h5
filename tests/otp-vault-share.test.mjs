@@ -51,8 +51,24 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /SHARE_ITEM_LIMIT/);
   assert.match(workspace, /单次最多(?:授权|选择) \$\{SHARE_ITEM_LIMIT\}/);
   assert.match(workspace, /credentialTab === "received"/);
-  assert.match(sharePage, /转存到我收到的/);
   assert.match(sharePage, /PENDING_SAVE_KEY/);
   assert.match(sharePage, /已经转存过了，无需再次转存/);
   assert.match(vaultPage, /next/);
+});
+
+test("share save sits in a collapsible bottom dock named 转存", async () => {
+  const [sharePage, styles] = await Promise.all([
+    source("app/systems/otp/VaultSharePage.tsx"),
+    source("app/systems/otp/otp-vault.css"),
+  ]);
+  assert.doesNotMatch(sharePage, /转存到我收到的/);
+  assert.doesNotMatch(sharePage, /已转存到我收到的/);
+  assert.match(sharePage, /className=\{`share-save-dock\$\{saveCollapsed \? " is-collapsed" : ""\}`\}/);
+  assert.match(sharePage, /aria-label=\{saved \? "已转存" : "转存"\}/);
+  assert.match(sharePage, /aria-label="收起"/);
+  assert.match(sharePage, /\{saved \? "已转存" : "转存"\}/);
+  assert.match(sharePage, /保存到「我收到的」/);
+  assert.match(sharePage, /登录后转存/);
+  assert.match(styles, /\.share-save-dock\s*\{[^}]*position:\s*fixed;/s);
+  assert.match(styles, /\.share-save-fab\s*\{[^}]*width:\s*44px;/s);
 });

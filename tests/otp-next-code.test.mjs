@@ -16,12 +16,16 @@ test("shows and copies the next time-window code for private credentials", async
   assert.match(api, /otp\?: string; nextOtp\?: string/);
   assert.match(workspace, /now \+ period \* 1000/);
   assert.match(workspace, /item\.otpType !== "HOTP"/);
-  assert.match(workspace, /!item\.shared/);
+  assert.match(workspace, /nextOtpLabel && item\.otpType !== "HOTP"/);
+  assert.doesNotMatch(workspace, /nextOtpLabel && !item\.shared/);
+  assert.doesNotMatch(workspace, /liveDetail\.nextOtp && !liveDetail\.shared/);
   assert.match(workspace, /className="vault-card-next"/);
   assert.match(workspace, /className="vault-detail-next"/);
   assert.equal(workspace.match(/className="vault-next-copy"/g)?.length, 2);
   assert.match(workspace, /copy\(item\.nextOtp \|\| "", "下一组验证码已复制"\)/);
   assert.match(workspace, /copy\(liveDetail\.nextOtp \|\| "", "下一组验证码已复制"\)/);
+  assert.match(workspace, /formatShareValidity\(item\.shareExpireTime, now\)/);
+  assert.doesNotMatch(workspace, /有效至 \$\{/);
   assert.match(sharePage, /item\.nextOtp/);
   assert.equal(sharePage.match(/className="vault-next-copy"/g)?.length, 2);
   assert.match(sharePage, /onCopy\(item\.nextOtp \|\| "", nextOtpKey, "下一组验证码已复制"\)/);

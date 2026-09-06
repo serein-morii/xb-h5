@@ -494,15 +494,18 @@ html.theme-dark { @media (max-width: 560px) {
 .share-access-card form > button:not(:disabled):active,.share-open-button:not(:disabled):active { transform: translateY(0) scale(.99); }
 .share-access-card footer { margin-top: 13px; padding-top: 11px; color: #8a92a2; }
 
-.share-page.is-open { background: radial-gradient(circle at 90% 0, rgba(100, 117, 218, .15), transparent 28%), #eef1f7; }
+.share-page.is-open { background: radial-gradient(circle at 90% 0, rgba(100, 117, 218, .15), transparent 28%), #eef1f7; padding-bottom: 88px; }
 .share-page.is-open .share-brand { max-width: 820px; }
 .share-content { max-width: 820px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.share-save-bar { margin-top: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 16px; background: #edf0fc; color: #26345d; }
-.share-save-bar > span { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.share-save-bar b { font-size: 13px; }
-.share-save-bar small { width: 100%; color: #747d90; font-size: 11px; line-height: 1.45; }
-.share-save-bar button, .share-save-bar a { flex: none; min-height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: #485cc7; color: #fff; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
-.share-save-bar button:disabled { opacity: .6; cursor: not-allowed; }
+.share-save-dock { position: fixed; z-index: 40; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); transform: translateX(-50%); padding: 9px 10px 9px 8px; display: flex; align-items: center; gap: 8px; border-radius: 18px; background: rgba(255,255,255,.94); box-shadow: 0 14px 36px rgba(34, 44, 76, .18); color: #26345d; backdrop-filter: blur(14px); }
+.share-save-dock.is-collapsed { width: auto; padding: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.share-save-collapse { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 999px; background: #eef0f8; color: #6a7388; cursor: pointer; }
+.share-save-dock > span { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.share-save-dock b { font-size: 13px; line-height: 1.1; }
+.share-save-dock small { color: #747d90; font-size: 10px; line-height: 1.35; }
+.share-save-dock:not(.is-collapsed) > button:last-child, .share-save-dock > a { flex: none; min-height: 32px; padding: 0 11px; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: #485cc7; color: #fff; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.share-save-dock:not(.is-collapsed) > button:last-child:disabled { opacity: .6; cursor: not-allowed; }
+.share-save-fab { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 999px; background: #485cc7; color: #fff; box-shadow: 0 10px 24px rgba(72, 92, 199, .32); cursor: pointer; }
 .share-content > header { padding: 14px 16px; align-items: center; border: 0; border-radius: 20px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); }
 .share-content > header > div:first-child { min-width: 0; }
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
@@ -581,11 +584,10 @@ html.theme-dark { @media (max-width: 560px) {
   .share-access-intro h1 { font-size: 23px; }
   .share-code-input { height: 50px; }
 
-  .share-page.is-open { padding: max(12px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)); }
+  .share-page.is-open { padding: max(12px, env(safe-area-inset-top)) 12px max(88px, env(safe-area-inset-bottom)); }
   .share-page.is-open .share-brand { margin: 0 2px 10px; }
   .share-page.is-open .share-content { padding: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
-  .share-save-bar { flex-wrap: wrap; }
-  .share-save-bar button, .share-save-bar a { width: 100%; justify-content: center; }
+  .share-save-dock { width: min(100% - 24px, 360px); }
   .share-content > header { position: sticky; z-index: 20; top: max(8px, env(safe-area-inset-top)); padding: 13px; flex-direction: row; align-items: center; border-radius: 18px; box-shadow: 0 7px 22px rgba(34, 44, 76, .1); }
   .share-content h1 { font-size: 20px; }
   .share-content > header p { font-size: 9px; }
@@ -615,8 +617,9 @@ html.theme-dark {
   .share-code-input:focus-within { background: #101725; border-color: #6c7bdd; }
   .share-page.is-open { background: #0e1420; }
   .share-content { background: transparent; }
-  .share-save-bar { background: #222b4a; color: #eef1f8; }
-  .share-save-bar small { color: #939caf; }
+  .share-save-dock { background: rgba(23, 30, 44, .94); color: #eef1f8; }
+  .share-save-dock small { color: #939caf; }
+  .share-save-collapse { background: #222b40; color: #aeb7c9; }
   .share-content > header { border: 0; background: #171e2c; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
   .share-expiry-ring { color: #aeb7ff; }
   .share-expiry-progress .share-expiry-track.is-total { stroke: rgba(174,183,255,.22); }
@@ -730,7 +733,7 @@ html.theme-dark {
 .vault-card-top-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .vault-shared-badge { padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
 .vault-code.is-readonly { cursor: default; }
-.vault-shared-expiry { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--utility-muted); font-size: 8px; }
+.vault-shared-expiry { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--utility-muted); font-size: 9px; white-space: nowrap; }
 .vault-card-foot { align-items: center; justify-content: flex-start; gap: 7px; }
 .vault-card-foot > span:first-child { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-card-foot > span:last-child { flex: none; }
@@ -767,6 +770,7 @@ html.theme-dark .vault-next-copy:hover { border-color: rgba(190,200,235,.24); ba
 .vault-card.is-compact .vault-card-actions button { width: 22px; height: 22px; justify-content: center; }
 .vault-card.is-compact .vault-card-actions button span { display: none; }
 .vault-card.is-compact .vault-card-actions .vault-compact-favorite { display: inline-flex; }
+.vault-card.is-compact .vault-shared-expiry { margin-left: 0; font-size: 8px; }
 @media (min-width: 561px) { .vault-grid.is-compact { grid-template-columns: repeat(auto-fill,minmax(255px,1fr)); gap: 8px; } }
 @media (max-width: 560px) {
   .vault-card.is-compact { column-gap: 8px; padding: 10px 11px; }
