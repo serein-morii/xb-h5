@@ -53,5 +53,6 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /credentialTab === "received"/);
   assert.match(sharePage, /转存到我收到的/);
   assert.match(sharePage, /PENDING_SAVE_KEY/);
+  assert.match(sharePage, /已经转存过了，无需再次转存/);
   assert.match(vaultPage, /next/);
 });

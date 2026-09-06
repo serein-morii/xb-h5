@@ -1,4 +1,4 @@
-import { BookOpen, Fingerprint, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldAlert, ShieldCheck, User, UserPlus, X } from "lucide-react";
+import { BookOpen, Fingerprint, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldCheck, User, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { SliderCaptcha } from "../../components/SliderCaptcha";
 import { apiRequest, COMMON_MAILBOX_HINT, loginByEmail, sendEmailCode } from "../../lib/api";
@@ -145,7 +145,7 @@ export default function OtpAuthScreen({ onAuthenticated }: { onAuthenticated: (t
         {mode === "register" || loginMethod === "email" ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={17} /><input inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder="6 位验证码" /><button type="button" disabled={emailSending || countdown > 0} onClick={() => void requestEmailCode(mode === "register" ? "otp-register" : "otp-login")}>{emailSending ? "发送中" : countdown > 0 ? `${countdown}s` : "获取验证码"}</button></div></label> : null}
         {mode === "login" && loginMethod === "password" ? <label><span>密码</span><div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} maxLength={20} autoComplete="current-password" placeholder="5-20 位密码" /></div></label> : null}
         {captchaOn && mode === "login" && loginMethod === "password" ? <label><span>安全验证</span><SliderCaptcha resetKey={captchaReset} disabled={busy} onEnabledChange={setCaptchaOn} onVerified={(value) => { setUuid(value.uuid); setCode(value.token); }} /></label> : null}
-        {mode === "login" ? <><label className="otp-long-session"><input type="checkbox" checked={longSession} onChange={(event) => setLongSession(event.target.checked)} /><i /><span><b>保持登录 15 天</b><small>有操作时自动续期</small></span></label>{longSession ? <p className="otp-session-warning"><ShieldAlert size={15} /><span><b>请确认这是你的私人设备</b><small>15 天内无需重新登录，公共或他人设备请勿开启。</small></span></p> : null}</> : null}
+        {mode === "login" ? <label className="otp-long-session"><input type="checkbox" checked={longSession} onChange={(event) => setLongSession(event.target.checked)} /><i /><span><b>保持登录 15 天</b><small>{longSession ? "请确认这是你的私人设备，公共或他人设备请勿开启。" : "有操作时自动续期"}</small></span></label> : null}
 		<VaultToastMessage message={message} onDismiss={() => setMessage("")} />
 		<button className="otp-auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : mode === "login" && loginMethod === "passkey" ? <Fingerprint size={18} /> : mode === "login" ? <ShieldCheck size={18} /> : <UserPlus size={18} />}{busy ? "正在处理" : mode === "login" && loginMethod === "passkey" ? "使用 Passkey 登录" : mode === "login" ? "进入保险库" : "创建账号并进入"}</button>
       </form>

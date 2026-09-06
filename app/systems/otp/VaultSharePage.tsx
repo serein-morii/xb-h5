@@ -85,7 +85,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       const result = await saveInboundShare(token, sessionToken);
       setSaved(true);
       sessionStorage.removeItem(PENDING_SAVE_KEY);
-      setToast(result.data.alreadySaved ? "已经在我收到的里" : "已转存到我收到的");
+      setToast(result.data.alreadySaved ? "已经转存过了，无需再次转存" : "已转存到我收到的");
     } catch (saveError) {
       if (saveError && typeof saveError === "object" && "code" in saveError && saveError.code === 401 && !getOtpToken()) {
         sessionStorage.setItem(PENDING_SAVE_KEY, token);

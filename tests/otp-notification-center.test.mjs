@@ -102,6 +102,18 @@ test("share-open events notify the owner in-site", async () => {
   assert.match(vaultService, /alertService\.notifyShareOpened\(share, IpUtils\.getIpAddr\(request\)\)/);
 });
 
+test("share updates revoke and delete notify people who saved the link", async () => {
+  const [alertService, vaultService] = await Promise.all([
+    source("../xb/src/main/java/com/xb/modules/otp/service/OtpVaultSecurityAlertService.java"),
+    source("../xb/src/main/java/com/xb/modules/otp/service/impl/DefaultOtpVaultService.java"),
+  ]);
+  assert.match(alertService, /notifyShareSavers/);
+  assert.match(alertService, /转存的授权/);
+  assert.match(vaultService, /notifyInboundShareSavers\(share, "updated"\)/);
+  assert.match(vaultService, /notifyInboundShareSavers\(share, "revoked"\)/);
+  assert.match(vaultService, /notifyInboundShareSavers\(share, "deleted"\)/);
+});
+
 test("richText renderer escapes by default and sanitizes html", async () => {
   const richText = await source("app/lib/richText.ts");
   assert.match(richText, /escapeHtml/);

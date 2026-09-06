@@ -14,12 +14,14 @@ test("offers the existing registration flow after an unregistered email login", 
   assert.doesNotMatch(auth, /className="otp-register-prompt"/);
 });
 
-test("aligns the persistent login control to the right", async () => {
+test("keeps the 15-day login hint to the left of the switch", async () => {
   const [auth, styles] = await Promise.all([
     source("app/systems/otp/OtpAuthScreen.tsx"),
     source("app/systems/otp/otp-auth.css"),
   ]);
 
   assert.match(auth, /className="otp-long-session"/);
-  assert.match(styles, /\.otp-long-session\s*\{[^}]*width:\s*100%;[^}]*justify-content:\s*flex-end;/s);
+  assert.match(auth, /<span><b>保持登录 15 天<\/b><small>/);
+  assert.doesNotMatch(auth, /className="otp-session-warning"/);
+  assert.match(styles, /\.otp-long-session\s*\{[^}]*flex-direction:\s*row-reverse;/s);
 });
