@@ -116,10 +116,23 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
     setConfirmError("");
   }, []);
 
+  useEffect(() => {
+    if (!loaded || !current) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !confirming) dismiss(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [loaded, current, confirming, dismiss]);
+
   if (!loaded || !current) return null;
   return <div className="notif-popup-mask" role="alertdialog" aria-modal="true" aria-labelledby="notif-popup-title">
     <section className="notif-popup">
-      <header><small>NOTICE</small><h2 id="notif-popup-title">{current.title}</h2></header>
+      <header>
+        <div>
+          <small>NOTICE</small>
+          <h2 id="notif-popup-title">{current.title}</h2>
+        </div>
+        <button type="button" className="notif-icon-action notif-popup-close" title="关闭" aria-label="关闭" disabled={confirming} onClick={dismiss}><X size={15} /></button>
+      </header>
       <div className="notif-popup-body"><div className="notif-item-content notif-popup-content" dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
       <footer>
         {confirmError ? <span className="notif-popup-error" role="alert">{confirmError}</span> : null}

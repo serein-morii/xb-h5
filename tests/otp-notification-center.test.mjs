@@ -85,6 +85,11 @@ test("in-site message module: typed categories, rich content, unread count", asy
   assert.match(controller, /SecurityUtils\.isAdmin/);
   assert.match(sql, /content_type/);
   assert.match(sql, /sys_user_message/);
+  const impl = await source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java");
+  const registration = await source("../xb/src/main/java/com/xb/modules/identity/service/RegistrationService.java");
+  assert.match(impl, /deliverLiveBroadcasts/);
+  assert.match(impl, /selectLiveBroadcastsMissingForUser/);
+  assert.match(registration, /deliverLiveBroadcasts\(sysUser\.getUserId\(\)\)/);
 });
 
 test("share-open events notify the owner in-site", async () => {
@@ -151,6 +156,8 @@ test("popup announcements: ack on confirm, re-pop when dismissed", async () => {
   assert.match(component, /阅读状态未保存，请重试/);
   assert.match(component, /下次再说/);
   assert.match(component, /确认/);
+  assert.match(component, /aria-label="关闭"/);
+  assert.match(component, /notif-popup-close/);
   assert.doesNotMatch(component, /POPUP_ACK_KEY/);
 
   const broadcast = await source("app/systems/system/MessageBroadcast.tsx");
