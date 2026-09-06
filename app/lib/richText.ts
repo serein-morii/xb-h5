@@ -44,6 +44,19 @@ const SAFE_STYLE_PROPERTIES = new Set([
 
 const UNSAFE_STYLE_VALUE = /(url\s*\(|expression|javascript:|@import|position\s*:|fixed|sticky|z-index|calc\s*\(|var\s*\()/i;
 
+/** 正文里过大的字号会撑破弹窗和手机宽度，只保留接近正文层级的尺寸。 */
+function isCompactFontSize(value: string): boolean {
+  const named = /^(smaller|larger|xx-small|x-small|small|medium|large)$/i.test(value.trim());
+  if (named) return true;
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)(px|em|rem|%)$/i);
+  if (!match) return false;
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  if (unit === "px") return amount >= 10 && amount <= 22;
+  if (unit === "em" || unit === "rem") return amount >= 0.75 && amount <= 1.4;
+  return amount >= 80 && amount <= 130;
+}
+
 function sanitizeStyleAttr(value: string | null): string | null {
   if (!value) return null;
   const kept: string[] = [];
@@ -56,6 +69,7 @@ function sanitizeStyleAttr(value: string | null): string | null {
     if (!SAFE_STYLE_PROPERTIES.has(property)) continue;
     if (UNSAFE_STYLE_VALUE.test(styleValue)) continue;
     if (styleValue.includes("\\") || styleValue.includes("<")) continue;
+    if (property === "font-size" && !isCompactFontSize(styleValue)) continue;
     kept.push(`${property}: ${styleValue}`);
   }
   return kept.length ? kept.join("; ") : null;

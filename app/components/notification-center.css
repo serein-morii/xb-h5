@@ -121,17 +121,19 @@
 .notif-item-content :is(h4,h5,h6) { font-size: 12px; }
 .notif-item-content li + li { margin-top: 3px; }
 .notif-item-content hr { margin: 12px 0; border: 0; border-top: 1px solid rgba(128,140,163,.22); }
-.notif-item-content table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.notif-item-content table { width: 100%; border-collapse: collapse; font-size: 11px; display: block; overflow-x: auto; }
 .notif-item-content :is(th,td) { padding: 7px 8px; border: 1px solid rgba(128,140,163,.22); text-align: left; overflow-wrap: anywhere; }
 .notif-item-content th { background: rgba(128,140,163,.09); font-weight: 650; }
-.notif-item-content a { text-underline-offset: 3px; }
+.notif-item-content a { text-underline-offset: 3px; color: #4c5cc5; }
 .notif-item-content ul, .notif-item-content ol { margin: 6px 0; padding-left: 18px; }
+.notif-item-content :is(ul,ol) :is(ul,ol) { margin: 3px 0; }
 .notif-item-content code { background: rgba(15, 23, 42, 0.06); border-radius: 5px; padding: 1px 5px; font-size: 11px; }
 .notif-item-content pre { background: rgba(15, 23, 42, 0.06); border-radius: 8px; padding: 9px; overflow-x: auto; }
 .notif-item-content pre code { background: transparent; padding: 0; }
 .notif-item-content blockquote { margin: 6px 0; padding: 3px 11px; border-left: 3px solid #c9cff0; color: #6b7280; }
 .notif-item-content img { max-width: 100%; border-radius: 8px; }
-.notif-item-content a { color: #4c5cc5; }
+.notif-item-content mark { background: #fff3bf; color: inherit; padding: 0 3px; border-radius: 3px; }
+.notif-item-content :is(div,section,center) { min-width: 0; }
 
 /* 铃铛按钮 */
 .notif-bell {
@@ -176,9 +178,10 @@
 .notif-popup-body { overflow-y: auto; padding: 2px 20px 6px; }
 .notif-popup-body .notif-item-content { background: #f8f9fc; }
 .notif-popup footer {
-  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
   padding: 12px 20px 16px;
 }
+.notif-popup-error { flex: 1 1 100%; margin-right: auto; color: #dc2626; font-size: 12px; font-weight: 600; }
 .notif-popup-dismiss {
   border: 1px solid rgba(15, 23, 42, 0.12); background: #fff; color: #596174;
   border-radius: 11px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -291,6 +294,8 @@ html.theme-dark .notif-popup header h2 { color: #e8ebf5; }
 html.theme-dark .notif-popup-body .notif-item-content { background: #10151f; }
 html.theme-dark .notif-popup-dismiss { background: transparent; border-color: rgba(225, 231, 248, 0.14); color: #a6afc6; }
 html.theme-dark .notif-popup-confirm { background: #4c5cc5; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+html.theme-dark .notif-popup-error { color: #fca5a5; }
+html.theme-dark .notif-item-content mark { background: rgba(250, 204, 21, 0.22); }
 
 @media (prefers-reduced-motion: reduce) {
   .notif-panel, .notif-popup, .notif-mask, .notif-popup-mask { animation: none; }

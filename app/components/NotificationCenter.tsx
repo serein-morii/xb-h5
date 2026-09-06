@@ -31,21 +31,6 @@ export const DEFAULT_MESSAGE_CATEGORIES: MessageCategory[] = [
   { key: "SYSTEM", label: "系统" },
 ];
 
-const POPUP_ACK_KEY = "xb-msg-popup-acked";
-
-function readAckedPopups(): number[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(POPUP_ACK_KEY) || "[]");
-    return Array.isArray(raw) ? raw.map(Number).filter((value) => Number.isFinite(value)) : [];
-  } catch { return []; }
-}
-
-function ackPopup(id: number) {
-  const acked = readAckedPopups();
-  const next = [...new Set([id, ...acked])].slice(0, 200);
-  try { localStorage.setItem(POPUP_ACK_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-}
-
 async function fetchMessages(request: MessageRequest, category: string): Promise<UserMessage[]> {
   const query = category ? `?category=${encodeURIComponent(category)}&limit=100` : "?limit=100";
   const result = await request<ListResult>(`${API_PATHS.message.root}${query}`);
@@ -92,19 +77,20 @@ export function NotificationBellButton({ count, onClick, floating, label = "通�
 
 /**
  * 弹窗公告宿主：页面打开时拉取未读弹窗公告并逐条弹出。
- * 点「确认」→ 标记已读 + 本机记录，之后不再弹；点关闭或不操作 → 下次打开还会弹。
+ * 点「确认」→ 写入已读记录后不再弹；点「下次再说」或不操作 → 下次打开还会弹。
  */
 export function MessagePopupHost({ request }: { request: MessageRequest }) {
   const [queue, setQueue] = useState<UserMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
 
   useEffect(() => {
     let mounted = true;
     request<ListResult>(`${API_PATHS.message.root}/popup`)
       .then((result) => {
         if (!mounted) return;
-        const acked = new Set(readAckedPopups());
-        const pending = (Array.isArray(result.data) ? result.data : []).filter((item) => !acked.has(item.id));
+        const pending = Array.isArray(result.data) ? result.data : [];
         setQueue(pending);
         setLoaded(true);
       })
@@ -114,16 +100,20 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
 
   const current = queue[0];
   const confirm = useCallback(async () => {
-    if (!current) return;
-    ackPopup(current.id);
-    try { await request(`${API_PATHS.message.root}/${current.id}/read`, { method: "PUT" }); } catch { /* 已读同步失败不影响关闭 */ }
-    window.dispatchEvent(new Event(MESSAGE_CHANGED_EVENT));
-    setQueue((rows) => rows.slice(1));
-  }, [current, request]);
+    if (!current || confirming) return;
+    setConfirming(true); setConfirmError("");
+    try {
+      await request(`${API_PATHS.message.root}/${current.id}/read`, { method: "PUT" });
+      window.dispatchEvent(new Event(MESSAGE_CHANGED_EVENT));
+      setQueue((rows) => rows.slice(1));
+    } catch { setConfirmError("阅读状态未保存，请重试"); }
+    finally { setConfirming(false); }
+  }, [current, request, confirming]);
 
   const dismiss = useCallback(() => {
     // 直接关闭：不记录确认，下次打开页面继续弹
     setQueue((rows) => rows.slice(1));
+    setConfirmError("");
   }, []);
 
   if (!loaded || !current) return null;
@@ -132,8 +122,9 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
       <header><small>NOTICE</small><h2 id="notif-popup-title">{current.title}</h2></header>
       <div className="notif-popup-body"><div className="notif-item-content" dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
       <footer>
-        <button type="button" className="notif-popup-dismiss" onClick={dismiss}>下次再说</button>
-        <button type="button" className="notif-popup-confirm" onClick={() => void confirm()}>确认</button>
+        {confirmError ? <span className="notif-popup-error" role="alert">{confirmError}</span> : null}
+        <button type="button" className="notif-popup-dismiss" disabled={confirming} onClick={dismiss}>下次再说</button>
+        <button type="button" className="notif-popup-confirm" disabled={confirming} onClick={() => void confirm()}>{confirming ? "保存中…" : "确认"}</button>
       </footer>
     </section>
   </div>;

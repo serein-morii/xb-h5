@@ -9,6 +9,7 @@ type Notify = (message: string, type?: "success" | "error" | "info") => void;
 type BroadcastGroup = {
   groupKey: string; title: string; category?: string; contentType?: string; popup?: boolean;
   link?: string; content?: string; targetRole?: string | null; createTime?: string; recipientCount?: number;
+  readCount?: number; unreadCount?: number;
 };
 
 const EMPTY_FORM = { title: "", category: "SYSTEM", contentType: "markdown", content: "", link: "", popup: false, target: "ALL" };
@@ -44,6 +45,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
+  const [readersGroup, setReadersGroup] = useState<BroadcastGroup | null>(null);
   const [busy, setBusy] = useState(false);
   const previewHtml = useMemo(() => renderRichText(form.content, form.contentType), [form.content, form.contentType]);
 
@@ -117,6 +119,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
       const result = await apiRequest<{ data?: { deleted?: number } }>(`${API_PATHS.message.root}/broadcast/${group.groupKey}`, { method: "DELETE" });
       notify(`已删除 ${Number(result.data?.deleted ?? 0)} 条投递`, "success");
       if (editingGroup?.groupKey === group.groupKey) cancelEdit();
+      if (readersGroup?.groupKey === group.groupKey) setReadersGroup(null);
       loadRecords();
     } catch (error) { notify(error instanceof Error ? error.message : "删除失败", "error"); }
   }
@@ -159,10 +162,10 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
         : !records.length ? <p className="sysbroadcast-empty">还没有群发过通知，填写上方表单发出第一条。</p>
         : <div className="sysbroadcast-list">
           <div className="sysbroadcast-row sysbroadcast-row-head" aria-hidden="true">
-            <span>通知</span><span>投递范围</span><span>发送时间</span><span>人数</span><span className="sysbroadcast-cell-actions">操作</span>
+            <span>通知</span><span>投递范围</span><span>发送时间</span><span>已读 / 投递</span><span className="sysbroadcast-cell-actions">操作</span>
           </div>
           {records.map((group) => (
-            <article className={`sysbroadcast-row${editingGroup?.groupKey === group.groupKey ? " is-editing" : ""}`} key={group.groupKey}>
+            <article className={`sysbroadcast-row${editingGroup?.groupKey === group.groupKey ? " is-editing" : ""}${readersGroup?.groupKey === group.groupKey ? " is-reading" : ""}`} key={group.groupKey}>
               <div className="sysbroadcast-cell sysbroadcast-cell-title" data-label="通知">
                 <b>{group.title}</b>
                 <span className="sysbroadcast-cell-tags">
@@ -173,19 +176,85 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
               </div>
               <div className="sysbroadcast-cell" data-label="投递范围"><b>{targetLabel(group.targetRole)}</b></div>
               <div className="sysbroadcast-cell" data-label="发送时间">{formatTime(group.createTime)}</div>
-              <div className="sysbroadcast-cell sysbroadcast-cell-count" data-label="人数">{Number(group.recipientCount || 0)}</div>
+              <div className="sysbroadcast-cell sysbroadcast-cell-count" data-label="已读 / 投递">{Number(group.readCount || 0)} / {Number(group.recipientCount || 0)}</div>
               <div className="sysbroadcast-cell sysbroadcast-cell-actions">
+                <button type="button" className="sysbroadcast-op" onClick={() => setReadersGroup(group)}><Eye size={13} />阅读记录</button>
                 <button type="button" className="sysbroadcast-op" onClick={() => startEdit(group)}><Pencil size={13} />编辑</button>
                 <button type="button" className={`sysbroadcast-op is-danger${confirmDeleteKey === group.groupKey ? " is-confirm" : ""}`} onClick={() => void removeGroup(group)}><Trash2 size={13} />{confirmDeleteKey === group.groupKey ? "确认删除" : "删除"}</button>
               </div>
               <div className="sysbroadcast-cell sysbroadcast-cell-meta">
                 <span>范围 <b>{targetLabel(group.targetRole)}</b></span>
                 <span>时间 <b>{formatTime(group.createTime)}</b></span>
-                <span>人数 <b>{Number(group.recipientCount || 0)}</b></span>
+                <span>已读 <b>{Number(group.readCount || 0)} / {Number(group.recipientCount || 0)}</b></span>
               </div>
             </article>
           ))}
         </div>}
     </section>
+    {readersGroup ? <ReadReceipts key={readersGroup.groupKey} group={readersGroup} onClose={() => setReadersGroup(null)} /> : null}
   </div>;
+}
+
+type Reader = { userId: number; username: string; nickname?: string; isRead: boolean | number; readTime?: string; firstReadTime?: string; userDeleted?: boolean | number };
+
+function truthy(value: boolean | number | undefined) {
+  return value === true || value === 1;
+}
+
+function ReadReceipts({ group, onClose }: { group: BroadcastGroup; onClose: () => void }) {
+  const [state, setState] = useState("all");
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<Reader[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError("");
+    apiRequest<{ data: { rows: Reader[]; total: number } }>(`${API_PATHS.message.root}/broadcast/${encodeURIComponent(group.groupKey)}/readers?state=${state}&page=${page}&size=20`)
+      .then(({ data }) => { if (active) { setRows(data?.rows || []); setTotal(Number(data?.total || 0)); } })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "阅读记录加载失败"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [group.groupKey, page, state, refresh]);
+  useEffect(() => { document.getElementById("message-readers")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, []);
+  return <section className="sysbroadcast-records message-readers" id="message-readers" aria-label="通知阅读记录">
+    <header className="sysbroadcast-records-head">
+      <div><b>阅读记录</b><small>{group.title} · 已读 {Number(group.readCount || 0)} / {Number(group.recipientCount || 0)}</small></div>
+      <button className="sysbroadcast-op" type="button" onClick={onClose}>收起</button>
+    </header>
+    <div className="message-readers-tools">
+      <div role="group" aria-label="阅读状态筛选">
+        {([["all", "全部"], ["read", "已读"], ["unread", "未读"]] as const).map(([key, label]) =>
+          <button type="button" key={key} className={state === key ? "is-active" : undefined} aria-pressed={state === key} onClick={() => { setState(key); setPage(1); }}>{label}</button>)}
+      </div>
+      <button type="button" className="sysbroadcast-op" onClick={() => setRefresh((value) => value + 1)}><RefreshCw size={13} />刷新</button>
+    </div>
+    {loading ? <p className="sysbroadcast-empty" role="status">正在加载阅读记录…</p>
+      : error ? <p className="sysbroadcast-empty" role="alert">{error}</p>
+      : !rows.length ? <p className="sysbroadcast-empty">暂无符合条件的记录</p>
+      : <div className="message-readers-list">{rows.map((row) => {
+        const read = truthy(row.isRead);
+        const status = read ? "已读" : row.firstReadTime ? "待重读" : "未读";
+        return <article key={row.userId}>
+          <div>
+            <b>{row.nickname || row.username}</b>
+            <small>{row.username} · ID {row.userId}{truthy(row.userDeleted) ? " · 已移出收件箱" : ""}</small>
+          </div>
+          <div>
+            <span className={read ? "is-read" : row.firstReadTime ? "is-reread" : "is-unread"}>{status}</span>
+            <small>{row.readTime ? `阅读于 ${formatTime(row.readTime)}` : row.firstReadTime ? `首次阅读 ${formatTime(row.firstReadTime)}` : "尚未标记已读"}</small>
+          </div>
+        </article>;
+      })}</div>}
+    <footer className="message-readers-tools">
+      <small>共 {total} 人 · 已读包含点开详情、确认弹窗和标记已读</small>
+      <div>
+        <button type="button" disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)}>上一页</button>
+        <span>{page}</span>
+        <button type="button" disabled={loading || page * 20 >= total} onClick={() => setPage((value) => value + 1)}>下一页</button>
+      </div>
+    </footer>
+  </section>;
 }

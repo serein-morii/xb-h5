@@ -335,14 +335,15 @@ html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }
 .sysbroadcast-records-head small { display: block; margin-top: 3px; color: var(--sc-muted); font-size: 11.5px; }
 .sysbroadcast-list { display: flex; flex-direction: column; }
 .sysbroadcast-row {
-  display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1.1fr) minmax(0, 1.2fr) 64px auto;
+  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1.1fr) minmax(88px, 0.8fr) auto;
   align-items: center; gap: 12px;
   padding: 11px 2px;
   border-top: 1px solid var(--sc-line);
   transition: background 0.14s;
 }
 .sysbroadcast-row:hover { background: rgba(79, 99, 210, 0.03); }
-.sysbroadcast-row.is-editing { background: var(--sc-accent-soft); }
+.sysbroadcast-row.is-editing,
+.sysbroadcast-row.is-reading { background: var(--sc-accent-soft); }
 .sysbroadcast-row-head {
   border-top: 0; padding: 4px 2px 8px;
   color: var(--sc-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
@@ -379,7 +380,46 @@ html.theme-dark .sc-topbar { background: rgba(23, 30, 44, 0.86); }
 .sysbroadcast-op.is-confirm { background: #dc2626; border-color: #dc2626; color: #fff; }
 .sysbroadcast-empty { margin: 0; padding: 18px 2px; color: var(--sc-muted); font-size: 12.5px; }
 
+.message-readers { margin-top: 12px; padding-bottom: 12px; }
+.message-readers-tools {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 4px 0 10px;
+}
+.message-readers-tools [role="group"] { display: flex; gap: 6px; }
+.message-readers-tools [role="group"] > button,
+.message-readers-tools footer button,
+.message-readers-tools > div > button {
+  border: 1px solid var(--sc-line); border-radius: 8px;
+  background: var(--sc-surface); color: var(--sc-text);
+  padding: 4px 10px; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer;
+}
+.message-readers-tools [role="group"] > button.is-active {
+  background: var(--sc-accent); border-color: var(--sc-accent); color: #fff;
+}
+.message-readers-tools button:disabled { opacity: .45; cursor: default; }
+.message-readers-list { display: flex; flex-direction: column; }
+.message-readers-list article {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 10px; align-items: center;
+  padding: 10px 2px; border-top: 1px solid var(--sc-line);
+}
+.message-readers-list article b { display: block; font-size: 13px; color: var(--sc-text); }
+.message-readers-list article small { display: block; margin-top: 3px; color: var(--sc-muted); font-size: 11px; }
+.message-readers-list .is-read,
+.message-readers-list .is-unread,
+.message-readers-list .is-reread {
+  display: inline-flex; align-items: center; border-radius: 999px;
+  padding: 2px 8px; font-size: 11px; font-weight: 700;
+}
+.message-readers-list .is-read { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+.message-readers-list .is-unread { background: rgba(148, 163, 184, 0.16); color: #64748b; }
+.message-readers-list .is-reread { background: rgba(217, 119, 6, 0.14); color: #c2410c; }
+.message-readers-tools small { color: var(--sc-muted); font-size: 11px; }
+.message-readers footer.message-readers-tools { padding: 10px 0 2px; border-top: 1px solid var(--sc-line); }
+.message-readers footer.message-readers-tools > div { display: flex; align-items: center; gap: 8px; }
+
 @media (max-width: 760px) {
+  .message-readers-list article { grid-template-columns: 1fr; gap: 6px; }
   .sysbroadcast-records { padding: 13px 12px 4px; }
   .sysbroadcast-row-head { display: none; }
   .sysbroadcast-row {
@@ -627,6 +667,9 @@ html.theme-dark .sc-content .sysrestore-result b { color: #6ee7a0; }
 html.theme-dark .sc-content .sysrestore-result small { color: #9ad0ae; }
 html.theme-dark .sc-content .sysbroadcast-cell code { background: var(--sc-accent-soft); }
 html.theme-dark .sc-content .notif-chip-popup { background: rgba(240, 195, 108, 0.18); color: #f0c36c; }
+html.theme-dark .message-readers-list .is-read { background: rgba(74, 222, 128, 0.14); color: #6ee7a0; }
+html.theme-dark .message-readers-list .is-unread { background: rgba(225, 231, 248, 0.08); color: #8b93a5; }
+html.theme-dark .message-readers-list .is-reread { background: rgba(251, 146, 60, 0.16); color: #fdba74; }
 
 /* ---------- 弹窗开关：隐藏原生 checkbox，滑块轨道 ---------- */
 .sc-content .sysbroadcast-popup input {

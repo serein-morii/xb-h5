@@ -147,9 +147,11 @@ test("popup announcements: ack on confirm, re-pop when dismissed", async () => {
   const component = await source("app/components/NotificationCenter.tsx");
   assert.match(component, /MessagePopupHost/);
   assert.match(component, /\/popup/);
-  assert.match(component, /POPUP_ACK_KEY/);
+  assert.match(component, /setConfirmError/);
+  assert.match(component, /阅读状态未保存，请重试/);
   assert.match(component, /下次再说/);
   assert.match(component, /确认/);
+  assert.doesNotMatch(component, /POPUP_ACK_KEY/);
 
   const broadcast = await source("app/systems/system/MessageBroadcast.tsx");
   assert.match(broadcast, /popup/);
@@ -194,11 +196,31 @@ test("broadcast targets business systems (ORDER/OTP/ADMIN), records editable", a
   assert.match(sql, /group_key/);
 });
 
+test("broadcast read receipts stay after inbox delete and show in admin", async () => {
+  const [form, service, controller, mapper, sql] = await Promise.all([
+    source("app/systems/system/MessageBroadcast.tsx"),
+    source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java"),
+    source("../xb/src/main/java/com/xb/modules/message/api/UserMessageController.java"),
+    source("../xb/src/main/java/com/xb/modules/message/mapper/UserMessageMapper.java"),
+    source("../xb/sql/20260906_message_read_receipts.sql"),
+  ]);
+  assert.match(form, /阅读记录/);
+  assert.match(form, /broadcast\/\$\{encodeURIComponent\(group\.groupKey\)\}\/readers/);
+  assert.match(service, /setUserDeleted\(false\)/);
+  assert.match(service, /broadcastReaders/);
+  assert.match(controller, /@GetMapping\("\/broadcast\/\{groupKey\}\/readers"\)/);
+  assert.match(mapper, /first_read_time/);
+  assert.match(mapper, /user_deleted = 0/);
+  assert.match(sql, /first_read_time/);
+  assert.match(sql, /user_deleted/);
+});
+
 test("html messages keep inline styles via sanitized allowlist", async () => {
   const richText = await source("app/lib/richText.ts");
   assert.match(richText, /SAFE_STYLE_PROPERTIES/);
   assert.match(richText, /sanitizeStyleAttr/);
   assert.match(richText, /UNSAFE_STYLE_VALUE/);
+  assert.match(richText, /isCompactFontSize/);
   assert.doesNotMatch(richText, /name === "style"\s*\|\|/);
 });
 
