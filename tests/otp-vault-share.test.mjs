@@ -175,7 +175,7 @@ test("vault scans clipboard on focus visibility and paste, never on an interval"
   assert.doesNotMatch(workspace, /setInterval\([^)]*clipboard/);
   assert.match(workspace, /检测到授权/);
   assert.match(workspace, /忽略/);
-  assert.match(workspace, /识别剪贴板/);
+  assert.doesNotMatch(workspace, /识别剪贴板/);
   assert.match(workspace, /clipboardReadBlocked/);
-  assert.match(workspace, /scanClipboard\(true\)/);
+  assert.match(workspace, /pointerdown/);
 });
