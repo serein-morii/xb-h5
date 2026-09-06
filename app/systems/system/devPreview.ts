@@ -55,6 +55,7 @@ export function installDevPreview(): void {
       ]);
     }
     if (url.includes("/otp/vault/account/admin/restore")) return json({ userId: 901, userName: "user8621", email: "zhang****@qq.com" });
+    if (url.includes("/otp/vault/account/admin/purge")) return json({ userId: 902, userName: "user9137" });
     if (url.includes("/auth/logout")) { window.localStorage.removeItem("xb-mobile-token"); return json({}); }
     return realFetch(input, init);
   };

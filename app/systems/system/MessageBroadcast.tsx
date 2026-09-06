@@ -72,6 +72,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
   const [records, setRecords] = useState<BroadcastGroup[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [deleteGroup, setDeleteGroup] = useState<BroadcastGroup | null>(null);
+  const [offlineGroup, setOfflineGroup] = useState<BroadcastGroup | null>(null);
   const [preview, setPreview] = useState(false);
   const [readersGroup, setReadersGroup] = useState<BroadcastGroup | null>(null);
   const [busy, setBusy] = useState(false);
@@ -167,8 +168,7 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
     } finally { setBusy(false); }
   }
 
-  async function toggleOffline(group: BroadcastGroup) {
-    const nextOffline = isOnline(group);
+  async function applyOffline(group: BroadcastGroup, nextOffline: boolean) {
     setBusy(true);
     try {
       await apiRequest(`${API_PATHS.message.root}/broadcast/${group.groupKey}`, {
@@ -187,10 +187,19 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
         },
       });
       notify(nextOffline ? "已下线，用户收件箱不再展示" : "已重新上线，7 天后自动下线", "success");
+      setOfflineGroup(null);
       loadRecords();
     } catch (error) {
       notify(error instanceof Error ? error.message : "状态更新失败", "error");
     } finally { setBusy(false); }
+  }
+
+  function toggleOffline(group: BroadcastGroup) {
+    if (isOnline(group)) {
+      setOfflineGroup(group);
+      return;
+    }
+    void applyOffline(group, false);
   }
 
   const onlineCount = records.filter(isOnline).length;
@@ -271,6 +280,16 @@ export default function MessageBroadcast({ notify }: { notify: Notify }) {
 
     {readersGroup ? <Sheet title="阅读记录" onClose={() => setReadersGroup(null)}>
       <ReadReceipts group={readersGroup} />
+    </Sheet> : null}
+
+    {offlineGroup ? <Sheet title="确认下线" onClose={() => setOfflineGroup(null)}>
+      <div className="sysbroadcast-confirm">
+        <p>确定下线「{offlineGroup.title}」？用户收件箱和弹窗会立刻看不到这条，即使还没读。后台记录和阅读记录仍会保留。</p>
+        <div className="sysbroadcast-sheet-actions">
+          <button type="button" className="sysbroadcast-preview-toggle" onClick={() => setOfflineGroup(null)}>取消</button>
+          <button type="button" className="sysbroadcast-send is-danger" disabled={busy} onClick={() => void applyOffline(offlineGroup, true)}>确认下线</button>
+        </div>
+      </div>
     </Sheet> : null}
 
     {deleteGroup ? <Sheet title="删除通知" onClose={() => setDeleteGroup(null)}>

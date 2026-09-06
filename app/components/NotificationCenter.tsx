@@ -120,7 +120,7 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
   return <div className="notif-popup-mask" role="alertdialog" aria-modal="true" aria-labelledby="notif-popup-title">
     <section className="notif-popup">
       <header><small>NOTICE</small><h2 id="notif-popup-title">{current.title}</h2></header>
-      <div className="notif-popup-body"><div className="notif-item-content" dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
+      <div className="notif-popup-body"><div className="notif-item-content notif-popup-content" dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
       <footer>
         {confirmError ? <span className="notif-popup-error" role="alert">{confirmError}</span> : null}
         <button type="button" className="notif-popup-dismiss" disabled={confirming} onClick={dismiss}>下次再说</button>

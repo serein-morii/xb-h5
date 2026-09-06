@@ -1,4 +1,4 @@
-import { LoaderCircle, RefreshCw, ShieldCheck, UserCheck, UserX } from "lucide-react";
+import { LoaderCircle, RefreshCw, ShieldCheck, Trash2, UserCheck, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
@@ -10,8 +10,8 @@ type DeletedAccount = {
 };
 
 /**
- * 账号恢复：先列出用户自助注销的账号（del_flag='2'），管理员逐个恢复。
- * 恢复 = 解除软删除 + 重新绑定 otp_user 角色；注销时已硬删除的保险库数据无法还原。
+ * 账号恢复：列出用户自助注销的账号（del_flag='2'）。
+ * 恢复 = 解除软删除 + 重新绑定 otp_user 角色；永久删除 = 物理删除 sys_user 行。
  */
 export default function RestoreAccount({ notify }: { notify: Notify }) {
   const [accounts, setAccounts] = useState<DeletedAccount[]>([]);
@@ -19,6 +19,8 @@ export default function RestoreAccount({ notify }: { notify: Notify }) {
   const [keyword, setKeyword] = useState("");
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [purgeAccount, setPurgeAccount] = useState<DeletedAccount | null>(null);
+  const [purging, setPurging] = useState(false);
   const [restored, setRestored] = useState<number[]>([]);
 
   const load = useCallback(() => {
@@ -47,6 +49,22 @@ export default function RestoreAccount({ notify }: { notify: Notify }) {
     } finally { setRestoringId(null); }
   }
 
+  async function purge() {
+    if (!purgeAccount) return;
+    setPurging(true);
+    try {
+      await apiRequest(`${API_PATHS.otp.vaultAccount}/admin/purge`, {
+        method: "POST",
+        body: { username: purgeAccount.userName },
+      });
+      setAccounts((rows) => rows.filter((row) => row.userId !== purgeAccount.userId));
+      notify(`账号 ${purgeAccount.userName} 已永久删除`, "success");
+      setPurgeAccount(null);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "永久删除失败", "error");
+    } finally { setPurging(false); }
+  }
+
   const keywordLower = keyword.trim().toLowerCase();
   const visible = accounts.filter((account) => !keywordLower
     || String(account.userName || "").toLowerCase().includes(keywordLower)
@@ -59,7 +77,7 @@ export default function RestoreAccount({ notify }: { notify: Notify }) {
       <div>
         <span className="eyebrow">ACCOUNT RECOVERY</span>
         <h1>账号恢复</h1>
-        <p>恢复用户自助注销的账号，重新开放登录；保险库数据无法找回</p>
+        <p>恢复用户自助注销的账号，或永久删除不再需要的账号；保险库数据无法找回</p>
       </div>
       <span className="hero-tool-icon"><UserCheck size={25} /></span>
     </div>
@@ -90,10 +108,14 @@ export default function RestoreAccount({ notify }: { notify: Notify }) {
               <div className="sysrestore-row-actions">
                 <button type="button"
                   className={`sysbroadcast-op${confirmId === account.userId ? " is-danger is-confirm" : ""}`}
-                  disabled={restoringId === account.userId}
+                  disabled={restoringId === account.userId || purging}
                   onClick={() => void restore(account)}>
                   {restoringId === account.userId ? <LoaderCircle className="spin" size={13} /> : <ShieldCheck size={13} />}
                   {restoringId === account.userId ? "恢复中" : confirmId === account.userId ? "确认恢复" : "恢复"}
+                </button>
+                <button type="button" className="sysbroadcast-op is-danger" disabled={purging}
+                  onClick={() => { setConfirmId(null); setPurgeAccount(account); }}>
+                  <Trash2 size={13} />永久删除
                 </button>
               </div>
             </article>
@@ -101,6 +123,27 @@ export default function RestoreAccount({ notify }: { notify: Notify }) {
           {restored.length ? <p className="sysrestore-restored-note">本次已恢复 {restored.length} 个账号，恢复成功会向账号邮箱发送通知。</p> : null}
         </div>}
     </section>
+
+    {purgeAccount ? <div className="sc-sheet-mask" onClick={() => !purging && setPurgeAccount(null)} role="presentation">
+      <section className="sc-sheet" role="dialog" aria-modal="true" aria-label="永久删除账号" onClick={(event) => event.stopPropagation()}>
+        <header className="sc-sheet-head">
+          <b>永久删除</b>
+          <button type="button" className="sysbroadcast-op" onClick={() => setPurgeAccount(null)} aria-label="关闭"><X size={16} /></button>
+        </header>
+        <div className="sc-sheet-body">
+          <div className="sysbroadcast-confirm">
+            <p>确定永久删除账号「{purgeAccount.userName}」？账号会从数据库删除，无法再恢复登录。此操作不可撤销。</p>
+            <div className="sysbroadcast-sheet-actions">
+              <button type="button" className="sysbroadcast-preview-toggle" disabled={purging} onClick={() => setPurgeAccount(null)}>取消</button>
+              <button type="button" className="sysbroadcast-send is-danger" disabled={purging} onClick={() => void purge()}>
+                {purging ? <LoaderCircle className="spin" size={15} /> : <Trash2 size={15} />}
+                {purging ? "正在删除" : "确认永久删除"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div> : null}
   </div>;
 }
 

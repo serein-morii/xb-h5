@@ -227,6 +227,8 @@ test("broadcasts expire and can be taken offline so unread does not stay forever
   ]);
   assert.match(form, /sc-sheet-mask/);
   assert.match(form, /datetime-local/);
+  assert.match(form, /确认下线/);
+  assert.match(form, /setOfflineGroup/);
   assert.match(service, /userVisible/);
   assert.match(service, /DEFAULT_OFFLINE_DAYS = 7/);
   assert.match(service, /getOfflineTime/);
@@ -243,6 +245,33 @@ test("html messages keep inline styles via sanitized allowlist", async () => {
   assert.match(richText, /UNSAFE_STYLE_VALUE/);
   assert.match(richText, /isCompactFontSize/);
   assert.doesNotMatch(richText, /name === "style"\s*\|\|/);
+});
+
+test("popup announcement card is larger for HTML and Markdown", async () => {
+  const [component, css] = await Promise.all([
+    source("app/components/NotificationCenter.tsx"),
+    source("app/components/notification-center.css"),
+  ]);
+  assert.match(component, /notif-popup-content/);
+  assert.match(css, /min\(720px, 100%\)/);
+  assert.match(css, /notif-popup-content/);
+  assert.match(css, /min-height: 180px/);
+});
+
+test("account recovery can permanently purge deleted users", async () => {
+  const [page, controller, service, mapper] = await Promise.all([
+    source("app/systems/system/RestoreAccount.tsx"),
+    source("../xb/src/main/java/com/xb/modules/otp/api/OtpVaultAccountController.java"),
+    source("../xb/src/main/java/com/xb/modules/otp/service/OtpVaultAccountService.java"),
+    source("../xb/src/main/java/com/xb/modules/identity/mapper/UserAccountMapper.java"),
+  ]);
+  assert.match(page, /admin\/purge/);
+  assert.match(page, /永久删除/);
+  assert.match(page, /确认永久删除/);
+  assert.match(controller, /@PostMapping\("\/admin\/purge"\)/);
+  assert.match(service, /purgeDeletedAccount/);
+  assert.match(service, /wipeVaultData/);
+  assert.match(mapper, /DELETE FROM sys_user WHERE user_id = #\{userId\} AND del_flag = '2'/);
 });
 
 test("bell badge refreshes immediately via message-changed event", async () => {
