@@ -1,8 +1,8 @@
 import { ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares,
-	listVaultRecipients, getVaultPreferences, otpApiRequest, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
+	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
+	listVaultRecipients, getVaultPreferences, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveVaultCredential, saveVaultPreferences, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
@@ -11,7 +11,7 @@ import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
-import { SHARE_ITEM_LIMIT, matchesCredentialTab, selectShareItems, toggleShareSelection, type CredentialTab } from "./otpVaultShare";
+import { SHARE_ITEM_LIMIT, matchesCredentialTab, receivedShareSourceLabel, selectShareItems, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
@@ -24,7 +24,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
 type VaultView = "all" | "shares" | "security" | "settings";
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
@@ -235,6 +235,9 @@ async function decodeQrsWithCanvas(source: CanvasImageSource) {
 export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, accountEmail, onAccountNameChange, onAccountNickChange, onAccountEmailChange }: { onLogout: () => void; accountName: string; accountNick: string; accountEmail: string; onAccountNameChange: (name: string) => void; onAccountNickChange: (name: string) => void; onAccountEmailChange: (email: string) => void }) {
   const [credentials, setCredentials] = useState<VaultCredential[]>([]);
   const [shares, setShares] = useState<VaultShare[]>([]);
+  const [receivedShares, setReceivedShares] = useState<VaultShare[]>([]);
+  const [shareTab, setShareTab] = useState<ShareTab>("sent");
+  const [pendingRelease, setPendingRelease] = useState<VaultShare | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -329,9 +332,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
     try {
-      const [credentialResult, shareResult] = await Promise.all([listVaultCredentials(), listVaultShares()]);
+      const [credentialResult, shareResult, receivedResult] = await Promise.all([listVaultCredentials(), listVaultShares(), listReceivedVaultShares()]);
 			setCredentials(await Promise.all((credentialResult.data || []).map((item) => hydrateClientCredential(item, zeroKnowledgeKey))));
       setShares(shareResult.data || []);
+      setReceivedShares(receivedResult.data || []);
     } catch (error) { notify(error instanceof Error ? error.message : "加载失败", true); }
     finally { if (!quiet) setLoading(false); }
 	  }, [zeroKnowledgeKey]);
@@ -598,6 +602,22 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		catch (error) { notify(error instanceof Error ? error.message : "删除失败", true); }
 		finally { setBusy(false); }
 	}
+  async function confirmRelease() {
+    if (!pendingRelease) return;
+    setBusy(true);
+    try {
+      await releaseReceivedVaultShare(pendingRelease.id);
+      notify("已解除该授权");
+      setPendingRelease(null);
+      setModal(null);
+      await load(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "解除失败", true); }
+    finally { setBusy(false); }
+  }
+  const openReceivedCredentials = () => {
+    setCredentialTab("received");
+    changeView("all");
+  };
   const cancelRevoke = () => {
     if (busy) return;
     const from = pendingRevoke?.from;
@@ -803,12 +823,16 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </section> : null}
 
     {view === "shares" ? <section className="vault-panel">
-      <header className="vault-panel-head"><div><h2>临时授权</h2><p>链接分享或指定用户，均可随时撤销</p></div><button type="button" className="vault-create-share" onClick={() => openShare()} disabled={!ownCredentials.length} aria-label="创建授权"><Share2 size={14} /><span>创建授权</span></button></header>
-      <div className="vault-share-list">{shares.length ? shares.map((share) => <article key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
+      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>授权</h2><div className="vault-fav-switch" role="tablist" aria-label="授权筛选"><button type="button" className={shareTab === "sent" ? "is-active" : ""} onClick={() => setShareTab("sent")}>我发出的</button><button type="button" className={shareTab === "received" ? "is-active" : ""} onClick={() => setShareTab("received")}>我收到的</button></div></span><p>{shareTab === "received" ? `指定给你的授权，以及你转存进来的 · ${receivedShares.length} 项` : `链接分享或指定用户，均可随时撤销 · ${shares.length} 项`}</p></div>{shareTab === "sent" ? <button type="button" className="vault-create-share" onClick={() => openShare()} disabled={!ownCredentials.length} aria-label="创建授权"><Share2 size={14} /><span>创建授权</span></button> : null}</header>
+      {shareTab === "received" ? <div className="vault-share-list">{receivedShares.length ? receivedShares.map((share) => <article key={share.id} role="button" tabIndex={0} onClick={openReceivedCredentials} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openReceivedCredentials(); } }}>
+        <span className={`vault-status is-${share.status.toLowerCase()}`}>{share.status === "ACTIVE" ? "有效" : share.status === "EXPIRED" ? "已过期" : share.status === "LIMIT_REACHED" ? "次数已用完" : "已撤销"}</span>
+        <div><b>{share.name?.trim() || "临时凭据授权"}</b><small><Clock3 size={12} />{share.itemCount} 个凭据 · 来自 {share.sharedBy || "未知用户"} · {receivedShareSourceLabel(share.source, share.shareMode)} · {share.status === "ACTIVE" ? `剩余 ${formatRemaining(share.expireTime, now)}` : new Date(normalizeDateTime(share.expireTime)).toLocaleString("zh-CN", { hour12: false })}</small></div>
+        <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); openReceivedCredentials(); }}><Eye size={14} />查看凭据</button><button type="button" onClick={(event) => { event.stopPropagation(); setPendingRelease(share); setModal("releaseConfirm"); }}><UserMinus size={14} />解除</button></div>
+      </article>) : <div className="vault-empty compact"><Inbox size={20} /><b>还没有收到的授权</b><p>指定给你的授权，或从分享链接转存的内容会出现在这里。</p></div>}</div> : <div className="vault-share-list">{shares.length ? shares.map((share) => <article key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
         <span className={`vault-status is-${share.status.toLowerCase()}`}>{share.status === "ACTIVE" ? "有效" : share.status === "EXPIRED" ? "已过期" : share.status === "LIMIT_REACHED" ? "次数已用完" : "已撤销"}</span>
         <div><b>{share.name?.trim() || "临时凭据授权"}</b><small><Clock3 size={12} />{share.itemCount} 个凭据 · {share.shareMode === "DIRECT" ? `指定给 ${share.recipientUsername}` : share.accessCodeEnabled ? "访问码保护" : "链接访问"} · {share.status === "ACTIVE" ? `剩余 ${formatRemaining(share.expireTime, now)}` : new Date(normalizeDateTime(share.expireTime)).toLocaleString("zh-CN", { hour12: false })}{share.shareMode === "LINK" ? ` · 已访问 ${share.accessCount}${share.maxAccessCount ? `/${share.maxAccessCount}` : ""}` : ""}</small></div>
         <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openShareDetail(share); }}><Eye size={14} />详情</button>{share.status === "ACTIVE" ? <button type="button" onClick={(event) => { event.stopPropagation(); void openShareEdit(share); }}><Pencil size={14} />编辑</button> : null}{share.status === "ACTIVE" && share.sharePath ? <button type="button" onClick={(event) => { event.stopPropagation(); void copyShareInfo(share); }}><Copy size={14} />复制</button> : null}{share.status !== "REVOKED" ? <button type="button" onClick={(event) => { event.stopPropagation(); setPendingRevoke({ share, from: "list" }); setModal("revokeConfirm"); }}><X size={14} />撤销</button> : <button type="button" onClick={(event) => { event.stopPropagation(); setPendingShareDelete(share); setModal("shareDeleteConfirm"); }}><Trash2 size={14} />删除</button>}</div>
-      </article>) : <div className="vault-empty compact">还没有创建临时授权</div>}</div>
+      </article>) : <div className="vault-empty compact">还没有创建临时授权</div>}</div>}
     </section> : null}
 
 	    {view === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} /></section> : null}
@@ -928,6 +952,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	</form></div> : null}
 
     {modal === "deleteConfirm" && pendingDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingDelete(null); closeModal(); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE CREDENTIAL</small><h2>删除凭据</h2><p>这项操作会同步撤回相关临时授权</p></div><button type="button" onClick={() => { setPendingDelete(null); closeModal(); }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要删除</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingDelete.issuer}</b><small>{pendingDelete.accountName}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">删除后会从你的保险库中移除，包含它的临时授权也会一起失效。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingDelete(null); closeModal(); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeCredential()}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
+
+    {modal === "releaseConfirm" && pendingRelease ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingRelease(null); setModal(null); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>RELEASE ACCESS</small><h2>解除授权</h2><p>解除后你将立刻看不到这些凭据，分享者会收到通知</p></div><button type="button" onClick={() => { if (!busy) { setPendingRelease(null); setModal(null); } }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要解除</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><UserMinus size={21} /></span><div><b>{pendingRelease.name?.trim() || "临时凭据授权"}</b><small>{pendingRelease.itemCount} 个凭据 · 来自 {pendingRelease.sharedBy || "未知用户"} · {receivedShareSourceLabel(pendingRelease.source, pendingRelease.shareMode)}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">{pendingRelease.source === "DIRECT" || pendingRelease.shareMode === "DIRECT" ? "指定授权解除后，需要对方重新授权你才能再次看到。" : "链接转存解除后，只要原链接仍有效，你还可以再次转存。"}</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingRelease(null); setModal(null); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void confirmRelease()}>{busy ? "解除中" : "确认解除"}</button></div></footer></section></div> : null}
 
     {modal === "revokeConfirm" && pendingRevoke ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) cancelRevoke(); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>REVOKE ACCESS</small><h2>撤销授权</h2><p>撤销后对方将立刻无法继续访问</p></div><button type="button" onClick={cancelRevoke} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要撤销</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><X size={21} /></span><div><b>{pendingRevoke.share.name?.trim() || "临时凭据授权"}</b><small>{pendingRevoke.share.itemCount} 个凭据 · {pendingRevoke.share.shareMode === "DIRECT" ? `指定给 ${pendingRevoke.share.recipientUsername}` : pendingRevoke.share.accessCodeEnabled ? "访问码保护" : "链接访问"} · {pendingRevoke.share.status === "ACTIVE" ? `剩余 ${formatRemaining(pendingRevoke.share.expireTime, now)}` : "授权已结束"}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">撤销后链接立即失效，指定用户列表中的共享凭据也会一起消失。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={cancelRevoke}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void confirmRevoke()}>{busy ? "撤销中" : "确认撤销"}</button></div></footer></section></div> : null}
 

@@ -4,6 +4,11 @@ const SHARE_CODE_PREFIX = "otp-vault-share-code:";
 const SHARE_RETURN = /^\/s\/[A-Za-z0-9_-]{5,16}(?:#k=[A-Za-z0-9]{4,12})?$/;
 
 export type CredentialTab = "all" | "favorite" | "received";
+export type ShareTab = "sent" | "received";
+
+export function receivedShareSourceLabel(source?: string, shareMode?: string) {
+  return source === "DIRECT" || shareMode === "DIRECT" ? "指定授权" : "链接转存";
+}
 
 export function selectShareItems(ids: number[], limit = SHARE_ITEM_LIMIT) {
   return ids.slice(0, limit);

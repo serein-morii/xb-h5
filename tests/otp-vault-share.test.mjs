@@ -5,6 +5,7 @@ import {
   PENDING_SAVE_KEY,
   SHARE_ITEM_LIMIT,
   matchesCredentialTab,
+  receivedShareSourceLabel,
   selectShareItems,
   shareLoginNext,
   shareReturnPath,
@@ -53,14 +54,25 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
     source("app/systems/otp/OtpVaultPage.tsx"),
   ]);
   assert.match(workspace, /我收到的/);
+  assert.match(workspace, /我发出的/);
   assert.match(workspace, /SHARE_ITEM_LIMIT/);
   assert.match(workspace, /单次最多(?:授权|选择) \$\{SHARE_ITEM_LIMIT\}/);
   assert.match(workspace, /credentialTab === "received"/);
+  assert.match(workspace, /shareTab === "received"/);
+  assert.match(workspace, /确认解除/);
+  assert.match(workspace, /listReceivedVaultShares/);
+  assert.match(workspace, /releaseReceivedVaultShare/);
   assert.match(sharePage, /PENDING_SAVE_KEY/);
   assert.match(sharePage, /shareLoginNext\(token, accessCode\)/);
   assert.match(sharePage, /rememberShareAccessCode/);
   assert.match(sharePage, /已经转存过了，无需再次转存/);
   assert.match(vaultPage, /shareReturnPath/);
+});
+
+test("received share source labels distinguish direct grants and saved links", () => {
+  assert.equal(receivedShareSourceLabel("DIRECT"), "指定授权");
+  assert.equal(receivedShareSourceLabel("SAVE", "LINK"), "链接转存");
+  assert.equal(receivedShareSourceLabel(undefined, "DIRECT"), "指定授权");
 });
 
 test("share detail lists save records with kick and ban, and share form can forbid saving", async () => {

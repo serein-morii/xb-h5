@@ -73,6 +73,7 @@ export type VaultShare = {
   accessCode?: string; showAccount: boolean; showPassword: boolean; showOtp: boolean; showLoginUrl: boolean; showNote: boolean;
   credentialIds?: number[]; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; expireTime: string; createTime: string; accessRecords?: VaultAccessRecord[];
   saveRecords?: VaultShareSaveRecord[];
+  inbound?: boolean; sharedBy?: string; source?: "DIRECT" | "SAVE";
 };
 
 export type VaultShareSaveRecord = {
@@ -164,6 +165,7 @@ export const deleteVaultPasskey = (id: number) => otpApiRequest(`${vaultAccount}
 export const getPasskeyLoginOptions = (identifier: string, longSession: boolean) => apiRequest<{ data: { requestId: string; publicKey: Record<string, unknown> } }>(`${API_PATHS.auth.passkeyLogin}/options`, { auth: false, method: "POST", body: { identifier, longSession } });
 export const finishPasskeyLogin = (requestId: string, credential: Record<string, unknown>) => apiRequest<{ data: { token: string; username: string } }>(`${API_PATHS.auth.passkeyLogin}/finish`, { auth: false, method: "POST", body: { requestId, credential } });
 export const listVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares`);
+export const listReceivedVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares/received`);
 export const getVaultShare = (id: number) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`);
 export const createVaultShare = (body: Record<string, unknown>) => otpApiRequest<{ data: { id: number; name: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string; itemCount: number } }>(`${vault}/shares`, { method: "POST", body });
 export const updateVaultShare = (id: number, body: Record<string, unknown>) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`, { method: "PUT", body });
@@ -171,6 +173,7 @@ export const kickVaultShareSave = (shareId: number, saveId: number) => otpApiReq
 export const banVaultShareSave = (shareId: number, saveId: number) => otpApiRequest(`${vault}/shares/${shareId}/saves/${saveId}/ban`, { method: "POST" });
 export const restoreVaultShareSave = (shareId: number, saveId: number) => otpApiRequest(`${vault}/shares/${shareId}/saves/${saveId}/restore`, { method: "POST" });
 export const revokeVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}/revoke`, { method: "POST" });
+export const releaseReceivedVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}/release`, { method: "POST" });
 export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/${id}`, { method: "DELETE" });
 
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`${share}/${token}/status`, { auth: false });
