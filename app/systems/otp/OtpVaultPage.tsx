@@ -45,5 +45,10 @@ export default function OtpVaultPage() {
   if (access === "login") return <OtpAuthScreen onAuthenticated={(token, registration) => { setOtpToken(token); if (registration?.username) setOnboard({ username: registration.username }); setAccess("loading"); void checkAccess(); }} />;
   if (access === "denied") return <div className="vault-auth-state"><ShieldAlert size={20} /><h1>没有 OTP Vault 权限</h1><p>当前账号不能访问这个保险库。</p><button type="button" onClick={() => { clearOtpToken(); setAccess("login"); }}>换一个账号</button></div>;
   if (onboard) return <VaultOnboardingPage username={onboard.username} onDone={finishOnboard} />;
+  const next = new URLSearchParams(window.location.search).get("next") || "";
+  if (/^\/s\/[A-Za-z0-9_-]{5,16}$/.test(next)) {
+    window.location.replace(next);
+    return <AppStartup system="otp" message="正在返回授权页" />;
+  }
   return <Suspense fallback={<AppStartup system="otp" message="正在打开保险库" />}><OtpVaultWorkspace onLogout={() => { clearOtpToken(); setAccess("login"); }} accountName={accountName} accountNick={accountNick} accountEmail={accountEmail} onAccountNameChange={setAccountName} onAccountNickChange={setAccountNick} onAccountEmailChange={setAccountEmail} /></Suspense>;
 }

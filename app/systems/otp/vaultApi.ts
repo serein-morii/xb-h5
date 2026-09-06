@@ -168,6 +168,9 @@ export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/$
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`${share}/${token}/status`, { auth: false });
 export const openVaultShare = (token: string, accessCode: string) => apiRequest<{ data: { sessionToken: string; sessionExpiresIn: number } }>(`${share}/${token}/open`, { auth: false, method: "POST", body: { accessCode } });
 export const getSharedContent = (token: string, sessionToken: string) => apiRequest<{ data: { items: SharedItem[]; name?: string; allowCopy: boolean; expireTime: string; serverTime: number } }>(`${share}/${token}/content`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
+export const getInboundShareStatus = (token: string) => otpApiRequest<{ data: { saved: boolean; own: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`);
+export const saveInboundShare = (token: string, sessionToken: string) => otpApiRequest<{ data: { saved: boolean; alreadySaved: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`, { method: "POST", headers: { "X-Otp-Share-Session": sessionToken } });
+export const favoriteSharedCredential = (itemId: number, favorite: boolean) => otpApiRequest<{ data: VaultCredential }>(`${vault}/shared/${itemId}/favorite`, { method: "PUT", body: { favorite } });
 
 // ─── 注册与账号自助 ───────────────────────────────────────────
 

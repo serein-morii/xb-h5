@@ -497,6 +497,12 @@ html.theme-dark { @media (max-width: 560px) {
 .share-page.is-open { background: radial-gradient(circle at 90% 0, rgba(100, 117, 218, .15), transparent 28%), #eef1f7; }
 .share-page.is-open .share-brand { max-width: 820px; }
 .share-content { max-width: 820px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.share-save-bar { margin-top: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 16px; background: #edf0fc; color: #26345d; }
+.share-save-bar > span { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.share-save-bar b { font-size: 13px; }
+.share-save-bar small { width: 100%; color: #747d90; font-size: 11px; line-height: 1.45; }
+.share-save-bar button, .share-save-bar a { flex: none; min-height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: #485cc7; color: #fff; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.share-save-bar button:disabled { opacity: .6; cursor: not-allowed; }
 .share-content > header { padding: 14px 16px; align-items: center; border: 0; border-radius: 20px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); }
 .share-content > header > div:first-child { min-width: 0; }
 .share-content > header > div:first-child > span { margin: 0; color: #6575d3; font-size: 8px; }
@@ -578,6 +584,8 @@ html.theme-dark { @media (max-width: 560px) {
   .share-page.is-open { padding: max(12px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)); }
   .share-page.is-open .share-brand { margin: 0 2px 10px; }
   .share-page.is-open .share-content { padding: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+  .share-save-bar { flex-wrap: wrap; }
+  .share-save-bar button, .share-save-bar a { width: 100%; justify-content: center; }
   .share-content > header { position: sticky; z-index: 20; top: max(8px, env(safe-area-inset-top)); padding: 13px; flex-direction: row; align-items: center; border-radius: 18px; box-shadow: 0 7px 22px rgba(34, 44, 76, .1); }
   .share-content h1 { font-size: 20px; }
   .share-content > header p { font-size: 9px; }
@@ -607,6 +615,8 @@ html.theme-dark {
   .share-code-input:focus-within { background: #101725; border-color: #6c7bdd; }
   .share-page.is-open { background: #0e1420; }
   .share-content { background: transparent; }
+  .share-save-bar { background: #222b4a; color: #eef1f8; }
+  .share-save-bar small { color: #939caf; }
   .share-content > header { border: 0; background: #171e2c; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
   .share-expiry-ring { color: #aeb7ff; }
   .share-expiry-progress .share-expiry-track.is-total { stroke: rgba(174,183,255,.22); }
@@ -717,7 +727,8 @@ html.theme-dark {
 .vault-create-share { border-color: #cfd5f3; background: transparent; }
 
 .vault-card.is-shared { border: 1px solid #dfe3f7; background: linear-gradient(145deg, #fff, #f7f8ff); }
-.vault-shared-badge { margin-left: auto; padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
+.vault-card-top-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.vault-shared-badge { padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
 .vault-code.is-readonly { cursor: default; }
 .vault-shared-expiry { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--utility-muted); font-size: 8px; }
 .vault-card-foot { align-items: center; justify-content: flex-start; gap: 7px; }
@@ -740,7 +751,7 @@ html.theme-dark .vault-next-copy:hover { border-color: rgba(190,200,235,.24); ba
 .vault-card.is-compact .vault-service-mark { width: 28px; height: 28px; border-radius: 9px; font-size: 8px; }
 .vault-card.is-compact .vault-card-top b { font-size: 11px; }
 .vault-card.is-compact .vault-card-top small { font-size: 8px; }
-.vault-card.is-compact .vault-card-top > button,.vault-card.is-compact .vault-shared-badge { display: none; }
+.vault-card.is-compact .vault-card-top-actions { display: none; }
 .vault-card.is-compact .vault-code,.vault-card.is-compact .vault-no-code { grid-area: code; width: auto; min-width: 86px; height: auto; margin: 0; justify-content: flex-end; gap: 5px; white-space: nowrap; }
 .vault-card.is-compact .vault-code span { font-size: 20px; letter-spacing: .06em; }
 .vault-card.is-compact .vault-code svg { width: 13px; height: 13px; flex: none; display: block; }

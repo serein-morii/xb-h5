@@ -1,6 +1,8 @@
-import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { getSharedContent, getShareStatus, openVaultShare, type SharedItem, type ShareStatus } from "./vaultApi";
+import { APP_ROUTES } from "../../lib/pathConventions";
+import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, openVaultShare, saveInboundShare, type SharedItem, type ShareStatus } from "./vaultApi";
+import { PENDING_SAVE_KEY, shareLoginNext } from "./otpVaultShare";
 import { issuerStyle } from "./issuerStyle";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { scheduleClipboardClear } from "./otpDailyUse";
@@ -25,6 +27,9 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [toast, setToast] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [ownShare, setOwnShare] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [detailItem, setDetailItem] = useState<SharedItem | null>(null);
   const [detailPasswordVisible, setDetailPasswordVisible] = useState(false);
   const [query, setQuery] = useState("");
@@ -59,6 +64,38 @@ export default function VaultSharePage({ token }: { token: string }) {
     }
   }, [sessionKey, token]);
 
+  const refreshInbound = useCallback(async () => {
+    if (!getOtpToken()) { setSaved(false); setOwnShare(false); return; }
+    try {
+      const result = await getInboundShareStatus(token);
+      setSaved(Boolean(result.data.saved));
+      setOwnShare(Boolean(result.data.own));
+    } catch { setSaved(false); setOwnShare(false); }
+  }, [token]);
+
+  const saveToInbox = useCallback(async () => {
+    if (!getOtpToken()) {
+      sessionStorage.setItem(PENDING_SAVE_KEY, token);
+      window.location.href = shareLoginNext(token);
+      return;
+    }
+    if (!sessionToken) { setError("请先打开授权内容再转存"); return; }
+    setSaving(true); setError("");
+    try {
+      const result = await saveInboundShare(token, sessionToken);
+      setSaved(true);
+      sessionStorage.removeItem(PENDING_SAVE_KEY);
+      setToast(result.data.alreadySaved ? "已经在我收到的里" : "已转存到我收到的");
+    } catch (saveError) {
+      if (saveError && typeof saveError === "object" && "code" in saveError && saveError.code === 401 && !getOtpToken()) {
+        sessionStorage.setItem(PENDING_SAVE_KEY, token);
+        window.location.href = shareLoginNext(token);
+        return;
+      }
+      setError(saveError instanceof Error ? saveError.message : "转存失败");
+    } finally { setSaving(false); }
+  }, [sessionToken, token]);
+
   const open = useCallback(async (code: string, automatic = false) => {
     if (automatic) setAutoOpening(true);
     setBusy(true); setError("");
@@ -91,6 +128,12 @@ export default function VaultSharePage({ token }: { token: string }) {
     void loadContent(sessionToken);
   }, [items, loadContent, sessionToken, syncedNow]);
   useEffect(() => { localStorage.setItem("otp-vault-share-prefs", JSON.stringify(displayPrefs)); }, [displayPrefs]);
+  useEffect(() => { if (sessionToken) void refreshInbound(); }, [refreshInbound, sessionToken]);
+  useEffect(() => {
+    if (!sessionToken || !items.length || sessionStorage.getItem(PENDING_SAVE_KEY) !== token || !getOtpToken()) return;
+    sessionStorage.removeItem(PENDING_SAVE_KEY);
+    void saveToInbox();
+  }, [items.length, saveToInbox, sessionToken, token]);
   useEffect(() => {
     if (!status?.name) return;
     document.title = `${status.name}｜OTP Vault`;
@@ -141,6 +184,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       <footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
       <header><div><span>临时授权已验证</span><h1>{status?.name || "凭据内容"}</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
+      {ownShare ? null : <div className="share-save-bar">{saved ? <><span><FolderDown size={16} /><b>已转存到我收到的</b><small>有效期和权限仍由分享者控制，撤销后会一起消失</small></span><a href={APP_ROUTES.otp}>打开保险库</a></> : <><span><FolderDown size={16} /><b>转存到我收到的</b><small>不复制凭据，打开后仍跟随这份授权的内容和时效</small></span><button type="button" disabled={saving} onClick={() => void saveToInbox()}>{saving ? <LoaderCircle className="spin" size={15} /> : <FolderDown size={15} />}{getOtpToken() ? (saving ? "转存中" : "转存") : "登录后转存"}</button></>}</div>}
       <div className="share-toolbar vault-panel-tools"><label className={`vault-view-toggle${displayPrefs.grouped ? " is-active" : ""}`}><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={displayPrefs.grouped} onChange={(event) => setDisplayPrefs({ ...displayPrefs, grouped: event.target.checked })} /><i /></label><label className={`vault-view-toggle${displayPrefs.compact ? " is-active" : ""}`}><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={displayPrefs.compact} onChange={(event) => setDisplayPrefs({ ...displayPrefs, compact: event.target.checked })} /><i /></label><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索服务或账号" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div>
       <div className="share-groups">{groups.map(([name, groupItems]) => <section className="share-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{groupItems.length}</span></header> : null}<div className={`share-item-list${displayPrefs.compact ? " is-compact" : ""}`}>{groupItems.map((item, index) => <SharedItemCard key={`${item.issuer}-${item.accountName || ""}-${index}`} item={item} index={index} groupName={name} compact={displayPrefs.compact} allowCopy={allowCopy} copied={copied} now={syncedNow} onCopy={copy} onOpenDetail={() => { setDetailPasswordVisible(false); setDetailItem(item); }} />)}</div></section>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
