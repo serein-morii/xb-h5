@@ -7,8 +7,15 @@ const SHARE_CODE_LINE = /访问码[:：]\s*([A-Za-z0-9]{4,12})/;
 
 export type ParsedShareLink = { token: string; accessCode: string };
 
+export function clipboardReadBlocked(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const name = "name" in error ? String(error.name) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return name === "NotAllowedError" || name === "SecurityError" || /not allowed|permission|denied|not focused/i.test(message);
+}
+
 export function parseShareClipboard(text: string): ParsedShareLink | null {
-  const source = text.trim();
+  const source = text.replace(/[\u200b-\u200d\ufeff]/g, "").replace(/\u00a0/g, " ").trim();
   if (!source) return null;
   const match = source.match(SHARE_LINK);
   if (!match) return null;

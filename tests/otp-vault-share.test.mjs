@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   PENDING_SAVE_KEY,
   SHARE_ITEM_LIMIT,
+  clipboardReadBlocked,
   matchesCredentialTab,
   parseShareClipboard,
   receivedShareSourceLabel,
@@ -141,8 +142,16 @@ test("clipboard parser extracts share token and access code from urls and copied
   assert.deepEqual(parseShareClipboard("https://otp.example/s/Ab3De#k=A1B2C"), { token: "Ab3De", accessCode: "A1B2C" });
   assert.deepEqual(parseShareClipboard("给同事的临时访问\nhttps://otp.example/s/Ab3De#k=A1B2C\n访问码：A1B2C\n有效期：2026/09/07 12:00:00"), { token: "Ab3De", accessCode: "A1B2C" });
   assert.deepEqual(parseShareClipboard("https://otp.example/s/Ab3De\n访问码：Xy9K2"), { token: "Ab3De", accessCode: "XY9K2" });
+  assert.deepEqual(parseShareClipboard("\u200bhttps://otp.example/s/Ab3De#k=A1B2C"), { token: "Ab3De", accessCode: "A1B2C" });
   assert.equal(parseShareClipboard("https://example.com/blog"), null);
   assert.equal(parseShareClipboard("s/abc"), null);
+});
+
+test("clipboard read errors that need a tap are treated as blocked", () => {
+  assert.equal(clipboardReadBlocked({ name: "NotAllowedError", message: "Write permission denied." }), true);
+  assert.equal(clipboardReadBlocked({ name: "SecurityError", message: "The request is not allowed" }), true);
+  assert.equal(clipboardReadBlocked({ name: "NotFoundError", message: "No valid data" }), false);
+  assert.equal(clipboardReadBlocked(null), false);
 });
 
 test("clipboard share prompt skips ignored tokens and the share page already open", () => {
@@ -166,4 +175,7 @@ test("vault scans clipboard on focus visibility and paste, never on an interval"
   assert.doesNotMatch(workspace, /setInterval\([^)]*clipboard/);
   assert.match(workspace, /检测到授权/);
   assert.match(workspace, /忽略/);
+  assert.match(workspace, /识别剪贴板/);
+  assert.match(workspace, /clipboardReadBlocked/);
+  assert.match(workspace, /scanClipboard\(true\)/);
 });

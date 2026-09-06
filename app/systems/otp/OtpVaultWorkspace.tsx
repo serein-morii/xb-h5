@@ -11,7 +11,7 @@ import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
-import { PENDING_SAVE_KEY, SHARE_ITEM_LIMIT, matchesCredentialTab, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shouldOfferClipboardShare, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
+import { PENDING_SAVE_KEY, SHARE_ITEM_LIMIT, clipboardReadBlocked, matchesCredentialTab, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shouldOfferClipboardShare, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
@@ -32,6 +32,7 @@ const LAST_USED_KEY = "otp-vault-last-used";
 const CONCEAL_KEY = "otp-vault-conceal-otp";
 const SORT_KEY = "otp-vault-sort";
 const CLIPBOARD_IGNORED_KEY = "otp-vault-clipboard-ignored";
+const CLIPBOARD_HINT_KEY = "otp-vault-clipboard-hint-dismissed";
 type ClipboardOffer = { token: string; accessCode: string; name: string; accessCodeRequired: boolean };
 const LONG_TERM_DAYS = 20 * 365;
 const LONG_TERM_SECONDS = LONG_TERM_DAYS * 86400;
@@ -241,6 +242,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [shareTab, setShareTab] = useState<ShareTab>("sent");
   const [pendingRelease, setPendingRelease] = useState<VaultShare | null>(null);
   const [clipboardOffer, setClipboardOffer] = useState<ClipboardOffer | null>(null);
+  const [clipboardHint, setClipboardHint] = useState(false);
   const [clipboardSaving, setClipboardSaving] = useState(false);
   const clipboardBusy = useRef(false);
   const clipboardIgnored = useRef<Set<string>>(new Set());
@@ -353,27 +355,41 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   };
   const considerClipboardText = useCallback(async (text: string) => {
     const parsed = parseShareClipboard(text);
-    if (!shouldOfferClipboardShare(parsed, clipboardIgnored.current)) return;
-    if (!parsed || clipboardOfferRef.current?.token === parsed.token || clipboardBusy.current) return;
+    if (!shouldOfferClipboardShare(parsed, clipboardIgnored.current) || !parsed) return false;
+    if (clipboardOfferRef.current?.token === parsed.token) return true;
+    if (clipboardBusy.current) return false;
     clipboardBusy.current = true;
     try {
       const status = await getShareStatus(parsed.token);
-      if (status.data.status !== "ACTIVE") return;
+      if (status.data.status !== "ACTIVE") return false;
       const inbound = await getInboundShareStatus(parsed.token);
-      if (inbound.data.own || inbound.data.saved) return;
+      if (inbound.data.own || inbound.data.saved) return false;
       setClipboardOffer({
         token: parsed.token,
         accessCode: parsed.accessCode,
         name: status.data.name?.trim() || "临时凭据授权",
         accessCodeRequired: Boolean(status.data.accessCodeRequired),
       });
-    } catch { /* 无效、过期或无权读取时保持安静 */ }
+      setClipboardHint(false);
+      return true;
+    } catch { return false; }
     finally { clipboardBusy.current = false; }
   }, []);
-  const scanClipboard = useCallback(async () => {
-    if (document.visibilityState !== "visible" || typeof navigator.clipboard?.readText !== "function") return;
-    try { await considerClipboardText(await navigator.clipboard.readText()); }
-    catch { /* 浏览器拒绝读取剪贴板时等下一次机会 */ }
+  const scanClipboard = useCallback(async (fromGesture = false) => {
+    if (document.visibilityState !== "visible") return;
+    try {
+      const text = await readClipboardText();
+      const found = await considerClipboardText(text);
+      if (found) return;
+      setClipboardHint(false);
+      if (fromGesture) notify("剪贴板里没有可转存的分享链接");
+    } catch (error) {
+      if (!fromGesture && sessionStorage.getItem(CLIPBOARD_HINT_KEY) === "1") return;
+      if (clipboardReadBlocked(error) || fromGesture) {
+        if (fromGesture) notify("无法读取剪贴板，可直接在本页粘贴分享链接", true);
+        else setClipboardHint(true);
+      }
+    }
   }, [considerClipboardText]);
   useEffect(() => {
     try {
@@ -384,7 +400,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const onVisible = () => { if (document.visibilityState === "visible") void scanClipboard(); };
     const onPaste = (event: ClipboardEvent) => {
       const text = event.clipboardData?.getData("text") || "";
-      if (text) void considerClipboardText(text);
+      if (text) void considerClipboardText(text).then((found) => { if (found) setClipboardHint(false); });
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
@@ -1070,9 +1086,25 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <span><b>检测到授权</b><small>「{clipboardOffer.name}」可以转存到「我收到的」</small></span>
       <button type="button" className="vault-clipboard-ignore" onClick={ignoreClipboardOffer}>忽略</button>
       <button type="button" disabled={clipboardSaving} onClick={() => void saveClipboardOffer()}>{clipboardSaving ? <LoaderCircle className="spin" size={15} /> : <FolderDown size={15} />}{clipboardSaving ? "转存中" : "转存"}</button>
+    </div> : clipboardHint ? <div className="share-save-dock vault-clipboard-dock" role="status">
+      <span><b>识别剪贴板</b><small>浏览器需要点一下才能读取分享链接</small></span>
+      <button type="button" className="vault-clipboard-ignore" onClick={() => { sessionStorage.setItem(CLIPBOARD_HINT_KEY, "1"); setClipboardHint(false); }}>关闭</button>
+      <button type="button" onClick={() => void scanClipboard(true)}>识别</button>
     </div> : null}
     {notice ? <div className={`vault-toast${notice.error ? " is-error" : ""}`} role={notice.error ? "alert" : "status"} aria-live={notice.error ? "assertive" : "polite"}>{notice.error ? <ShieldAlert size={15} /> : <Check size={15} />}<span>{notice.text}</span></div> : null}
   </div>;
+}
+
+async function readClipboardText() {
+  const clipboard = navigator.clipboard;
+  if (clipboard?.readText) return await clipboard.readText();
+  if (clipboard?.read) {
+    const items = await clipboard.read();
+    for (const item of items) {
+      if (item.types.includes("text/plain")) return await (await item.getType("text/plain")).text();
+    }
+  }
+  throw new DOMException("Clipboard unavailable", "NotAllowedError");
 }
 
 function normalizeDateTime(value: string) {
