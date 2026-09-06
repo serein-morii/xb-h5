@@ -91,6 +91,13 @@ test("share detail lists save records with kick and ban, and share form can forb
   assert.match(api, /\/saves\/\$\{saveId\}\/restore/);
 });
 
+test("forbidden save toast uses a warning icon", async () => {
+  const toast = await source("app/systems/otp/VaultToastMessage.tsx");
+  assert.match(toast, /禁止/);
+  assert.match(toast, /TriangleAlert/);
+  assert.match(toast, /ERROR_TEXT\.test\(message\)/);
+});
+
 test("share save sits in a collapsible bottom dock named 转存", async () => {
   const [sharePage, styles] = await Promise.all([
     source("app/systems/otp/VaultSharePage.tsx"),
