@@ -5,7 +5,8 @@
    通过 .sc-content 作用域覆盖，统一到同一套视觉语言。
    ============================================================ */
 
-.sc-root {
+.sc-root,
+.sc-sheet-mask {
   --sc-sidebar-w: 248px;
   --sc-bg: #f5f6f8;
   --sc-surface: #ffffff;
@@ -18,7 +19,9 @@
   --sc-sidebar-line: #eef1f5;
   --sc-sidebar-text: #5c6578;
   --sc-radius: 16px;
+}
 
+.sc-root {
   min-height: 100vh;
   display: flex;
   background: var(--sc-bg);
@@ -320,7 +323,8 @@
 
 /* ---------- 暗色主题跟随 ---------- */
 @media (prefers-color-scheme: dark) {
-  html:not(.theme-light) .sc-root:not(.sc-force-light) {
+  html:not(.theme-light) .sc-root:not(.sc-force-light),
+  html:not(.theme-light) .sc-sheet-mask {
     --sc-bg: #10141c;
     --sc-surface: #181e28;
     --sc-line: rgba(225, 231, 248, 0.08);
@@ -333,7 +337,8 @@
   .sc-topbar { background: color-mix(in srgb, var(--sc-bg) 82%, transparent); }
   .sc-nav button:hover, .sc-foot-link:hover { background: rgba(225, 231, 248, 0.06); color: #e8ebf5; }
 }
-html.theme-dark .sc-root {
+html.theme-dark .sc-root,
+html.theme-dark .sc-sheet-mask {
   --sc-bg: #10141c;
   --sc-surface: #181e28;
   --sc-line: rgba(225, 231, 248, 0.08);
@@ -801,7 +806,7 @@ html.theme-dark .sysbroadcast-status.is-off { background: rgba(225, 231, 248, 0.
 .sc-sheet {
   width: min(640px, 100%); max-width: 100%; min-width: 0; max-height: 92dvh;
   display: flex; flex-direction: column;
-  background: var(--sc-surface); color: var(--sc-text);
+  background: var(--sc-surface, #ffffff); color: var(--sc-text, #121826);
   border-radius: 18px 18px 12px 12px;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
   overflow: hidden;
@@ -834,8 +839,8 @@ html.theme-dark .sysbroadcast-status.is-off { background: rgba(225, 231, 248, 0.
 .sysbroadcast-sheet-form select,
 .sysbroadcast-sheet-form textarea {
   width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
-  border: 1px solid var(--sc-line); border-radius: 10px;
-  background: var(--sc-surface); color: var(--sc-text);
+  border: 1px solid var(--sc-line, #e7ebf0); border-radius: 10px;
+  background: var(--sc-surface, #ffffff); color: var(--sc-text, #121826);
   padding: 9px 11px; font: inherit; font-size: 14px;
 }
 .sysbroadcast-sheet-form input[type="datetime-local"] { max-width: 100%; min-width: 0; }
@@ -843,6 +848,54 @@ html.theme-dark .sysbroadcast-status.is-off { background: rgba(225, 231, 248, 0.
 .sysbroadcast-sheet-actions {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding-top: 4px;
 }
+.sc-sheet .sysbroadcast-send {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--sc-accent, #3b5bfd); box-shadow: none;
+  border: 0; color: #fff;
+  border-radius: 10px; padding: 8px 16px; font: inherit; font-size: 13px; min-height: 0; font-weight: 650;
+  cursor: pointer;
+}
+.sc-sheet .sysbroadcast-send:hover { background: #2f4ae8; }
+.sc-sheet .sysbroadcast-preview-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--sc-line, #e7ebf0); border-radius: 10px; padding: 7px 12px;
+  font: inherit; font-size: 12.5px; min-height: 0; font-weight: 600; cursor: pointer;
+  background: var(--sc-surface, #ffffff); color: var(--sc-text, #121826);
+}
+.sc-sheet .sysbroadcast-preview-toggle:hover { border-color: var(--sc-accent, #3b5bfd); color: var(--sc-accent, #3b5bfd); }
+.sc-sheet .sysbroadcast-preview-toggle.is-active { background: var(--sc-accent, #3b5bfd); border-color: var(--sc-accent, #3b5bfd); color: #fff; }
+.sc-sheet .sysbroadcast-preview {
+  background: var(--sc-bg, #f5f6f8); border: 1px solid rgba(79, 99, 210, 0.3);
+  border-radius: 11px; padding: 10px 12px;
+}
+.sc-sheet .sysbroadcast-popup input {
+  position: absolute; opacity: 0; width: 0; height: 0; border: 0; padding: 0;
+}
+.sc-sheet .sysbroadcast-popup i {
+  flex: none; width: 38px; height: 22px; margin-top: 1px; border-radius: 999px;
+  background: rgba(120, 128, 150, 0.45); position: relative; transition: background 0.18s;
+}
+.sc-sheet .sysbroadcast-popup i::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s;
+}
+.sc-sheet .sysbroadcast-popup input:checked + i { background: var(--sc-accent, #3b5bfd); }
+.sc-sheet .sysbroadcast-popup input:checked + i::after { transform: translateX(16px); }
+html.theme-dark .sc-sheet,
+html.theme-dark .sc-sheet .sysbroadcast-preview-toggle,
+html.theme-dark .sysbroadcast-sheet-form input,
+html.theme-dark .sysbroadcast-sheet-form select,
+html.theme-dark .sysbroadcast-sheet-form textarea {
+  background: var(--sc-surface, #181e28);
+  color: var(--sc-text, #e8ebf5);
+}
+html.theme-dark .sysbroadcast-sheet-form input,
+html.theme-dark .sysbroadcast-sheet-form select,
+html.theme-dark .sysbroadcast-sheet-form textarea {
+  border-color: var(--sc-line, rgba(225, 231, 248, 0.08));
+}
+html.theme-dark .sc-sheet .sysbroadcast-preview { background: var(--sc-bg, #10141c); }
 .sysbroadcast-send.is-danger { background: #dc2626; box-shadow: none; }
 .sysbroadcast-confirm p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--sc-text); }
 .message-readers.is-sheet { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
