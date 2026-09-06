@@ -8,8 +8,12 @@ document.querySelector('#md').innerHTML=renderRichText('# 本次更新\n\n正文
 const checks=[];const check=(name,passed)=>checks.push({name,passed});
 check('HTML class style preserved',getComputedStyle(document.querySelector('#html h2')).color==='rgb(70, 93, 182)');
 check('no stylesheet leakage',!document.querySelector('#html style'));
-const attack=sanitizeRichHtml('<unknown><p onclick="alert(1)" id="clobber"><a href="javascript:alert(1)">bad</a></p></unknown><style>p{position:fixed;background:url(https://example.com)}</style>');
+const withIcon=sanitizeRichHtml('<style>:root{--ink:#4f46e5}.ico{color:var(--ink)}</style><div class="ico"><svg viewBox="0 0 24 24"><path d="M5 12h14" stroke="#4f46e5" stroke-width="2"/></svg></div>');
+check('inline svg kept', /<svg[\s\S]*<path/.test(withIcon));
+check('css variables inlined', /#4f46e5/.test(withIcon));
+const attack=sanitizeRichHtml('<unknown><p onclick="alert(1)" id="clobber"><a href="javascript:alert(1)">bad</a></p></unknown><style>p{position:fixed;background:url(https://example.com)}</style><svg><script>alert(1)</script></svg>');
 check('nested unsafe attributes removed',! /onclick|javascript:|clobber|position:|url\(/.test(attack));
+check('svg script stripped',! /<script/i.test(attack));
 check('markdown links not nested',document.querySelectorAll('#md a').length===1 && document.querySelector('#md a').getAttribute('href')==='https://example.com/guide');
 check('code stays literal',document.querySelector('#md code').textContent==='https://example.com/code');
 check('compact body size',getComputedStyle(document.querySelector('#md')).fontSize==='12px');

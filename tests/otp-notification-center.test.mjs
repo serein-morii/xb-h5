@@ -101,7 +101,7 @@ test("richText renderer escapes by default and sanitizes html", async () => {
   const richText = await source("app/lib/richText.ts");
   assert.match(richText, /escapeHtml/);
   assert.match(richText, /ALLOWED_TAGS/);
-  assert.match(richText, /const drop = !\[/);
+  assert.match(richText, /const drop = !allowed\.has\(name\)/);
   assert.match(richText, /javascript:/);
   assert.match(richText, /SAFE_URL/);
 });
@@ -249,6 +249,26 @@ test("html messages keep inline styles via sanitized allowlist", async () => {
   assert.match(richText, /UNSAFE_STYLE_VALUE/);
   assert.match(richText, /isCompactFontSize/);
   assert.doesNotMatch(richText, /name === "style"\s*\|\|/);
+});
+
+test("html messages keep inline svg icons and resolve css variables", async () => {
+  const richText = await source("app/lib/richText.ts");
+  assert.match(richText, /"svg"/);
+  assert.match(richText, /"path"/);
+  assert.match(richText, /viewbox/);
+  assert.match(richText, /resolveCssVars/);
+  assert.match(richText, /place-items/);
+  assert.doesNotMatch(richText, /button,svg,math/);
+});
+
+test("broadcast composer sheet portals out of the page scroll container", async () => {
+  const [form, css] = await Promise.all([
+    source("app/systems/system/MessageBroadcast.tsx"),
+    source("app/systems/system/system-center.css"),
+  ]);
+  assert.match(form, /createPortal/);
+  assert.match(css, /\.sc-sheet-body \{ overflow-x: hidden;/);
+  assert.match(css, /datetime-local/);
 });
 
 test("popup announcement card is larger for HTML and Markdown", async () => {

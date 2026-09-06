@@ -1,5 +1,6 @@
 import { Check, CloudOff, Eye, LoaderCircle, MonitorUp, Pencil, Plus, Radio, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
 import { renderRichText } from "../../lib/richText";
@@ -315,7 +316,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
     window.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", onKey); };
   }, [onClose]);
-  return <div className="sc-sheet-mask" onClick={onClose} role="presentation">
+  return createPortal(<div className="sc-sheet-mask" onClick={onClose} role="presentation">
     <section className="sc-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(event) => event.stopPropagation()}>
       <header className="sc-sheet-head">
         <b>{title}</b>
@@ -323,7 +324,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
       </header>
       <div className="sc-sheet-body">{children}</div>
     </section>
-  </div>;
+  </div>, document.body);
 }
 
 type Reader = { userId: number; username: string; nickname?: string; isRead: boolean | number; readTime?: string; firstReadTime?: string; userDeleted?: boolean | number };

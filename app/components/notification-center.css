@@ -134,6 +134,7 @@
 .notif-item-content img { max-width: 100%; border-radius: 8px; }
 .notif-item-content mark { background: #fff3bf; color: inherit; padding: 0 3px; border-radius: 3px; }
 .notif-item-content :is(div,section,center) { min-width: 0; }
+.notif-item-content svg { max-width: 100%; overflow: visible; flex-shrink: 0; display: inline-block; vertical-align: middle; }
 
 /* 铃铛按钮 */
 .notif-bell {

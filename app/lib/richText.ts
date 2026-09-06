@@ -19,7 +19,17 @@ const ALLOWED_TAGS = new Set([
   "h1", "h2", "h3", "h4", "h5", "h6",
   "ul", "ol", "li", "blockquote", "pre", "code",
   "a", "img", "table", "thead", "tbody", "tfoot", "caption", "tr", "th", "td",
+  "svg", "path", "rect", "circle", "line", "polyline", "polygon", "g",
 ]);
+
+const SVG_TAGS = new Set(["svg", "path", "rect", "circle", "line", "polyline", "polygon", "g"]);
+const SVG_ATTRS = new Set([
+  "viewbox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin",
+  "d", "cx", "cy", "r", "x", "y", "width", "height", "rx", "ry", "xmlns",
+  "aria-hidden", "role", "transform", "opacity", "fill-opacity", "stroke-opacity",
+  "points", "x1", "x2", "y1", "y2",
+]);
+const HTML_ATTRS = new Set(["style", "href", "src", "alt", "title", "colspan", "rowspan", "align", "color", "face", "class"]);
 
 const SAFE_URL = /^(https?:|mailto:|\/|#)/i;
 
@@ -35,14 +45,15 @@ const SAFE_STYLE_PROPERTIES = new Set([
   "padding", "padding-top", "padding-bottom", "padding-left", "padding-right",
   "border", "border-top", "border-bottom", "border-left", "border-right",
   "border-color", "border-width", "border-style", "border-radius",
-  "display", "flex-direction", "align-items", "justify-content", "gap", "flex-wrap",
+  "display", "flex-direction", "flex-wrap", "flex-shrink", "flex-grow", "flex-basis",
+  "align-items", "align-content", "justify-content", "justify-items", "place-items", "gap",
   "width", "max-width", "min-width", "height", "max-height", "min-height",
-  "vertical-align", "overflow-wrap", "box-sizing",
+  "vertical-align", "overflow", "overflow-x", "overflow-y", "overflow-wrap", "box-sizing",
   "border-collapse", "border-spacing", "table-layout", "box-shadow",
-  "grid-template-columns", "align-self", "flex", "row-gap", "column-gap",
+  "grid-template-columns", "grid-template-rows", "align-self", "flex", "row-gap", "column-gap",
 ]);
 
-const UNSAFE_STYLE_VALUE = /(url\s*\(|expression|javascript:|@import|position\s*:|fixed|sticky|z-index|calc\s*\(|var\s*\()/i;
+const UNSAFE_STYLE_VALUE = /(url\s*\(|expression|javascript:|@import|position\s*:|(^|[^-])fixed|(^|[^-])sticky|z-index)/i;
 
 /** 正文里过大的字号会撑破弹窗和手机宽度，只保留接近正文层级的尺寸。 */
 function isCompactFontSize(value: string): boolean {
@@ -81,6 +92,56 @@ function sanitizeUrl(value: string | null): string | null {
   return url.replace(/"/g, "%22");
 }
 
+function resolveCssVars(value: string, vars: Map<string, string>): string {
+  let current = value;
+  for (let pass = 0; pass < 8; pass++) {
+    const next = current.replace(/var\(\s*(--[a-z0-9-]+)\s*(?:,([^()]*))?\)/gi, (match, name: string, fallback?: string) => {
+      const key = String(name).toLowerCase();
+      if (vars.has(key)) return vars.get(key) || "";
+      return fallback != null ? fallback.trim() : match;
+    });
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+}
+
+function collectCustomProperties(sheet: CSSStyleSheet, vars: Map<string, string>) {
+  const take = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (typeof CSSMediaRule !== "undefined" && rule instanceof CSSMediaRule) { take(rule.cssRules); continue; }
+      if (!(rule instanceof CSSStyleRule)) continue;
+      if (!/(^|,)\s*(:root|html|body|\*)\s*(,|$)/i.test(rule.selectorText)) continue;
+      for (const name of Array.from(rule.style)) {
+        if (!name.startsWith("--")) continue;
+        vars.set(name.toLowerCase(), rule.style.getPropertyValue(name).trim());
+      }
+    }
+  };
+  take(sheet.cssRules);
+  for (let pass = 0; pass < 6; pass++) {
+    for (const [key, value] of vars) vars.set(key, resolveCssVars(value, vars));
+  }
+}
+
+function applySheetRules(doc: Document, sheet: CSSStyleSheet, vars: Map<string, string>) {
+  const apply = (rules: CSSRuleList) => {
+    for (const rule of Array.from(rules)) {
+      if (typeof CSSMediaRule !== "undefined" && rule instanceof CSSMediaRule) { apply(rule.cssRules); continue; }
+      if (!(rule instanceof CSSStyleRule)) continue;
+      const safe = sanitizeStyleAttr(resolveCssVars(rule.style.cssText, vars));
+      if (!safe) continue;
+      try {
+        doc.querySelectorAll(rule.selectorText).forEach((node) => {
+          if (node === doc.documentElement) return;
+          node.setAttribute("style", `${node.getAttribute("style") || ""};${safe}`);
+        });
+      } catch { /* Unsupported selectors do not prevent reading the message. */ }
+    }
+  };
+  apply(sheet.cssRules);
+}
+
 /** DOM 白名单过滤：仅保留安全标签与必要属性，其余全部剔除。 */
 export function sanitizeRichHtml(html: string): string {
   if (typeof window === "undefined" || typeof DOMParser === "undefined") return escapeHtml(html);
@@ -90,36 +151,32 @@ export function sanitizeRichHtml(html: string): string {
   const originalStyles = new Map<Element, string>();
   doc.querySelectorAll("[style]").forEach((node) => originalStyles.set(node, node.getAttribute("style") || ""));
   if (typeof CSSStyleSheet !== "undefined") {
+    const vars = new Map<string, string>();
+    const sheets: CSSStyleSheet[] = [];
     for (const style of Array.from(doc.querySelectorAll("style"))) {
       try {
         const sheet = new CSSStyleSheet();
         sheet.replaceSync(style.textContent || "");
-        for (const rule of Array.from(sheet.cssRules)) {
-          if (!(rule instanceof CSSStyleRule)) continue;
-          const safe = sanitizeStyleAttr(rule.style.cssText);
-          if (!safe) continue;
-          try {
-            doc.querySelectorAll(rule.selectorText).forEach((node) => {
-              node.setAttribute("style", `${node.getAttribute("style") || ""};${safe}`);
-            });
-          } catch { /* Unsupported selectors do not prevent reading the message. */ }
-        }
+        collectCustomProperties(sheet, vars);
+        sheets.push(sheet);
       } catch { /* Invalid template CSS is ignored. */ }
     }
+    for (const sheet of sheets) applySheetRules(doc, sheet, vars);
   }
   originalStyles.forEach((style, node) => node.setAttribute("style", `${node.getAttribute("style") || ""};${style}`));
-  doc.querySelectorAll("script,style,iframe,frame,object,embed,link,meta,form,input,button,svg,math,audio,video,source,base").forEach((node) => node.remove());
+  doc.querySelectorAll("script,style,iframe,frame,object,embed,link,meta,form,input,button,math,audio,video,source,base,use,foreignObject,image,animate").forEach((node) => node.remove());
   const walk = (node: Element) => {
     for (const child of Array.from(node.children)) {
       walk(child);
-      if (!ALLOWED_TAGS.has(child.tagName.toLowerCase())) {
-        // 未知标签：保留其文本内容，丢弃标签与属性
+      const tag = child.tagName.toLowerCase();
+      if (!ALLOWED_TAGS.has(tag)) {
         child.replaceWith(...Array.from(child.childNodes));
         continue;
       }
+      const allowed = SVG_TAGS.has(tag) ? SVG_ATTRS : HTML_ATTRS;
       for (const attribute of Array.from(child.attributes)) {
         const name = attribute.name.toLowerCase();
-        const drop = !["style", "href", "src", "alt", "title", "colspan", "rowspan", "align", "color", "face"].includes(name)
+        const drop = !allowed.has(name) && name !== "style"
           || ((name === "href" || name === "src") && !sanitizeUrl(child.getAttribute(name)));
         if (drop) { child.removeAttribute(attribute.name); continue; }
         if (name === "style") {
@@ -128,13 +185,13 @@ export function sanitizeRichHtml(html: string): string {
           else child.removeAttribute("style");
         }
       }
-      if (child.tagName.toLowerCase() === "a") {
+      if (tag === "a") {
         const href = sanitizeUrl(child.getAttribute("href"));
         child.setAttribute("rel", "noopener noreferrer nofollow");
         child.setAttribute("target", "_blank");
         if (href) child.setAttribute("href", href);
       }
-      if (child.tagName.toLowerCase() === "img") {
+      if (tag === "img") {
         const src = sanitizeUrl(child.getAttribute("src"));
         if (!src) { child.remove(); continue; }
         child.setAttribute("src", src);
