@@ -61,14 +61,18 @@ test("share detail lists save records with kick and ban, and share form can forb
     source("app/systems/otp/OtpVaultWorkspace.tsx"),
     source("app/systems/otp/vaultApi.ts"),
   ]);
-  assert.match(workspace, /转存操作列表/);
-  assert.match(workspace, /踢掉/);
+  assert.match(workspace, /转存列表/);
+  assert.doesNotMatch(workspace, /转存操作列表/);
+  assert.match(workspace, /移除/);
+  assert.doesNotMatch(workspace, /踢掉/);
   assert.match(workspace, /禁止/);
   assert.match(workspace, /该链接已被分享者禁止转存/);
   assert.match(workspace, /禁止转存/);
   assert.match(workspace, /forbidSave/);
   assert.match(workspace, /kickVaultShareSave/);
   assert.match(workspace, /banVaultShareSave/);
+  assert.match(workspace, /<b>\{record\.nickname \|\| record\.username \|\| "未知用户"\}<\/b><time>/);
+  assert.match(workspace, /className="vault-save-actions"/);
   assert.match(api, /saveRecords\?: VaultShareSaveRecord\[\]/);
   assert.match(api, /forbidSave\?: boolean/);
   assert.match(api, /\/saves\/\$\{saveId\}\/kick/);

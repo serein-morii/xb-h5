@@ -112,6 +112,8 @@ test("share updates revoke and delete notify people who saved the link", async (
   assert.match(vaultService, /notifyInboundShareSavers\(share, "updated"\)/);
   assert.match(vaultService, /notifyInboundShareSavers\(share, "revoked"\)/);
   assert.match(vaultService, /notifyInboundShareSavers\(share, "deleted"\)/);
+  assert.match(alertService, /移除了你转存的授权/);
+  assert.match(vaultService, /notifyShareSavers\(share, "removed"/);
 });
 
 test("richText renderer escapes by default and sanitizes html", async () => {

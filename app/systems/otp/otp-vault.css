@@ -257,8 +257,9 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-access-records article em { margin-top: 2px; color: #a5483f; }
 .vault-access-records article time { text-align: right; }
 .vault-save-records article { grid-template-columns: auto minmax(0, 1fr) auto; }
-.vault-save-actions { display: inline-flex; gap: 6px; }
-.vault-save-actions button { min-height: 28px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 8px; background: #eef0f8; color: #5a6478; font: inherit; font-size: 10px; cursor: pointer; }
+.vault-save-records article time { display: block; margin-top: 3px; text-align: left; }
+.vault-save-actions { flex: none; display: inline-flex; flex-wrap: nowrap; gap: 6px; }
+.vault-save-actions button { min-height: 28px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 8px; background: #eef0f8; color: #5a6478; font: inherit; font-size: 10px; white-space: nowrap; cursor: pointer; }
 .vault-save-actions button:hover { background: #e4e7f3; color: #26345d; }
 .vault-save-actions button:disabled { opacity: .55; cursor: not-allowed; }
 .vault-access-records > p { margin: 0; padding: 25px; color: var(--utility-muted); font-size: 10px; text-align: center; }
@@ -327,6 +328,8 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
   .vault-share-detail-grid { grid-template-columns: 1fr 1fr; }
   .vault-access-records article { grid-template-columns: auto minmax(0, 1fr); }
   .vault-access-records article time { grid-column: 2; text-align: left; }
+  .vault-save-records article { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .vault-save-records article time { grid-column: auto; }
   .share-page { padding-top: max(14px, env(safe-area-inset-top)); }
   .share-brand { margin-bottom: 10px; }
   .share-access-card { margin-top: 2vh; padding: 22px 16px max(20px, env(safe-area-inset-bottom)); border-radius: 22px; }
