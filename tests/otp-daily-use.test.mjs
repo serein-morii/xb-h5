@@ -8,6 +8,7 @@ import {
   installCoachCopy,
   installCoachKind,
   iosInstallHint,
+  iosVersionFromUa,
   measureClockDriftMs,
   scheduleClipboardClear,
   shouldShowInstallHint,
@@ -38,13 +39,19 @@ test("install coach copy is explicit for iOS, WeChat and browsers", () => {
   assert.equal(installCoachKind("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) CriOS/120.0.0.0"), "browser");
   assert.equal(installCoachKind("Mozilla/5.0 MicroMessenger/8.0.5"), "wechat");
   assert.equal(installCoachKind("Mozilla/5.0 (Linux; Android 14) Chrome/120"), "browser");
-  const ios = installCoachCopy("ios");
-  assert.equal(ios.title, "添加到桌面");
-  assert.match(ios.action, /指出分享按钮/);
-  assert.equal(ios.steps.length, 3);
-  assert.match(ios.steps[0], /右下角/);
-  assert.match(ios.steps[0], /三个点/);
-  assert.match(ios.steps.join(""), /添加到桌面|添加到主屏幕/);
+  assert.equal(iosVersionFromUa("Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X)"), 18);
+  assert.equal(iosVersionFromUa("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)"), 26);
+  assert.equal(iosVersionFromUa("Mozilla/5.0 (iPad; CPU OS 26_1 like Mac OS X)"), 26);
+  const ios26 = installCoachCopy("ios", 26);
+  assert.equal(ios26.title, "添加到桌面");
+  assert.match(ios26.action, /指出分享按钮/);
+  assert.equal(ios26.steps.length, 3);
+  assert.match(ios26.steps[0], /右下角/);
+  assert.match(ios26.steps[0], /三个点/);
+  const ios18 = installCoachCopy("ios", 18);
+  assert.match(ios18.steps[0], /中间/);
+  assert.match(ios18.steps.join(""), /分享/);
+  assert.doesNotMatch(ios18.steps[0], /三个点/);
   const wechat = installCoachCopy("wechat");
   assert.match(wechat.detail, /Safari|Chrome/);
   assert.match(wechat.steps.join(""), /Safari/);
@@ -110,6 +117,7 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   const hint = await source("app/systems/otp/OtpInstallHint.tsx");
   assert.match(hint, /installCoachCopy/);
   assert.match(hint, /otp-install-spotlight/);
+  assert.match(hint, /iosVersionFromUa/);
   assert.match(hint, /指出分享按钮/);
   assert.match(hint, /otp-install-steps/);
   assert.match(css, /otp-install-spotlight/);

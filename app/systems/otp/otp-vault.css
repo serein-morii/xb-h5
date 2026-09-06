@@ -1256,6 +1256,7 @@ body:has(.otp-guide-page) .otp-install-hint { position: relative; left: auto; ri
   padding: calc(12px + env(safe-area-inset-top)) 16px 20px;
 }
 .otp-install-spotlight.is-br { align-content: end; justify-items: end; }
+.otp-install-spotlight.is-bc { align-content: end; justify-items: center; }
 .otp-install-spotlight-card {
   width: min(360px, calc(100% - 8px)); margin: 0 0 14px; padding: 18px 16px 14px;
   border-radius: 18px; background: #fff; color: #172033; text-align: center;

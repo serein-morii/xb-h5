@@ -12,17 +12,29 @@ export function installCoachKind(ua = typeof navigator === "undefined" ? "" : na
   return "browser";
 }
 
-export function installCoachCopy(kind: InstallCoachKind) {
+export function iosVersionFromUa(ua = typeof navigator === "undefined" ? "" : navigator.userAgent) {
+  const match = ua.match(/OS (\d+)[._]/);
+  return match ? Number(match[1]) : null;
+}
+
+export function installCoachCopy(kind: InstallCoachKind, iosVersion: number | null = null) {
   if (kind === "ios") {
+    const modern = (iosVersion ?? 0) >= 26;
     return {
       title: "添加到桌面",
       detail: "装到主屏幕后，像 App 一样打开，不用再找浏览器。",
       action: "指出分享按钮",
-      steps: [
-        "点右下角三个点，打开分享",
-        "在分享里选择「添加到桌面」",
-        "确认添加，之后从桌面图标打开",
-      ],
+      steps: modern
+        ? [
+          "点右下角三个点，打开分享",
+          "在分享里选择「添加到桌面」",
+          "确认添加，之后从桌面图标打开",
+        ]
+        : [
+          "点底栏中间的分享按钮",
+          "在分享里选择「添加到主屏幕」或「添加到桌面」",
+          "确认添加，之后从桌面图标打开",
+        ],
     };
   }
   if (kind === "wechat") {
