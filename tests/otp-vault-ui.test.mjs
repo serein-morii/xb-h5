@@ -49,6 +49,13 @@ test("keeps credential and share filter tabs right-aligned beside the titles", a
   assert.match(styles, /\.vault-fav-switch[\s\S]{0,280}border-radius:\s*999px/);
 });
 
+test("floats credential add and share create actions on PC", async () => {
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(styles, /\.vault-panel-head > \.vault-import-action,[\s\S]{0,80}\.vault-panel-head > \.vault-create-share \{[\s\S]{0,120}position:\s*fixed/);
+  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,280}right:\s*28px/);
+  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,320}bottom:\s*28px/);
+});
+
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");

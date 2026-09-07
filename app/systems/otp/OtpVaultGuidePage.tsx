@@ -212,7 +212,7 @@ export default function OtpVaultGuidePage() {
             { type: "step", text: "新设备登录后先校验再导入" },
             { type: "end", text: "换机也能找回" },
           ]} />
-          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全中心”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。安全中心、账号、外观和关于都在“我的”里。</p></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全中心”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、安全中心、外观和关于都在“我的”里。</p></div>
         </div>
       </section>
 

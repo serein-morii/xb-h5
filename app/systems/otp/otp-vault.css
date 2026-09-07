@@ -1654,12 +1654,6 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
     margin-left: 0;
     border-radius: 12px;
   }
-  .vault-create-share {
-    min-height: 40px;
-    padding: 0 14px;
-    border-radius: 12px;
-    font-size: 13px;
-  }
   .vault-fav-switch button {
     min-height: 32px;
     padding: 0 14px;
@@ -1732,38 +1726,49 @@ html.theme-dark .vault-filters select { background: #171e2c; color: #e8edf8; }
 
 .vault-panel-head > .vault-import-action,
 .vault-panel-head > .vault-create-share {
-  min-height: 40px;
+  position: fixed;
+  z-index: 121;
+  right: 28px;
+  bottom: 28px;
+  min-height: 48px;
+  height: 48px;
   flex: none;
-  gap: 6px;
-  padding: 0 16px;
-  border: 1px solid var(--vault-accent);
-  border-radius: 12px;
-  background: var(--vault-accent);
-  color: #fff;
+  gap: 8px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cfd5f3;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .94);
+  color: #5b6bd4;
   font-size: 13px;
+  font-weight: 750;
   white-space: nowrap;
+  box-shadow: 0 10px 28px rgba(35, 49, 99, .14);
+  backdrop-filter: blur(14px);
 }
 
 @media (max-width: 560px) {
   .vault-panel-head > .vault-import-action,
   .vault-panel-head > .vault-create-share {
-    position: fixed;
-    z-index: 121;
     right: 17px;
     bottom: calc(max(10px, env(safe-area-inset-bottom)) + 76px);
     width: 48px;
-    height: 48px;
     padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 50%;
-    box-shadow: 0 6px 18px rgba(35, 49, 99, .22);
-    backdrop-filter: none;
+    box-shadow: 0 8px 22px rgba(35, 49, 99, .16);
   }
   .vault-panel-head > .vault-import-action span,
   .vault-panel-head > .vault-create-share span { display: none; }
   .vault-panel-head > .vault-create-share svg { width: 18px; height: 18px; }
+}
+
+html.theme-dark .vault-panel-head > .vault-import-action,
+html.theme-dark .vault-panel-head > .vault-create-share {
+  border-color: #3b4664;
+  background: rgba(23, 30, 44, .94);
+  color: #b1baff;
 }
 
 
