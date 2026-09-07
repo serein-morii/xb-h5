@@ -31,6 +31,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(workspace, /给这次授权起个名字/);
   assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
   for (const id of ["quick-start", "add", "use", "share", "security", "faq", "changelog"]) assert.match(guide, new RegExp(`id="${id}"`));
+  assert.ok(guide.indexOf('id="faq"') < guide.indexOf('id="changelog"'));
+  assert.match(guide, /\["faq", "常见问题"\],\s*\["changelog", "更新日志"\]/);
   assert.match(guide, /授权名称/);
   assert.match(guide, /给同事的临时访问/);
   assert.match(guide, /验证码一直不正确/);

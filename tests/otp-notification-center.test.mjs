@@ -137,6 +137,36 @@ test("notification center: thumbnail list + detail views and compact actions", a
   assert.match(component, /openDetail/);
 });
 
+test("notification center paginates long lists and keeps category tabs on one row", async () => {
+  const [component, styles] = await Promise.all([
+    source("app/components/NotificationCenter.tsx"),
+    source("app/components/notification-center.css"),
+  ]);
+  assert.match(component, /NOTIF_PAGE_SIZE = 20/);
+  assert.match(component, /notif-pager/);
+  assert.match(component, /setPage\(1\)/);
+  assert.match(styles, /\.notif-pager/);
+  assert.match(styles, /\.notif-tabs \{[^}]*flex-shrink: 0/);
+  assert.match(styles, /\.notif-tabs \{[^}]*overflow-x: auto/);
+  assert.match(styles, /\.notif-tabs button \{[^}]*white-space: nowrap/);
+  assert.match(styles, /\.notif-list \{[^}]*flex: 1/);
+  assert.match(styles, /\.notif-list \{[^}]*min-height: 0/);
+});
+
+test("markdown notices keep readable type while HTML templates keep their own styles", async () => {
+  const [component, styles] = await Promise.all([
+    source("app/components/NotificationCenter.tsx"),
+    source("app/components/notification-center.css"),
+  ]);
+  assert.match(component, /contentTypeClass/);
+  assert.match(component, /notif-popup-content \$\{contentTypeClass/);
+  assert.match(component, /notif-item-content \$\{contentTypeClass/);
+  assert.match(styles, /\.notif-popup-content\.is-md/);
+  assert.match(styles, /\.notif-popup-content\.is-html :is\(h1,h2,h3,h4,h5,h6\)/);
+  assert.doesNotMatch(styles, /\.notif-popup-body \.notif-item-content :is\(h1,h2,h3,h4,h5,h6\),\s*\.notif-popup-body \.notif-item-content p \{\s*font-size: unset/);
+  assert.match(styles, /\.notif-item-content li \+ li \{ margin-top: 6px/);
+});
+
 test("order admin shell mounts floating bell and notification center", async () => {
   const shell = await source("app/systems/order/admin/shell.tsx");
   assert.match(shell, /NotificationBellButton/);
@@ -300,7 +330,7 @@ test("popup announcement card is larger for HTML and Markdown", async () => {
   assert.match(component, /notif-popup-content/);
   assert.match(css, /min\(720px, 100%\)/);
   assert.match(css, /notif-popup-content/);
-  assert.match(css, /\.notif-popup-content \* \{ max-width: none; \}/);
+  assert.match(css, /\.notif-popup-content\.is-html \* \{ max-width: none; \}/);
 });
 
 test("account recovery can permanently purge deleted users", async () => {

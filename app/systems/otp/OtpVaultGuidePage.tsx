@@ -8,13 +8,13 @@ import "./otp-guide.css";
 
 const navigation = [
   ["overview", "功能总览"],
-  ["changelog", "更新日志"],
   ["quick-start", "快速开始"],
   ["add", "添加凭据"],
   ["use", "查看和使用"],
   ["share", "临时授权"],
   ["security", "安全与备份"],
   ["faq", "常见问题"],
+  ["changelog", "更新日志"],
 ] as const;
 
 const quickSteps = [
@@ -141,22 +141,6 @@ export default function OtpVaultGuidePage() {
           <div className="otp-guide-features">{featureHighlights.map(([Icon, title, text]) => <section key={title}><span><Icon size={18} /></span><div><b>{title}</b><p>{text}</p></div></section>)}</div>
         </section>
 
-        <section id="changelog" className="otp-guide-section">
-          <header><span><History size={21} /></span><div><h2>更新日志</h2><p>按时间节点查看最近功能。当前版本 {OTP_VAULT_VERSION}。</p></div></header>
-          <ol className="otp-guide-timeline otp-guide-changelog" aria-label="更新时间节点">
-            {changelog.map((entry, index) => <li className="otp-guide-timeline-node" key={entry.date}>
-              <span className="otp-guide-timeline-mark" aria-hidden="true" />
-              <article>
-                <header><time dateTime={entry.date}>{entry.date}</time>{index === 0 ? <small>版本 {OTP_VAULT_VERSION}</small> : null}<b>{entry.title}</b></header>
-                {entry.groups.map((group) => <section key={group.name}>
-                  <h3>{group.name}</h3>
-                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
-                </section>)}
-              </article>
-            </li>)}
-          </ol>
-        </section>
-
         <section id="quick-start" className="otp-guide-section">
           <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>先选择登录方式，再按顺序完成录入、使用和备份。</p></div></header>
           <div className="otp-guide-methods">{loginWays.map(([Icon, title, text]) => <section key={title}><Icon size={18} /><b>{title}</b><p>{text}</p></section>)}</div>
@@ -255,6 +239,22 @@ export default function OtpVaultGuidePage() {
             <details><summary>为什么提示已存在相同系统和账号？</summary><p>同一系统和账号可以重复添加。这是确认，不是拦截。确认后仍会保存，适合两台设备各自的验证码。</p></details>
             <details><summary>访问码链接第二次打开为什么会卡住？</summary><p>现在第二次打开会直接复用已有会话，不再停在“验证授权”。如果仍卡住，请硬刷新后再试。</p></details>
           </div>
+        </section>
+
+        <section id="changelog" className="otp-guide-section">
+          <header><span><History size={21} /></span><div><h2>更新日志</h2><p>按时间节点查看最近功能。当前版本 {OTP_VAULT_VERSION}。</p></div></header>
+          <ol className="otp-guide-timeline otp-guide-changelog" aria-label="更新时间节点">
+            {changelog.map((entry, index) => <li className="otp-guide-timeline-node" key={entry.date}>
+              <span className="otp-guide-timeline-mark" aria-hidden="true" />
+              <article>
+                <header><time dateTime={entry.date}>{entry.date}</time>{index === 0 ? <small>版本 {OTP_VAULT_VERSION}</small> : null}<b>{entry.title}</b></header>
+                {entry.groups.map((group) => <section key={group.name}>
+                  <h3>{group.name}</h3>
+                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>)}
+              </article>
+            </li>)}
+          </ol>
         </section>
       </article>
     </div>

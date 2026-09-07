@@ -31,6 +31,13 @@ export const DEFAULT_MESSAGE_CATEGORIES: MessageCategory[] = [
   { key: "SYSTEM", label: "系统" },
 ];
 
+export const NOTIF_PAGE_SIZE = 20;
+
+function contentTypeClass(contentType?: string) {
+  const type = (contentType || "text").toLowerCase();
+  return type === "html" ? "is-html" : type === "markdown" ? "is-md" : "is-text";
+}
+
 async function fetchMessages(request: MessageRequest, category: string): Promise<UserMessage[]> {
   const query = category ? `?category=${encodeURIComponent(category)}&limit=100` : "?limit=100";
   const result = await request<ListResult>(`${API_PATHS.message.root}${query}`);
@@ -133,7 +140,7 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
         </div>
         <button type="button" className="notif-icon-action notif-popup-close" title="关闭" aria-label="关闭" disabled={confirming} onClick={dismiss}><X size={15} /></button>
       </header>
-      <div className="notif-popup-body"><div className="notif-item-content notif-popup-content" dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
+      <div className="notif-popup-body"><div className={`notif-item-content notif-popup-content ${contentTypeClass(current.contentType)}`} dangerouslySetInnerHTML={{ __html: renderRichText(current.content, current.contentType) }} /></div>
       <footer>
         {confirmError ? <span className="notif-popup-error" role="alert">{confirmError}</span> : null}
         <button type="button" className="notif-popup-dismiss" disabled={confirming} onClick={dismiss}>下次再说</button>
@@ -148,17 +155,18 @@ export default function NotificationCenter({ request, open, onClose, categories 
 }) {
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
   const [messages, setMessages] = useState<UserMessage[]>([]);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<UserMessage | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => { if (open) { setActiveCategory(defaultCategory); setSelected(null); } }, [open, defaultCategory]);
+  useEffect(() => { if (open) { setActiveCategory(defaultCategory); setSelected(null); setPage(1); } }, [open, defaultCategory]);
   useEffect(() => {
     if (!open) return;
     let mounted = true;
     setLoading(true); setError("");
     fetchMessages(request, activeCategory)
-      .then((rows) => { if (mounted) setMessages(rows); })
+      .then((rows) => { if (mounted) { setMessages(rows); setPage(1); } })
       .catch((cause) => { if (mounted) setError(cause instanceof Error ? cause.message : "通知加载失败"); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
@@ -171,6 +179,9 @@ export default function NotificationCenter({ request, open, onClose, categories 
   }, [open, onClose, selected]);
 
   const unreadTotal = useMemo(() => messages.filter((item) => !item.isRead).length, [messages]);
+  const pageCount = Math.max(1, Math.ceil(messages.length / NOTIF_PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageItems = messages.slice((safePage - 1) * NOTIF_PAGE_SIZE, safePage * NOTIF_PAGE_SIZE);
 
   const markRead = useCallback(async (id: number, silent = true) => {
     try {
@@ -231,7 +242,7 @@ export default function NotificationCenter({ request, open, onClose, categories 
           <small className="notif-detail-time">{formatTime(selected.createTime)}</small>
         </span>
         <h3>{selected.title}</h3>
-        {selected.content ? <div className="notif-item-content" dangerouslySetInnerHTML={{ __html: renderRichText(selected.content, selected.contentType) }} /> : <p className="notif-detail-empty">没有正文内容</p>}
+        {selected.content ? <div className={`notif-item-content ${contentTypeClass(selected.contentType)}`} dangerouslySetInnerHTML={{ __html: renderRichText(selected.content, selected.contentType) }} /> : <p className="notif-detail-empty">没有正文内容</p>}
       </div>
       : <>
         <div className="notif-tabs" role="tablist">
@@ -246,7 +257,7 @@ export default function NotificationCenter({ request, open, onClose, categories 
           {loading ? <div className="notif-state"><LoaderCircle className="spin" size={18} />正在加载</div>
             : error ? <div className="notif-state notif-error">{error}</div>
             : !messages.length ? <div className="notif-state"><Inbox size={24} /><b>暂无通知</b><small>安全提醒和系统通知会出现在这里</small></div>
-            : messages.map((message) => (
+            : pageItems.map((message) => (
               <article key={message.id} className={`notif-item${message.isRead ? "" : " is-unread"}`}>
                 <button type="button" className="notif-item-main" onClick={() => openDetail(message)}>
                   <span className="notif-item-top">
@@ -263,6 +274,11 @@ export default function NotificationCenter({ request, open, onClose, categories 
               </article>
             ))}
         </div>
+        {messages.length > NOTIF_PAGE_SIZE ? <nav className="notif-pager" aria-label="通知分页">
+          <button type="button" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>上一页</button>
+          <span>{safePage} / {pageCount}</span>
+          <button type="button" disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)}>下一页</button>
+        </nav> : null}
       </>}
     </section>
   </div>;
