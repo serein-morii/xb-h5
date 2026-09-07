@@ -1,12 +1,14 @@
 import {
-  AlertTriangle, ArrowRight, BookOpen, Check, Clock3, Copy, Download, Fingerprint,
+  AlertTriangle, ArrowRight, BookOpen, Check, Clock3, Copy, Download, Fingerprint, History,
   KeyRound, Layers3, Link2, LockKeyhole, Mail, QrCode, ScanLine, Settings2, ShieldCheck, Smartphone, User, UserCheck,
 } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
+import { OTP_VAULT_VERSION } from "./otpVersion";
 import "./otp-guide.css";
 
 const navigation = [
   ["overview", "功能总览"],
+  ["changelog", "更新日志"],
   ["quick-start", "快速开始"],
   ["add", "添加凭据"],
   ["use", "查看和使用"],
@@ -44,11 +46,61 @@ const featureHighlights = [
   [Smartphone, "适配手机操作", "输入、反馈和内容布局均针对窄屏进行调整"],
 ] as const;
 
+const changelog = [
+  {
+    date: "2026-09-07",
+    title: "凭据、设置和授权体验",
+    groups: [
+      {
+        name: "凭据和设置",
+        items: [
+          "同一系统和账号可以重复添加，例如两台设备各自的验证码；保存前会确认",
+          "“我的”页改为统一设置：上面是账号与安全，下面是外观和显示",
+        ],
+      },
+      {
+        name: "授权",
+        items: [
+          "回到保险库时，如果剪贴板里是授权链接，会询问是否转存；空剪贴板或普通文字不会弹出",
+          "带访问码的链接第二次打开会直接进入内容，不再卡在验证授权",
+        ],
+      },
+    ],
+  },
+  {
+    date: "2026-09-06",
+    title: "授权转存和日常使用",
+    groups: [
+      {
+        name: "日常使用",
+        items: [
+          "登录页和保险库会提示添加到桌面，之后可以像 App 一样打开",
+          "设备时间偏差较大时会提示打开自动时间，避免验证码一直错",
+          "复制验证码约 30 秒后会清空剪贴板；已经贴走或剪贴板被改过时不会误清",
+          "启用离线应急后，登录以及增删改凭据会自动更新本机副本",
+        ],
+      },
+      {
+        name: "授权和转存",
+        items: [
+          "授权页分成“我发出的”和“我收到的”",
+          "单次最多授权 50 条凭据",
+          "登录后可以把别人的分享链接转存到“我收到的”，不转存也能继续打开原链接",
+          "已转存过的链接会提示无需再次转存",
+          "分享者可以在转存列表里移除或禁止某人；移除后对方可再转并存会收到通知，禁止后不能再转且不通知",
+          "创建授权时可以一键禁止所有人转存",
+          "分享者修改、撤销或删除授权时，已转存的人会收到通知",
+        ],
+      },
+    ],
+  },
+] as const;
+
 export default function OtpVaultGuidePage() {
   return <main className="otp-guide-page">
     <header className="otp-guide-header">
       <a className="otp-guide-brand" href={APP_ROUTES.otp}><span><KeyRound size={20} /></span><div><b>OTP Vault</b><small>使用指南</small></div></a>
-      <nav aria-label="指南快捷导航"><a href="#quick-start">开始</a><a href="#share">分享</a><a href="#security">备份</a><a href="#faq">排查</a></nav>
+      <nav aria-label="指南快捷导航"><a href="#changelog">更新</a><a href="#quick-start">开始</a><a href="#share">分享</a><a href="#faq">排查</a></nav>
       <a className="otp-guide-open" href={APP_ROUTES.otp}>打开保险库<ArrowRight size={15} /></a>
     </header>
 
@@ -89,12 +141,29 @@ export default function OtpVaultGuidePage() {
           <div className="otp-guide-features">{featureHighlights.map(([Icon, title, text]) => <section key={title}><span><Icon size={18} /></span><div><b>{title}</b><p>{text}</p></div></section>)}</div>
         </section>
 
+        <section id="changelog" className="otp-guide-section">
+          <header><span><History size={21} /></span><div><h2>更新日志</h2><p>按时间节点查看最近功能。当前版本 {OTP_VAULT_VERSION}。</p></div></header>
+          <ol className="otp-guide-timeline otp-guide-changelog" aria-label="更新时间节点">
+            {changelog.map((entry, index) => <li className="otp-guide-timeline-node" key={entry.date}>
+              <span className="otp-guide-timeline-mark" aria-hidden="true" />
+              <article>
+                <header><time dateTime={entry.date}>{entry.date}</time>{index === 0 ? <small>版本 {OTP_VAULT_VERSION}</small> : null}<b>{entry.title}</b></header>
+                {entry.groups.map((group) => <section key={group.name}>
+                  <h3>{group.name}</h3>
+                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>)}
+              </article>
+            </li>)}
+          </ol>
+        </section>
+
         <section id="quick-start" className="otp-guide-section">
           <header><span><Smartphone size={21} /></span><div><h2>快速开始</h2><p>先选择登录方式，再按顺序完成录入、使用和备份。</p></div></header>
           <div className="otp-guide-methods">{loginWays.map(([Icon, title, text]) => <section key={title}><Icon size={18} /><b>{title}</b><p>{text}</p></section>)}</div>
           <ol className="otp-guide-steps">{quickSteps.map(([Icon, title, text], index) => <li key={title}><span>{index + 1}</span><Icon size={20} /><div><b>{title}</b><p>{text}</p></div></li>)}</ol>
           <div className="otp-guide-copy-block"><b>邮箱还没有注册</b><p>验证码校验完成后，页面会询问是否创建账号。确认后会保留邮箱，并转到注册流程重新获取注册验证码。</p></div>
-          <div className="otp-guide-note"><Clock3 size={17} /><p><b>先校准设备时间</b>动态验证码依赖准确时间。请开启系统的自动日期、自动时间和自动时区。“保持登录 15 天”只建议在自己的设备上开启。</p></div>
+          <div className="otp-guide-copy-block"><b>添加到桌面</b><p>登录页和保险库会出现安装提示。Chrome 可直接点“安装”；苹果浏览器按系统版本从分享菜单选择“添加到桌面”。已经是独立窗口，或关掉过提示，就不会再出现。</p></div>
+          <div className="otp-guide-note"><Clock3 size={17} /><p><b>先校准设备时间</b>打开保险库会和服务器对时。偏差达到约 2 秒会提示“请打开自动时间”。请开启系统的自动日期、自动时间和自动时区。“保持登录 15 天”只建议在自己的设备上开启。</p></div>
         </section>
 
         <section id="add" className="otp-guide-section">
@@ -107,6 +176,8 @@ export default function OtpVaultGuidePage() {
               <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。</p>
               <h3>导入文本</h3>
               <p>如果已有包含 <code>otpauth://</code> 地址的文本，可在首页点击“导入”。导入前先确认文件来源可信。</p>
+              <h3>重复添加</h3>
+              <p>同一系统和账号可以重复添加，例如两台设备各自的验证码。保存或批量导入时如果已经有相同系统和账号，会先确认，确认后仍可保存。</p>
             </div>
             <figure className="otp-guide-scan-visual">
               <div className="otp-guide-scan-frame"><span /><QrCode size={58} /><span /></div>
@@ -129,7 +200,7 @@ export default function OtpVaultGuidePage() {
             </figure>
             <div className="otp-guide-copy">
               <h3>日常使用</h3>
-              <ul><li>点击复制按钮，将当前验证码粘贴到登录页面。</li><li>点击卡片查看账号、密码、登录地址和备注。</li><li>常用凭据可以收藏；系统较多时开启按系统分组。</li><li>紧凑模式适合电脑大屏或凭据数量较多的场景。</li></ul>
+              <ul><li>点击复制按钮，将当前验证码粘贴到登录页面。约 30 秒后会清空剪贴板；已经贴走或剪贴板被改过时不会误清。</li><li>点击卡片查看账号、密码、登录地址和备注。</li><li>常用凭据可以收藏；系统较多时开启按系统分组。</li><li>紧凑模式适合电脑大屏或凭据数量较多的场景。</li><li>显示和排序开关在“我的”页的“外观和显示”里。</li></ul>
               <h3>验证码不正确</h3>
               <p>先检查设备时间和时区，再核对 Secret、算法、位数和周期。HOTP 还要确保计数器与服务方一致。</p>
             </div>
@@ -144,9 +215,12 @@ export default function OtpVaultGuidePage() {
           </div>
           <div className="otp-guide-share-types">
             <section><span><Link2 size={20} /></span><h3>链接分享</h3><p>接收方无需登录。可以设置访问码、有效期、一次性访问和最大访问次数。</p><small>建议通过不同渠道分别发送链接和访问码。</small></section>
-            <section><span><UserCheck size={20} /></span><h3>指定用户</h3><p>搜索接收账号，对方登录后会在“全部”中看到共享凭据。</p><small>最高敏感等级的凭据只能使用此方式。</small></section>
+            <section><span><UserCheck size={20} /></span><h3>指定用户</h3><p>搜索接收账号，对方登录后会在“全部”和“我收到的”中看到共享凭据。</p><small>最高敏感等级的凭据只能使用此方式。</small></section>
           </div>
           <div className="otp-guide-copy-block"><b>给授权起个名字</b><p>创建时可填写授权名称，例如“给同事的临时访问”。不填时默认为“临时凭据授权”。名称会出现在你的授权列表、对方打开的授权页，以及复制出来的分享文案第一行。</p></div>
+          <div className="otp-guide-copy-block"><b>我发出的和我收到的</b><p>授权页分成两个标签。“我发出的”是你创建的授权，可以编辑、撤销和查看转存列表；“我收到的”是别人指定给你的授权，以及你从链接转存进来的。单次最多选择 50 条凭据。</p></div>
+          <div className="otp-guide-copy-block"><b>转存到我收到的</b><p>登录后打开别人的分享链接，可以转存到自己的“我收到的”。不转存也能继续查看原链接。已经转存过会提示无需再次转存。回到保险库时，如果剪贴板里正好是授权链接，也会询问是否转存；空剪贴板或普通文字不会弹出。</p></div>
+          <div className="otp-guide-copy-block"><b>转存列表</b><p>链接分享的详情里可以看到谁转存了。移除后对方可再转存，并会收到通知；禁止后对方不能自行转存，且不会通知。创建授权时也可以打开“禁止转存”，一键禁止所有人。分享者修改、撤销或删除授权时，已转存的人同样会收到通知。</p></div>
           <div className="otp-guide-anatomy" aria-label="分享文案包含的字段">
             <b>复制按钮会带出这些信息</b>
             <ol>{shareParts.map(([title, text]) => <li key={title}><span>{title}</span><small>{text}</small></li>)}</ol>
@@ -161,7 +235,7 @@ export default function OtpVaultGuidePage() {
             <section><Fingerprint size={22} /><h3>敏感操作验证</h3><p>默认关闭。开启后可用邮箱、密码或 Passkey 验证；更新登录密码也支持 Passkey。</p></section>
             <section><LockKeyhole size={22} /><h3>零知识保护</h3><p>敏感字段在浏览器加密。忘记保护密码无法恢复，并且零知识凭据不能创建服务器分享快照。</p></section>
             <section><Download size={22} /><h3>加密备份</h3><p>下载 .xbvault 文件，将文件和恢复密码分开保存。恢复前可以先校验和预览内容。</p></section>
-            <section><Smartphone size={22} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。凭据发生变化后需要重新更新离线副本。</p></section>
+            <section><Smartphone size={22} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。启用后，登录以及增删改、导入凭据会自动更新本机副本。</p></section>
           </div>
           <div className="otp-guide-backup-flow"><span><Download size={17} />下载备份</span><ArrowRight size={15} /><span><LockKeyhole size={17} />分开保管密码</span><ArrowRight size={15} /><span><ShieldCheck size={17} />新设备校验恢复</span></div>
           <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“安全”里可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。</p></div>
@@ -178,6 +252,8 @@ export default function OtpVaultGuidePage() {
             <details><summary>更换手机怎么迁移？</summary><p>在旧设备创建 .xbvault 加密备份，在新设备登录后校验并恢复。也可以生成迁移二维码导入兼容应用。</p></details>
             <details><summary>没有原密码还能修改登录密码吗？</summary><p>可以使用绑定邮箱验证码，或选择已绑定的 Passkey，通过指纹、面容或设备 PIN 验证后修改。</p></details>
             <details><summary>发现陌生设备或来源 IP 怎么办？</summary><p>立即在“安全”中撤销设备、退出其他会话并修改登录密码，同时检查最近安全活动。</p></details>
+            <details><summary>为什么提示已存在相同系统和账号？</summary><p>同一系统和账号可以重复添加。这是确认，不是拦截。确认后仍会保存，适合两台设备各自的验证码。</p></details>
+            <details><summary>访问码链接第二次打开为什么会卡住？</summary><p>现在第二次打开会直接复用已有会话，不再停在“验证授权”。如果仍卡住，请硬刷新后再试。</p></details>
           </div>
         </section>
       </article>

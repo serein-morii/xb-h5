@@ -30,7 +30,7 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(workspace, /placeholder="例如 给同事的临时访问，不填则为临时凭据授权"/);
   assert.match(workspace, /给这次授权起个名字/);
   assert.match(share, /status\?\.name \|\| "临时凭据授权"/);
-  for (const id of ["quick-start", "add", "use", "share", "security", "faq"]) assert.match(guide, new RegExp(`id="${id}"`));
+  for (const id of ["quick-start", "add", "use", "share", "security", "faq", "changelog"]) assert.match(guide, new RegExp(`id="${id}"`));
   assert.match(guide, /授权名称/);
   assert.match(guide, /给同事的临时访问/);
   assert.match(guide, /验证码一直不正确/);
@@ -39,6 +39,19 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(guide, /otp-guide-methods/);
   assert.match(guide, /从添加第一条凭据开始/);
   assert.match(guide, /邮箱还没有注册/);
+  assert.match(guide, /更新日志/);
+  assert.match(guide, /我发出的/);
+  assert.match(guide, /我收到的/);
+  assert.match(guide, /转存/);
+  assert.match(guide, /添加到桌面/);
+  assert.match(guide, /同一系统和账号可以重复添加/);
+  assert.match(guide, /OTP_VAULT_VERSION/);
+  assert.match(guide, /otp-guide-timeline/);
+  assert.match(guide, /aria-label="更新时间节点"/);
+  assert.match(guide, /2026-09-06/);
+  assert.match(guide, /otp-guide-changelog/);
+  assert.match(styles, /\.otp-guide-timeline/);
+  assert.match(styles, /\.otp-guide-timeline-node/);
   assert.doesNotMatch(guide, /无需登录即可阅读|公开指南/);
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
   assert.doesNotMatch(guide, /dCOxR|W9KKQR/);

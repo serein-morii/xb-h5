@@ -696,6 +696,7 @@ html.theme-dark {
 .vault-account-link.is-danger:hover { background: #fdf2f4; }
 .vault-account-link.is-danger b { color: #c22f47; }
 .vault-account-link .vault-setting-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-version-row { text-decoration: none; }
 .vault-import-choice-modal { width: min(440px,100%); }
 .vault-import-choice-list { display: grid; gap: 8px; }
 .vault-import-choice-list > button { width: 100%; min-height: 66px; padding: 10px 11px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 11px; border: 1px solid var(--utility-line); border-radius: 14px; background: color-mix(in srgb,var(--utility-paper) 76%,var(--utility-bg)); color: var(--utility-text); font: inherit; text-align: left; cursor: pointer; transition: border-color .15s,background .15s; }

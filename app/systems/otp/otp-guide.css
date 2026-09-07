@@ -165,6 +165,24 @@
 .otp-guide-security-grid h3 { margin-top: 10px; }
 .otp-guide-security-grid p { margin-top: 6px; color: var(--guide-muted); font-size: 13px; line-height: 1.7; }
 .otp-guide-backup-flow { margin-top: 12px; grid-template-columns: 1fr auto 1fr auto 1fr; }
+.otp-guide-changelog { display: grid; gap: 18px; }
+.otp-guide-timeline { margin: 0; padding: 2px 0 0; list-style: none; gap: 0; }
+.otp-guide-timeline-node { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 14px; padding-bottom: 22px; }
+.otp-guide-timeline-node:last-child { padding-bottom: 0; }
+.otp-guide-timeline-node::before { content: ""; position: absolute; left: 7px; top: 18px; bottom: 0; width: 2px; background: #d7dced; }
+.otp-guide-timeline-node:last-child::before { display: none; }
+.otp-guide-timeline-mark { position: relative; z-index: 1; width: 12px; height: 12px; margin-top: 6px; border-radius: 50%; background: var(--guide-accent); box-shadow: 0 0 0 4px var(--guide-accent-soft); }
+.otp-guide-timeline-node > article { padding: 16px 18px; border: 1px solid var(--guide-line); border-radius: 16px; background: #f7f8fc; }
+.otp-guide-changelog > article { padding: 16px 18px; border: 1px solid var(--guide-line); border-radius: 16px; background: #f7f8fc; }
+.otp-guide-changelog > article > header, .otp-guide-timeline-node > article > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px; margin-bottom: 12px; }
+.otp-guide-changelog time { color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+.otp-guide-timeline-node > article > header small { padding: 2px 8px; border-radius: 999px; background: var(--guide-accent-soft); color: var(--guide-accent); font-size: 11px; font-weight: 800; }
+.otp-guide-changelog > article > header b, .otp-guide-timeline-node > article > header b { flex: 1 1 100%; font-size: 14px; }
+.otp-guide-changelog section + section { margin-top: 12px; }
+.otp-guide-changelog h3 { margin: 0 0 6px; font-size: 13px; }
+.otp-guide-changelog ul { margin: 0; padding-left: 18px; }
+.otp-guide-changelog ul li { color: var(--guide-muted); font-size: 13px; line-height: 1.7; }
+.otp-guide-changelog ul li + li { margin-top: 4px; }
 .otp-guide-faq { display: grid; gap: 8px; }
 .otp-guide-faq details { border: 1px solid var(--guide-line); border-radius: 12px; background: #fafbfe; }
 .otp-guide-faq summary { padding: 14px 16px; color: var(--guide-ink); font-size: 13px; font-weight: 750; cursor: pointer; }
@@ -178,7 +196,8 @@ html.theme-dark .otp-guide-page { --guide-accent: #8d9cff; --guide-accent-soft: 
 html.theme-dark .otp-guide-header { background: rgba(16,22,33,.97); }
 html.theme-dark .otp-guide-summary span { color: #aeb7ca; }
 html.theme-dark .otp-guide-route > span, html.theme-dark .otp-guide-steps li, html.theme-dark .otp-guide-scan-visual, html.theme-dark .otp-guide-code-card, html.theme-dark .otp-guide-share-flow, html.theme-dark .otp-guide-backup-flow, html.theme-dark .otp-guide-security-grid section, html.theme-dark .otp-guide-methods section { background: #121a28; }
-html.theme-dark .otp-guide-share-flow span, html.theme-dark .otp-guide-backup-flow span, html.theme-dark .otp-guide-faq details, html.theme-dark .otp-guide-copy-block, html.theme-dark .otp-guide-anatomy { background: #1b2332; }
+html.theme-dark .otp-guide-share-flow span, html.theme-dark .otp-guide-backup-flow span, html.theme-dark .otp-guide-faq details, html.theme-dark .otp-guide-copy-block, html.theme-dark .otp-guide-anatomy, html.theme-dark .otp-guide-changelog > article, html.theme-dark .otp-guide-timeline-node > article { background: #1b2332; }
+html.theme-dark .otp-guide-timeline-node::before { background: #364158; }
 html.theme-dark .otp-guide-anatomy li { background: #171e2c; }
 html.theme-dark .otp-guide-scan-frame { background: #202a42; }
 html.theme-dark .otp-guide-scan-result { color: #8ed1a7; background: #193325; }
@@ -252,6 +271,9 @@ html.theme-dark .otp-guide-lifecycle-branches { border-color: #364158; }
   .otp-guide-security-grid section { padding: 16px; }
   .otp-guide-faq summary { padding: 15px 14px; line-height: 1.5; }
   .otp-guide-faq details p { padding: 0 14px 15px; line-height: 1.7; }
+  .otp-guide-timeline-node { grid-template-columns: 12px 1fr; gap: 10px; padding-bottom: 16px; }
+  .otp-guide-timeline-node::before { left: 5px; }
+  .otp-guide-timeline-node > article { padding: 14px 14px; }
   .otp-guide-footer { min-height: 88px; padding: 16px 14px; align-items: flex-start; flex-direction: column; }
 }
 

@@ -73,10 +73,14 @@ test("otp settings page groups account security and appearance in one panel", as
   assert.match(workspace, /vault-settings-stack/);
   assert.match(workspace, /账号与安全/);
   assert.match(workspace, /外观和显示/);
+  assert.match(workspace, /OTP_VAULT_VERSION/);
+  assert.match(workspace, /vault-version-row/);
+  assert.match(workspace, /<b>版本<\/b>/);
   assert.doesNotMatch(workspace, /<b>外观<\/b>/);
   assert.doesNotMatch(workspace, /<b>界面显示<\/b>/);
   assert.match(styles, /\.vault-settings-stack/);
   assert.match(styles, /\.vault-settings-block-title/);
+  assert.match(styles, /\.vault-version-row/);
 });
 
 test("order admin exposes notification center from menu sheet and branded login", async () => {

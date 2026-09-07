@@ -13,6 +13,7 @@ import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCo
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, duplicateImportCount, findSameAccountCredential, measureClockDriftMs, shouldConfirmDuplicateAdd, shouldWarnClockDrift } from "./otpDailyUse";
 import { PENDING_SAVE_KEY, SHARE_ITEM_LIMIT, clipboardReadBlocked, matchesCredentialTab, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shouldOfferClipboardShare, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
+import { OTP_VAULT_VERSION } from "./otpVersion";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
 import "./otp-vault.css";
@@ -978,6 +979,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
           {([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet'], ['defaultFavorites', Star, '默认显示收藏', '打开后进入凭据页默认只看收藏，关闭则显示全部', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}
           <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>
+        </section>
+        <section className="vault-settings-block">
+          <header className="vault-settings-block-title"><b>关于</b></header>
+          <a className="vault-account-link vault-version-row" href={APP_ROUTES.otpGuide}><span className="vault-setting-icon is-blue"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>版本</b><small>{OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></a>
         </section>
       </div>
     </section> : null}
