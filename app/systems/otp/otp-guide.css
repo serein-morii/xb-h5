@@ -182,99 +182,165 @@
 
 .otp-guide-flow {
   width: 100%;
-  padding: 12px 12px 4px;
+  padding: 14px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  isolation: isolate;
   border: 1px solid var(--guide-line);
-  border-radius: 12px;
-  background: #fbfcff;
+  border-radius: 14px;
+  background: #f6f7fc;
 }
 .otp-guide-flow-caption {
-  margin: 0 0 10px;
+  align-self: stretch;
+  margin: 0 0 12px;
   color: var(--guide-accent);
   font-size: 11px;
   font-weight: 800;
 }
-.otp-guide-flow-item {
-  position: relative;
-  padding: 0 0 14px 22px;
-}
-.otp-guide-flow-item:last-child { padding-bottom: 8px; }
-.otp-guide-flow-item::before {
-  content: "";
-  position: absolute;
-  left: 5px;
-  top: 14px;
-  bottom: 0;
-  width: 2px;
-  background: #d8def2;
-}
-.otp-guide-flow-item:last-child::before { display: none; }
-.otp-guide-flow-item::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--guide-accent);
-  border-radius: 50%;
+.otp-guide-flow-node {
+  width: min(250px, 100%);
+  padding: 10px 12px;
+  border: 1.5px solid #b4bde4;
+  border-radius: 10px;
   background: #fff;
-}
-.otp-guide-flow-item.is-start::after { background: var(--guide-accent); }
-.otp-guide-flow-item.is-end::after { background: #3f8a63; border-color: #3f8a63; }
-.otp-guide-flow-item.is-choice::after {
-  left: 1px;
-  top: 5px;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  transform: rotate(45deg);
-  background: var(--guide-accent-soft);
-}
-.otp-guide-flow-item > b {
-  display: block;
   color: var(--guide-ink);
   font-size: 13px;
-  font-weight: 700;
-  line-height: 1.45;
-}
-.otp-guide-prose .otp-guide-flow p,
-.otp-guide-flow-item > p {
-  margin: 3px 0 0;
-  color: var(--guide-muted);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.5;
-}
-.otp-guide-flow-branches {
-  margin-top: 8px;
-  display: grid;
-  gap: 6px;
-}
-.otp-guide-flow-branches span {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--guide-line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--guide-ink);
-  font-size: 12px;
   font-weight: 650;
   line-height: 1.45;
-}
-.otp-guide-flow-branches em {
-  flex: none;
-  min-width: 44px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: var(--guide-accent-soft);
-  color: var(--guide-accent);
-  font-style: normal;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 16px;
   text-align: center;
+  overflow-wrap: anywhere;
+}
+.otp-guide-flow-node.is-start,
+.otp-guide-flow-node.is-end {
+  width: auto;
+  min-width: 92px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border-color: transparent;
+  color: #fff;
+  font-weight: 750;
+}
+.otp-guide-flow-node.is-start { background: var(--guide-accent); }
+.otp-guide-flow-node.is-end { background: #2f8a5b; }
+.otp-guide-flow-node b { display: block; font-size: 13px; }
+.otp-guide-prose .otp-guide-flow p,
+.otp-guide-flow-node p {
+  margin: 4px 0 0;
+  color: var(--guide-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.otp-guide-flow-arrow {
+  display: block;
+  width: 2px;
+  height: 18px;
+  background: #8d9ae0;
+  position: relative;
+}
+.otp-guide-flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  border: 5px solid transparent;
+  border-top-color: #8d9ae0;
+  border-bottom-width: 0;
+  transform: translate(-50%, 50%);
+}
+.otp-guide-flow-choice {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.otp-guide-flow-diamond {
+  width: 118px;
+  height: 118px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.otp-guide-flow-diamond::before {
+  content: "";
+  position: absolute;
+  width: 82px;
+  height: 82px;
+  border: 1.5px solid #7b8ad4;
+  border-radius: 8px;
+  background: #eef0fb;
+  transform: rotate(45deg);
+}
+.otp-guide-flow-diamond span {
+  position: relative;
+  z-index: 1;
+  max-width: 76px;
+  text-align: center;
+  color: #3d4db0;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+.otp-guide-flow-fork {
+  width: min(320px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  color: #8d9ae0;
+}
+.otp-guide-flow-fork svg {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 16px;
+  display: block;
+}
+.otp-guide-flow-fork path,
+.otp-guide-flow-merge path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.otp-guide-flow-fork > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.otp-guide-flow-fork small {
+  color: var(--guide-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+.otp-guide-flow-fork .otp-guide-flow-node {
+  width: 100%;
+  padding: 8px 8px;
+  font-size: 12px;
+}
+.otp-guide-flow-merge {
+  display: block;
+  width: min(320px, 100%);
+  height: 22px;
+  color: #8d9ae0;
+  position: relative;
+}
+.otp-guide-flow-merge svg {
+  display: block;
+  width: 100%;
+  height: 22px;
+}
+.otp-guide-flow-merge::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  border: 5px solid transparent;
+  border-top-color: #8d9ae0;
+  border-bottom-width: 0;
+  transform: translate(-50%, 40%);
 }
 
 .otp-changelog-doc {
@@ -375,12 +441,17 @@ html.theme-dark .otp-guide-faq details,
 html.theme-dark .otp-guide-flow { background: #171e2c; }
 html.theme-dark .otp-guide-anatomy li { background: #121a28; }
 html.theme-dark .otp-guide-callout { color: #e6b86b; background: #33291c; }
-html.theme-dark .otp-guide-flow-item::after { background: #171e2c; }
-html.theme-dark .otp-guide-flow-item.is-start::after { background: var(--guide-accent); }
-html.theme-dark .otp-guide-flow-item.is-end::after { background: #3f8a63; }
-html.theme-dark .otp-guide-flow-item.is-choice::after { background: #222c4c; }
-html.theme-dark .otp-guide-flow-item::before { background: #2b3447; }
-html.theme-dark .otp-guide-flow-branches span { background: #121a28; border-color: #2b3447; }
+html.theme-dark .otp-guide-flow-node { background: #121a28; border-color: #3a4660; }
+html.theme-dark .otp-guide-flow-node.is-start { background: var(--guide-accent); border-color: transparent; color: #fff; }
+html.theme-dark .otp-guide-flow-node.is-end { background: #2f8a5b; border-color: transparent; color: #fff; }
+html.theme-dark .otp-guide-flow-diamond::before { background: #222c4c; border-color: #6e7cdb; }
+html.theme-dark .otp-guide-flow-diamond span { color: #b7c2ff; }
+html.theme-dark .otp-guide-flow-arrow,
+html.theme-dark .otp-guide-flow-fork,
+html.theme-dark .otp-guide-flow-merge { color: #6e7cdb; }
+html.theme-dark .otp-guide-flow-arrow { background: #6e7cdb; }
+html.theme-dark .otp-guide-flow-arrow::after,
+html.theme-dark .otp-guide-flow-merge::after { border-top-color: #6e7cdb; }
 html.theme-dark .otp-guide-toc nav { background: rgba(23, 30, 44, .96); }
 html.theme-dark .otp-changelog-timeline::before { background: #2b3447; }
 html.theme-dark .otp-changelog-entry::before { background: #171e2c; box-shadow: 0 0 0 3px #101621; }
@@ -465,13 +536,18 @@ html.theme-dark .otp-changelog-entry li { color: #9ba5b9; }
   .otp-guide-faq summary { padding: 8px 0; font-size: 12px; }
   .otp-guide-faq details p { padding: 0 0 8px; font-size: 12px; line-height: 1.5; }
 
-  .otp-guide-flow { padding: 10px 10px 2px; }
+  .otp-guide-flow { padding: 12px 8px 14px; }
   .otp-guide-flow-caption { font-size: 10px; }
-  .otp-guide-flow-item { padding: 0 0 12px 20px; }
-  .otp-guide-flow-item > b { font-size: 12px; }
+  .otp-guide-flow-node { width: min(100%, 260px); padding: 9px 10px; font-size: 12px; }
+  .otp-guide-flow-node b { font-size: 12px; }
   .otp-guide-prose .otp-guide-flow p,
-  .otp-guide-flow-item > p { font-size: 11px; }
-  .otp-guide-flow-branches span { padding: 7px 8px; font-size: 11px; }
+  .otp-guide-flow-node p { font-size: 11px; }
+  .otp-guide-flow-diamond { width: 108px; height: 108px; }
+  .otp-guide-flow-diamond::before { width: 74px; height: 74px; }
+  .otp-guide-flow-diamond span { max-width: 70px; font-size: 11px; }
+  .otp-guide-flow-fork { width: 100%; gap: 6px 8px; }
+  .otp-guide-flow-fork .otp-guide-flow-node { padding: 8px 7px; font-size: 11px; }
+  .otp-guide-flow-merge { width: 100%; }
 
   .otp-changelog-doc { width: 100%; padding: 10px 12px 40px; }
   .otp-changelog-lead { font-size: 12px; }

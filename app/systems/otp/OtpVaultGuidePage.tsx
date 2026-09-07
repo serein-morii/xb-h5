@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, Check, Clock3, Download, Fingerprint,
   Link2, List, LockKeyhole, Mail, Settings2, Smartphone, UserCheck, X,
@@ -34,15 +34,25 @@ type FlowNode =
   | { type: "choice"; text: string; yes: string; no: string; yesLabel?: string; noLabel?: string };
 
 function GuideFlow({ label, nodes }: { label: string; nodes: FlowNode[] }) {
-  return <div className="otp-guide-flow" role="group" aria-label={label}>
+  return <div className="otp-guide-flow" role="img" aria-label={label}>
     <div className="otp-guide-flow-caption">{label}</div>
-    {nodes.map((node, index) => <div className={`otp-guide-flow-item is-${node.type}${node.type === "choice" ? " otp-guide-flow-choice" : ""}`} key={`${label}-${index}`}>
-      <b>{node.text}</b>
-      {node.type === "choice" ? <div className="otp-guide-flow-branches">
-        <span><em>{node.yesLabel || "是"}</em>{node.yes}</span>
-        <span><em>{node.noLabel || "否"}</em>{node.no}</span>
-      </div> : node.note ? <p>{node.note}</p> : null}
-    </div>)}
+    {nodes.map((node, index) => <Fragment key={`${label}-${index}`}>
+      {index ? nodes[index - 1].type === "choice"
+        ? <i className="otp-guide-flow-merge" aria-hidden="true"><svg viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M25 0 V8 H50 V20 M75 0 V8 H50" /></svg></i>
+        : <i className="otp-guide-flow-arrow" aria-hidden="true" />
+      : null}
+      {node.type === "choice" ? <div className="otp-guide-flow-choice">
+        <div className="otp-guide-flow-diamond"><span>{node.text}</span></div>
+        <i className="otp-guide-flow-arrow" aria-hidden="true" />
+        <div className="otp-guide-flow-fork">
+          <svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 V8 H25 V16 M50 8 H75 V16" /></svg>
+          <div><small>{node.yesLabel || "是"}</small><div className="otp-guide-flow-node">{node.yes}</div></div>
+          <div><small>{node.noLabel || "否"}</small><div className="otp-guide-flow-node">{node.no}</div></div>
+        </div>
+      </div> : <div className={`otp-guide-flow-node is-${node.type}`}>
+        {node.note ? <><b>{node.text}</b><p>{node.note}</p></> : node.text}
+      </div>}
+    </Fragment>)}
   </div>;
 }
 
@@ -85,14 +95,14 @@ export default function OtpVaultGuidePage() {
             { type: "step", text: "登录或注册", note: "邮箱验证码、账号密码或 Passkey" },
             { type: "step", text: "点顶部加号添加凭据" },
             { type: "step", text: "复制验证码去登录" },
-            { type: "choice", text: "要给别人用吗", yes: "创建临时授权", no: "只自己用" },
+            { type: "choice", text: "要分享吗", yes: "创建临时授权", no: "只自己用" },
             { type: "step", text: "下载加密备份" },
             { type: "end", text: "可以日常使用" },
           ]} />
           <div className="otp-guide-copy-block"><b>邮箱还没有注册</b><p>验证码校验完成后，页面会询问是否创建账号。确认后会保留邮箱，并转到注册流程重新获取注册验证码。</p></div>
           <GuideFlow label="添加到桌面" nodes={[
             { type: "start", text: "打开登录页或保险库" },
-            { type: "choice", text: "出现安装提示", yes: "按提示安装", no: "已经是独立窗口或关过" },
+            { type: "choice", text: "有安装提示", yes: "按提示安装", no: "已是独立窗口或关过" },
             { type: "step", text: "Chrome 点安装；苹果从分享菜单选添加到桌面" },
             { type: "end", text: "之后像 App 打开" },
           ]} />
@@ -107,7 +117,7 @@ export default function OtpVaultGuidePage() {
             { type: "start", text: "进入全部" },
             { type: "step", text: "点顶部加号" },
             { type: "choice", text: "有二维码吗", yes: "允许相机并扫描", no: "手动填或导入文本", yesLabel: "有", noLabel: "没有" },
-            { type: "choice", text: "已有相同系统和账号", yes: "确认后仍保存", no: "直接保存" },
+            { type: "choice", text: "账号已存在", yes: "确认后仍保存", no: "直接保存" },
             { type: "end", text: "首页出现卡片" },
           ]} />
           <h3>扫描二维码</h3>
@@ -155,7 +165,7 @@ export default function OtpVaultGuidePage() {
             { type: "start", text: "从卡片或授权页进入" },
             { type: "step", text: "勾选凭据", note: "单次最多 50 条" },
             { type: "step", text: "填写授权名称", note: "不填则为临时凭据授权" },
-            { type: "choice", text: "怎么发给对方", yes: "链接分享，可设访问码", no: "指定用户，对方登录后看", yesLabel: "链接", noLabel: "指定用户" },
+            { type: "choice", text: "发给谁", yes: "链接分享，可设访问码", no: "指定用户，对方登录后看", yesLabel: "链接", noLabel: "指定用户" },
             { type: "step", text: "选择可见字段、复制、有效期" },
             { type: "end", text: "发送或授权完成" },
           ]} />
@@ -165,7 +175,7 @@ export default function OtpVaultGuidePage() {
           </div>
           <GuideFlow label="转存别人的授权" nodes={[
             { type: "start", text: "拿到授权链接" },
-            { type: "choice", text: "从哪进来", yes: "打开链接", no: "回到保险库，剪贴板里正好是授权链接", yesLabel: "打开链接", noLabel: "剪贴板" },
+            { type: "choice", text: "从哪打开", yes: "打开授权链接", no: "回到保险库，剪贴板里正好是授权链接", yesLabel: "链接", noLabel: "剪贴板" },
             { type: "choice", text: "已经转存过", yes: "提示无需再转", no: "可转存到我收到的" },
             { type: "end", text: "不转存也能继续看原链接" },
           ]} />
