@@ -682,6 +682,13 @@ html.theme-dark {
 .vault-settings-block + .vault-settings-block { border-top: 1px solid rgba(38,50,77,.07); }
 .vault-settings-block-title { padding: 16px 17px 8px; }
 .vault-settings-block-title b { display: block; font-size: 15px; letter-spacing: -.02em; }
+.vault-settings-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin: 0 0 8px; padding: 0; border: 0; background: transparent;
+  color: #596174; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer;
+}
+.vault-settings-group > .vault-account-link:first-child { border-top: 0; }
+.vault-settings-group > .vault-theme-options { padding-top: 14px; }
 .vault-account-settings { padding-bottom: 0; }
 .vault-account-profile { display: flex; align-items: center; gap: 12px; padding: 4px 17px 12px; }
 .vault-account-avatar { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 16px; background: #eaf2ff; color: #4f72c9; font-size: 16px; font-weight: 750; }
@@ -725,6 +732,7 @@ html.theme-dark {
 }
 
 html.theme-dark {
+  .vault-settings-back { color: #a6afc6; }
   .vault-settings-group { border-color: rgba(225,231,248,.08); background: #171e2c; box-shadow: 0 9px 28px rgba(0,0,0,.2); }
   .vault-settings-block + .vault-settings-block { border-color: rgba(225,231,248,.08); }
   .vault-settings-group > header > span { background: #222b3d; color: #9da7ba; }

@@ -23,6 +23,7 @@ export const APP_ROUTES = {
   beadStudio: "/bead-studio",
   otp: "/otp",
   otpGuide: "/otp/guide",
+  otpChangelog: "/otp/changelog",
   systemCenter: "/system",
 } as const;
 
@@ -51,6 +52,7 @@ export const LOCAL_ROUTES = [
   APP_ROUTES.beadStudio,
   APP_ROUTES.otp,
   APP_ROUTES.otpGuide,
+  APP_ROUTES.otpChangelog,
   APP_ROUTES.systemCenter,
 ];
 

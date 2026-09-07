@@ -1,4 +1,4 @@
-import { ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, History, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
@@ -27,6 +27,7 @@ async function loadJsQR() {
 
 type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
 type VaultView = "all" | "shares" | "security" | "settings";
+type SettingsSection = "account" | "appearance" | "about" | null;
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
 const LAST_USED_KEY = "otp-vault-last-used";
@@ -253,6 +254,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<VaultView>("all");
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>(null);
   const [issuer, setIssuer] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 	const [prefs, setPrefs] = useState<VaultPrefs>(() => {
@@ -538,6 +540,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
   const changeView = (next: VaultView) => {
     setView(next); setFiltersOpen(false);
+    if (next !== "settings") setSettingsSection(null);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
@@ -960,31 +963,32 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
 	    {view === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} /></section> : null}
 
-    {view === "settings" ? <section className="vault-settings"><header className="vault-panel-head"><div><h2>设置</h2><p>账号安全与显示偏好会跟随当前账号</p></div></header>
-      <div className="vault-settings-group vault-settings-stack">
-        <section className="vault-settings-block vault-account-settings">
-          <header className="vault-settings-block-title"><b>账号与安全</b></header>
-          <div className="vault-account-profile"><span className="vault-account-avatar">{(accountNick || accountName || "?").trim().slice(0, 1).toUpperCase()}</span><div><b>{accountNick || accountName || "未设置用户名"}</b><small>账号与登录</small></div></div>
-          <div className="vault-account-links">
-            <button type="button" className="vault-account-link" onClick={() => setModal("nickname")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>用户名</b><small>{accountNick || accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
-            <button type="button" className="vault-account-link" onClick={() => setModal("username")}><span className="vault-setting-icon is-blue"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>{accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
-            <button type="button" className="vault-account-link" onClick={() => setModal("email")}><span className="vault-setting-icon is-violet"><Mail size={17} /></span><span className="vault-setting-copy"><b>邮箱</b><small>{accountEmail || "未绑定"}</small></span><ChevronRight size={15} /></button>
-            <button type="button" className="vault-account-link" onClick={() => setModal("password")}><span className="vault-setting-icon is-violet"><LockKeyhole size={17} /></span><span className="vault-setting-copy"><b>登录密码</b><small>修改密码</small></span><ChevronRight size={15} /></button>
-            <button type="button" className="vault-account-link" onClick={() => setModal("logoutConfirm")}><span className="vault-setting-icon is-blue"><LogOut size={17} /></span><span className="vault-setting-copy"><b>退出登录</b><small>只结束本设备的登录状态</small></span><ChevronRight size={15} /></button>
-            <button type="button" className="vault-account-link is-danger" onClick={() => { setDeleteStep("warn"); setDeleteConfirmText(""); setModal("deleteAccountConfirm"); }}><span className="vault-setting-icon is-red"><UserX size={17} /></span><span className="vault-setting-copy"><b>注销账号</b><small>永久删除账号与全部数据，不可恢复</small></span><ChevronRight size={15} /></button>
-          </div>
-        </section>
-        <section className="vault-settings-block">
-          <header className="vault-settings-block-title"><b>外观和显示</b></header>
-          <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
-          {([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet'], ['defaultFavorites', Star, '默认显示收藏', '打开后进入凭据页默认只看收藏，关闭则显示全部', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}
-          <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>
-        </section>
-        <section className="vault-settings-block">
-          <header className="vault-settings-block-title"><b>关于</b></header>
-          <a className="vault-account-link vault-version-row" href={APP_ROUTES.otpGuide}><span className="vault-setting-icon is-blue"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>版本</b><small>{OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></a>
-        </section>
-      </div>
+    {view === "settings" ? <section className="vault-settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}<h2>{settingsSection === "account" ? "账号与安全" : settingsSection === "appearance" ? "外观和显示" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "about" ? "版本和使用指南" : "账号安全与显示偏好会跟随当前账号"}</p></div></header>
+      {!settingsSection ? <div className="vault-settings-group">
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("account")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>账号与安全</b><small>用户名、账号、邮箱、密码和登录</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("appearance")}><span className="vault-setting-icon is-blue"><SunMoon size={17} /></span><span className="vault-setting-copy"><b>外观和显示</b><small>主题、卡片和列表偏好</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("about")}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>关于</b><small>版本 {OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></button>
+      </div> : null}
+      {settingsSection === "account" ? <div className="vault-settings-group vault-account-settings">
+        <div className="vault-account-profile"><span className="vault-account-avatar">{(accountNick || accountName || "?").trim().slice(0, 1).toUpperCase()}</span><div><b>{accountNick || accountName || "未设置用户名"}</b><small>账号与登录</small></div></div>
+        <div className="vault-account-links">
+          <button type="button" className="vault-account-link" onClick={() => setModal("nickname")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>用户名</b><small>{accountNick || accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("username")}><span className="vault-setting-icon is-blue"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>{accountName || "未设置"}</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("email")}><span className="vault-setting-icon is-violet"><Mail size={17} /></span><span className="vault-setting-copy"><b>邮箱</b><small>{accountEmail || "未绑定"}</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("password")}><span className="vault-setting-icon is-violet"><LockKeyhole size={17} /></span><span className="vault-setting-copy"><b>登录密码</b><small>修改密码</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link" onClick={() => setModal("logoutConfirm")}><span className="vault-setting-icon is-blue"><LogOut size={17} /></span><span className="vault-setting-copy"><b>退出登录</b><small>只结束本设备的登录状态</small></span><ChevronRight size={15} /></button>
+          <button type="button" className="vault-account-link is-danger" onClick={() => { setDeleteStep("warn"); setDeleteConfirmText(""); setModal("deleteAccountConfirm"); }}><span className="vault-setting-icon is-red"><UserX size={17} /></span><span className="vault-setting-copy"><b>注销账号</b><small>永久删除账号与全部数据，不可恢复</small></span><ChevronRight size={15} /></button>
+        </div>
+      </div> : null}
+      {settingsSection === "appearance" ? <div className="vault-settings-group">
+        <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
+        {([['masked', EyeOff, '隐藏账号', '在列表中遮住账号主体', 'violet'], ['compact', LayoutGrid, '紧凑卡片', '缩小留白，一屏看到更多内容', 'blue'], ['grouped', Layers3, '按系统分组', '将同一系统的凭据排列在一起', 'green'], ['showShared', User, '显示共享', '在全部列表中展示别人分享给我的凭据', 'blue'], ['autoRefresh', Clock3, '自动刷新', '定时同步授权状态和新增共享', 'green'], ['concealOtp', EyeOff, '隐蔽验证码', '列表中先显示掩码，点按后再显示并复制', 'violet'], ['defaultFavorites', Star, '默认显示收藏', '打开后进入凭据页默认只看收藏，关闭则显示全部', 'violet']] as const).map(([key, Icon, title, detail, tone]) => <label className="vault-setting-row" key={key}><span className={`vault-setting-icon is-${tone}`}><Icon size={17} /></span><span className="vault-setting-copy"><b>{title}</b><small>{detail}</small></span><input type="checkbox" checked={Boolean(prefs[key])} onChange={(event) => { if (key === "concealOtp") setRevealedOtp(null); void updatePrefs({ ...prefs, [key]: event.target.checked }); }} /><i /></label>)}
+        <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>
+      </div> : null}
+      {settingsSection === "about" ? <div className="vault-settings-group">
+        <a className="vault-account-link vault-version-row" href={APP_ROUTES.otpChangelog}><span className="vault-setting-icon is-blue"><History size={17} /></span><span className="vault-setting-copy"><b>版本</b><small>{OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></a>
+        <a className="vault-account-link" href={APP_ROUTES.otpGuide}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>使用指南</b><small>添加、分享和备份说明</small></span><ChevronRight size={15} /></a>
+      </div> : null}
     </section> : null}
 
     <nav className="vault-mobile-nav" aria-label="密钥管理导航">

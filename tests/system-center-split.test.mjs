@@ -61,7 +61,7 @@ test("otp keeps logout inside 我的 page instead of the header", async () => {
   assert.match(workspace, /vault-account-link is-danger/);
   assert.match(workspace, /vault-account-profile/);
   assert.match(workspace, /vault-account-avatar/);
-  assert.match(workspace, /<h2>设置<\/h2>/);
+  assert.match(workspace, /: "设置"\}<\/h2>/);
   assert.match(workspace, /\['settings', Settings2, '我的'\]/);
 });
 
@@ -70,16 +70,20 @@ test("otp settings page groups account security and appearance in one panel", as
     source("app/systems/otp/OtpVaultWorkspace.tsx"),
     source("app/systems/otp/otp-vault.css"),
   ]);
-  assert.match(workspace, /vault-settings-stack/);
+  assert.match(workspace, /settingsSection/);
+  assert.match(workspace, /setSettingsSection\("account"\)/);
+  assert.match(workspace, /setSettingsSection\("appearance"\)/);
+  assert.match(workspace, /setSettingsSection\("about"\)/);
   assert.match(workspace, /账号与安全/);
   assert.match(workspace, /外观和显示/);
   assert.match(workspace, /OTP_VAULT_VERSION/);
   assert.match(workspace, /vault-version-row/);
   assert.match(workspace, /<b>版本<\/b>/);
+  assert.match(workspace, /APP_ROUTES\.otpChangelog/);
+  assert.match(workspace, /vault-settings-back/);
   assert.doesNotMatch(workspace, /<b>外观<\/b>/);
   assert.doesNotMatch(workspace, /<b>界面显示<\/b>/);
-  assert.match(styles, /\.vault-settings-stack/);
-  assert.match(styles, /\.vault-settings-block-title/);
+  assert.match(styles, /\.vault-settings-back/);
   assert.match(styles, /\.vault-version-row/);
 });
 

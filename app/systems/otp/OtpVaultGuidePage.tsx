@@ -1,9 +1,8 @@
 import {
-  AlertTriangle, ArrowRight, BookOpen, Check, Clock3, Copy, Download, Fingerprint, History,
+  AlertTriangle, ArrowRight, BookOpen, Check, Clock3, Copy, Download, Fingerprint,
   KeyRound, Layers3, Link2, LockKeyhole, Mail, QrCode, ScanLine, Settings2, ShieldCheck, Smartphone, User, UserCheck,
 } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
-import { OTP_VAULT_VERSION } from "./otpVersion";
 import "./otp-guide.css";
 
 const navigation = [
@@ -14,7 +13,6 @@ const navigation = [
   ["share", "临时授权"],
   ["security", "安全与备份"],
   ["faq", "常见问题"],
-  ["changelog", "更新日志"],
 ] as const;
 
 const quickSteps = [
@@ -46,61 +44,11 @@ const featureHighlights = [
   [Smartphone, "适配手机操作", "输入、反馈和内容布局均针对窄屏进行调整"],
 ] as const;
 
-const changelog = [
-  {
-    date: "2026-09-07",
-    title: "凭据、设置和授权体验",
-    groups: [
-      {
-        name: "凭据和设置",
-        items: [
-          "同一系统和账号可以重复添加，例如两台设备各自的验证码；保存前会确认",
-          "“我的”页改为统一设置：上面是账号与安全，下面是外观和显示",
-        ],
-      },
-      {
-        name: "授权",
-        items: [
-          "回到保险库时，如果剪贴板里是授权链接，会询问是否转存；空剪贴板或普通文字不会弹出",
-          "带访问码的链接第二次打开会直接进入内容，不再卡在验证授权",
-        ],
-      },
-    ],
-  },
-  {
-    date: "2026-09-06",
-    title: "授权转存和日常使用",
-    groups: [
-      {
-        name: "日常使用",
-        items: [
-          "登录页和保险库会提示添加到桌面，之后可以像 App 一样打开",
-          "设备时间偏差较大时会提示打开自动时间，避免验证码一直错",
-          "复制验证码约 30 秒后会清空剪贴板；已经贴走或剪贴板被改过时不会误清",
-          "启用离线应急后，登录以及增删改凭据会自动更新本机副本",
-        ],
-      },
-      {
-        name: "授权和转存",
-        items: [
-          "授权页分成“我发出的”和“我收到的”",
-          "单次最多授权 50 条凭据",
-          "登录后可以把别人的分享链接转存到“我收到的”，不转存也能继续打开原链接",
-          "已转存过的链接会提示无需再次转存",
-          "分享者可以在转存列表里移除或禁止某人；移除后对方可再转并存会收到通知，禁止后不能再转且不通知",
-          "创建授权时可以一键禁止所有人转存",
-          "分享者修改、撤销或删除授权时，已转存的人会收到通知",
-        ],
-      },
-    ],
-  },
-] as const;
-
 export default function OtpVaultGuidePage() {
   return <main className="otp-guide-page">
     <header className="otp-guide-header">
       <a className="otp-guide-brand" href={APP_ROUTES.otp}><span><KeyRound size={20} /></span><div><b>OTP Vault</b><small>使用指南</small></div></a>
-      <nav aria-label="指南快捷导航"><a href="#changelog">更新</a><a href="#quick-start">开始</a><a href="#share">分享</a><a href="#faq">排查</a></nav>
+      <nav aria-label="指南快捷导航"><a href={APP_ROUTES.otpChangelog}>更新</a><a href="#quick-start">开始</a><a href="#share">分享</a><a href="#faq">排查</a></nav>
       <a className="otp-guide-open" href={APP_ROUTES.otp}>打开保险库<ArrowRight size={15} /></a>
     </header>
 
@@ -239,22 +187,6 @@ export default function OtpVaultGuidePage() {
             <details><summary>为什么提示已存在相同系统和账号？</summary><p>同一系统和账号可以重复添加。这是确认，不是拦截。确认后仍会保存，适合两台设备各自的验证码。</p></details>
             <details><summary>访问码链接第二次打开为什么会卡住？</summary><p>现在第二次打开会直接复用已有会话，不再停在“验证授权”。如果仍卡住，请硬刷新后再试。</p></details>
           </div>
-        </section>
-
-        <section id="changelog" className="otp-guide-section">
-          <header><span><History size={21} /></span><div><h2>更新日志</h2><p>按时间节点查看最近功能。当前版本 {OTP_VAULT_VERSION}。</p></div></header>
-          <ol className="otp-guide-timeline otp-guide-changelog" aria-label="更新时间节点">
-            {changelog.map((entry, index) => <li className="otp-guide-timeline-node" key={entry.date}>
-              <span className="otp-guide-timeline-mark" aria-hidden="true" />
-              <article>
-                <header><time dateTime={entry.date}>{entry.date}</time>{index === 0 ? <small>版本 {OTP_VAULT_VERSION}</small> : null}<b>{entry.title}</b></header>
-                {entry.groups.map((group) => <section key={group.name}>
-                  <h3>{group.name}</h3>
-                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
-                </section>)}
-              </article>
-            </li>)}
-          </ol>
         </section>
       </article>
     </div>
