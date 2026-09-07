@@ -27,7 +27,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(share, /aria-label="查看"/);
   assert.doesNotMatch(auth, /RSA 加密传输/);
   assert.doesNotMatch(workspace, /vault-guide-action/);
-  assert.match(workspace, /<b>使用指南<\/b>/);
+  assert.match(workspace, /<b>使用说明<\/b>/);
+  assert.match(workspace, /<b>更新日志<\/b>/);
   assert.doesNotMatch(workspace, /添加、分享和备份说明/);
   assert.match(workspace, /formatShareText/);
   assert.match(workspace, /copyShareInfo/);

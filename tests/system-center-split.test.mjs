@@ -77,9 +77,13 @@ test("otp settings page groups account security and appearance in one panel", as
   assert.match(workspace, /账号与安全/);
   assert.match(workspace, /外观和显示/);
   assert.match(workspace, /OTP_VAULT_VERSION/);
-  assert.match(workspace, /<b>使用指南<\/b>/);
-  assert.doesNotMatch(workspace, /vault-version-row/);
-  assert.doesNotMatch(workspace, /<b>版本<\/b>/);
+  assert.match(workspace, /<b>更新日志<\/b>/);
+  assert.match(workspace, /<b>使用说明<\/b>/);
+  assert.match(workspace, /<b>版本号<\/b>/);
+  assert.match(workspace, /APP_ROUTES\.otpChangelog/);
+  assert.match(workspace, /APP_ROUTES\.otpGuide/);
+  assert.match(workspace, /vault-account-link is-static/);
+  assert.doesNotMatch(workspace, /href=\{APP_ROUTES\.otpChangelog\}[\s\S]{0,80}<b>版本号<\/b>/);
   assert.match(workspace, /vault-settings-back/);
   assert.doesNotMatch(workspace, /<b>外观<\/b>/);
   assert.doesNotMatch(workspace, /<b>界面显示<\/b>/);

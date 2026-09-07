@@ -986,7 +986,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><ArrowUpDown size={17} /></span><span className="vault-setting-copy"><b>默认排序</b><small>列表按这个顺序排列，换设备也会记住</small></span><select className="vault-setting-select" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>
       </div> : null}
       {settingsSection === "about" ? <div className="vault-settings-group">
-        <a className="vault-account-link" href={APP_ROUTES.otpGuide}><span className="vault-setting-copy"><b>使用指南</b></span></a>
+        <a className="vault-account-link" href={APP_ROUTES.otpChangelog}><span className="vault-setting-copy"><b>更新日志</b></span><ChevronRight size={15} /></a>
+        <a className="vault-account-link" href={APP_ROUTES.otpGuide}><span className="vault-setting-copy"><b>使用说明</b></span><ChevronRight size={15} /></a>
+        <div className="vault-account-link is-static"><span className="vault-setting-copy"><b>版本号</b><small>{OTP_VAULT_VERSION}</small></span></div>
       </div> : null}
     </section> : null}
 
