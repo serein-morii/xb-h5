@@ -441,7 +441,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(accountSetup, /setOtpStepUpToken\(verified\.data\.token\)/);
   assert.match(accountSetup, /VaultToastMessage message=\{message\}/);
   assert.match(toast, /window\.setTimeout/);
-  assert.match(guide, /otp-guide-lifecycle-rail/);
+  assert.match(guide, /otp-guide-flow/);
   assert.match(guide, /登录、改密和敏感操作都可使用 Passkey/);
   assert.match(workspace, /getVaultPreferences/);
   assert.match(workspace, /DURATION_PRESETS/);
