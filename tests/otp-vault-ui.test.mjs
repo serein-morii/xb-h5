@@ -32,6 +32,9 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /max-width: 820px/);
   assert.match(workspace, /CLIPBOARD_CLEAR_MS/);
   assert.match(workspace, /issuerStyle\(item\.issuer, item.loginUrl\)/);
+  assert.match(workspace, /className="vault-ghost vault-import-action"/);
+  assert.match(workspace, /aria-label="添加或导入凭据"><Plus size=\{18\}/);
+  assert.doesNotMatch(workspace, /vault-primary vault-import-action/);
 });
 
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {

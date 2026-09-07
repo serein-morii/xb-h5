@@ -38,8 +38,6 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-head p { margin-top: 3px; font-size: 10px; }
 .vault-head-actions > * { width: 72px; min-width: 72px; min-height: 42px; justify-content: center; flex: none; padding: 0; border-radius: 14px; }
 .vault-head-actions .vault-logout { padding: 0; }
-.vault-head-actions .vault-import-action svg { width: 21px; height: 21px; }
-.vault-head-actions .vault-add-action svg { width: 22px; height: 22px; }
 .vault-head-actions .vault-logout svg { width: 14px; height: 14px; }
 .vault-tabs { position: sticky; z-index: 100; top: 12px; height: 45px; margin-top: -4px; align-items: center; flex: none; border: 0; background: #eceef5; }
 .vault-tabs button { height: 35px; flex: none; }
@@ -838,8 +836,6 @@ html.theme-dark .vault-next-copy:hover { border-color: rgba(190,200,235,.24); ba
 @media (max-width: 560px) {
   .vault-head-actions { gap: 5px; }
   .vault-head-actions > *, .vault-head-actions .vault-logout { width: 38px; min-width: 38px; min-height: 38px; padding: 0; border-radius: 12px; }
-  .vault-head-actions .vault-import-action svg { width: 25px; height: 25px; }
-  .vault-head-actions .vault-add-action svg { width: 26px; height: 26px; }
   .vault-head-actions .vault-logout svg { width: 14px; height: 14px; }
   .vault-card { padding: 12px; border-radius: 16px; }
   .vault-service-mark { width: 34px; height: 34px; border-radius: 11px; }
