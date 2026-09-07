@@ -1,7 +1,7 @@
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, Check, Clock3, Download, Fingerprint,
-  Link2, LockKeyhole, Mail, Settings2, Smartphone, UserCheck,
+  Link2, List, LockKeyhole, Mail, Settings2, Smartphone, UserCheck, X,
 } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { applyThemePreference } from "../../lib/theme";
@@ -39,7 +39,7 @@ function GuideFlow({ label, nodes }: { label: string; nodes: FlowNode[] }) {
     {nodes.map((node, index) => <Fragment key={`${label}-${index}`}>
       {index ? <i className="otp-guide-flow-arrow" aria-hidden="true" /> : null}
       {node.type === "choice" ? <div className="otp-guide-flow-choice">
-        <span className="otp-guide-flow-diamond"><i /><b>{node.text}</b></span>
+        <span className="otp-guide-flow-diamond"><b>{node.text}</b></span>
         <div className="otp-guide-flow-fork">
           <div><small>{node.yesLabel || "是"}</small><b>{node.yes}</b></div>
           <div><small>{node.noLabel || "否"}</small><b>{node.no}</b></div>
@@ -48,6 +48,18 @@ function GuideFlow({ label, nodes }: { label: string; nodes: FlowNode[] }) {
         {node.note ? <><b>{node.text}</b><p>{node.note}</p></> : node.text}
       </div>}
     </Fragment>)}
+  </div>;
+}
+
+function GuideToc() {
+  const [open, setOpen] = useState(false);
+  return <div className={`otp-guide-toc${open ? " is-open" : ""}`}>
+    {open ? <button type="button" className="otp-guide-toc-mask" aria-label="关闭目录" onClick={() => setOpen(false)} /> : null}
+    {open ? <nav aria-label="章节目录">{chapters.map(([id, no, label]) => <a href={`#${id}`} key={id} onClick={() => setOpen(false)}><em>{no}</em>{label}</a>)}</nav> : null}
+    <button type="button" className="otp-guide-toc-toggle" aria-expanded={open} aria-label="章节目录" onClick={() => setOpen((value) => !value)}>
+      {open ? <X size={15} /> : <List size={15} />}
+      <span>{open ? "关闭" : "目录"}</span>
+    </button>
   </div>;
 }
 
@@ -66,9 +78,7 @@ export default function OtpVaultGuidePage() {
         <p>按使用顺序阅读，从添加第一条凭据开始。大约 5 分钟。<a href={APP_ROUTES.otpChangelog}>更新日志</a></p>
       </header>
 
-      <nav className="otp-guide-toc" aria-label="章节目录">
-        {chapters.map(([id, no, label]) => <a href={`#${id}`} key={id}><em>{no}</em>{label}</a>)}
-      </nav>
+      <GuideToc />
 
       <section id="quick-start" className="otp-guide-chapter">
         <header><em>01</em><div><h2>快速开始</h2><p>先登录，再按顺序完成录入、使用和备份。</p></div></header>

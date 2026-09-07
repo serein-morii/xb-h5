@@ -98,13 +98,15 @@ export default function OtpVaultChangelogPage() {
 
     <article className="otp-changelog-doc" aria-label="更新记录">
       <p className="otp-changelog-lead">当前版本 {OTP_VAULT_VERSION} · <a href={APP_ROUTES.otpGuide}>使用指南</a></p>
-      {changelog.map((entry) => <section className="otp-changelog-entry" key={entry.date}>
-        <header>
-          <time dateTime={entry.date}>{entry.date}</time>
-          <h2>{entry.title}</h2>
-        </header>
-        <ul>{entry.items.map((item) => <li key={item}>{item}</li>)}</ul>
-      </section>)}
+      <div className="otp-changelog-timeline">
+        {changelog.map((entry) => <section className="otp-changelog-entry" key={entry.date}>
+          <header>
+            <time dateTime={entry.date}>{entry.date}</time>
+            <h2>{entry.title}</h2>
+          </header>
+          <ul>{entry.items.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>)}
+      </div>
     </article>
   </main>;
 }

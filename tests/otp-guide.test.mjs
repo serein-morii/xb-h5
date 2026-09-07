@@ -45,6 +45,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(guide, /设备与回收站/);
   assert.match(guide, /otp-guide-chapter/);
   assert.match(guide, /otp-guide-toc/);
+  assert.match(guide, /otp-guide-toc-toggle/);
+  assert.match(guide, /aria-expanded/);
   assert.match(guide, /otp-guide-prose/);
   assert.doesNotMatch(guide, /otp-guide-hero-visual/);
   assert.doesNotMatch(guide, /otp-guide-lifecycle/);
@@ -65,6 +67,7 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(changelog, /otp-guide-page/);
   assert.match(changelog, /otp-guide-bar/);
   assert.match(changelog, /otp-changelog-page/);
+  assert.match(changelog, /otp-changelog-timeline/);
   assert.match(changelog, /otp-changelog-entry/);
   assert.doesNotMatch(changelog, /vault-page/);
   assert.doesNotMatch(changelog, /vault-head/);
@@ -86,16 +89,18 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(styles, /\.otp-guide-chapter/);
   assert.match(styles, /\.otp-guide-toc/);
   assert.match(styles, /\.otp-guide-prose/);
-  assert.match(styles, /overflow-x:\s*auto/);
   assert.match(styles, /safe-area-inset-top/);
-  assert.match(styles, /otp-guide-toc a[\s\S]{0,200}border-radius:\s*999px/);
+  assert.match(styles, /\.otp-guide-toc[\s\S]{0,280}position:\s*fixed/);
+  assert.match(styles, /\.otp-guide-toc-toggle[\s\S]{0,220}border-radius:\s*999px/);
+  assert.match(styles, /\.otp-guide-flow-diamond[\s\S]{0,280}clip-path:\s*polygon/);
+  assert.match(styles, /\.otp-changelog-timeline::before/);
   assert.doesNotMatch(guide, /无需登录即可阅读|公开指南/);
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
   assert.doesNotMatch(guide, /dCOxR|W9KKQR/);
   assert.match(styles, /@media \(max-width: 600px\)/);
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-chapter h2 \{ font-size: 15px/);
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-prose p, \.otp-guide-prose li \{ font-size: 12px/);
-  assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-doc \{ width: 100%; padding: 10px 12px 40px/);
+  assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-doc \{ width: 100%; padding: 10px 12px 84px/);
   assert.match(styles, /\.otp-guide-flow/);
   assert.match(styles, /\.otp-changelog-entry/);
   assert.doesNotMatch(guide, /—/);
