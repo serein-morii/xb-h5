@@ -161,8 +161,11 @@ test("markdown notices keep readable type while HTML templates keep their own st
   assert.match(component, /contentTypeClass/);
   assert.match(component, /notif-popup-content \$\{contentTypeClass/);
   assert.match(component, /notif-item-content \$\{contentTypeClass/);
-  assert.match(styles, /\.notif-popup-content\.is-md/);
+  assert.match(styles, /\.notif-popup-content\.is-md[\s\S]{0,80}\{[^}]*padding:/);
+  assert.match(styles, /\.notif-popup-content\.is-md (ul|ol)/);
+  assert.match(styles, /\.notif-popup-content\.is-html[\s\S]{0,80}\{[^}]*padding: 0/);
   assert.match(styles, /\.notif-popup-content\.is-html :is\(h1,h2,h3,h4,h5,h6\)/);
+  assert.doesNotMatch(styles, /\.notif-popup-body \.notif-item-content,\s*\.notif-popup-content \{/);
   assert.doesNotMatch(styles, /\.notif-popup-body \.notif-item-content :is\(h1,h2,h3,h4,h5,h6\),\s*\.notif-popup-body \.notif-item-content p \{\s*font-size: unset/);
   assert.match(styles, /\.notif-item-content li \+ li \{ margin-top: 6px/);
 });
