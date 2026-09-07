@@ -68,12 +68,25 @@ function GuideToc() {
   </div>;
 }
 
+function backToPrevious(event: { preventDefault: () => void }) {
+  event.preventDefault();
+  try {
+    if (document.referrer && new URL(document.referrer).origin === location.origin) {
+      history.back();
+      return;
+    }
+  } catch {
+    // 没有同源上一页时回到保险库
+  }
+  location.assign(APP_ROUTES.otp);
+}
+
 export default function OtpVaultGuidePage() {
   useEffect(() => { applyThemePreference(); }, []);
 
   return <main className="otp-guide-page">
     <header className="otp-guide-bar">
-      <a className="otp-guide-bar-back" href={APP_ROUTES.otp}><ArrowLeft size={16} /><span>返回</span></a>
+      <a className="otp-guide-bar-back" href={APP_ROUTES.otp} onClick={backToPrevious}><ArrowLeft size={16} /><span>返回</span></a>
       <b>使用指南</b>
       <a className="otp-guide-bar-open" href={APP_ROUTES.otp}>打开</a>
     </header>
@@ -212,7 +225,7 @@ export default function OtpVaultGuidePage() {
             { type: "step", text: "新设备登录后先校验再导入" },
             { type: "end", text: "换机也能找回" },
           ]} />
-          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全中心”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、安全中心、外观和关于都在“我的”里。</p></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全中心”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、外观、安全中心和关于都在“我的”里。</p></div>
         </div>
       </section>
 

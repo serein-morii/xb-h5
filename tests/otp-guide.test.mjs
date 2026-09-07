@@ -20,6 +20,10 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(routes, /otpChangelog: "\/otp\/changelog"/);
   assert.match(shell, /guide \? <OtpVaultGuidePage \/>/);
   assert.match(shell, /changelog \? <OtpVaultChangelogPage \/>/);
+  assert.match(guide, /onClick=\{backToPrevious\}/);
+  assert.match(changelog, /onClick=\{backToPrevious\}/);
+  assert.match(guide, /history\.back\(\)/);
+  assert.match(changelog, /history\.back\(\)/);
   assert.match(auth, /href=\{APP_ROUTES\.otpGuide\}/);
   assert.match(auth, /const \[longSession, setLongSession\] = useState\(true\)/);
   assert.match(share, /setThemePreference/);

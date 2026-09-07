@@ -52,8 +52,8 @@ test("keeps credential and share filter tabs right-aligned beside the titles", a
 test("floats credential add and share create actions on PC", async () => {
   const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(styles, /\.vault-panel-head > \.vault-import-action,[\s\S]{0,80}\.vault-panel-head > \.vault-create-share \{[\s\S]{0,120}position:\s*fixed/);
-  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,280}right:\s*28px/);
-  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,320}bottom:\s*28px/);
+  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,360}right:\s*calc\(max\(24px, \(100vw - 1120px\) \/ 2\) \+ 24px\)/);
+  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,420}bottom:\s*28px/);
 });
 
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {

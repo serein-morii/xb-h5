@@ -1728,7 +1728,7 @@ html.theme-dark .vault-filters select { background: #171e2c; color: #e8edf8; }
 .vault-panel-head > .vault-create-share {
   position: fixed;
   z-index: 121;
-  right: 28px;
+  right: calc(max(24px, (100vw - 1120px) / 2) + 24px);
   bottom: 28px;
   min-height: 48px;
   height: 48px;

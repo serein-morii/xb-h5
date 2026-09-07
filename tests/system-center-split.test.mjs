@@ -78,7 +78,7 @@ test("otp settings page groups account security and appearance in one panel", as
   assert.match(workspace, /<b>安全中心<\/b>/);
   assert.match(workspace, /Passkey、备份、设备/);
   assert.match(workspace, /<b>账号<\/b>/);
-  assert.match(workspace, /<b>账号<\/b>[\s\S]*<b>安全中心<\/b>/);
+  assert.match(workspace, /<b>账号<\/b>[\s\S]*<b>外观和显示<\/b>[\s\S]*<b>安全中心<\/b>/);
   assert.doesNotMatch(workspace, /账号与安全/);
   assert.doesNotMatch(workspace, /\['security', ShieldCheck, '安全'\]/);
   assert.match(workspace, /外观和显示/);

@@ -88,12 +88,25 @@ const changelog = [
   },
 ] as const;
 
+function backToPrevious(event: { preventDefault: () => void }) {
+  event.preventDefault();
+  try {
+    if (document.referrer && new URL(document.referrer).origin === location.origin) {
+      history.back();
+      return;
+    }
+  } catch {
+    // 没有同源上一页时回到保险库
+  }
+  location.assign(APP_ROUTES.otp);
+}
+
 export default function OtpVaultChangelogPage() {
   useEffect(() => { applyThemePreference(); }, []);
 
   return <main className="otp-guide-page otp-changelog-page">
     <header className="otp-guide-bar">
-      <a className="otp-guide-bar-back" href={APP_ROUTES.otp}><ArrowLeft size={16} /><span>返回</span></a>
+      <a className="otp-guide-bar-back" href={APP_ROUTES.otp} onClick={backToPrevious}><ArrowLeft size={16} /><span>返回</span></a>
       <b>更新日志</b>
       <a className="otp-guide-bar-open" href={APP_ROUTES.otp}>打开</a>
     </header>
