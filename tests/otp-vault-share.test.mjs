@@ -103,10 +103,15 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.equal(defaultShareName("爱丽丝", ["GitHub", "Google"]), "爱丽丝的临时凭据授权");
   assert.match(workspace, /defaultShareName/);
   assert.match(workspace, /DEFAULT_SHARE_SECONDS/);
+  assert.match(workspace, /vault-view-toggles/);
+  assert.match(workspace, /vault-share-compose/);
+  assert.match(sharePage, /vault-view-toggles/);
   assert.match(workspace, /shareCreateConfirm/);
   assert.match(workspace, /requestShareCreate/);
   assert.match(workspace, /confirmShareCreate/);
   assert.match(workspace, /vault-share-confirm-duration/);
+  assert.match(workspace, /核对有效期、内容和平台后再生成/);
+  assert.match(workspace, /<span>01<\/span><h3>有效期<\/h3>[\s\S]*<span>02<\/span><h3>分享内容<\/h3>[\s\S]*<span>03<\/span><h3>平台<\/h3>/);
   assert.match(workspace, /确认生成/);
   assert.match(workspace, /shareDetailCredentials/);
   assert.match(workspace, /item.shareId === shareDetail.id/);

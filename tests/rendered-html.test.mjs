@@ -487,7 +487,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(styles, /\.vault-toast \{ top: auto; bottom:/);
   assert.match(styles, /html\.theme-dark \.vault-theme-options button\.is-active/);
   assert.match(styles, /\.vault-toast\.is-error \{ border-color: rgba\(190,79,68/);
-  assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(auto-fill/);
+  assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(4,minmax\(0,1fr\)\);/);
   assert.match(styles, /\.share-group > header b \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-item-title b,\.share-item-title small \{[^}]*text-overflow: ellipsis; white-space: nowrap/);
   assert.match(styles, /\.share-toolbar \.vault-view-toggle\.is-active input:checked \+ i \{ background: #4054c3/);

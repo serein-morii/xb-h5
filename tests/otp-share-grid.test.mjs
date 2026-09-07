@@ -16,7 +16,8 @@ test("renders public shared credentials as responsive summary cards", async () =
   assert.match(sharePage, /share-login-summary/);
   assert.match(sharePage, /item\.password \? "账号与密码" : "账号信息"/);
   assert.match(styles, /\.share-page\.is-open \.share-brand,\.share-content \{ max-width: 1120px; \}/);
-  assert.match(styles, /\.share-item-list,\.share-item-list\.is-compact \{ grid-template-columns: repeat\(3,minmax\(0,1fr\)\);/);
+  assert.match(styles, /\.share-item-list \{ grid-template-columns: repeat\(3,minmax\(0,1fr\)\);/);
+  assert.match(styles, /\.share-item-list\.is-compact \{ grid-template-columns: repeat\(4,minmax\(0,1fr\)\);/);
   assert.match(styles, /@media \(max-width: 820px\)[\s\S]*?\.share-item-list,\.share-item-list\.is-compact \{ grid-template-columns: repeat\(2,minmax\(0,1fr\)\); \}/);
   assert.match(styles, /@media \(max-width: 560px\)[\s\S]*?\.share-item-list,\.share-item-list\.is-compact \{ grid-template-columns: 1fr; \}/);
 });

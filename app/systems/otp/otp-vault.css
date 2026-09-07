@@ -740,7 +740,7 @@ html.theme-dark { @media (max-width: 560px) {
 .share-toolbar .vault-view-toggle:not(.is-active) i { background: #aeb5c5; }
 .share-toolbar .vault-view-toggle:focus-within { outline: 3px solid rgba(72,92,199,.12); outline-offset: 1px; }
 .share-toolbar .vault-search { width: min(310px, 100%); }
-.share-item-list.is-compact { grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 8px; }
+.share-item-list.is-compact { gap: 8px; }
 .share-item-list.is-compact > article { padding: 11px; border-radius: 15px; }
 .share-item-list.is-compact .share-item-title { margin-bottom: 0; }
 .share-card-detail { grid-column: 1 / -1; margin-top: 10px; overflow: hidden; border-radius: 14px; background: #f3f5fa; }
@@ -1405,7 +1405,8 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 }
 
 .share-page.is-open .share-brand,.share-content { max-width: 1120px; }
-.share-item-list,.share-item-list.is-compact { grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; }
+.share-item-list { grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; }
+.share-item-list.is-compact { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .share-item-list > article.share-credential-card { min-width: 0; }
 .share-login-summary { min-width: 0; min-height: 53px; margin: 14px 0 9px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px solid rgba(72,92,199,.1); border-radius: 12px; background: linear-gradient(135deg,#f5f6fd,#eef0fb); }
 .share-login-summary > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: rgba(72,92,199,.1); color: #586bcf; }
@@ -1553,5 +1554,168 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
 .share-handoff-card h1,
 .share-access-intro h1 { font-size: 18px; letter-spacing: -.02em; }
 .share-content h1 { font-size: 18px; }
+
+.vault-view-toggles {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+}
+
+@media (min-width: 561px) {
+  .vault-panel-head {
+    align-items: flex-end;
+    gap: 16px 20px;
+  }
+  .vault-panel-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .vault-view-toggles {
+    padding: 3px;
+    border: 1px solid var(--utility-line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(34, 44, 76, .04);
+  }
+  .vault-view-toggles .vault-view-toggle {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: #6f788b;
+    font-size: 13px;
+    box-shadow: none;
+  }
+  .vault-view-toggles .vault-view-toggle:has(input:checked) {
+    background: #eef0fb;
+    color: #3146ad;
+  }
+  .vault-search {
+    width: min(380px, 42vw);
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--utility-line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: none;
+  }
+  .vault-search input { font-size: 13px; }
+  .vault-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 12px;
+    margin: 0 0 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .vault-filters label {
+    position: static;
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .vault-filters label > span {
+    position: static;
+    top: auto;
+    left: auto;
+    color: var(--utility-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  .vault-filters label::after {
+    top: auto;
+    bottom: 16px;
+    right: 14px;
+  }
+  .vault-filters select {
+    min-height: 42px;
+    padding: 0 32px 0 12px;
+    border: 1px solid var(--utility-line);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: none;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .vault-filter-clear {
+    min-height: 42px;
+    margin-left: 0;
+    border-radius: 12px;
+  }
+  .vault-create-share {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+  .vault-fav-switch button {
+    min-height: 32px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .share-toolbar.vault-panel-tools { width: 100%; }
+  .share-toolbar .vault-search { width: min(380px, 42vw); }
+  .vault-modal.share.vault-share-compose {
+    width: min(1040px, 94vw);
+    max-height: min(88vh, 860px);
+  }
+  .vault-share-compose > .vault-share-scroll {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.15fr);
+    align-items: start;
+    gap: 14px;
+    padding: 16px 22px 20px;
+  }
+  .vault-share-compose .vault-share-section { margin-top: 0; }
+  .vault-share-compose .vault-share-picker-section {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    height: 100%;
+  }
+  .vault-share-compose .vault-share-section:not(.vault-share-picker-section) { grid-column: 2; }
+  .vault-share-compose .vault-share-section:last-of-type { grid-column: 1 / -1; }
+  .vault-share-compose .vault-section-title h3 { font-size: 15px; }
+  .vault-share-compose .vault-section-help { font-size: 12px; }
+  .vault-share-compose .vault-credential-picker {
+    height: calc(100% - 8px);
+    display: flex;
+    flex-direction: column;
+  }
+  .vault-share-compose .vault-credential-picker .vault-select-list {
+    flex: 1;
+    grid-template-columns: 1fr;
+    max-height: min(48vh, 380px);
+    overflow: auto;
+  }
+  .vault-share-compose .vault-credential-picker summary b { font-size: 13px; }
+  .vault-share-compose .vault-credential-picker summary small { font-size: 12px; }
+  .vault-share-compose .vault-single-field input { min-height: 44px; font-size: 14px; }
+  .vault-share-compose .vault-duration-head b { font-size: 18px; }
+  .vault-share-compose .vault-duration-presets button { min-height: 38px; font-size: 13px; }
+  .vault-share-compose .vault-option-grid label { min-height: 72px; }
+  .vault-share-compose .vault-option-grid label span { font-size: 13px; }
+  .vault-share-compose .vault-option-grid label small { font-size: 11px; }
+  .vault-share-compose > footer > span { font-size: 12px; }
+  .vault-share-form.vault-delete-modal .vault-share-confirm-duration {
+    padding: 22px 16px;
+  }
+  .vault-share-form.vault-delete-modal .vault-share-confirm-duration b { font-size: 36px; }
+}
+
+html.theme-dark .vault-view-toggles { background: #171e2c; border-color: rgba(225, 231, 248, .1); }
+html.theme-dark .vault-view-toggles .vault-view-toggle:has(input:checked) {
+  background: #273154;
+  color: #c8ceff;
+}
+html.theme-dark .vault-filters select { background: #171e2c; color: #e8edf8; }
 
 
