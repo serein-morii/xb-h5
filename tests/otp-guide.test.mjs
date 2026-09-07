@@ -52,7 +52,15 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(changelog, /OTP_VAULT_VERSION/);
   assert.match(changelog, /otp-guide-timeline/);
   assert.match(changelog, /aria-label="更新时间节点"/);
+  assert.match(changelog, /2026-09-07/);
   assert.match(changelog, /2026-09-06/);
+  assert.match(changelog, /2026-09-02/);
+  assert.match(changelog, /2026-09-01/);
+  assert.match(changelog, /2026-08-31/);
+  assert.match(changelog, /2026-08-25/);
+  assert.match(changelog, /首次上线/);
+  assert.match(changelog, /加密备份/);
+  assert.match(changelog, /使用指南/);
   assert.match(changelog, /otp-guide-changelog/);
   assert.match(changelog, /APP_ROUTES\.otpGuide/);
   assert.match(changelog, /查看使用指南|使用指南/);
