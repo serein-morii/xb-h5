@@ -1,0 +1,24 @@
+app/systems/otp/otp-vault.css
+  s_ec331693b00d25::t_a0e0ee92d8a9b8 1614-1616,1641-1642,1725
+  s_ec331693b00d25::t_8f23f87cdfa078 1572,1575,1601-1602,1617-1620,1627,1633,1669,1724,1726-1731,1768
+  s_ec331693b00d25::t_cf5789592c9997 1732-1767
+  s_ec331693b00d25::t_74c03c738e7a33 1603
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_ec331693b00d25::t_3675d650002847 1037,1045,1049
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "95e67d5e268b4de27facd3be9375495d5647a8b6",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
