@@ -84,5 +84,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
   assert.doesNotMatch(guide, /dCOxR|W9KKQR/);
   assert.match(styles, /@media \(max-width: 600px\)/);
+  assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-chapter h2 \{ font-size: 17px/);
+  assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-prose p, \.otp-guide-prose li \{ font-size: 13px/);
+  assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-doc \{ width: 100%; padding: 12px 14px 48px/);
   assert.doesNotMatch(guide, /—/);
 });

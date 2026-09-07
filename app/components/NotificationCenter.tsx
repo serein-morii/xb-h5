@@ -130,6 +130,23 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [loaded, current, confirming, dismiss]);
 
+  useEffect(() => {
+    if (!loaded || !current) return;
+    document.body.classList.add("sheet-open");
+    const blockBackground = (event: TouchEvent | WheelEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".notif-popup-body")) return;
+      event.preventDefault();
+    };
+    document.addEventListener("touchmove", blockBackground, { passive: false });
+    document.addEventListener("wheel", blockBackground, { passive: false });
+    return () => {
+      document.body.classList.remove("sheet-open");
+      document.removeEventListener("touchmove", blockBackground);
+      document.removeEventListener("wheel", blockBackground);
+    };
+  }, [loaded, current]);
+
   if (!loaded || !current) return null;
   return <div className="notif-popup-mask" role="alertdialog" aria-modal="true" aria-labelledby="notif-popup-title">
     <section className="notif-popup">

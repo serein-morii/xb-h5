@@ -325,6 +325,20 @@ test("broadcast composer sheet portals out of the page scroll container", async 
   assert.match(css, /datetime-local/);
 });
 
+test("popup announcement locks background scroll and clicks while open", async () => {
+  const [component, css] = await Promise.all([
+    source("app/components/NotificationCenter.tsx"),
+    source("app/components/notification-center.css"),
+  ]);
+  assert.match(component, /classList\.add\("sheet-open"\)/);
+  assert.match(component, /addEventListener\("touchmove"/);
+  assert.match(component, /addEventListener\("wheel"/);
+  assert.match(component, /preventDefault/);
+  assert.match(component, /notif-popup-body/);
+  assert.match(css, /\.notif-popup-mask[\s\S]{0,280}touch-action:\s*none/);
+  assert.match(css, /\.notif-popup-body[\s\S]{0,120}overscroll-behavior:\s*contain/);
+});
+
 test("popup announcement card is larger for HTML and Markdown", async () => {
   const [component, css] = await Promise.all([
     source("app/components/NotificationCenter.tsx"),

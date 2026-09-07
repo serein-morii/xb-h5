@@ -177,25 +177,25 @@ html.theme-dark .otp-guide-callout { color: #e6b86b; background: #33291c; }
 @media (max-width: 600px) {
   .otp-guide-page { background: #fff; }
   .otp-guide-bar {
-    min-height: calc(48px + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) 8px 0 4px;
+    min-height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 6px 0 2px;
     grid-template-columns: auto 1fr auto;
     background: rgba(255, 255, 255, .94);
   }
-  .otp-guide-bar b { justify-self: center; font-size: 16px; font-weight: 750; }
-  .otp-guide-bar-back { min-width: 44px; min-height: 44px; justify-content: center; gap: 0; }
+  .otp-guide-bar b { justify-self: center; font-size: 14px; font-weight: 750; }
+  .otp-guide-bar-back { min-width: 40px; min-height: 40px; justify-content: center; gap: 0; }
   .otp-guide-bar-back span { display: none; }
-  .otp-guide-bar-back svg { width: 20px; height: 20px; }
-  .otp-guide-bar-open { min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; }
-  .otp-guide-doc { width: 100%; padding: 16px 18px 56px; }
-  .otp-guide-lead { margin: 0 0 12px; }
-  .otp-guide-lead p { font-size: 14px; line-height: 1.7; }
+  .otp-guide-bar-back svg { width: 18px; height: 18px; }
+  .otp-guide-bar-open { min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; }
+  .otp-guide-doc { width: 100%; padding: 12px 14px 48px; }
+  .otp-guide-lead { margin: 0 0 10px; }
+  .otp-guide-lead p { font-size: 13px; line-height: 1.6; }
   .otp-guide-lead a { margin-left: 6px; }
 
   .otp-guide-toc {
-    position: sticky; z-index: 15; top: calc(48px + env(safe-area-inset-top));
-    display: flex; grid-template-columns: none; gap: 8px;
-    width: calc(100% + 36px); margin: 0 -18px 8px; padding: 8px 18px 10px;
+    position: sticky; z-index: 15; top: calc(44px + env(safe-area-inset-top));
+    display: flex; grid-template-columns: none; gap: 6px;
+    width: calc(100% + 28px); margin: 0 -14px 6px; padding: 6px 14px 8px;
     overflow-x: auto; scrollbar-width: none;
     border: 0; border-bottom: 1px solid var(--guide-line);
     background: rgba(255, 255, 255, .94);
@@ -203,64 +203,66 @@ html.theme-dark .otp-guide-callout { color: #e6b86b; background: #33291c; }
   }
   .otp-guide-toc::-webkit-scrollbar { display: none; }
   .otp-guide-toc a {
-    flex: none; min-height: 32px; padding: 0 12px;
-    border-radius: 999px; background: #f3f4f8; font-size: 13px; font-weight: 700; white-space: nowrap;
+    flex: none; min-height: 28px; padding: 0 10px;
+    border-radius: 999px; background: #f3f4f8; font-size: 12px; font-weight: 700; white-space: nowrap;
   }
-  .otp-guide-toc em { width: auto; height: auto; padding: 0; background: none; font-size: 11px; }
+  .otp-guide-toc em { width: auto; height: auto; padding: 0; background: none; font-size: 10px; }
 
-  .otp-guide-chapter { scroll-margin-top: calc(96px + env(safe-area-inset-top)); padding: 26px 0 10px; }
-  .otp-guide-chapter > header { gap: 10px; margin-bottom: 14px; }
+  .otp-guide-chapter { scroll-margin-top: calc(84px + env(safe-area-inset-top)); padding: 16px 0 6px; }
+  .otp-guide-chapter > header { gap: 8px; margin-bottom: 10px; }
   .otp-guide-chapter > header > em {
-    width: auto; height: auto; padding: 0; border-radius: 0; background: none; font-size: 13px;
+    width: auto; height: auto; padding: 0; border-radius: 0; background: none; font-size: 12px;
   }
-  .otp-guide-chapter h2 { font-size: 22px; line-height: 1.25; }
-  .otp-guide-chapter > header p { font-size: 14px; line-height: 1.65; }
-  .otp-guide-prose { gap: 16px; }
-  .otp-guide-prose h3 { margin-top: 8px; font-size: 16px; }
-  .otp-guide-prose p, .otp-guide-prose li { font-size: 16px; line-height: 1.8; }
-  .otp-guide-prose ol, .otp-guide-prose ul { padding-left: 1.2em; }
+  .otp-guide-chapter h2 { font-size: 17px; line-height: 1.25; }
+  .otp-guide-chapter > header p { font-size: 12px; line-height: 1.5; }
+  .otp-guide-prose { gap: 10px; }
+  .otp-guide-prose h3 { margin-top: 4px; font-size: 14px; }
+  .otp-guide-prose p, .otp-guide-prose li { font-size: 13px; line-height: 1.65; }
+  .otp-guide-prose ol, .otp-guide-prose ul { padding-left: 1.15em; }
 
   .otp-guide-methods, .otp-guide-share-types, .otp-guide-security-grid { gap: 0; }
   .otp-guide-methods section,
   .otp-guide-share-types section,
   .otp-guide-security-grid section {
-    padding: 12px 0; border: 0; border-top: 1px solid var(--guide-line); border-radius: 0; background: transparent;
+    padding: 8px 0; border: 0; border-top: 1px solid var(--guide-line); border-radius: 0; background: transparent;
   }
   .otp-guide-methods section:first-child,
   .otp-guide-share-types section:first-child,
   .otp-guide-security-grid section:first-child { border-top: 0; padding-top: 0; }
   .otp-guide-share-types section > span, .otp-guide-security-grid svg { display: none; }
-  .otp-guide-share-types h3, .otp-guide-security-grid h3 { margin-top: 0; font-size: 16px; }
-  .otp-guide-share-types p, .otp-guide-security-grid p, .otp-guide-methods p { font-size: 15px; line-height: 1.7; }
+  .otp-guide-share-types h3, .otp-guide-security-grid h3 { margin-top: 0; font-size: 14px; }
+  .otp-guide-share-types p, .otp-guide-security-grid p, .otp-guide-methods p { font-size: 12px; line-height: 1.55; }
+  .otp-guide-methods b { font-size: 13px; }
 
   .otp-guide-steps { gap: 0; }
   .otp-guide-steps li {
-    padding: 0 0 16px 36px; border: 0; border-radius: 0; background: transparent;
+    padding: 0 0 10px 30px; border: 0; border-radius: 0; background: transparent;
   }
   .otp-guide-steps li:last-child { padding-bottom: 0; }
-  .otp-guide-steps li::before { left: 0; top: 1px; font-size: 13px; }
-  .otp-guide-steps b { font-size: 16px; }
-  .otp-guide-steps p { font-size: 15px; line-height: 1.7; }
+  .otp-guide-steps li::before { left: 0; top: 1px; font-size: 12px; }
+  .otp-guide-steps b { font-size: 13px; }
+  .otp-guide-steps p { font-size: 12px; line-height: 1.55; }
 
-  .otp-guide-copy-block { padding: 12px 14px; border-radius: 12px; background: #f6f7fb; }
-  .otp-guide-copy-block b { font-size: 15px; }
-  .otp-guide-copy-block p { font-size: 15px; line-height: 1.75; }
-  .otp-guide-note, .otp-guide-callout { padding: 12px 0; background: transparent; border-radius: 0; }
+  .otp-guide-copy-block { padding: 8px 10px; border-radius: 8px; background: #f6f7fb; }
+  .otp-guide-copy-block b { font-size: 13px; }
+  .otp-guide-copy-block p { font-size: 12px; line-height: 1.6; }
+  .otp-guide-note, .otp-guide-callout { padding: 8px 0; background: transparent; border-radius: 0; }
   .otp-guide-note { border-top: 1px solid #d9def8; color: #34469f; }
   .otp-guide-callout { border-top: 1px solid #ead9b0; }
-  .otp-guide-note p, .otp-guide-callout p { font-size: 15px; line-height: 1.7; }
+  .otp-guide-note p, .otp-guide-callout p { font-size: 12px; line-height: 1.55; }
+  .otp-guide-note b, .otp-guide-callout b { font-size: 12px; }
   .otp-guide-anatomy { padding: 0; border: 0; background: transparent; }
   .otp-guide-anatomy ol { gap: 0; }
-  .otp-guide-anatomy li { padding: 12px 0; border-radius: 0; background: transparent; border-top: 1px solid var(--guide-line); }
+  .otp-guide-anatomy li { padding: 8px 0; border-radius: 0; background: transparent; border-top: 1px solid var(--guide-line); }
   .otp-guide-anatomy li:first-child { border-top: 0; }
-  .otp-guide-anatomy span { font-size: 15px; }
-  .otp-guide-anatomy small { font-size: 14px; line-height: 1.6; }
-  .otp-guide-permissions span { min-height: 34px; font-size: 13px; }
+  .otp-guide-anatomy span { font-size: 13px; }
+  .otp-guide-anatomy small { font-size: 12px; line-height: 1.5; }
+  .otp-guide-permissions span { min-height: 28px; font-size: 12px; }
   .otp-guide-faq { gap: 0; }
   .otp-guide-faq details { border: 0; border-top: 1px solid var(--guide-line); border-radius: 0; background: transparent; }
   .otp-guide-faq details:first-child { border-top: 0; }
-  .otp-guide-faq summary { padding: 16px 0; font-size: 16px; }
-  .otp-guide-faq details p { padding: 0 0 16px; font-size: 15px; line-height: 1.8; }
+  .otp-guide-faq summary { padding: 10px 0; font-size: 13px; }
+  .otp-guide-faq details p { padding: 0 0 10px; font-size: 12px; line-height: 1.6; }
 
   html.theme-dark .otp-guide-page { background: #101621; }
   html.theme-dark .otp-guide-bar,
