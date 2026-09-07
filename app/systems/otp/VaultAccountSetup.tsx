@@ -328,7 +328,7 @@ export default function VaultAccountSetup({ initialUsername, initialNickname = "
         <label><span>确认密码</span><div><KeyRound size={16} /><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} maxLength={20} autoComplete="new-password" placeholder="再次输入密码" /></div></label>
       </div> : null}
 
-      {passwordMode === "skip" ? <p className="otp-setup-warning"><ShieldAlert size={15} /><span><b>跳过后将无法使用账号密码登录</b><small>下次登录只能通过邮箱验证码；之后想设置密码，可在保险库「设置 → 账号安全」中补设。</small></span></p> : null}
+      {passwordMode === "skip" ? <p className="otp-setup-warning"><ShieldAlert size={15} /><span><b>跳过后将无法使用账号密码登录</b><small>下次登录只能通过邮箱验证码；之后想设置密码，可在保险库「我的 → 账号」中补设。</small></span></p> : null}
 
       {requireVerify && passwordMode !== "skip" ? identityBlock : null}
 

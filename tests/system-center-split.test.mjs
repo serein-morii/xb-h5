@@ -52,7 +52,7 @@ test("order system home links to the standalone system center", async () => {
 
 test("otp keeps logout inside 我的 page instead of the header", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
-  // 头部不再有退出按钮；退出/注销并入「账号与安全」分组
+  // 头部不再有退出按钮；退出/注销并入「账号」分组
   assert.doesNotMatch(workspace, /vault-ghost vault-logout" onClick/);
   assert.match(workspace, /onClick=\{\(\) => setModal\("logoutConfirm"\)\}/);
   assert.match(workspace, /setDeleteStep\("warn"\); setDeleteConfirmText\(""\); setModal\("deleteAccountConfirm"\)/);
@@ -71,10 +71,15 @@ test("otp settings page groups account security and appearance in one panel", as
     source("app/systems/otp/otp-vault.css"),
   ]);
   assert.match(workspace, /settingsSection/);
+  assert.match(workspace, /setSettingsSection\("security"\)/);
   assert.match(workspace, /setSettingsSection\("account"\)/);
   assert.match(workspace, /setSettingsSection\("appearance"\)/);
   assert.match(workspace, /setSettingsSection\("about"\)/);
-  assert.match(workspace, /账号与安全/);
+  assert.match(workspace, /<b>安全中心<\/b>/);
+  assert.match(workspace, /Passkey、备份、设备/);
+  assert.match(workspace, /<b>账号<\/b>/);
+  assert.doesNotMatch(workspace, /账号与安全/);
+  assert.doesNotMatch(workspace, /\['security', ShieldCheck, '安全'\]/);
   assert.match(workspace, /外观和显示/);
   assert.match(workspace, /OTP_VAULT_VERSION/);
   assert.match(workspace, /<b>更新日志<\/b>/);
