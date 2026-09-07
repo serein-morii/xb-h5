@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, Check, Clock3, Download, Fingerprint,
   Link2, List, LockKeyhole, Mail, Settings2, Smartphone, UserCheck, X,
@@ -35,19 +35,14 @@ type FlowNode =
 
 function GuideFlow({ label, nodes }: { label: string; nodes: FlowNode[] }) {
   return <div className="otp-guide-flow" role="group" aria-label={label}>
-    <p className="otp-guide-flow-caption">{label}</p>
-    {nodes.map((node, index) => <Fragment key={`${label}-${index}`}>
-      {index ? <i className="otp-guide-flow-arrow" aria-hidden="true" /> : null}
-      {node.type === "choice" ? <div className="otp-guide-flow-choice">
-        <span className="otp-guide-flow-diamond"><b>{node.text}</b></span>
-        <div className="otp-guide-flow-fork">
-          <div><small>{node.yesLabel || "是"}</small><b>{node.yes}</b></div>
-          <div><small>{node.noLabel || "否"}</small><b>{node.no}</b></div>
-        </div>
-      </div> : <div className={`otp-guide-flow-${node.type}`}>
-        {node.note ? <><b>{node.text}</b><p>{node.note}</p></> : node.text}
-      </div>}
-    </Fragment>)}
+    <div className="otp-guide-flow-caption">{label}</div>
+    {nodes.map((node, index) => <div className={`otp-guide-flow-item is-${node.type}${node.type === "choice" ? " otp-guide-flow-choice" : ""}`} key={`${label}-${index}`}>
+      <b>{node.text}</b>
+      {node.type === "choice" ? <div className="otp-guide-flow-branches">
+        <span><em>{node.yesLabel || "是"}</em>{node.yes}</span>
+        <span><em>{node.noLabel || "否"}</em>{node.no}</span>
+      </div> : node.note ? <p>{node.note}</p> : null}
+    </div>)}
   </div>;
 }
 

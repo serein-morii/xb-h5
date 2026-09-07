@@ -52,6 +52,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.doesNotMatch(guide, /otp-guide-lifecycle/);
   assert.match(guide, /otp-guide-flow/);
   assert.match(guide, /otp-guide-flow-choice/);
+  assert.match(guide, /otp-guide-flow-item/);
+  assert.match(guide, /otp-guide-flow-branches/);
   assert.match(guide, /点顶部加号/);
   assert.match(guide, /剪贴板里正好是授权链接/);
   assert.match(guide, /第二次打开会直接进入内容/);
@@ -92,7 +94,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(styles, /safe-area-inset-top/);
   assert.match(styles, /\.otp-guide-toc[\s\S]{0,280}position:\s*fixed/);
   assert.match(styles, /\.otp-guide-toc-toggle[\s\S]{0,220}border-radius:\s*999px/);
-  assert.match(styles, /\.otp-guide-flow-diamond[\s\S]{0,280}clip-path:\s*polygon/);
+  assert.match(styles, /\.otp-guide-flow-item::before/);
+  assert.match(styles, /\.otp-guide-flow-branches/);
   assert.match(styles, /\.otp-changelog-timeline::before/);
   assert.doesNotMatch(guide, /无需登录即可阅读|公开指南/);
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
