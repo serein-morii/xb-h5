@@ -106,7 +106,7 @@ export default function OtpVaultGuidePage() {
           <GuideFlow label="日常路径" nodes={[
             { type: "start", text: "打开 OTP Vault" },
             { type: "step", text: "登录或注册", note: "邮箱验证码、账号密码或 Passkey" },
-            { type: "step", text: "点顶部加号添加凭据" },
+            { type: "step", text: "点添加按钮" },
             { type: "step", text: "复制验证码去登录" },
             { type: "choice", text: "要分享吗", yes: "创建临时授权", no: "只自己用" },
             { type: "step", text: "下载加密备份" },
@@ -127,15 +127,15 @@ export default function OtpVaultGuidePage() {
         <header><em>02</em><div><h2>添加凭据</h2><p>优先扫描二维码，无法扫码时再手动录入或导入文本。</p></div></header>
         <div className="otp-guide-prose">
           <GuideFlow label="添加凭据" nodes={[
-            { type: "start", text: "进入全部" },
-            { type: "step", text: "点顶部加号" },
+            { type: "start", text: "进入凭据页" },
+            { type: "step", text: "点添加" },
             { type: "choice", text: "有二维码吗", yes: "允许相机并扫描", no: "手动填或导入文本", yesLabel: "有", noLabel: "没有" },
             { type: "choice", text: "账号已存在", yes: "确认后仍保存", no: "直接保存" },
             { type: "end", text: "首页出现卡片" },
           ]} />
           <h3>扫描二维码</h3>
           <ol>
-            <li>进入“全部”，点顶部加号。</li>
+            <li>进入凭据页，点添加。</li>
             <li>选择扫码，并允许相机权限；多条迁移选“批量导入”。</li>
             <li>将二维码完整放入识别区域。</li>
             <li>核对系统名称和账号后保存。</li>
@@ -144,7 +144,7 @@ export default function OtpVaultGuidePage() {
           <h3>手动录入</h3>
           <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。</p>
           <h3>导入文本</h3>
-          <p>如果已有包含 <code>otpauth://</code> 地址的文本，点顶部加号后选择导入。导入前先确认文件来源可信。</p>
+          <p>如果已有包含 <code>otpauth://</code> 地址的文本，点添加后选择导入。导入前先确认文件来源可信。</p>
           <h3>重复添加</h3>
           <p>同一系统和账号可以重复添加，例如两台设备各自的验证码。保存或批量导入时如果已经有相同系统和账号，会先确认，确认后仍可保存。</p>
           <aside className="otp-guide-callout"><AlertTriangle size={14} /><div><b>Secret 不是普通登录密码</b><p>它可以持续生成验证码，只能从服务方的双重验证设置页面获取，不要截图或明文转发。</p></div></aside>
@@ -175,7 +175,7 @@ export default function OtpVaultGuidePage() {
         <header><em>04</em><div><h2>临时授权</h2><p>先给授权起名，只开放对方真正需要的内容，并设置尽可能短的有效期。</p></div></header>
         <div className="otp-guide-prose">
           <GuideFlow label="创建授权" nodes={[
-            { type: "start", text: "从卡片或授权页进入" },
+            { type: "start", text: "从卡片分享，或授权页点创建授权" },
             { type: "step", text: "勾选凭据", note: "单次最多 50 条" },
             { type: "step", text: "填写授权名称", note: "不填则为临时凭据授权" },
             { type: "choice", text: "发给谁", yes: "链接分享，可设访问码", no: "指定用户，对方登录后看", yesLabel: "链接", noLabel: "指定用户" },

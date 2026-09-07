@@ -60,7 +60,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(guide, /otp-guide-flow-fork/);
   assert.match(guide, /otp-guide-flow-arrow/);
   assert.match(guide, /otp-guide-flow-merge/);
-  assert.match(guide, /点顶部加号/);
+  assert.match(guide, /点添加/);
+  assert.doesNotMatch(guide, /点顶部加号/);
   assert.match(guide, /剪贴板里正好是授权链接/);
   assert.match(guide, /第二次打开会直接进入内容/);
   assert.match(guide, /登录、改密和敏感操作都可使用 Passkey/);
