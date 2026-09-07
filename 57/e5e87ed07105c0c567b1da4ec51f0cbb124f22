@@ -1,0 +1,40 @@
+app/components/notification-center.css
+  h_d554d32aa9d663 15-17,20-21,25-62,308
+app/systems/otp/OtpInstallHint.tsx
+  h_d554d32aa9d663 8,20
+app/systems/otp/OtpVaultWorkspace.tsx
+  h_d554d32aa9d663 1,14,28,259-260,288-289,551-556,565,567,569-593,779-783,836-845,865-867,870-873,876-877,966-967,970-1016,1021-1024,1049-1051,1058-1059,1070,1086,1091,1162,1165-1168,1170,1174-1176,1180,1232
+app/systems/otp/VaultSharePage.tsx
+  h_d554d32aa9d663 203,223
+app/systems/otp/otp-guide.css
+  h_d554d32aa9d663 18,38,347
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 21,39-40,52-151,165-192,198,292-296,305-310,508-509,514-526,564,570-571,678-689,825,904-958,960-961,1161,1173
+app/systems/otp/otpDailyUse.ts
+  h_d554d32aa9d663 82-100
+app/systems/otp/otpVaultShare.ts
+  h_d554d32aa9d663 3-13,68-263
+app/systems/otp/vaultApi.ts
+  h_d554d32aa9d663 67,76
+tests/otp-daily-use.test.mjs
+  h_d554d32aa9d663 14,33,35-42,150-151
+tests/otp-guide.test.mjs
+  h_d554d32aa9d663 112-113
+tests/otp-vault-share.test.mjs
+  h_d554d32aa9d663 5-6,10-13,15,17-19,21-24,80-115,133-202,255,299,304-307
+tests/rendered-html.test.mjs
+  h_d554d32aa9d663 454,473,485
+tests/system-center-split.test.mjs
+  h_d554d32aa9d663 92-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "57e5e87ed07105c0c567b1da4ec51f0cbb124f22",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
