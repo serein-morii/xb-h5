@@ -109,6 +109,8 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-chapter h2 \{ font-size: 15px/);
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-prose p, \.otp-guide-prose li \{ font-size: 12px/);
   assert.match(styles, /@media \(max-width: 600px\)[\s\S]*\.otp-guide-doc \{ width: 100%; padding: 10px 12px 84px/);
+  assert.match(styles, /\.otp-guide-doc \{\s*width: min\(920px, calc\(100% - 40px\)\)/);
+  assert.match(styles, /\.otp-changelog-doc \{\s*width: min\(920px, calc\(100% - 40px\)\)/);
   assert.match(styles, /\.otp-guide-flow/);
   assert.match(styles, /\.otp-changelog-entry/);
   assert.doesNotMatch(guide, /—/);

@@ -5,6 +5,7 @@ import {
   installCoachCopy,
   installCoachKind,
   iosVersionFromUa,
+  isMobileLikeDevice,
   isStandaloneDisplay,
   readInstallDismissed,
   shouldShowInstallHint,
@@ -16,6 +17,7 @@ export default function OtpInstallHint() {
   const [visible, setVisible] = useState(() => shouldShowInstallHint({
     standalone: typeof window !== "undefined" && isStandaloneDisplay(),
     dismissed: typeof window !== "undefined" && readInstallDismissed(),
+    mobile: typeof navigator === "undefined" ? false : isMobileLikeDevice(),
   }));
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const kind = typeof navigator === "undefined" ? "browser" : installCoachKind();

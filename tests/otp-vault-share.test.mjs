@@ -2,12 +2,26 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  DEFAULT_SHARE_DAYS,
+  DEFAULT_SHARE_SECONDS,
   PENDING_SAVE_KEY,
   SHARE_ITEM_LIMIT,
   clipboardReadBlocked,
+  defaultShareName,
+  groupCredentials,
+  groupReceivedBySource,
+  listSharedByOptions,
   matchesCredentialTab,
+  matchesSharedByFilter,
   parseShareClipboard,
+  receivedAvatarText,
+  receivedGroupLabel,
+  receivedGroupMeta,
   receivedShareSourceLabel,
+  shareDetailCredentials,
+  SHARED_BY_SELF,
+  sharedByFilterLabel,
+  sharerDisplay,
   selectShareItems,
   shareHandoffAfterRestore,
   shareLoginNext,
@@ -63,6 +77,42 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /SHARE_ITEM_LIMIT/);
   assert.match(workspace, /单次最多(?:授权|选择) \$\{SHARE_ITEM_LIMIT\}/);
   assert.match(workspace, /credentialTab === "received"/);
+  assert.match(workspace, /groupCredentials\(filtered, credentialTab, prefs\.grouped\)/);
+  assert.match(workspace, /groupReceivedBySource/);
+  assert.match(workspace, /renderReceivedList/);
+  assert.match(workspace, /is-received-source/);
+  assert.match(workspace, /vault-received-group-head/);
+  assert.doesNotMatch(workspace, /toggleGroupBySource/);
+  assert.match(workspace, /sharedByFilter/);
+  assert.match(workspace, /listSharedByOptions/);
+  assert.match(workspace, /matchesSharedByFilter/);
+  assert.doesNotMatch(workspace, /optgroup/);
+  assert.match(workspace, /<span>来自<\/span>/);
+  assert.match(workspace, /SHARED_BY_SELF/);
+  assert.match(workspace, />我的</);
+  assert.doesNotMatch(workspace, /<span>来源<\/span>/);
+  assert.doesNotMatch(workspace, /vault-sharer-toggle/);
+  assert.match(workspace, /sharerDisplay\(section\)/);
+  assert.match(workspace, /来自 \$\{sharerDisplay\(item\)\}/);
+  assert.match(workspace, /aria-label="分享详情"/);
+  assert.match(workspace, /分享配置/);
+  assert.equal(DEFAULT_SHARE_DAYS, 30);
+  assert.equal(DEFAULT_SHARE_SECONDS, 30 * 86400);
+  assert.equal(defaultShareName("爱丽丝", ["GitHub"]), "爱丽丝的GitHub临时凭据授权");
+  assert.equal(defaultShareName("爱丽丝", ["GitHub", "GitHub"]), "爱丽丝的GitHub临时凭据授权");
+  assert.equal(defaultShareName("爱丽丝", ["GitHub", "Google"]), "爱丽丝的临时凭据授权");
+  assert.match(workspace, /defaultShareName/);
+  assert.match(workspace, /DEFAULT_SHARE_SECONDS/);
+  assert.match(workspace, /shareCreateConfirm/);
+  assert.match(workspace, /requestShareCreate/);
+  assert.match(workspace, /confirmShareCreate/);
+  assert.match(workspace, /vault-share-confirm-duration/);
+  assert.match(workspace, /确认生成/);
+  assert.match(workspace, /shareDetailCredentials/);
+  assert.match(workspace, /item.shareId === shareDetail.id/);
+  assert.match(workspace, /shareConfigItems/);
+  assert.match(workspace, /!shareDetail.inbound \? <>/);
+  assert.match(workspace, /未授权/);
   assert.match(workspace, /shareTab === "received"/);
   assert.match(workspace, /确认解除/);
   assert.match(workspace, /listReceivedVaultShares/);
@@ -78,6 +128,76 @@ test("received share source labels distinguish direct grants and saved links", (
   assert.equal(receivedShareSourceLabel("DIRECT"), "指定授权");
   assert.equal(receivedShareSourceLabel("SAVE", "LINK"), "链接转存");
   assert.equal(receivedShareSourceLabel(undefined, "DIRECT"), "指定授权");
+});
+
+test("received credentials group by share batch not issuer", () => {
+  assert.equal(receivedGroupLabel({ shareName: "给同事", sharedBy: "alice" }), "给同事 · 来自 alice");
+  assert.equal(receivedGroupLabel({ sharedBy: "bob" }), "来自 bob");
+  assert.deepEqual(receivedGroupMeta({ shareName: "给同事", sharedBy: "alice" }), {
+    label: "给同事 · 来自 alice",
+    title: "给同事",
+    subtitle: "来自 alice",
+    sharedBy: "alice",
+    shareName: "给同事",
+    avatar: "AL",
+  });
+  assert.equal(receivedAvatarText("张三"), "张三");
+  assert.equal(receivedAvatarText("alice"), "AL");
+  const items = [
+    { issuer: "GitHub", shareId: 2, shareName: "一批", sharedBy: "alice", shared: true },
+    { issuer: "GitHub", shareId: 3, shareName: "另一批", sharedBy: "bob", shared: true },
+    { issuer: "Google", shareId: 2, shareName: "一批", sharedBy: "alice", shared: true },
+    { issuer: "Own", shared: false },
+  ];
+  const receivedOnly = items.filter((item) => item.shared);
+  const groups = groupCredentials(receivedOnly, "received", true, false);
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0].key, "share:2");
+  assert.equal(groups[0].title, "一批");
+  assert.equal(groups[0].subtitle, "来自 alice");
+  assert.equal(groups[0].avatar, "AL");
+  assert.equal(groups[0].items.length, 2);
+  assert.equal(groups[1].key, "share:3");
+  assert.equal(groups[1].title, "另一批");
+  assert.equal(groups[1].items.length, 1);
+  const sections = groupReceivedBySource(receivedOnly);
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].sharedBy, "alice");
+  assert.equal(sections[0].batches.length, 1);
+  assert.equal(sections[0].items.length, 2);
+  assert.equal(sections[1].sharedBy, "bob");
+  assert.equal(sections[1].batches[0].title, "另一批");
+  const nickItems = [
+    { issuer: "GitHub", shareId: 2, sharedBy: "张三", sharedByAccount: "zhangsan", shared: true },
+    { issuer: "Google", shareId: 2, sharedBy: "张三", sharedByAccount: "zhangsan", shared: true },
+    { issuer: "Slack", shareId: 4, sharedBy: "张三", sharedByAccount: "zhangsan2", shared: true },
+  ];
+  const nickSections = groupReceivedBySource(nickItems);
+  assert.equal(nickSections.length, 2);
+  assert.equal(nickSections[0].sharedBy, "张三");
+  assert.equal(nickSections[0].sharedByAccount, "zhangsan");
+  assert.equal(nickSections[0].label, "来自 张三 · zhangsan");
+  assert.equal(nickSections[0].items.length, 2);
+  assert.equal(nickSections[1].sharedByAccount, "zhangsan2");
+  assert.equal(sharerDisplay({ sharedBy: "张三", sharedByAccount: "zhangsan" }), "张三 · zhangsan");
+  assert.equal(sharerDisplay({ sharedBy: "alice", sharedByAccount: "alice" }), "alice");
+  assert.equal(sharerDisplay({ sharedBy: "bob" }), "bob");
+  assert.deepEqual(
+    shareDetailCredentials([2, 9], [{ id: 2, issuer: "GitHub", accountName: "octo" }]),
+    [{ id: 2, issuer: "GitHub", accountName: "octo" }, { id: 9, issuer: "已移除的凭据", accountName: "#9" }],
+  );
+  const issuerGroups = groupCredentials(items, "all", true);
+  assert.equal(issuerGroups.length, 3);
+  assert.equal(issuerGroups[0].label, "GitHub");
+  assert.deepEqual(listSharedByOptions(items), ["alice", "bob"]);
+  assert.equal(matchesSharedByFilter(items[0], ""), true);
+  assert.equal(matchesSharedByFilter(items[0], "alice"), true);
+  assert.equal(matchesSharedByFilter(items[1], "alice"), false);
+  assert.equal(matchesSharedByFilter(items[3], "alice"), false);
+  assert.equal(matchesSharedByFilter(items[3], SHARED_BY_SELF), true);
+  assert.equal(matchesSharedByFilter(items[0], SHARED_BY_SELF), false);
+  assert.equal(sharedByFilterLabel(SHARED_BY_SELF), "我的");
+  assert.equal(sharedByFilterLabel("alice"), "alice");
 });
 
 test("share detail lists save records with kick and ban, and share form can forbid saving", async () => {
@@ -132,7 +252,7 @@ test("share save sits in a collapsible bottom dock named 转存", async () => {
   assert.match(sharePage, /className=\{`share-save-dock\$\{saveCollapsed \? " is-collapsed" : ""\}`\}/);
   assert.match(sharePage, /aria-label=\{saved \? "已转存" : "转存"\}/);
   assert.match(sharePage, /aria-label="收起"/);
-  assert.match(sharePage, /\{saved \? "已转存" : "转存"\}/);
+  assert.match(sharePage, /status\?\.name\?\.trim\(\)/);
   assert.match(sharePage, /保存到「我收到的」/);
   assert.match(sharePage, /登录后转存/);
   assert.match(styles, /\.share-save-dock\s*\{[^}]*position:\s*fixed;/s);
@@ -176,10 +296,15 @@ test("vault scans clipboard on focus visibility and paste, never on an interval"
   assert.match(workspace, /clipboard\.readText/);
   assert.doesNotMatch(workspace, /setInterval\([^)]*clipboard/);
   assert.match(workspace, /检测到授权/);
+  assert.match(workspace, /clipboardOffer\.name/);
   assert.match(workspace, /忽略/);
   assert.doesNotMatch(workspace, /识别剪贴板/);
   assert.match(workspace, /clipboardReadBlocked/);
   assert.match(workspace, /pointerdown/);
+  const saveFn = workspace.slice(workspace.indexOf("const saveClipboardOffer"), workspace.indexOf("const syncOfflineCopy"));
+  assert.doesNotMatch(saveFn, /persistClipboardIgnored/);
+  assert.match(saveFn, /alreadySaved/);
+  assert.match(workspace, /persistClipboardIgnored\(clipboardOffer\.token\)/);
 });
 
 test("second access-code open does not stay on verifying handoff when a session already exists", () => {

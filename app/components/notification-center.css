@@ -12,14 +12,53 @@
 
 .notif-panel {
   position: relative;
-  width: min(390px, 100%);
-  max-height: 80vh;
+  width: min(560px, 100%);
+  max-height: 86vh;
+  min-height: min(520px, 86vh);
   display: flex; flex-direction: column;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 52px rgba(15, 23, 42, 0.26);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.26);
   overflow: hidden;
   animation: notif-rise 0.18s ease;
+}
+
+/* PC 端再放大一档：更宽、更高、字号与留白更从容 */
+@media (min-width: 561px) {
+  .notif-mask { padding: 5vh 20px 20px; }
+  .notif-panel {
+    width: min(640px, 92vw);
+    max-height: 88vh;
+    min-height: min(580px, 88vh);
+  }
+  .notif-header { padding: 16px 18px 12px; }
+  .notif-header small { font-size: 10px; }
+  .notif-header h2 { font-size: 18px; }
+  .notif-header h2 em { font-size: 11.5px; padding: 2px 9px; }
+  .notif-icon-action { width: 32px; height: 32px; border-radius: 9px; }
+  .notif-tabs { gap: 6px; padding: 12px 18px 0; }
+  .notif-tabs button { padding: 6px 14px; font-size: 12.5px; }
+  .notif-list { padding: 12px 14px 16px; gap: 6px; }
+  .notif-item { border-radius: 14px; }
+  .notif-item-main { padding: 14px 12px 14px 14px; }
+  .notif-item-top b { font-size: 14.5px; }
+  .notif-item-time { font-size: 11.5px; }
+  .notif-chip { font-size: 10.5px; padding: 2px 8px; }
+  .notif-item-actions .notif-icon-action { width: 28px; height: 28px; }
+  .notif-detail { padding: 22px 24px 28px; gap: 16px; }
+  .notif-detail h3 { font-size: 20px; }
+  .notif-detail-time { font-size: 13px; }
+  .notif-item-content { font-size: 15px; line-height: 1.75; padding: 18px 20px; border-radius: 14px; }
+  .notif-item-content h1 { font-size: 20px; }
+  .notif-item-content h2 { font-size: 17px; }
+  .notif-item-content h3 { font-size: 15px; }
+  .notif-item-content :is(h4,h5,h6) { font-size: 14px; }
+  .notif-item-content table { font-size: 13px; }
+  .notif-item-content code { font-size: 13px; }
+  .notif-pager { padding: 12px 18px 16px; font-size: 13px; gap: 12px; }
+  .notif-pager button { min-height: 34px; padding: 0 14px; font-size: 12.5px; }
+  .notif-state { min-height: 220px; gap: 10px; font-size: 13.5px; }
+  .notif-back { font-size: 13.5px; padding: 6px 10px 6px 4px; }
 }
 @keyframes notif-rise { from { transform: translateY(12px); opacity: 0; } }
 
@@ -266,6 +305,7 @@
   .notif-panel {
     width: 100%;
     max-height: 88dvh;
+    min-height: 0;
     border-radius: 0 0 20px 20px;
     border-top: 0;
     padding-bottom: env(safe-area-inset-bottom);

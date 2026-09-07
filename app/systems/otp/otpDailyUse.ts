@@ -79,8 +79,25 @@ export function isIosDevice(ua = typeof navigator === "undefined" ? "" : navigat
   return /iPad|iPhone|iPod/.test(ua) || (typeof navigator !== "undefined" && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-export function shouldShowInstallHint({ standalone, dismissed }: { standalone: boolean; dismissed: boolean }) {
-  return !standalone && !dismissed;
+/** 手机/平板才提示「添加到桌面」；PC 桌面端不弹。 */
+export function isMobileLikeDevice(ua = typeof navigator === "undefined" ? "" : navigator.userAgent) {
+  if (isIosDevice(ua)) return true;
+  if (/Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true;
+  if (/Mobile/i.test(ua)) return true;
+  return false;
+}
+
+export function shouldShowInstallHint({
+  standalone,
+  dismissed,
+  mobile = true,
+}: {
+  standalone: boolean;
+  dismissed: boolean;
+  /** false 表示 PC 桌面，不展示安装提示 */
+  mobile?: boolean;
+}) {
+  return Boolean(mobile) && !standalone && !dismissed;
 }
 
 export function readInstallDismissed() {

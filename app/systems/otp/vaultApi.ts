@@ -64,7 +64,7 @@ export type VaultCredential = {
   currentOtp?: string; nextOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
-  shared?: boolean; shareId?: number; sharedBy?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
+  shared?: boolean; shareId?: number; shareName?: string; sharedBy?: string; sharedByAccount?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
 };
 
 export type VaultShare = {
@@ -73,7 +73,7 @@ export type VaultShare = {
   accessCode?: string; showAccount: boolean; showPassword: boolean; showOtp: boolean; showLoginUrl: boolean; showNote: boolean;
   credentialIds?: number[]; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; expireTime: string; createTime: string; accessRecords?: VaultAccessRecord[];
   saveRecords?: VaultShareSaveRecord[];
-  inbound?: boolean; sharedBy?: string; source?: "DIRECT" | "SAVE";
+  inbound?: boolean; sharedBy?: string; sharedByAccount?: string; source?: "DIRECT" | "SAVE";
 };
 
 export type VaultShareSaveRecord = {

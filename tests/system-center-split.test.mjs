@@ -89,6 +89,14 @@ test("otp settings page groups account security and appearance in one panel", as
   assert.doesNotMatch(workspace, /<b>界面显示<\/b>/);
   assert.match(styles, /\.vault-settings-back/);
   assert.match(styles, /\.vault-version-row/);
+  assert.match(workspace, /vault-settings-hub/);
+  assert.match(workspace, /vault-settings-appearance/);
+  assert.match(workspace, /vault-settings-about/);
+  assert.match(styles, /\.vault-settings \{ width: 100%;/);
+  assert.match(styles, /\.vault-security-page \{ width: 100%; max-width: none;/);
+  assert.doesNotMatch(styles, /\.vault-security-page \{ width: 100%; max-width: 920px/);
+  assert.match(styles, /@media \(min-width: 561px\)[\s\S]*\.vault-settings-hub/);
+  assert.match(styles, /@media \(min-width: 561px\)[\s\S]*\.vault-clipboard-dock \{[\s\S]*width: min\(480px/);
 });
 
 test("order admin exposes notification center from menu sheet and branded login", async () => {

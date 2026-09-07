@@ -451,7 +451,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(workspace, /openShareEdit/);
   assert.match(workspace, /updateVaultShare\(shareDetail\.id/);
   assert.match(workspace, /原授权链接和访问码保持不变/);
-  assert.match(workspace, /created\?\.autoFillAllowed \? autoFillUrl : created\?\.shareUrl/);
+  assert.match(workspace, /created\.autoFillAllowed \? <button type="button" className="vault-ghost" onClick=\{\(\) => void copy\(autoFillUrl, "自动填充链接已复制"\)\}>/);
   assert.match(workspace, /formatShareText/);
   assert.match(workspace, /copyShareInfo/);
   assert.match(workspace, /shareShareInfo/);
@@ -470,7 +470,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(share, /setDetailItem/);
   assert.match(share, /className=\{`vault-card/);
   assert.match(share, /localStorage\.setItem\("otp-vault-share-prefs"/);
-  assert.match(share, /搜索服务或账号/);
+  assert.match(share, /placeholder="搜索"/);
   assert.match(share, /displayPrefs\.compact \? " is-compact"/);
   assert.match(share, /displayPrefs\.grouped/);
   assert.match(share, /expiryProgress/);
@@ -482,7 +482,7 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
   assert.match(share, /pathLength="100"/);
   assert.match(styles, /\.vault-card\.is-compact \{ display: grid/);
   assert.match(styles, /\.vault-account-links \{[^}]*display: grid/);
-  assert.doesNotMatch(styles, /\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/);
+  assert.doesNotMatch(styles, /^\.vault-account-links \{[^}]*grid-template-columns: repeat\(2/m);
   assert.match(styles, /\.vault-account-profile/);
   assert.match(styles, /\.vault-toast \{ top: auto; bottom:/);
   assert.match(styles, /html\.theme-dark \.vault-theme-options button\.is-active/);

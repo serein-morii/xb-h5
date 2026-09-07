@@ -11,6 +11,7 @@ import {
   installCoachKind,
   iosInstallHint,
   iosVersionFromUa,
+  isMobileLikeDevice,
   measureClockDriftMs,
   scheduleClipboardClear,
   shouldConfirmDuplicateAdd,
@@ -29,11 +30,16 @@ test("clock drift uses RTT midpoint and warns at 2 seconds", () => {
   assert.equal(shouldWarnClockDrift(-2500), true);
 });
 
-test("install hint hides in standalone and after dismiss", () => {
+test("install hint hides on PC, standalone and after dismiss", () => {
   assert.equal(INSTALL_DISMISS_KEY, "otp-vault-install-coach-v3");
-  assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false }), false);
-  assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true }), false);
-  assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false }), true);
+  assert.equal(isMobileLikeDevice("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120"), false);
+  assert.equal(isMobileLikeDevice("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) Safari/605.1"), false);
+  assert.equal(isMobileLikeDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1"), true);
+  assert.equal(isMobileLikeDevice("Mozilla/5.0 (Linux; Android 14) Chrome/120"), true);
+  assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false, mobile: true }), false);
+  assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true, mobile: true }), false);
+  assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false, mobile: false }), false);
+  assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false, mobile: true }), true);
   assert.match(iosInstallHint, /添加到桌面/);
 });
 
@@ -141,6 +147,8 @@ test("vault wires install hint, clock banner, local offline sync and clipboard c
   const hint = await source("app/systems/otp/OtpInstallHint.tsx");
   assert.match(hint, /installCoachCopy/);
   assert.match(hint, /iosVersionFromUa/);
+  assert.match(hint, /isMobileLikeDevice/);
+  assert.match(hint, /mobile:/);
   assert.match(hint, /怎么添加/);
   assert.match(hint, /kind === "ios" \|\| kind === "wechat"/);
   assert.match(hint, /otp-install-steps/);
