@@ -34,17 +34,14 @@ export default function OtpVaultGuidePage() {
 
   return <main className="otp-guide-page">
     <header className="otp-guide-bar">
-      <a className="otp-guide-bar-back" href={APP_ROUTES.otp}><ArrowLeft size={16} />OTP Vault</a>
+      <a className="otp-guide-bar-back" href={APP_ROUTES.otp}><ArrowLeft size={16} /><span>返回</span></a>
       <b>使用指南</b>
-      <nav>
-        <a href={APP_ROUTES.otpChangelog}>更新日志</a>
-        <a className="otp-guide-bar-open" href={APP_ROUTES.otp}>打开保险库</a>
-      </nav>
+      <a className="otp-guide-bar-open" href={APP_ROUTES.otp}>打开</a>
     </header>
 
     <article className="otp-guide-doc">
       <header className="otp-guide-lead">
-        <p>按使用顺序阅读，从添加第一条凭据开始。大约 5 分钟。</p>
+        <p>按使用顺序阅读，从添加第一条凭据开始。大约 5 分钟。<a href={APP_ROUTES.otpChangelog}>更新日志</a></p>
       </header>
 
       <nav className="otp-guide-toc" aria-label="章节目录">

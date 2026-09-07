@@ -14,22 +14,21 @@
 
 .otp-guide-bar {
   position: sticky; z-index: 20; top: 0;
-  min-height: 56px; padding: 0 max(20px, calc((100vw - 760px) / 2));
+  min-height: calc(52px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(20px, calc((100vw - 760px) / 2)) 0;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   border-bottom: 1px solid var(--guide-line);
-  background: rgba(246, 247, 251, .92);
+  background: rgba(246, 247, 251, .94);
   backdrop-filter: blur(14px);
 }
-.otp-guide-bar b { font-size: 14px; letter-spacing: -.02em; }
+.otp-guide-bar b { font-size: 15px; letter-spacing: -.02em; }
 .otp-guide-bar-back {
   justify-self: start; display: inline-flex; align-items: center; gap: 4px;
   color: #596174; font-size: 13px; font-weight: 650; text-decoration: none;
 }
-.otp-guide-bar nav { justify-self: end; display: flex; align-items: center; gap: 14px; }
-.otp-guide-bar nav a { color: var(--guide-muted); font-size: 12px; font-weight: 700; text-decoration: none; }
 .otp-guide-bar-open {
-  min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center;
-  border-radius: 10px; color: #fff !important; background: var(--guide-accent);
+  justify-self: end; min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center;
+  border-radius: 10px; color: #fff; background: var(--guide-accent); font-size: 12px; font-weight: 700; text-decoration: none;
 }
 .otp-guide-bar a:focus-visible, .otp-guide-toc a:focus-visible, .otp-guide-prose a:focus-visible {
   outline: 2px solid var(--guide-accent); outline-offset: 3px;
@@ -40,8 +39,9 @@
   margin: 0 auto;
   padding: 28px 0 64px;
 }
-.otp-guide-lead { margin: 0 0 22px; }
-.otp-guide-lead p { margin: 0; color: var(--guide-muted); font-size: 15px; line-height: 1.7; }
+.otp-guide-lead { margin: 0 0 18px; }
+.otp-guide-lead p { margin: 0; color: var(--guide-muted); font-size: 15px; line-height: 1.75; }
+.otp-guide-lead a { margin-left: 8px; color: var(--guide-accent); font-weight: 700; text-decoration: none; }
 
 .otp-guide-toc {
   margin: 0 0 28px; padding: 6px 0;
@@ -175,17 +175,104 @@ html.theme-dark .otp-guide-anatomy li { background: #121a28; }
 html.theme-dark .otp-guide-callout { color: #e6b86b; background: #33291c; }
 
 @media (max-width: 600px) {
-  .otp-guide-bar { min-height: 52px; padding: 0 14px; grid-template-columns: auto 1fr auto; }
-  .otp-guide-bar b { justify-self: center; font-size: 13px; }
-  .otp-guide-bar-back { font-size: 0; gap: 0; }
-  .otp-guide-bar-back svg { width: 18px; height: 18px; }
-  .otp-guide-bar nav { gap: 8px; }
-  .otp-guide-bar-open { min-height: 32px; padding: 0 10px; font-size: 11px; }
-  .otp-guide-doc { width: calc(100% - 28px); padding: 20px 0 48px; }
-  .otp-guide-toc { grid-template-columns: 1fr; }
-  .otp-guide-chapter { scroll-margin-top: 64px; padding: 22px 0 6px; }
-  .otp-guide-chapter h2 { font-size: 20px; }
-  .otp-guide-prose p, .otp-guide-prose li { font-size: 14px; }
+  .otp-guide-page { background: #fff; }
+  .otp-guide-bar {
+    min-height: calc(48px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 8px 0 4px;
+    grid-template-columns: auto 1fr auto;
+    background: rgba(255, 255, 255, .94);
+  }
+  .otp-guide-bar b { justify-self: center; font-size: 16px; font-weight: 750; }
+  .otp-guide-bar-back { min-width: 44px; min-height: 44px; justify-content: center; gap: 0; }
+  .otp-guide-bar-back span { display: none; }
+  .otp-guide-bar-back svg { width: 20px; height: 20px; }
+  .otp-guide-bar-open { min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; }
+  .otp-guide-doc { width: 100%; padding: 16px 18px 56px; }
+  .otp-guide-lead { margin: 0 0 12px; }
+  .otp-guide-lead p { font-size: 14px; line-height: 1.7; }
+  .otp-guide-lead a { margin-left: 6px; }
+
+  .otp-guide-toc {
+    position: sticky; z-index: 15; top: calc(48px + env(safe-area-inset-top));
+    display: flex; grid-template-columns: none; gap: 8px;
+    width: calc(100% + 36px); margin: 0 -18px 8px; padding: 8px 18px 10px;
+    overflow-x: auto; scrollbar-width: none;
+    border: 0; border-bottom: 1px solid var(--guide-line);
+    background: rgba(255, 255, 255, .94);
+    backdrop-filter: blur(14px);
+  }
+  .otp-guide-toc::-webkit-scrollbar { display: none; }
+  .otp-guide-toc a {
+    flex: none; min-height: 32px; padding: 0 12px;
+    border-radius: 999px; background: #f3f4f8; font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  .otp-guide-toc em { width: auto; height: auto; padding: 0; background: none; font-size: 11px; }
+
+  .otp-guide-chapter { scroll-margin-top: calc(96px + env(safe-area-inset-top)); padding: 26px 0 10px; }
+  .otp-guide-chapter > header { gap: 10px; margin-bottom: 14px; }
+  .otp-guide-chapter > header > em {
+    width: auto; height: auto; padding: 0; border-radius: 0; background: none; font-size: 13px;
+  }
+  .otp-guide-chapter h2 { font-size: 22px; line-height: 1.25; }
+  .otp-guide-chapter > header p { font-size: 14px; line-height: 1.65; }
+  .otp-guide-prose { gap: 16px; }
+  .otp-guide-prose h3 { margin-top: 8px; font-size: 16px; }
+  .otp-guide-prose p, .otp-guide-prose li { font-size: 16px; line-height: 1.8; }
+  .otp-guide-prose ol, .otp-guide-prose ul { padding-left: 1.2em; }
+
+  .otp-guide-methods, .otp-guide-share-types, .otp-guide-security-grid { gap: 0; }
+  .otp-guide-methods section,
+  .otp-guide-share-types section,
+  .otp-guide-security-grid section {
+    padding: 12px 0; border: 0; border-top: 1px solid var(--guide-line); border-radius: 0; background: transparent;
+  }
+  .otp-guide-methods section:first-child,
+  .otp-guide-share-types section:first-child,
+  .otp-guide-security-grid section:first-child { border-top: 0; padding-top: 0; }
+  .otp-guide-share-types section > span, .otp-guide-security-grid svg { display: none; }
+  .otp-guide-share-types h3, .otp-guide-security-grid h3 { margin-top: 0; font-size: 16px; }
+  .otp-guide-share-types p, .otp-guide-security-grid p, .otp-guide-methods p { font-size: 15px; line-height: 1.7; }
+
+  .otp-guide-steps { gap: 0; }
+  .otp-guide-steps li {
+    padding: 0 0 16px 36px; border: 0; border-radius: 0; background: transparent;
+  }
+  .otp-guide-steps li:last-child { padding-bottom: 0; }
+  .otp-guide-steps li::before { left: 0; top: 1px; font-size: 13px; }
+  .otp-guide-steps b { font-size: 16px; }
+  .otp-guide-steps p { font-size: 15px; line-height: 1.7; }
+
+  .otp-guide-copy-block { padding: 12px 14px; border-radius: 12px; background: #f6f7fb; }
+  .otp-guide-copy-block b { font-size: 15px; }
+  .otp-guide-copy-block p { font-size: 15px; line-height: 1.75; }
+  .otp-guide-note, .otp-guide-callout { padding: 12px 0; background: transparent; border-radius: 0; }
+  .otp-guide-note { border-top: 1px solid #d9def8; color: #34469f; }
+  .otp-guide-callout { border-top: 1px solid #ead9b0; }
+  .otp-guide-note p, .otp-guide-callout p { font-size: 15px; line-height: 1.7; }
+  .otp-guide-anatomy { padding: 0; border: 0; background: transparent; }
+  .otp-guide-anatomy ol { gap: 0; }
+  .otp-guide-anatomy li { padding: 12px 0; border-radius: 0; background: transparent; border-top: 1px solid var(--guide-line); }
+  .otp-guide-anatomy li:first-child { border-top: 0; }
+  .otp-guide-anatomy span { font-size: 15px; }
+  .otp-guide-anatomy small { font-size: 14px; line-height: 1.6; }
+  .otp-guide-permissions span { min-height: 34px; font-size: 13px; }
+  .otp-guide-faq { gap: 0; }
+  .otp-guide-faq details { border: 0; border-top: 1px solid var(--guide-line); border-radius: 0; background: transparent; }
+  .otp-guide-faq details:first-child { border-top: 0; }
+  .otp-guide-faq summary { padding: 16px 0; font-size: 16px; }
+  .otp-guide-faq details p { padding: 0 0 16px; font-size: 15px; line-height: 1.8; }
+
+  html.theme-dark .otp-guide-page { background: #101621; }
+  html.theme-dark .otp-guide-bar,
+  html.theme-dark .otp-guide-toc { background: rgba(16, 22, 33, .94); }
+  html.theme-dark .otp-guide-toc a { background: #222c4c; }
+  html.theme-dark .otp-guide-copy-block { background: #171e2c; }
+  html.theme-dark .otp-guide-methods section,
+  html.theme-dark .otp-guide-steps li,
+  html.theme-dark .otp-guide-share-types section,
+  html.theme-dark .otp-guide-anatomy,
+  html.theme-dark .otp-guide-security-grid section,
+  html.theme-dark .otp-guide-faq details { background: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {

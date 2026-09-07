@@ -74,6 +74,9 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(styles, /\.otp-guide-chapter/);
   assert.match(styles, /\.otp-guide-toc/);
   assert.match(styles, /\.otp-guide-prose/);
+  assert.match(styles, /overflow-x:\s*auto/);
+  assert.match(styles, /safe-area-inset-top/);
+  assert.match(styles, /otp-guide-toc a[\s\S]{0,200}border-radius:\s*999px/);
   assert.doesNotMatch(guide, /无需登录即可阅读|公开指南/);
   assert.doesNotMatch(guide, /gooop\.top\/s\//);
   assert.doesNotMatch(guide, /dCOxR|W9KKQR/);
