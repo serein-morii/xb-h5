@@ -1,7 +1,9 @@
-import { ArrowRight, BookOpen, History, KeyRound, ShieldCheck } from "lucide-react";
+import { useEffect } from "react";
+import { ArrowLeft, BookOpen, ChevronRight, History, KeyRound } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
+import { applyThemePreference } from "../../lib/theme";
 import { OTP_VAULT_VERSION } from "./otpVersion";
-import "./otp-guide.css";
+import "./otp-vault.css";
 
 const changelog = [
   {
@@ -148,45 +150,46 @@ const changelog = [
 ] as const;
 
 export default function OtpVaultChangelogPage() {
-  return <main className="otp-guide-page otp-changelog-page">
-    <header className="otp-guide-header">
-      <a className="otp-guide-brand" href={APP_ROUTES.otp}><span><KeyRound size={20} /></span><div><b>OTP Vault</b><small>更新日志</small></div></a>
-      <nav aria-label="更新日志导航"><a href={APP_ROUTES.otpGuide}>使用指南</a></nav>
-      <a className="otp-guide-open" href={APP_ROUTES.otp}>打开保险库<ArrowRight size={15} /></a>
-    </header>
+  useEffect(() => { applyThemePreference(); }, []);
 
-    <section className="otp-guide-hero">
-      <div>
-        <h1>更新日志</h1>
-        <p>从 2026-08-25 首次上线到现在，按时间节点查看功能变化。当前版本 {OTP_VAULT_VERSION}。</p>
-        <div className="otp-guide-actions"><a href={APP_ROUTES.otpGuide}>查看使用指南</a><a href={APP_ROUTES.otp}>打开 OTP Vault</a></div>
+  return <main className="vault-page vault-changelog-page">
+    <section className="vault-head">
+      <div className="vault-brand">
+        <span className="vault-brand-mark"><History size={20} /></span>
+        <div>
+          <a className="vault-settings-back" href={APP_ROUTES.otp}><ArrowLeft size={15} />返回保险库</a>
+          <h1>更新日志</h1>
+          <p>当前版本 {OTP_VAULT_VERSION} · 从首次上线到现在</p>
+        </div>
+      </div>
+      <div className="vault-head-actions">
+        <a className="vault-ghost vault-guide-action" href={APP_ROUTES.otpGuide} aria-label="打开使用指南"><BookOpen size={18} /><span>指南</span></a>
+        <a className="vault-primary" href={APP_ROUTES.otp}><KeyRound size={16} /><span>打开</span></a>
       </div>
     </section>
 
-    <div className="otp-guide-layout">
-      <article className="otp-guide-content">
-        <section className="otp-guide-section">
-          <header><span><History size={21} /></span><div><h2>时间节点</h2><p>从最近一次更新往前看，覆盖首次上线以来的主要变化。</p></div></header>
-          <ol className="otp-guide-timeline otp-guide-changelog" aria-label="更新时间节点">
-            {changelog.map((entry, index) => <li className="otp-guide-timeline-node" key={entry.date}>
-              <span className="otp-guide-timeline-mark" aria-hidden="true" />
-              <article>
-                <header><time dateTime={entry.date}>{entry.date}</time>{index === 0 ? <small>版本 {OTP_VAULT_VERSION}</small> : null}<b>{entry.title}</b></header>
-                {entry.groups.map((group) => <section key={group.name}>
-                  <h3>{group.name}</h3>
-                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
-                </section>)}
-              </article>
-            </li>)}
-          </ol>
-        </section>
-        <section className="otp-guide-section">
-          <header><span><BookOpen size={21} /></span><div><h2>使用指南</h2><p>需要操作说明时，打开独立的使用指南。</p></div></header>
-          <div className="otp-guide-actions"><a href={APP_ROUTES.otpGuide}>打开使用指南<ArrowRight size={15} /></a></div>
-        </section>
-      </article>
-    </div>
+    <section className="vault-settings" aria-label="更新记录">
+      {changelog.map((entry, index) => <article className="vault-settings-group" key={entry.date}>
+        <header>
+          <div>
+            <small><time dateTime={entry.date}>{entry.date}</time></small>
+            <b>{entry.title}</b>
+          </div>
+          {index === 0 ? <span>版本 {OTP_VAULT_VERSION}</span> : null}
+        </header>
+        {entry.groups.map((group) => <div className="vault-settings-block" key={group.name}>
+          <div className="vault-settings-block-title"><b>{group.name}</b></div>
+          <ul className="vault-changelog-list">{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
+        </div>)}
+      </article>)}
 
-    <footer className="otp-guide-footer"><span><ShieldCheck size={15} />安全使用从最小权限和可靠备份开始</span><a href={APP_ROUTES.otpGuide}>查看使用指南<ArrowRight size={14} /></a></footer>
+      <div className="vault-settings-group">
+        <a className="vault-account-link" href={APP_ROUTES.otpGuide}>
+          <span className="vault-setting-icon is-violet"><BookOpen size={17} /></span>
+          <span className="vault-setting-copy"><b>查看使用指南</b><small>添加、使用、授权和备份的操作说明</small></span>
+          <ChevronRight size={15} />
+        </a>
+      </div>
+    </section>
   </main>;
 }

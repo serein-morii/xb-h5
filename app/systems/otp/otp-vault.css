@@ -1318,3 +1318,25 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
 .share-handoff-card h1,
 .share-access-intro h1 { font-size: 18px; letter-spacing: -.02em; }
 .share-content h1 { font-size: 18px; }
+
+.vault-changelog-page { padding-bottom: 36px; }
+.vault-changelog-page .vault-settings-back,
+.vault-changelog-page a.vault-ghost,
+.vault-changelog-page a.vault-primary,
+.vault-changelog-page .vault-account-link { text-decoration: none; }
+.vault-changelog-page .vault-brand { align-items: flex-start; }
+.vault-changelog-page .vault-head h1 { margin-top: 2px; }
+.vault-changelog-list {
+  margin: 0; padding: 2px 17px 14px; list-style: none; display: grid; gap: 8px;
+}
+.vault-changelog-list li {
+  position: relative; padding-left: 14px; color: var(--utility-muted); font-size: 12px; line-height: 1.7;
+}
+.vault-changelog-list li::before {
+  content: ""; position: absolute; left: 0; top: 8px; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--vault-accent);
+}
+@media (max-width: 560px) {
+  .vault-changelog-page { padding-bottom: 24px; }
+  .vault-changelog-list { padding: 2px 13px 12px; }
+}
