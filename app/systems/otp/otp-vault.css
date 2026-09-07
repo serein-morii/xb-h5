@@ -21,7 +21,7 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-settings{max-width:640px}.vault-setting-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 3px;border-top:1px solid var(--utility-line);cursor:pointer}.vault-setting-row>span b,.vault-setting-row>span small{display:block}.vault-setting-row>span b{font-size:12px}.vault-setting-row>span small{margin-top:4px;color:var(--utility-muted);font-size:10px}.vault-setting-row input{position:absolute;opacity:0}.vault-setting-row i{position:relative;width:42px;height:24px;flex:0 0 auto;border-radius:999px;background:#c8cdd8;transition:.18s}.vault-setting-row i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.16);transition:.18s}.vault-setting-row input:checked+i{background:var(--vault-accent)}.vault-setting-row input:checked+i::after{transform:translateX(18px)}.vault-mobile-nav{display:none}
 .vault-auth-state{--xb-accent:#485cc7;min-height:100vh;padding:24px;display:grid;place-items:center;align-content:center;gap:10px;text-align:center;background:#f3f5fa;color:#172033}.vault-auth-state h1,.vault-auth-state p{margin:0}.vault-auth-state p{color:#6f788b;font-size:13px}.vault-auth-state button{min-height:42px;margin-top:5px;padding:0 17px;border:0;border-radius:12px;background:#485cc7;color:#fff;font:inherit;font-weight:700;cursor:pointer}
 .otp-auth-page{--xb-accent:#485cc7;--xb-accent-pressed:#3449ae;--xb-accent-soft:#e8ebfb;position:relative;min-height:100vh;padding:64px 18px 28px;display:grid;place-items:center;background:radial-gradient(circle at 20% 0,rgba(103,120,220,.25),transparent 32%),linear-gradient(155deg,#111a31,#1b2849 55%,#121b32);color:#172033}.otp-auth-page::before{content:"";position:fixed;inset:0;opacity:.22;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:30px 30px;mask-image:linear-gradient(to bottom,#000,transparent 78%);pointer-events:none}.otp-auth-card{position:relative;z-index:1;width:min(420px,100%);padding:25px;border:1px solid rgba(255,255,255,.5);border-radius:25px;background:rgba(255,255,255,.96);box-shadow:0 28px 75px rgba(4,9,24,.35);backdrop-filter:blur(18px)}.otp-auth-card>header{display:flex;align-items:center;gap:11px}.otp-auth-mark{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#3449ae,#7180df);color:#fff;box-shadow:0 10px 22px rgba(72,92,199,.25)}.otp-auth-card>header small{display:block;color:#6775c7;font-size:8px;font-weight:800;letter-spacing:.16em}.otp-auth-card>header h1{margin:4px 0 0;font-size:20px;letter-spacing:-.03em}.otp-auth-copy{margin:24px 0 18px}.otp-auth-copy h2{margin:0;font-size:27px;letter-spacing:-.04em}.otp-auth-copy p{margin:7px 0 0;color:#727b8e;font-size:11px;line-height:1.65}.otp-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:#eef0f6}.otp-auth-tabs button{min-height:34px;border:0;border-radius:9px;background:transparent;color:#7b8393;font:inherit;font-size:11px;font-weight:700;cursor:pointer}.otp-auth-tabs button.is-active{background:#fff;color:#485cc7;box-shadow:0 4px 12px rgba(28,39,72,.08)}.otp-auth-form{display:grid;gap:13px;margin-top:17px}.otp-auth-form>label>span{display:block;margin-bottom:5px;color:#566074;font-size:10px;font-weight:700}.otp-auth-form>label>div:not(.slider-captcha){min-height:42px;padding:0 11px;display:flex;align-items:center;gap:8px;border:1px solid #dfe2eb;border-radius:11px;background:#f8f9fc;color:#8991a2}.otp-auth-form input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#172033;font:inherit;font-size:13px}.otp-auth-message{margin:0;padding:9px 10px;border-radius:9px;background:#eef0fb;color:#4354b4;font-size:10px;line-height:1.5}.otp-auth-submit{min-height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:12px;background:#485cc7;color:#fff;font:inherit;font-size:12px;font-weight:800;box-shadow:0 10px 22px rgba(72,92,199,.23);cursor:pointer}.otp-auth-submit:disabled{opacity:.65}.otp-auth-card>footer{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;color:#8b92a0;font-size:8px}.otp-auth-card>footer span{width:5px;height:5px;border-radius:50%;background:#6373d5}.share-vault-mark{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#485cc7;color:#fff;font-size:9px;font-weight:800;letter-spacing:.06em}
-@media(max-width:560px){.vault-page{padding:15px 13px 92px}.vault-panel-title-row{gap:8px}.vault-panel-tools{flex-wrap:nowrap;overflow-x:auto}.vault-head{padding-top:4px}.vault-head>div:first-child p{display:none}.vault-head-actions{display:grid;grid-template-columns:1fr 1fr}.vault-head-actions .vault-logout{grid-column:1/-1;justify-self:end;min-height:30px;padding:0 9px}.vault-tabs{display:none}.vault-filter-trigger{display:grid!important;place-items:center}.vault-filters{display:none;grid-template-columns:1fr 1fr;margin-top:-5px}.vault-filters.is-open{display:grid}.vault-filters>button{grid-column:1/-1}.vault-group>header{position:sticky;top:0;z-index:2;padding:7px 3px;background:var(--utility-paper)}.vault-card:hover{transform:none}.vault-mobile-nav{position:fixed;z-index:120;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);padding:6px;border:1px solid rgba(38,50,77,.1);border-radius:17px;background:rgba(255,255,255,.9);box-shadow:0 14px 35px rgba(24,34,60,.18);backdrop-filter:blur(16px)}.vault-mobile-nav button{min-height:47px;display:grid;place-items:center;align-content:center;gap:3px;border:0;border-radius:12px;background:transparent;color:#838b9b;font:inherit;font-size:8px;cursor:pointer}.vault-mobile-nav button.is-active{background:#edf0fc;color:var(--vault-accent)}.otp-auth-page{padding:58px 12px 18px;place-items:start center}.otp-auth-card{padding:20px;border-radius:21px}.otp-auth-copy{margin:20px 0 16px}.otp-auth-copy h2{font-size:24px}}
+@media(max-width:560px){.vault-page{padding:15px 13px 92px}.vault-panel-title-row{gap:8px}.vault-fav-switch{padding:2px}.vault-fav-switch button{min-height:26px;padding:0 9px;font-size:10px}.vault-panel-tools{flex-wrap:nowrap;overflow-x:auto}.vault-head{padding-top:4px}.vault-head>div:first-child p{display:none}.vault-head-actions{display:grid;grid-template-columns:1fr 1fr}.vault-head-actions .vault-logout{grid-column:1/-1;justify-self:end;min-height:30px;padding:0 9px}.vault-tabs{display:none}.vault-filter-trigger{display:grid!important;place-items:center}.vault-filters{display:none;grid-template-columns:1fr 1fr;margin-top:-5px}.vault-filters.is-open{display:grid}.vault-filters>button{grid-column:1/-1}.vault-group>header{position:sticky;top:0;z-index:2;padding:7px 3px;background:var(--utility-paper)}.vault-card:hover{transform:none}.vault-mobile-nav{position:fixed;z-index:120;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);padding:6px;border:1px solid rgba(38,50,77,.1);border-radius:17px;background:rgba(255,255,255,.9);box-shadow:0 14px 35px rgba(24,34,60,.18);backdrop-filter:blur(16px)}.vault-mobile-nav button{min-height:47px;display:grid;place-items:center;align-content:center;gap:3px;border:0;border-radius:12px;background:transparent;color:#838b9b;font:inherit;font-size:8px;cursor:pointer}.vault-mobile-nav button.is-active{background:#edf0fc;color:var(--vault-accent)}.otp-auth-page{padding:58px 12px 18px;place-items:start center}.otp-auth-card{padding:20px;border-radius:21px}.otp-auth-copy{margin:20px 0 16px}.otp-auth-copy h2{font-size:24px}}
 
 /* OTP Vault 是独立身份验证器 App，不沿用管理后台的看板结构。 */
 .vault-page {
@@ -43,6 +43,7 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-tabs button { height: 35px; flex: none; }
 .vault-panel { min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .vault-panel-head { min-width: 0; margin-bottom: 15px; }
+.vault-panel-head > div:first-child { flex: 1; min-width: 0; }
 .vault-panel-head h2 { font-size: 20px; letter-spacing: -.025em; }
 .vault-panel-head p { font-size: 10px; }
 .vault-panel-tools { min-width: 0; display: flex; align-items: center; gap: 8px; }
@@ -355,8 +356,9 @@ html.theme-dark {
   .vault-tabs { background: #151c29; }
   .vault-tabs button { color: #8992a5; }
   .vault-tabs button.is-active { background: #242d40; color: #a9b3ff; box-shadow: none; }
-  .vault-fav-switch { background: #151c29; border-color: rgba(225, 231, 248, 0.08); }
+  .vault-fav-switch { background: #151c29; border-color: rgba(225, 231, 248, 0.08); box-shadow: none; }
   .vault-fav-switch button { color: #8992a5; }
+  .vault-fav-switch button:hover:not(.is-active) { color: #d5dcf5; }
   .vault-fav-switch button.is-active { background: #242d40; color: #a9b3ff; box-shadow: none; }
   .vault-create-share { border-color: #343f63; background: #222b4a; color: #b1baff; }
   .vault-search { background: #171e2c; box-shadow: 0 4px 18px rgba(0, 0, 0, .18); }
@@ -1227,22 +1229,31 @@ html.theme-dark .share-login-summary em { background: rgba(255,255,255,.06); col
 .vault-logout-row b { display: block; font-size: 13px; color: #e11d48; }
 .vault-logout-row small { display: block; margin-top: 3px; color: var(--utility-muted, #8b93a5); font-size: 11px; }
 
-/* 凭据页内 全部/收藏 切换：标题右侧的紧凑胶囊，不占工具栏 */
-.vault-panel-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+/* 凭据/授权标题在左，筛选胶囊靠右，不占工具栏 */
+.vault-panel-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; width: 100%; flex-wrap: nowrap; min-width: 0;
+}
 .vault-panel-title-row h2 { margin: 0; flex: none; }
 .vault-fav-switch {
-  display: inline-flex; align-items: center; gap: 2px; flex: none;
-  padding: 2px; border: 0; border-radius: 9px;
-  background: rgba(38, 50, 77, 0.07);
+  display: inline-flex; align-items: center; justify-content: flex-end;
+  gap: 3px; margin-left: auto; flex: none; max-width: 100%;
+  padding: 3px; border: 1px solid rgba(72, 92, 199, .1);
+  border-radius: 999px; background: #eef0f6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
 }
 .vault-fav-switch button {
-  min-height: 22px; padding: 0 10px;
-  border: 0; border-radius: 7px; background: transparent;
-  color: var(--utility-muted); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  min-height: 28px; padding: 0 12px;
+  border: 0; border-radius: 999px; background: transparent;
+  color: #7a8396; font: inherit; font-size: 11px; font-weight: 750;
+  letter-spacing: .01em; white-space: nowrap; cursor: pointer;
+  transition: color .16s, background .16s, box-shadow .16s;
 }
+.vault-fav-switch button:hover:not(.is-active) { color: var(--utility-text); }
+.vault-fav-switch button:focus-visible { outline: 2px solid rgba(72, 92, 199, .35); outline-offset: 1px; }
 .vault-fav-switch button.is-active {
   background: #fff; color: var(--vault-accent);
-  box-shadow: 0 2px 8px rgba(38, 50, 77, 0.16);
+  box-shadow: 0 2px 8px rgba(38, 50, 77, .12);
 }
 
 .otp-install-hint {

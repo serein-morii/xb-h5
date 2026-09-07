@@ -37,6 +37,18 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.doesNotMatch(workspace, /vault-primary vault-import-action/);
 });
 
+test("keeps credential and share filter tabs right-aligned beside the titles", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(workspace, /vault-panel-title-row/);
+  assert.match(workspace, /aria-label="凭据筛选"/);
+  assert.match(workspace, /aria-label="授权筛选"/);
+  assert.match(styles, /\.vault-panel-title-row[\s\S]{0,180}justify-content:\s*space-between/);
+  assert.match(styles, /\.vault-fav-switch[\s\S]{0,220}margin-left:\s*auto/);
+  assert.match(styles, /\.vault-fav-switch[\s\S]{0,220}justify-content:\s*flex-end/);
+  assert.match(styles, /\.vault-fav-switch[\s\S]{0,280}border-radius:\s*999px/);
+});
+
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
