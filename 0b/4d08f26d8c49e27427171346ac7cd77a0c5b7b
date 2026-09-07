@@ -1,0 +1,19 @@
+tests/otp-share-grid.test.mjs
+  s_c8f434e3be8c3f::t_293f5ee45926ac 19-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "0b4d08f26d8c49e27427171346ac7cd77a0c5b7b",
+  "prompts": {},
+  "sessions": {
+    "s_c8f434e3be8c3f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ffd-6a7b-70a3-8b70-ddf462cc0257",
+        "model": "unknown"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
