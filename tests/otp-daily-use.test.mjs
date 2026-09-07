@@ -5,12 +5,15 @@ import {
   CLOCK_DRIFT_WARN_MS,
   CLIPBOARD_CLEAR_MS,
   INSTALL_DISMISS_KEY,
+  duplicateImportCount,
+  findSameAccountCredential,
   installCoachCopy,
   installCoachKind,
   iosInstallHint,
   iosVersionFromUa,
   measureClockDriftMs,
   scheduleClipboardClear,
+  shouldConfirmDuplicateAdd,
   shouldShowInstallHint,
   shouldWarnClockDrift,
 } from "../app/systems/otp/otpDailyUse.ts";
@@ -60,6 +63,25 @@ test("install coach copy is explicit for iOS, WeChat and browsers", () => {
   assert.match(browser.steps[0], /右上角/);
   assert.match(browser.steps.join(""), /分享/);
   assert.match(browser.steps.join(""), /添加到桌面|添加到主屏幕/);
+});
+
+test("same system and account can be added again after confirm", () => {
+  const existing = [
+    { id: 1, issuer: "GitHub", accountName: "me@example.com" },
+    { id: 2, issuer: "微信", accountName: "work" },
+  ];
+  const hit = findSameAccountCredential(existing, "github", "ME@example.com");
+  assert.equal(hit?.id, 1);
+  assert.equal(findSameAccountCredential(existing, "GitHub", "me@example.com", 1), undefined);
+  assert.equal(findSameAccountCredential(existing, "Other", "me@example.com"), undefined);
+  assert.equal(shouldConfirmDuplicateAdd(Boolean(hit), false), true);
+  assert.equal(shouldConfirmDuplicateAdd(Boolean(hit), true), false);
+  assert.equal(shouldConfirmDuplicateAdd(false, false), false);
+  assert.equal(duplicateImportCount(existing, [
+    { issuer: "GitHub", accountName: "me@example.com" },
+    { issuer: "New", accountName: "a" },
+    { issuer: "微信", accountName: "work" },
+  ]), 2);
 });
 
 test("clipboard clear only wipes if the copied value is still there", async () => {

@@ -22,7 +22,11 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /prefs.listSort \|\| "name"/);
   assert.match(workspace, /点按显示并复制/);
   assert.match(workspace, /最近使用/);
-  assert.match(workspace, /已存在相同系统和账号的凭据/);
+  assert.match(workspace, /findSameAccountCredential/);
+  assert.match(workspace, /shouldConfirmDuplicateAdd/);
+  assert.match(workspace, /duplicateConfirm/);
+  assert.match(workspace, /仍要添加/);
+  assert.doesNotMatch(workspace, /if \(duplicate\) return notify\("已存在相同系统和账号的凭据"/);
   assert.match(workspace, /canUseSystemShare/);
   assert.match(workspace, /系统分享/);
   assert.match(workspace, /max-width: 820px/);

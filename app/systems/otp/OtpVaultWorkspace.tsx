@@ -10,7 +10,7 @@ import VaultSecurityCenter from "./VaultSecurityCenter";
 import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
-import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, measureClockDriftMs, shouldWarnClockDrift } from "./otpDailyUse";
+import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, duplicateImportCount, findSameAccountCredential, measureClockDriftMs, shouldConfirmDuplicateAdd, shouldWarnClockDrift } from "./otpDailyUse";
 import { PENDING_SAVE_KEY, SHARE_ITEM_LIMIT, clipboardReadBlocked, matchesCredentialTab, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shouldOfferClipboardShare, toggleShareSelection, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { setThemePreference } from "../../lib/theme";
@@ -24,7 +24,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
 type VaultView = "all" | "shares" | "security" | "settings";
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
 type BarcodeDetectorConstructor = new (init?: { formats?: string[] }) => BarcodeDetectorLike;
@@ -69,6 +69,7 @@ const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: 
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false };
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
+type PendingDuplicate = { kind: "single"; issuer: string; accountName: string } | { kind: "batch"; items: ScannedCredential[]; count: number };
 
 function parseOtpPayload(raw: string): ScannedPayload {
   let url: URL;
@@ -269,6 +270,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [pendingShareDelete, setPendingShareDelete] = useState<VaultShare | null>(null);
   const [pendingSaveAction, setPendingSaveAction] = useState<{ saveId: number; action: "kick" | "ban"; name: string } | null>(null);
   const [pendingSync, setPendingSync] = useState<{ id: number; issuer: string; accountName: string; count: number } | null>(null);
+  const [pendingDuplicate, setPendingDuplicate] = useState<PendingDuplicate | null>(null);
   const [shareDetail, setShareDetail] = useState<VaultShare | null>(null);
   const [shareDetailLoading, setShareDetailLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -566,13 +568,19 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", favorite: item.favorite, sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
     setModal("credential");
   };
-  const importScannedItems = async (items: ScannedCredential[]) => {
+  const importScannedItems = async (items: ScannedCredential[], allowDuplicate = false) => {
     if (!items.length) throw new Error("二维码中没有可导入的验证器数据");
+    const count = duplicateImportCount(ownCredentials, items);
+    if (shouldConfirmDuplicateAdd(count > 0, allowDuplicate)) {
+      setPendingDuplicate({ kind: "batch", items, count });
+      setModal("duplicateConfirm");
+      return;
+    }
     setBusy(true);
     try {
 	      await Promise.all(items.map(async (item) => saveVaultCredential(null, await protectCredential({ ...emptyCredential, ...item }))));
       scanBatchRef.current.clear();
-      stopScanner(); setScanText(""); setScanError(""); setModal(null);
+      stopScanner(); setScanText(""); setScanError(""); setPendingDuplicate(null); setModal(null);
       notify(`已批量导入 ${items.length} 条验证器数据`);
       await load(true);
     } finally {
@@ -659,15 +667,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     catch (error) { setModal(null); notify(error instanceof Error ? error.message : "详情加载失败", true); }
     finally { setDetailLoading(false); }
   };
-  async function submitCredential(event: FormEvent) {
-    event.preventDefault();
-    const issuerName = form.issuer.trim().toLowerCase();
-    const account = form.accountName.trim().toLowerCase();
-    const duplicate = ownCredentials.find((item) => item.id !== editingId && item.issuer.trim().toLowerCase() === issuerName && item.accountName.trim().toLowerCase() === account);
-    if (duplicate) return notify("已存在相同系统和账号的凭据", true);
+  async function saveCredential(allowDuplicate = false) {
+    const duplicate = findSameAccountCredential(ownCredentials, form.issuer, form.accountName, editingId);
+    if (shouldConfirmDuplicateAdd(Boolean(duplicate), allowDuplicate)) {
+      setPendingDuplicate({ kind: "single", issuer: form.issuer, accountName: form.accountName });
+      setModal("duplicateConfirm");
+      return;
+    }
     setBusy(true);
     try {
       const result = await saveVaultCredential(editingId, await protectCredential(form));
+      setPendingDuplicate(null);
       if (editingId && (result.data.activeShareCount || 0) > 0) {
         setPendingSync({ id: editingId, issuer: form.issuer, accountName: form.accountName, count: result.data.activeShareCount || 0 });
         setModal("syncShares");
@@ -678,6 +688,21 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     }
     catch (error) { notify(error instanceof Error ? error.message : "保存失败", true); }
     finally { setBusy(false); }
+  }
+  async function submitCredential(event: FormEvent) {
+    event.preventDefault();
+    await saveCredential(false);
+  }
+  const cancelDuplicate = () => {
+    if (busy) return;
+    const kind = pendingDuplicate?.kind;
+    setPendingDuplicate(null);
+    setModal(kind === "single" ? "credential" : null);
+  };
+  const confirmDuplicate = () => {
+    if (!pendingDuplicate || busy) return;
+    if (pendingDuplicate.kind === "batch") return void importScannedItems(pendingDuplicate.items, true);
+    void saveCredential(true);
   }
   async function removeCredential() {
     if (!pendingDelete) return;
@@ -1053,6 +1078,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		</div>
 		<footer><span>分享方式、接收人、链接和访问码不会变化</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !selected.length}>{busy ? "保存中" : "保存修改"}</button></div></footer>
 	</form></div> : null}
+
+    {modal === "duplicateConfirm" && pendingDuplicate ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) cancelDuplicate(); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DUPLICATE ACCOUNT</small><h2>重复添加</h2><p>{pendingDuplicate.kind === "batch" ? `其中 ${pendingDuplicate.count} 条已有相同系统和账号，仍要全部导入吗？` : "已存在相同系统和账号，仍要再添加一条吗？"}</p></div><button type="button" onClick={cancelDuplicate} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>{pendingDuplicate.kind === "batch" ? "将要导入" : "将要添加"}</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Copy size={21} /></span><div>{pendingDuplicate.kind === "batch" ? <><b>{pendingDuplicate.items.length} 条验证器数据</b><small>{pendingDuplicate.count} 条与现有系统和账号相同</small></> : <><b>{pendingDuplicate.issuer}</b><small>{pendingDuplicate.accountName}</small></>}</div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>可以重复</h3></div></div><p className="vault-section-help">同一系统、同一账号可以保存多条密钥，例如两台设备各自的验证码。</p></section></div><footer><span>确认后继续保存</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={cancelDuplicate}>取消</button><button type="button" className="vault-primary" disabled={busy} onClick={confirmDuplicate}>{busy ? "保存中" : pendingDuplicate.kind === "batch" ? "仍要导入" : "仍要添加"}</button></div></footer></section></div> : null}
 
     {modal === "deleteConfirm" && pendingDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingDelete(null); closeModal(); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE CREDENTIAL</small><h2>删除凭据</h2><p>这项操作会同步撤回相关临时授权</p></div><button type="button" onClick={() => { setPendingDelete(null); closeModal(); }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要删除</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingDelete.issuer}</b><small>{pendingDelete.accountName}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">删除后会从你的保险库中移除，包含它的临时授权也会一起失效。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingDelete(null); closeModal(); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeCredential()}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
 

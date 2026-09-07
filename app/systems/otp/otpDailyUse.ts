@@ -118,3 +118,29 @@ export async function copyAndScheduleClear(value: string) {
     () => navigator.clipboard.readText(),
   );
 }
+
+export function accountIdentity(issuer: string, accountName: string) {
+  return `${issuer.trim().toLowerCase()}\n${accountName.trim().toLowerCase()}`;
+}
+
+export function findSameAccountCredential<T extends { id?: number | null; issuer?: string; accountName?: string }>(
+  items: T[],
+  issuer: string,
+  accountName: string,
+  editingId: number | null = null,
+): T | undefined {
+  if (!issuer.trim() || !accountName.trim()) return undefined;
+  const key = accountIdentity(issuer, accountName);
+  return items.find((item) => (item.id ?? null) !== editingId && accountIdentity(item.issuer || "", item.accountName || "") === key);
+}
+
+export function shouldConfirmDuplicateAdd(hasDuplicate: boolean, confirmed: boolean) {
+  return hasDuplicate && !confirmed;
+}
+
+export function duplicateImportCount<T extends { issuer?: string; accountName?: string }>(
+  existing: Array<{ id?: number | null; issuer: string; accountName: string }>,
+  incoming: T[],
+) {
+  return incoming.filter((item) => findSameAccountCredential(existing, item.issuer || "", item.accountName || "")).length;
+}
