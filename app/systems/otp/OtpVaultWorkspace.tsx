@@ -70,7 +70,20 @@ function canUseSystemShare() {
 }
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
+const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
+function readLastScreenActive() {
+  const value = Number(localStorage.getItem(SCREEN_LOCK_ACTIVE_KEY) || 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+function writeLastScreenActive(at = Date.now()) {
+  localStorage.setItem(SCREEN_LOCK_ACTIVE_KEY, String(at));
+  return at;
+}
+function shouldAutoLockByIdle(prefs: Pick<VaultPrefs, "screenLockSet" | "autoScreenLockMinutes">, lastActive = readLastScreenActive()) {
+  const minutes = Number(prefs.autoScreenLockMinutes || 0);
+  return Boolean(prefs.screenLockSet) && minutes > 0 && lastActive > 0 && Date.now() - lastActive >= minutes * 60_000;
+}
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
 type PendingDuplicate = { kind: "single"; issuer: string; accountName: string } | { kind: "batch"; items: ScannedCredential[]; count: number };
@@ -462,11 +475,16 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setCredentialTab(Boolean(next.defaultFavorites) ? "favorite" : "all");
     setThemePreference(next.theme || "system");
     void getVaultScreenLockState().then((state) => {
-      const locked = Boolean(remote.screenLockSet) && Boolean(state.data?.locked);
+      const idleLocked = shouldAutoLockByIdle(remote);
+      const locked = Boolean(remote.screenLockSet) && (Boolean(state.data?.locked) || idleLocked);
       sessionStorage.setItem(SCREEN_LOCK_KEY, locked ? "locked" : "unlocked");
       setScreenLocked(locked);
+      if (idleLocked && !state.data?.locked) void setVaultScreenLockState(true).catch(() => undefined);
     }).catch(() => {
-      setScreenLocked(Boolean(remote.screenLockSet) && sessionStorage.getItem(SCREEN_LOCK_KEY) === "locked");
+      const idleLocked = shouldAutoLockByIdle(remote);
+      const locked = Boolean(remote.screenLockSet) && (sessionStorage.getItem(SCREEN_LOCK_KEY) === "locked" || idleLocked);
+      setScreenLocked(locked);
+      if (idleLocked) void setVaultScreenLockState(true).catch(() => undefined);
     });
     if (device.concealOtp == null && !device.listSort) return;
     void saveVaultPreferences(next).then((saved) => {
@@ -538,55 +556,65 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		document.addEventListener("visibilitychange", visibility); reset();
 		return () => { window.clearTimeout(timer); events.forEach((name) => window.removeEventListener(name, reset)); document.removeEventListener("visibilitychange", visibility); };
 	}, [prefs.autoLockMinutes]);
-		  const lockScreen = useCallback(() => {
-		    if (!prefs.screenLockSet) return setScreenLockSetup(true);
-		    sessionStorage.setItem(SCREEN_LOCK_KEY, "locked");
-		    setScreenLocked(true);
-		    setScreenLockSetup(false);
-		    void setVaultScreenLockState(true).catch((error) => notify(error instanceof Error ? error.message : "锁屏状态保存失败", true));
-		  }, [prefs.screenLockSet]);
-		  const unlockScreen = () => {
-		    sessionStorage.setItem(SCREEN_LOCK_KEY, "unlocked");
-		    setScreenLocked(false);
-		  };
-	  useEffect(() => {
-	    const minutes = Number(prefs.autoScreenLockMinutes || 0);
-	    if (!prefs.screenLockSet || minutes <= 0 || screenLocked) return;
-	    const idleMs = minutes * 60_000;
-	    let lastActive = Date.now();
-	    let timer = 0;
-	    const due = () => Math.max(250, lastActive + idleMs - Date.now());
-	    const lockIfIdle = () => {
-	      if (Date.now() - lastActive >= idleMs) lockScreen();
-	      else timer = window.setTimeout(lockIfIdle, due());
-	    };
-	    const markActive = () => {
-	      lastActive = Date.now();
-	      window.clearTimeout(timer);
-	      timer = window.setTimeout(lockIfIdle, idleMs);
-	    };
-	    const onVisible = () => {
-	      if (document.hidden) return;
-	      if (Date.now() - lastActive >= idleMs) lockScreen();
-	      else {
-	        window.clearTimeout(timer);
-	        timer = window.setTimeout(lockIfIdle, due());
-	      }
-	    };
-	    const events = ["pointerdown", "keydown", "touchstart"] as const;
-	    events.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
-	    document.addEventListener("visibilitychange", onVisible);
-	    window.addEventListener("focus", onVisible);
-	    window.addEventListener("pageshow", onVisible);
-	    timer = window.setTimeout(lockIfIdle, idleMs);
-	    return () => {
-	      window.clearTimeout(timer);
-	      events.forEach((name) => window.removeEventListener(name, markActive));
-	      document.removeEventListener("visibilitychange", onVisible);
-	      window.removeEventListener("focus", onVisible);
-	      window.removeEventListener("pageshow", onVisible);
-	    };
-	  }, [lockScreen, prefs.autoScreenLockMinutes, prefs.screenLockSet, screenLocked]);
+			  const lockScreen = useCallback(() => {
+			    if (!prefs.screenLockSet) return setScreenLockSetup(true);
+			    sessionStorage.setItem(SCREEN_LOCK_KEY, "locked");
+			    setScreenLocked(true);
+			    setScreenLockSetup(false);
+			    void setVaultScreenLockState(true).catch((error) => notify(error instanceof Error ? error.message : "锁屏状态保存失败", true));
+			  }, [prefs.screenLockSet]);
+			  const unlockScreen = () => {
+			    writeLastScreenActive();
+			    sessionStorage.setItem(SCREEN_LOCK_KEY, "unlocked");
+			    setScreenLocked(false);
+			  };
+		  useEffect(() => {
+		    const minutes = Number(prefs.autoScreenLockMinutes || 0);
+		    if (!prefs.screenLockSet || minutes <= 0 || screenLocked) return;
+		    const idleMs = minutes * 60_000;
+		    let lastActive = readLastScreenActive() || writeLastScreenActive();
+		    let timer = 0;
+		    const due = () => Math.max(250, lastActive + idleMs - Date.now());
+		    const lockIfIdle = () => {
+		      if (Date.now() - lastActive >= idleMs) lockScreen();
+		      else timer = window.setTimeout(lockIfIdle, due());
+		    };
+		    const markActive = () => {
+		      lastActive = writeLastScreenActive();
+		      window.clearTimeout(timer);
+		      timer = window.setTimeout(lockIfIdle, idleMs);
+		    };
+		    const persistActive = () => writeLastScreenActive(lastActive);
+		    const onVisible = () => {
+		      if (document.hidden) {
+		        persistActive();
+		        return;
+		      }
+		      lastActive = readLastScreenActive() || lastActive;
+		      if (Date.now() - lastActive >= idleMs) lockScreen();
+		      else {
+		        window.clearTimeout(timer);
+		        timer = window.setTimeout(lockIfIdle, due());
+		      }
+		    };
+		    const events = ["pointerdown", "keydown", "touchstart"] as const;
+		    events.forEach((name) => window.addEventListener(name, markActive, { passive: true }));
+		    document.addEventListener("visibilitychange", onVisible);
+		    window.addEventListener("focus", onVisible);
+		    window.addEventListener("pageshow", onVisible);
+		    window.addEventListener("pagehide", persistActive);
+		    if (Date.now() - lastActive >= idleMs) lockScreen();
+		    else timer = window.setTimeout(lockIfIdle, due());
+		    return () => {
+		      persistActive();
+		      window.clearTimeout(timer);
+		      events.forEach((name) => window.removeEventListener(name, markActive));
+		      document.removeEventListener("visibilitychange", onVisible);
+		      window.removeEventListener("focus", onVisible);
+		      window.removeEventListener("pageshow", onVisible);
+		      window.removeEventListener("pagehide", persistActive);
+		    };
+		  }, [lockScreen, prefs.autoScreenLockMinutes, prefs.screenLockSet, screenLocked]);
   useEffect(() => () => stopScanner(), []);
 
 	const updatePrefs = async (next: VaultPrefs) => {
