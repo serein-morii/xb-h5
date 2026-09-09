@@ -1421,8 +1421,9 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
 .vault-screen-lock-field > em { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 10px; background: color-mix(in srgb, var(--vault-accent) 12%, var(--utility-paper)); color: var(--vault-accent); font-style: normal; }
 .vault-screen-lock-field input { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; letter-spacing: .08em; text-align: left; font-size: 15px; font-weight: 650; }
 .vault-screen-lock-field small { margin-right: 6px; color: var(--utility-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-.vault-screen-lock-pin { display: grid; gap: 8px; }
-.vault-screen-lock-pins { position: relative; display: grid; gap: 8px; justify-content: center; }
+.vault-screen-lock-pin { display: grid; gap: 8px; justify-items: center; }
+.vault-screen-lock-pin-caption { margin: 0; color: var(--utility-muted); font-size: 12px; font-weight: 650; letter-spacing: .04em; text-align: center; }
+.vault-screen-lock-pins { position: relative; display: grid; gap: 8px; justify-content: center; width: 100%; }
 .vault-screen-lock-pins[data-count="4"] { grid-template-columns: repeat(4, minmax(46px, 56px)); }
 .vault-screen-lock-pins[data-count="6"] { grid-template-columns: repeat(6, minmax(36px, 48px)); }
 .vault-screen-lock-pins > i { height: 52px; border: 1px solid color-mix(in srgb, var(--vault-accent) 12%, var(--utility-line)); border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--utility-paper) 94%, #eef1fb), color-mix(in srgb, var(--utility-paper) 76%, var(--utility-bg))); display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.7); transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease; }

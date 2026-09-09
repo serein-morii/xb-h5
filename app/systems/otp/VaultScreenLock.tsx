@@ -81,14 +81,13 @@ function SetupForm({ prefs, onClose, onDone, onSaved }: { prefs: VaultPrefs; onC
   };
 
   return <div className="vault-modal-mask vault-screen-lock-mask"><form className="vault-modal small vault-screen-lock" onSubmit={submit}>
-    <header><div><small>APP LOCK</small><h2>{changing ? "修改锁屏密码" : "设置锁屏密码"}</h2><p>未设置时点锁屏会进入此页；设置后即可手动锁定。</p></div><button type="button" onClick={onClose} aria-label="关闭"><X size={18} /></button></header>
+    <header><div><small>APP LOCK</small><h2>{changing ? "修改锁屏密码" : "设置锁屏密码"}</h2><p>{changing ? "先验证当前密码，再设置新的数字或复杂密码。" : "先设数字或复杂密码，保存后才能添加 Passkey。"}</p></div><button type="button" onClick={onClose} aria-label="关闭"><X size={18} /></button></header>
     <div className="vault-screen-lock-types">{([["pin6", "6 位数字"], ["pin4", "4 位数字"], ["complex", "复杂密码"]] as const).map(([value, label]) =>
       <button type="button" className={type === value ? "is-active" : ""} key={value} onClick={() => { setType(value); setPassword(""); setConfirm(""); setMessage(""); }}>{label}</button>)}</div>
     {changing ? <LockPasswordField label="当前锁屏密码" lockType="complex" value={currentPassword} onChange={setCurrentPassword} placeholder="输入当前锁屏密码" /> : null}
-    <LockPasswordField autoFocus label={type === "complex" ? "新复杂密码" : `新${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "8-20 位，字母加数字" : type === "pin4" ? "4 位数字" : "6 位数字"} />
-    <LockPasswordField label="再输入一次" lockType={type} value={confirm} onChange={setConfirm} placeholder="再次输入锁屏密码" />
-    <p className="vault-screen-lock-hint">{HINT}</p>
-    {saved ? <div className="vault-screen-lock-passkey"><Fingerprint size={18} /><span><b>Passkey 解锁</b><small>必须先有锁屏密码，防止 Passkey 不可用时打不开。</small></span><button type="button" disabled={busy !== ""} onClick={() => void enablePasskey()}>{busy === "passkey" ? "等待设备" : prefs.screenLockPasskeyEnabled ? "已开启" : "开启"}</button></div> : <p className="vault-screen-lock-hint">保存数字或复杂密码后，才能添加 Passkey 解锁。</p>}
+    <LockPasswordField autoFocus label={type === "complex" ? "新复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "8-20 位，字母加数字" : type === "pin4" ? "4 位数字" : "6 位数字"} />
+    <LockPasswordField label="再输入一次" lockType={type} value={confirm} onChange={setConfirm} placeholder={type === "complex" ? "再次输入复杂密码" : "再次输入"} />
+    {saved ? <div className="vault-screen-lock-passkey"><Fingerprint size={18} /><span><b>Passkey 解锁</b><small>Passkey 不可用时，仍可用锁屏密码打开。</small></span><button type="button" disabled={busy !== ""} onClick={() => void enablePasskey()}>{busy === "passkey" ? "等待设备" : prefs.screenLockPasskeyEnabled ? "已开启" : "开启"}</button></div> : <p className="vault-screen-lock-hint">以后可在「我的 → 安全中心」修改锁屏方式和自动锁屏。</p>}
     <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
     <footer><button type="button" className="vault-ghost" onClick={onClose}>取消</button>{saved ? <button type="button" className="vault-primary" onClick={changing ? onClose : onDone}><LockKeyhole size={15} />{changing ? "完成" : "完成并锁定"}</button> : <button className="vault-primary" disabled={busy !== ""}>{busy === "save" ? <LoaderCircle className="spin" size={15} /> : <LockKeyhole size={15} />}{busy === "save" ? "保存中" : "保存密码"}</button>}</footer>
   </form></div>;
@@ -174,7 +173,6 @@ function LockPasswordField({ label, lockType, value, onChange, autoFocus, placeh
   if (pinLen) {
     return (
       <label className="vault-screen-lock-pin">
-        <span>{label}</span>
         <div className="vault-screen-lock-pins" data-count={pinLen} onClick={() => inputRef.current?.focus()}>
           {Array.from({ length: pinLen }, (_, index) => (
             <i key={index} className={index < value.length ? "is-filled" : index === value.length ? "is-current" : ""} />
@@ -192,6 +190,7 @@ function LockPasswordField({ label, lockType, value, onChange, autoFocus, placeh
             onChange={(event) => onChange(sanitizeLockInput(lockType, event.target.value))}
           />
         </div>
+        <span className="vault-screen-lock-pin-caption">{label}</span>
       </label>
     );
   }
