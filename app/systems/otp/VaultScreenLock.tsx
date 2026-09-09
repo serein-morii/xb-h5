@@ -1,5 +1,5 @@
 import { Fingerprint, LoaderCircle, LockKeyhole, ShieldCheck, X } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
 import { createPasskey, getPasskey } from "../../lib/passkey";
@@ -82,11 +82,11 @@ function SetupForm({ prefs, onClose, onDone, onSaved }: { prefs: VaultPrefs; onC
 
   return <div className="vault-modal-mask vault-screen-lock-mask"><form className="vault-modal small vault-screen-lock" onSubmit={submit}>
     <header><div><small>APP LOCK</small><h2>{changing ? "修改锁屏密码" : "设置锁屏密码"}</h2><p>未设置时点锁屏会进入此页；设置后即可手动锁定。</p></div><button type="button" onClick={onClose} aria-label="关闭"><X size={18} /></button></header>
-    <div className="vault-share-mode vault-screen-lock-types">{([["pin6", "6 位数字"], ["pin4", "4 位数字"], ["complex", "复杂密码"]] as const).map(([value, label]) =>
+    <div className="vault-screen-lock-types">{([["pin6", "6 位数字"], ["pin4", "4 位数字"], ["complex", "复杂密码"]] as const).map(([value, label]) =>
       <button type="button" className={type === value ? "is-active" : ""} key={value} onClick={() => { setType(value); setPassword(""); setConfirm(""); setMessage(""); }}>{label}</button>)}</div>
-    {changing ? <label><span>当前锁屏密码</span><input type={type === "complex" ? "password" : "text"} inputMode={type === "complex" ? "text" : "numeric"} value={currentPassword} onChange={(event) => setCurrentPassword(sanitizeLockInput(type, event.target.value))} autoComplete="off" /></label> : null}
-    <label><span>{type === "complex" ? "新复杂密码" : `新${type === "pin4" ? "4" : "6"} 位数字`}</span><input autoFocus type={type === "complex" ? "password" : "text"} inputMode={type === "complex" ? "text" : "numeric"} className={type === "complex" ? "" : "vault-screen-lock-pin"} value={password} onChange={(event) => setPassword(sanitizeLockInput(type, event.target.value))} autoComplete="off" placeholder={type === "complex" ? "8-20 位，字母加数字" : type === "pin4" ? "••••" : "••••••"} /></label>
-    <label><span>再输入一次</span><input type={type === "complex" ? "password" : "text"} inputMode={type === "complex" ? "text" : "numeric"} className={type === "complex" ? "" : "vault-screen-lock-pin"} value={confirm} onChange={(event) => setConfirm(sanitizeLockInput(type, event.target.value))} autoComplete="off" /></label>
+    {changing ? <LockPasswordField label="当前锁屏密码" lockType="complex" value={currentPassword} onChange={setCurrentPassword} placeholder="输入当前锁屏密码" /> : null}
+    <LockPasswordField autoFocus label={type === "complex" ? "新复杂密码" : `新${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "8-20 位，字母加数字" : type === "pin4" ? "4 位数字" : "6 位数字"} />
+    <LockPasswordField label="再输入一次" lockType={type} value={confirm} onChange={setConfirm} placeholder="再次输入锁屏密码" />
     <p className="vault-screen-lock-hint">{HINT}</p>
     {saved ? <div className="vault-screen-lock-passkey"><Fingerprint size={18} /><span><b>Passkey 解锁</b><small>必须先有锁屏密码，防止 Passkey 不可用时打不开。</small></span><button type="button" disabled={busy !== ""} onClick={() => void enablePasskey()}>{busy === "passkey" ? "等待设备" : prefs.screenLockPasskeyEnabled ? "已开启" : "开启"}</button></div> : <p className="vault-screen-lock-hint">保存数字或复杂密码后，才能添加 Passkey 解锁。</p>}
     <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
@@ -124,13 +124,66 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
 
   return <div className="vault-modal-mask vault-screen-lock-mask is-locked"><form className="vault-modal small vault-screen-lock" onSubmit={submit}>
     <header><div><small>LOCKED</small><h2>保险库已锁定</h2><p>输入锁屏密码继续。Passkey 打不开时也可以用数字或复杂密码。</p></div></header>
-    <div className="vault-screen-lock-icon"><LockKeyhole size={24} /></div>
-    {passkeyEnabled ? <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button> : null}
-    <label><span>{type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`}</span><input autoFocus type={type === "complex" ? "password" : "text"} inputMode={type === "complex" ? "text" : "numeric"} className={type === "complex" ? "" : "vault-screen-lock-pin"} value={password} onChange={(event) => setPassword(sanitizeLockInput(type, event.target.value))} autoComplete="off" /></label>
+    <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} />
+    {passkeyEnabled ? <button type="button" className="vault-ghost vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button> : null}
     <p className="vault-screen-lock-hint">{HINT}</p>
     <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
     <footer><button className="vault-primary" disabled={busy !== ""}>{busy === "password" ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}{busy === "password" ? "解锁中" : "解锁"}</button></footer>
   </form></div>;
+}
+
+function LockPasswordField({ label, lockType, value, onChange, autoFocus, placeholder }: {
+  label: string;
+  lockType: LockType;
+  value: string;
+  onChange: (value: string) => void;
+  autoFocus?: boolean;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pinLen = lockType === "pin4" ? 4 : lockType === "pin6" ? 6 : 0;
+  if (pinLen) {
+    return (
+      <label className="vault-screen-lock-pin">
+        <span>{label}</span>
+        <div className="vault-screen-lock-pins" data-count={pinLen} onClick={() => inputRef.current?.focus()}>
+          {Array.from({ length: pinLen }, (_, index) => (
+            <i key={index} className={index < value.length ? "is-filled" : index === value.length ? "is-current" : ""} />
+          ))}
+          <input
+            ref={inputRef}
+            autoFocus={autoFocus}
+            type="password"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={value}
+            maxLength={pinLen}
+            aria-label={label}
+            placeholder={placeholder}
+            onChange={(event) => onChange(sanitizeLockInput(lockType, event.target.value))}
+          />
+        </div>
+      </label>
+    );
+  }
+  return (
+    <label className="vault-screen-lock-complex">
+      <span>{label}</span>
+      <div className="vault-screen-lock-field is-complex">
+        <em><LockKeyhole size={15} /></em>
+        <input
+          autoFocus={autoFocus}
+          type="password"
+          inputMode="text"
+          value={value}
+          onChange={(event) => onChange(sanitizeLockInput(lockType, event.target.value))}
+          autoComplete="off"
+          placeholder={placeholder}
+        />
+        {value ? <small>{value.length}/20</small> : null}
+      </div>
+    </label>
+  );
 }
 
 export function validateLockPassword(type: LockType, password: string, confirm: string) {

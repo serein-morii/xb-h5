@@ -161,7 +161,11 @@ export const lockVaultSecurity = () => otpApiRequest(`${vaultAccount}/security/l
 export const saveVaultScreenLock = (body: { password: string; type: string; currentPassword?: string }) =>
   otpApiRequest<{ data: { screenLockSet: boolean; screenLockType?: string; screenLockPasskeyEnabled: boolean; autoScreenLockMinutes: number } }>(`${vaultAccount}/screen-lock`, { method: "POST", body });
 export const unlockVaultScreenLock = (body: { password?: string; requestId?: string; credential?: Record<string, unknown> }) =>
-  otpApiRequest<{ data: { unlocked: boolean } }>(`${vaultAccount}/screen-lock/unlock`, { method: "POST", body });
+  otpApiRequest<{ data: { unlocked?: boolean; locked?: boolean } }>(`${vaultAccount}/screen-lock/unlock`, { method: "POST", body });
+export const getVaultScreenLockState = () =>
+  otpApiRequest<{ data: { locked: boolean; deviceKey?: string } }>(`${vaultAccount}/screen-lock/state`);
+export const setVaultScreenLockState = (locked: boolean) =>
+  otpApiRequest<{ data: { locked: boolean; deviceKey?: string } }>(`${vaultAccount}/screen-lock/state`, { method: "PUT", body: { locked } });
 export const getVaultSecurityStatus = () => otpApiRequest<{ data: VaultSecurityStatus }>(`${vaultAccount}/security/status`);
 export const rotateVaultKey = () => otpApiRequest<{ data: { credentials: number; shares: number; shareItems: number; keyId: string } }>(`${vaultAccount}/security/key-rotation`, { method: "POST" });
 export const recordVaultRecoveryCheck = (itemCount: number, createdAt: string) => otpApiRequest(`${vaultAccount}/security/recovery-check`, { method: "POST", body: { itemCount, createdAt } });
