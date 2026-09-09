@@ -1435,7 +1435,9 @@ html.theme-dark .vault-screen-lock-types button.is-active { background: #273154;
 .vault-screen-lock-passkey b, .vault-screen-lock-passkey small { display: block; }
 .vault-screen-lock-passkey small { margin-top: 3px; color: var(--utility-muted); font-size: 10px; line-height: 1.5; }
 .vault-screen-lock-passkey button { min-height: 32px; padding: 0 10px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
-.vault-screen-lock-passkey-btn { width: 100%; margin-top: 2px; min-height: 42px; border-radius: 14px; }
+.vault-screen-lock-passkey-btn { width: 100%; margin-top: 2px; min-height: 42px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.vault-screen-lock-password-link { margin: 0 auto; padding: 2px 4px; border: 0; background: transparent; color: var(--utility-muted); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.vault-screen-lock-password-link:hover { color: var(--vault-accent); }
 .vault-toast { top: auto; bottom: max(20px,env(safe-area-inset-bottom)); animation: vault-toast-up .18s ease-out; }
 .vault-toast { border-color: rgba(68,79,110,.13); background: rgba(255,255,255,.96); color: #343b4d; box-shadow: 0 12px 30px rgba(36,47,78,.14); }
 .vault-toast svg { color: #5868d9; }
