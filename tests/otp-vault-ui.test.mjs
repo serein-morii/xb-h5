@@ -90,6 +90,10 @@ test("adds press, view switch and sheet motion without fighting reduced-motion",
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(workspace, /vault-view-enter/);
+  assert.match(workspace, /vault-subview-enter/);
+  assert.match(styles, /html\.theme-dark \.vault-screen-lock-mask\.is-locked/);
+  assert.match(styles, /@keyframes vault-subview-in/);
+  assert.match(styles, /@keyframes vault-detail-in/);
   assert.match(styles, /@keyframes vault-rise/);
   assert.match(styles, /@keyframes vault-sheet-in/);
   assert.match(styles, /prefers-reduced-motion/);

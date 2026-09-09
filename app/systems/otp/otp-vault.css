@@ -1406,8 +1406,8 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
   padding: 0;
   place-items: stretch;
   background:
-    radial-gradient(circle at 50% 12%, rgba(88, 104, 214, .28), transparent 34%),
-    linear-gradient(180deg, #151b2b 0%, #0f1420 46%, #121826 100%);
+    radial-gradient(circle at 50% 12%, rgba(72, 92, 199, .16), transparent 34%),
+    linear-gradient(180deg, #f6f7fb 0%, #eef1f8 46%, #f7f8fc 100%);
 }
 .vault-screen-lock-gate {
   width: min(420px, 100%);
@@ -1420,35 +1420,53 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
   padding: max(36px, env(safe-area-inset-top)) 28px max(28px, env(safe-area-inset-bottom));
   border: 0;
   background: transparent;
-  color: #eef1f8;
+  color: var(--utility-text);
   box-shadow: none;
 }
 .vault-screen-lock-hero { display: grid; justify-items: center; gap: 8px; text-align: center; }
 .vault-screen-lock-emblem {
   width: 72px; height: 72px; margin-bottom: 6px;
   display: grid; place-items: center;
-  border: 1px solid rgba(177, 186, 255, .22);
+  border: 1px solid rgba(72, 92, 199, .16);
   border-radius: 22px;
+  background: linear-gradient(160deg, #eef1ff, #dfe5fb);
+  color: var(--vault-accent);
+  box-shadow: 0 18px 40px rgba(40, 51, 91, .12), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.vault-screen-lock-hero small { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: #7180d7; }
+.vault-screen-lock-hero h2 { margin: 0; font-size: 26px; letter-spacing: -.04em; color: var(--utility-text); }
+.vault-screen-lock-hero p { margin: 0; max-width: 16em; color: var(--utility-muted); font-size: 13px; line-height: 1.55; }
+.vault-screen-lock-gate .vault-screen-lock-pin,
+.vault-screen-lock-gate .vault-screen-lock-complex { width: 100%; }
+.vault-screen-lock-gate .vault-screen-lock-pin-caption,
+.vault-screen-lock-gate .vault-screen-lock-complex > span { color: var(--utility-muted); }
+.vault-screen-lock-gate .vault-screen-lock-password-link { color: var(--vault-accent); }
+html.theme-dark .vault-screen-lock-mask.is-locked {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(88, 104, 214, .28), transparent 34%),
+    linear-gradient(180deg, #151b2b 0%, #0f1420 46%, #121826 100%);
+}
+html.theme-dark .vault-screen-lock-gate { color: #eef1f8; }
+html.theme-dark .vault-screen-lock-emblem {
+  border-color: rgba(177, 186, 255, .22);
   background: linear-gradient(160deg, rgba(92, 108, 214, .42), rgba(24, 32, 52, .9));
   color: #d7dcff;
   box-shadow: 0 18px 40px rgba(8, 12, 24, .35), inset 0 1px 0 rgba(255,255,255,.16);
 }
-.vault-screen-lock-hero small { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: #9aa6d8; }
-.vault-screen-lock-hero h2 { margin: 0; font-size: 26px; letter-spacing: -.04em; color: #f5f7ff; }
-.vault-screen-lock-hero p { margin: 0; max-width: 16em; color: #9aa3b8; font-size: 13px; line-height: 1.55; }
-.vault-screen-lock-gate .vault-screen-lock-pin,
-.vault-screen-lock-gate .vault-screen-lock-complex { width: 100%; }
-.vault-screen-lock-gate .vault-screen-lock-pin-caption,
-.vault-screen-lock-gate .vault-screen-lock-complex > span { color: #9aa3b8; }
-.vault-screen-lock-gate .vault-screen-lock-password-link { color: #b7c0e8; }
-.vault-screen-lock-gate .vault-screen-lock-pins > i {
+html.theme-dark .vault-screen-lock-hero small { color: #9aa6d8; }
+html.theme-dark .vault-screen-lock-hero h2 { color: #f5f7ff; }
+html.theme-dark .vault-screen-lock-hero p,
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pin-caption,
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-complex > span { color: #9aa3b8; }
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-password-link { color: #b7c0e8; }
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pins > i {
   background: linear-gradient(180deg, rgba(38, 48, 74, .95), rgba(22, 29, 46, .96));
   border-color: rgba(177, 186, 255, .16);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
-.vault-screen-lock-gate .vault-screen-lock-pins > i.is-filled { background: color-mix(in srgb, #6d7dff 22%, #1c2438); border-color: rgba(177, 186, 255, .42); }
-.vault-screen-lock-gate .vault-screen-lock-pins > i.is-filled::after { background: #d7dcff; }
-.vault-screen-lock-gate .vault-screen-lock-field {
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pins > i.is-filled { background: color-mix(in srgb, #6d7dff 22%, #1c2438); border-color: rgba(177, 186, 255, .42); }
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pins > i.is-filled::after { background: #d7dcff; }
+html.theme-dark .vault-screen-lock-gate .vault-screen-lock-field {
   background: linear-gradient(180deg, rgba(38, 48, 74, .95), rgba(22, 29, 46, .96));
   border-color: rgba(177, 186, 255, .16);
   color: #cfd6ea;
@@ -1961,9 +1979,13 @@ html.theme-dark .vault-panel-head > .vault-create-share {
 .vault-share-list > article { animation: vault-rise .26s ease both; }
 .vault-share-list > article:active { transform: scale(.985); }
 .vault-view-enter { animation: vault-view-in .28s ease; }
+.vault-subview-enter { animation: vault-subview-in .32s cubic-bezier(.22, 1, .36, 1); }
 .vault-modal-mask { animation: vault-mask-in .22s ease; }
 .vault-modal { animation: vault-sheet-in .28s cubic-bezier(.22, 1, .36, 1); }
+.vault-modal.vault-detail { animation: vault-detail-in .34s cubic-bezier(.22, 1, .36, 1); }
 .vault-screen-lock-mask.is-locked { animation: vault-mask-in .26s ease; }
+.vault-screen-lock-gate { animation: vault-lock-in .36s cubic-bezier(.22, 1, .36, 1); }
+.vault-screen-lock-emblem { animation: vault-pop .42s cubic-bezier(.22, 1.4, .36, 1); }
 .vault-tabs button,
 .vault-fav-switch button,
 .vault-mobile-nav button,
@@ -1982,6 +2004,18 @@ html.theme-dark .vault-panel-head > .vault-create-share {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
+@keyframes vault-subview-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vault-detail-in {
+  from { opacity: 0; transform: translateY(24px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vault-lock-in {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
 @keyframes vault-mask-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1996,6 +2030,7 @@ html.theme-dark .vault-panel-head > .vault-create-share {
 }
 @media (max-width: 560px) {
   .vault-modal { animation-name: vault-sheet-up; }
+  .vault-modal.vault-detail { animation-name: vault-sheet-up; animation-duration: .36s; }
   .vault-card:hover, .vault-share-list > article:hover { transform: none; }
 }
 @keyframes vault-sheet-up {
@@ -2006,6 +2041,9 @@ html.theme-dark .vault-panel-head > .vault-create-share {
   .vault-card,
   .vault-share-list > article,
   .vault-view-enter,
+  .vault-subview-enter,
+  .vault-screen-lock-gate,
+  .vault-screen-lock-emblem,
   .vault-modal-mask,
   .vault-modal,
   .vault-screen-lock-mask.is-locked,
