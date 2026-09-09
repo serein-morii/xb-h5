@@ -1,0 +1,20 @@
+app/systems/otp/VaultScreenLock.tsx
+  s_412c8cc5db0a98::t_a0ab03d57467c6 1-160
+  s_412c8cc5db0a98::t_2379e593f524d7 161-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "9a67c01098a71de7a24724b127515f0750ae4405",
+  "prompts": {},
+  "sessions": {
+    "s_412c8cc5db0a98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0844d-5a20-7363-abc3-bbf4c19c5c28",
+        "model": "unknown"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
