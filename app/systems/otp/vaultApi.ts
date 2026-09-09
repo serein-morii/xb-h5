@@ -94,6 +94,10 @@ export type VaultPrefs = {
   concealOtp?: boolean; listSort?: string; defaultFavorites?: boolean;
   zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
+  screenLockSet?: boolean;
+  screenLockType?: "pin4" | "pin6" | "complex" | string;
+  screenLockPasskeyEnabled?: boolean;
+  autoScreenLockMinutes?: number;
 };
 
 export type VaultSession = { id: string; deviceKey: string; displayName: string; current: boolean; trusted: boolean; sessionCount: number; longSession: boolean; ipAddress?: string; location?: string; browser?: string; os?: string; lastActiveTime: number; expireTime: number };
@@ -154,6 +158,10 @@ export const finishVaultStepUpPasskey = (requestId: string, credential: Record<s
 /** 自助注销账号：不可逆。需先通过 Step-Up；缺失时后端返回 428 由请求封装自动补验证。 */
 export const deleteVaultAccount = () => otpApiRequest(`${vaultAccount}`, { method: "DELETE" });
 export const lockVaultSecurity = () => otpApiRequest(`${vaultAccount}/security/lock`, { method: "POST" });
+export const saveVaultScreenLock = (body: { password: string; type: string; currentPassword?: string }) =>
+  otpApiRequest<{ data: { screenLockSet: boolean; screenLockType?: string; screenLockPasskeyEnabled: boolean; autoScreenLockMinutes: number } }>(`${vaultAccount}/screen-lock`, { method: "POST", body });
+export const unlockVaultScreenLock = (body: { password?: string; requestId?: string; credential?: Record<string, unknown> }) =>
+  otpApiRequest<{ data: { unlocked: boolean } }>(`${vaultAccount}/screen-lock/unlock`, { method: "POST", body });
 export const getVaultSecurityStatus = () => otpApiRequest<{ data: VaultSecurityStatus }>(`${vaultAccount}/security/status`);
 export const rotateVaultKey = () => otpApiRequest<{ data: { credentials: number; shares: number; shareItems: number; keyId: string } }>(`${vaultAccount}/security/key-rotation`, { method: "POST" });
 export const recordVaultRecoveryCheck = (itemCount: number, createdAt: string) => otpApiRequest(`${vaultAccount}/security/recovery-check`, { method: "POST", body: { itemCount, createdAt } });

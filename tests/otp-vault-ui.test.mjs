@@ -13,6 +13,21 @@ test("maps common issuers to local brand colors without network icons", () => {
   assert.doesNotMatch(JSON.stringify(issuerStyle("GitHub")), /https?:\/\//);
 });
 
+test("puts a lock control beside theme switch and wires screen lock setup", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const lockPage = await source("app/systems/otp/VaultScreenLock.tsx");
+  const security = await source("app/systems/otp/VaultSecurityCenter.tsx");
+  assert.match(workspace, /vault-lock-action/);
+  assert.match(workspace, /锁定保险库/);
+  assert.match(workspace, /设置锁屏密码/);
+  assert.match(workspace, /<Lock size=\{18\} \/>/);
+  assert.match(workspace, /VaultScreenLock/);
+  assert.match(lockPage, /我的 → 安全中心/);
+  assert.match(lockPage, /必须先有锁屏密码/);
+  assert.match(security, /无操作自动锁屏/);
+  assert.match(security, /仍可手动锁屏/);
+});
+
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   assert.match(workspace, /readDeviceDisplayPrefs/);

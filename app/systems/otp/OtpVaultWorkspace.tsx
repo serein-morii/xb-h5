@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Ban, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, Lock, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
@@ -7,6 +7,7 @@ import {
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
 import VaultSecurityCenter from "./VaultSecurityCenter";
+import VaultScreenLock from "./VaultScreenLock";
 import VaultStepUpDialog from "./VaultStepUpDialog";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
@@ -68,7 +69,8 @@ function canUseSystemShare() {
   return typeof navigator.share === "function" && window.matchMedia("(max-width: 820px), (pointer: coarse) and (hover: none)").matches;
 }
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
-const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false };
+const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
+const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
 type PendingDuplicate = { kind: "single"; issuer: string; accountName: string } | { kind: "batch"; items: ScannedCredential[]; count: number };
@@ -265,6 +267,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	  catch { return { ...defaultPrefs, ...(device.concealOtp == null ? {} : { concealOtp: device.concealOtp }), ...(device.listSort ? { listSort: device.listSort } : {}) }; }
 	});
 	const [zeroKnowledgeKey, setZeroKnowledgeKey] = useState<CryptoKey | null>(null);
+  const [screenLocked, setScreenLocked] = useState(() => sessionStorage.getItem(SCREEN_LOCK_KEY) === "locked");
+  const [screenLockSetup, setScreenLockSetup] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [modal, setModal] = useState<Modal>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -517,6 +521,26 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		document.addEventListener("visibilitychange", visibility); reset();
 		return () => { window.clearTimeout(timer); events.forEach((name) => window.removeEventListener(name, reset)); document.removeEventListener("visibilitychange", visibility); };
 	}, [prefs.autoLockMinutes]);
+  const lockScreen = () => {
+    if (!prefs.screenLockSet) return setScreenLockSetup(true);
+    sessionStorage.setItem(SCREEN_LOCK_KEY, "locked");
+    setScreenLocked(true);
+    setScreenLockSetup(false);
+  };
+  const unlockScreen = () => {
+    sessionStorage.setItem(SCREEN_LOCK_KEY, "unlocked");
+    setScreenLocked(false);
+  };
+  useEffect(() => {
+    const minutes = Number(prefs.autoScreenLockMinutes || 0);
+    if (!prefs.screenLockSet || minutes <= 0 || screenLocked) return;
+    let timer = 0;
+    const reset = () => { window.clearTimeout(timer); timer = window.setTimeout(lockScreen, minutes * 60_000); };
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    events.forEach((name) => window.addEventListener(name, reset, { passive: true }));
+    reset();
+    return () => { window.clearTimeout(timer); events.forEach((name) => window.removeEventListener(name, reset)); };
+  }, [prefs.screenLockSet, prefs.autoScreenLockMinutes, screenLocked]);
   useEffect(() => () => stopScanner(), []);
 
 	const updatePrefs = async (next: VaultPrefs) => {
@@ -1034,7 +1058,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   return <div className="vault-page">
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
-      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={18} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button></div>
+      <div className="vault-head-actions"><button type="button" className="vault-ghost vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={18} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><button type="button" className="vault-ghost vault-lock-action" onClick={lockScreen} aria-label={prefs.screenLockSet ? "锁定保险库" : "设置锁屏密码"}><Lock size={18} /></button></div>
     </section>
 
     {shouldWarnClockDrift(clockDriftMs) ? <p className="vault-clock-banner" role="status"><TriangleAlert size={14} />设备时间偏差约 {Math.max(1, Math.round(Math.abs(clockDriftMs) / 1000))} 秒，验证码可能不准。请打开自动时间。</p> : null}
@@ -1070,7 +1094,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("security")}><span className="vault-setting-icon is-violet"><ShieldCheck size={17} /></span><span className="vault-setting-copy"><b>安全中心</b><small>Passkey、备份、设备</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("about")}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>关于</b><small>版本 {OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></button>
       </div> : null}
-      {settingsSection === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} /></section> : null}
+      {settingsSection === "security" ? <section className="vault-security-page"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} onEditScreenLock={() => setScreenLockSetup(true)} /></section> : null}
       {settingsSection === "account" ? <div className="vault-settings-group vault-account-settings">
         <div className="vault-account-profile"><span className="vault-account-avatar">{(accountNick || accountName || "?").trim().slice(0, 1).toUpperCase()}</span><div><b>{accountNick || accountName || "未设置用户名"}</b><small>账号与登录</small></div></div>
         <div className="vault-account-links">
@@ -1226,6 +1250,19 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
     {modal === "password" ? <div className="vault-modal-mask"><section className="vault-modal share vault-share-form vault-account-modal"><header><div><small>PASSWORD</small><h2>登录密码</h2><p>验证身份后立即生效</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><VaultAccountSetup initialUsername={accountName} email={accountEmail} only="password" requireVerify cancellable onCancel={closeModal} onFinish={() => { setModal(null); notify("密码已更新，下次可用账号密码登录"); }} /></div></section></div> : null}
 
+    <VaultScreenLock
+      prefs={prefs}
+      locked={screenLocked && Boolean(prefs.screenLockSet)}
+      setupOpen={screenLockSetup}
+      onUnlocked={unlockScreen}
+      onSetupClose={() => setScreenLockSetup(false)}
+      onSetupDone={lockScreen}
+      onSaved={async (patch) => {
+        const next = { ...prefs, ...patch };
+        if (patch.screenLockPasskeyEnabled != null || patch.autoScreenLockMinutes != null) await updatePrefs(next);
+        else setPrefs(next);
+      }}
+    />
     <VaultStepUpDialog email={accountEmail} />
     {clipboardOffer ? <div className="share-save-dock vault-clipboard-dock" role="status">
       <span><b>{clipboardOffer.name}</b><small>检测到授权，可以转存到「我收到的」</small></span>
