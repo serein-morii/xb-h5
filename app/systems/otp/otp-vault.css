@@ -1925,49 +1925,38 @@ html.theme-dark .vault-panel-head > .vault-create-share {
   color: #b1baff;
 }
 
-.vault-primary,
-.vault-ghost,
-.vault-head-action,
-.vault-import-action,
-.vault-create-share,
-.vault-mobile-nav button,
-.vault-tabs button,
-.vault-fav-switch button,
-.vault-account-link,
-.vault-card-actions button,
-.vault-share-actions button,
-.vault-security-actions button,
-.vault-screen-lock-types button,
-.vault-screen-lock-password-link,
-.vault-screen-lock-passkey-btn {
-  transition: transform .16s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease, opacity .16s ease;
+.vault-page button,
+.vault-page a.vault-account-link,
+.vault-page .vault-setting-row,
+.vault-page .vault-received-group-head,
+.vault-modal button,
+.vault-screen-lock-mask button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, box-shadow .16s ease, background-color .16s ease, color .16s ease, border-color .16s ease, filter .16s ease, opacity .16s ease;
 }
-.vault-primary:not(:disabled):hover,
-.vault-ghost:not(:disabled):hover,
-.vault-head-action:hover,
-.vault-import-action:hover,
-.vault-create-share:hover,
-.vault-account-link:hover {
-  transform: translateY(-1px);
+.vault-page button:not(:disabled):hover,
+.vault-page a.vault-account-link:hover,
+.vault-modal button:not(:disabled):hover,
+.vault-screen-lock-mask button:not(:disabled):hover {
+  filter: brightness(1.03);
 }
-.vault-primary:not(:disabled):active,
-.vault-ghost:not(:disabled):active,
-.vault-head-action:active,
-.vault-import-action:active,
-.vault-create-share:active,
-.vault-mobile-nav button:active,
-.vault-tabs button:active,
-.vault-fav-switch button:active,
-.vault-account-link:active,
-.vault-card-actions button:active,
-.vault-share-actions button:active,
-.vault-security-actions button:active,
-.vault-screen-lock-types button:active,
-.vault-screen-lock-passkey-btn:active {
-  transform: scale(.96);
+.vault-page button:not(:disabled):active,
+.vault-page a.vault-account-link:active,
+.vault-page .vault-setting-row:active,
+.vault-page .vault-received-group-head:active,
+.vault-modal button:not(:disabled):active,
+.vault-screen-lock-mask button:not(:disabled):active {
+  transform: scale(.94);
+  filter: brightness(.92);
+}
+.vault-page button:not(:disabled):active.vault-primary,
+.vault-modal button:not(:disabled):active.vault-primary,
+.vault-screen-lock-mask button:not(:disabled):active.vault-primary {
+  transform: scale(.95);
+  box-shadow: 0 4px 12px rgba(72, 92, 199, .18);
 }
 .vault-card {
-  animation: vault-rise .28s ease both;
+  animation: vault-rise .28s ease;
 }
 .vault-card:nth-child(1) { animation-delay: .02s; }
 .vault-card:nth-child(2) { animation-delay: .05s; }
@@ -1975,9 +1964,9 @@ html.theme-dark .vault-panel-head > .vault-create-share {
 .vault-card:nth-child(4) { animation-delay: .11s; }
 .vault-card:nth-child(5) { animation-delay: .14s; }
 .vault-card:nth-child(6) { animation-delay: .17s; }
-.vault-card:active { transform: scale(.985); }
-.vault-share-list > article { animation: vault-rise .26s ease both; }
-.vault-share-list > article:active { transform: scale(.985); }
+.vault-card:active { transform: scale(.98); }
+.vault-share-list > article { animation: vault-rise .26s ease; }
+.vault-share-list > article:active { transform: scale(.98); }
 .vault-view-enter { animation: vault-view-in .28s ease; }
 .vault-subview-enter { animation: vault-subview-in .32s cubic-bezier(.22, 1, .36, 1); }
 .vault-modal-mask { animation: vault-mask-in .22s ease; }
@@ -2057,8 +2046,11 @@ html.theme-dark .vault-panel-head > .vault-create-share {
   .vault-tabs button,
   .vault-fav-switch button,
   .vault-account-link,
+  .vault-page button,
+  .vault-modal button,
+  .vault-screen-lock-mask button,
   .vault-card,
-  .vault-share-list > article { transition: none; transform: none !important; }
+  .vault-share-list > article { transition: none; transform: none !important; filter: none !important; }
 }
 
 

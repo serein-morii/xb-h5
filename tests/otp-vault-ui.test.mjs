@@ -97,7 +97,8 @@ test("adds press, view switch and sheet motion without fighting reduced-motion",
   assert.match(styles, /@keyframes vault-rise/);
   assert.match(styles, /@keyframes vault-sheet-in/);
   assert.match(styles, /prefers-reduced-motion/);
-  assert.match(styles, /transform: scale\(\.96\)/);
+  assert.match(styles, /transform: scale\(\.94\)/);
+  assert.match(styles, /\.vault-page button:not\(:disabled\):active/);
 });
 
 test("floats credential add and share create actions on PC", async () => {
