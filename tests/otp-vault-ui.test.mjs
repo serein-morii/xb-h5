@@ -27,6 +27,9 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /VaultScreenLock/);
   assert.match(workspace, /getVaultScreenLockState/);
   assert.match(workspace, /setVaultScreenLockState\(true\)/);
+  assert.match(workspace, /lockIfIdle/);
+  assert.match(workspace, /pageshow/);
+  assert.match(workspace, /autoScreenLockMinutes/);
   assert.match(lockPage, /我的 → 安全中心/);
   assert.match(lockPage, /必须先有锁屏密码/);
   assert.match(lockPage, /vault-screen-lock-pin/);
