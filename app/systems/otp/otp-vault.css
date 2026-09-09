@@ -1850,4 +1850,120 @@ html.theme-dark .vault-panel-head > .vault-create-share {
   color: #b1baff;
 }
 
+.vault-primary,
+.vault-ghost,
+.vault-head-action,
+.vault-import-action,
+.vault-create-share,
+.vault-mobile-nav button,
+.vault-tabs button,
+.vault-fav-switch button,
+.vault-account-link,
+.vault-card-actions button,
+.vault-share-actions button,
+.vault-security-actions button,
+.vault-screen-lock-types button,
+.vault-screen-lock-password-link,
+.vault-screen-lock-passkey-btn {
+  transition: transform .16s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease, opacity .16s ease;
+}
+.vault-primary:not(:disabled):hover,
+.vault-ghost:not(:disabled):hover,
+.vault-head-action:hover,
+.vault-import-action:hover,
+.vault-create-share:hover,
+.vault-account-link:hover {
+  transform: translateY(-1px);
+}
+.vault-primary:not(:disabled):active,
+.vault-ghost:not(:disabled):active,
+.vault-head-action:active,
+.vault-import-action:active,
+.vault-create-share:active,
+.vault-mobile-nav button:active,
+.vault-tabs button:active,
+.vault-fav-switch button:active,
+.vault-account-link:active,
+.vault-card-actions button:active,
+.vault-share-actions button:active,
+.vault-security-actions button:active,
+.vault-screen-lock-types button:active,
+.vault-screen-lock-passkey-btn:active {
+  transform: scale(.96);
+}
+.vault-card {
+  animation: vault-rise .28s ease both;
+}
+.vault-card:nth-child(1) { animation-delay: .02s; }
+.vault-card:nth-child(2) { animation-delay: .05s; }
+.vault-card:nth-child(3) { animation-delay: .08s; }
+.vault-card:nth-child(4) { animation-delay: .11s; }
+.vault-card:nth-child(5) { animation-delay: .14s; }
+.vault-card:nth-child(6) { animation-delay: .17s; }
+.vault-card:active { transform: scale(.985); }
+.vault-share-list > article { animation: vault-rise .26s ease both; }
+.vault-share-list > article:active { transform: scale(.985); }
+.vault-view-enter { animation: vault-view-in .28s ease; }
+.vault-modal-mask { animation: vault-mask-in .22s ease; }
+.vault-modal { animation: vault-sheet-in .28s cubic-bezier(.22, 1, .36, 1); }
+.vault-screen-lock-mask.is-locked { animation: vault-mask-in .26s ease; }
+.vault-tabs button,
+.vault-fav-switch button,
+.vault-mobile-nav button,
+.vault-screen-lock-types button {
+  transition: transform .16s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.vault-code span { transition: opacity .18s ease, filter .18s ease; }
+.vault-code.is-concealed span { filter: blur(.4px); }
+.vault-progress i { transition: width .7s cubic-bezier(.22, 1, .36, 1); }
+.vault-notif-badge { animation: vault-pop .32s cubic-bezier(.22, 1.4, .36, 1); }
+@keyframes vault-rise {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vault-view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vault-mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vault-sheet-in {
+  from { opacity: 0; transform: translateY(18px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vault-pop {
+  from { transform: scale(.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@media (max-width: 560px) {
+  .vault-modal { animation-name: vault-sheet-up; }
+  .vault-card:hover, .vault-share-list > article:hover { transform: none; }
+}
+@keyframes vault-sheet-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vault-card,
+  .vault-share-list > article,
+  .vault-view-enter,
+  .vault-modal-mask,
+  .vault-modal,
+  .vault-screen-lock-mask.is-locked,
+  .vault-notif-badge { animation: none; }
+  .vault-primary,
+  .vault-ghost,
+  .vault-head-action,
+  .vault-import-action,
+  .vault-create-share,
+  .vault-mobile-nav button,
+  .vault-tabs button,
+  .vault-fav-switch button,
+  .vault-account-link,
+  .vault-card,
+  .vault-share-list > article { transition: none; transform: none !important; }
+}
+
 

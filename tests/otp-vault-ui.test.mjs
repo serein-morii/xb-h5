@@ -84,6 +84,16 @@ test("keeps credential and share filter tabs right-aligned beside the titles", a
   assert.match(styles, /\.vault-fav-switch[\s\S]{0,280}border-radius:\s*999px/);
 });
 
+test("adds press, view switch and sheet motion without fighting reduced-motion", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(workspace, /vault-view-enter/);
+  assert.match(styles, /@keyframes vault-rise/);
+  assert.match(styles, /@keyframes vault-sheet-in/);
+  assert.match(styles, /prefers-reduced-motion/);
+  assert.match(styles, /transform: scale\(\.96\)/);
+});
+
 test("floats credential add and share create actions on PC", async () => {
   const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(styles, /\.vault-panel-head > \.vault-import-action,[\s\S]{0,80}\.vault-panel-head > \.vault-create-share \{[\s\S]{0,120}position:\s*fixed/);
