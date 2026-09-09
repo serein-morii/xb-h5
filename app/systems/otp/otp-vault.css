@@ -1402,6 +1402,15 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
 .vault-step-up-mask { z-index: 210; }
 .vault-screen-lock-mask { z-index: 160; }
 .vault-screen-lock-mask.is-locked { z-index: 200; background: color-mix(in srgb, var(--utility-bg) 88%, #12161f); }
+.vault-screen-lock-mask.is-keyboard { align-items: end; }
+.vault-screen-lock-mask.is-keyboard .vault-screen-lock { max-height: min(88dvh, 840px); overflow: auto; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+@media (max-width: 560px) {
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock { max-height: min(72dvh, 640px); gap: 8px; }
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock header p,
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock-hint { display: none; }
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock header { margin-bottom: 8px; }
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock footer { margin-top: 10px; padding-top: 10px; }
+}
 .vault-screen-lock { display: grid; gap: 12px; }
 .vault-screen-lock-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px; border: 1px solid var(--utility-line); border-radius: 14px; background: color-mix(in srgb, var(--utility-paper) 70%, var(--utility-bg)); }
 .vault-screen-lock-types button { min-height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--utility-muted); font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }

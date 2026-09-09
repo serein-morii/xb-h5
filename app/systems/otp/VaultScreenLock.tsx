@@ -101,6 +101,29 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
   const [message, setMessage] = useState("");
   const passkeyEnabled = Boolean(prefs.screenLockPasskeyEnabled);
   const [usePassword, setUsePassword] = useState(!passkeyEnabled);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+
+  useEffect(() => {
+    if (!usePassword) {
+      setKeyboardInset(0);
+      return;
+    }
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const sync = () => {
+      const inset = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+      setKeyboardInset(inset > 80 ? inset : 0);
+    };
+    sync();
+    viewport.addEventListener("resize", sync);
+    viewport.addEventListener("scroll", sync);
+    window.addEventListener("focusin", sync);
+    return () => {
+      viewport.removeEventListener("resize", sync);
+      viewport.removeEventListener("scroll", sync);
+      window.removeEventListener("focusin", sync);
+    };
+  }, [usePassword]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -127,7 +150,7 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
     finally { setBusy(""); }
   };
 
-  return <div className="vault-modal-mask vault-screen-lock-mask is-locked"><form className="vault-modal small vault-screen-lock" onSubmit={submit}>
+  return <div className={`vault-modal-mask vault-screen-lock-mask is-locked${keyboardInset ? " is-keyboard" : ""}`} style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}><form className="vault-modal small vault-screen-lock" onSubmit={submit}>
     <header><div><small>LOCKED</small><h2>保险库已锁定</h2><p>{usePassword ? "输入锁屏密码继续。" : "用 Passkey 解锁，也可改用锁定密码。"}</p></div></header>
     {usePassword ? <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} /> : <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button>}
     {passkeyEnabled && !usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(true); setMessage(""); }}>用锁定密码解锁</button> : null}
