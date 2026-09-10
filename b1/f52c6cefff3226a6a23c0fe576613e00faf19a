@@ -1,0 +1,14 @@
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 1510-1511,1513,1526-1527
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b1f52c6cefff3226a6a23c0fe576613e00faf19a",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
