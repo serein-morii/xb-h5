@@ -115,6 +115,20 @@ test("floats credential add and share create actions on PC", async () => {
   assert.match(styles, /\.vault-card:active,\s*\.vault-share-list > article:active \{ transform: scale\(\.97\); \}/);
 });
 
+test("keeps the HTML startup card still and only animates copy between stages", async () => {
+  const html = await source("index.html");
+  const startup = await source("app/components/AppStartup.tsx");
+  assert.match(html, /id="app-startup"/);
+  assert.match(html, /<div id="root"><\/div>/);
+  assert.match(html, /@keyframes app-startup-copy/);
+  assert.match(html, /\.app-startup-card\.is-settled \{ animation: none; \}/);
+  assert.match(startup, /holdCount/);
+  assert.match(startup, /showAppStartup/);
+  assert.match(startup, /hideAppStartup/);
+  assert.match(startup, /app-startup-copy/);
+  assert.match(startup, /if \(overlay\(\)\) return null/);
+});
+
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
