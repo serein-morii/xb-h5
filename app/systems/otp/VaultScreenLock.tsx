@@ -111,7 +111,7 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
     if (!viewport) return;
     const sync = () => {
       const inset = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
-      setKeyboardInset(inset > 80 ? inset : 0);
+      setKeyboardInset(inset > 48 ? inset : 0);
     };
     sync();
     viewport.addEventListener("resize", sync);
@@ -157,7 +157,7 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
     finally { setBusy(""); }
   };
 
-  return <div className={`vault-modal-mask vault-screen-lock-mask is-locked${keyboardInset ? " is-keyboard" : ""}`} style={keyboardInset ? { paddingBottom: keyboardInset } : undefined}><form className="vault-screen-lock vault-screen-lock-gate" onSubmit={submit}>
+  return <div className={`vault-modal-mask vault-screen-lock-mask is-locked${keyboardInset ? " is-keyboard" : ""}`} style={keyboardInset ? { ["--keyboard-inset" as string]: `${keyboardInset}px` } : undefined}><form className="vault-screen-lock vault-screen-lock-gate" onSubmit={submit}>
     <div className="vault-screen-lock-hero">
       <span className="vault-screen-lock-emblem" aria-hidden="true"><LockKeyhole size={28} /></span>
       <small>OTP VAULT</small>

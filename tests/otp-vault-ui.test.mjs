@@ -47,6 +47,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(lockPage, /vault-screen-lock-hero/);
   assert.match(lockPage, /vault-screen-lock-panel/);
   assert.match(lockPage, /keyboardInset/);
+  assert.match(lockPage, /--keyboard-inset/);
   assert.match(lockPage, /onComplete/);
   assert.match(lockPage, /submitPassword/);
   assert.match(lockPage, /sanitized.length === pinLen/);
@@ -96,7 +97,7 @@ test("adds press, view switch and sheet motion without fighting reduced-motion",
   assert.match(workspace, /vault-view-enter/);
   assert.match(workspace, /vault-subview-enter/);
   assert.match(styles, /html\.theme-dark \.vault-screen-lock-mask\.is-locked/);
-  assert.match(styles, /@keyframes vault-subview-in/);
+  assert.match(styles, /@keyframes vault-subview-in \{\s*from \{ opacity: 0; transform: translateY\(12px\); \}/);
   assert.match(styles, /@keyframes vault-detail-in/);
   assert.match(styles, /@keyframes vault-rise/);
   assert.match(styles, /@keyframes vault-sheet-in/);
