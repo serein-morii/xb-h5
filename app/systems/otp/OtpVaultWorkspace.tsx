@@ -80,6 +80,23 @@ function writeLastScreenActive(at = Date.now()) {
   localStorage.setItem(SCREEN_LOCK_ACTIVE_KEY, String(at));
   return at;
 }
+function spawnPressBurst(event: PointerEvent) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const burst = document.createElement("span");
+  burst.className = "vault-press-burst";
+  burst.style.left = `${event.clientX}px`;
+  burst.style.top = `${event.clientY}px`;
+  for (let index = 0; index < 10; index += 1) {
+    const spark = document.createElement("i");
+    const angle = (Math.PI * 2 * index) / 10 + Math.random() * 0.35;
+    const dist = 16 + Math.random() * 26;
+    spark.style.setProperty("--x", `${Math.cos(angle) * dist}px`);
+    spark.style.setProperty("--y", `${Math.sin(angle) * dist}px`);
+    burst.appendChild(spark);
+  }
+  document.body.appendChild(burst);
+  window.setTimeout(() => burst.remove(), 520);
+}
 function shouldAutoLockByIdle(prefs: Pick<VaultPrefs, "screenLockSet" | "autoScreenLockMinutes">, lastActive = readLastScreenActive()) {
   const minutes = Number(prefs.autoScreenLockMinutes || 0);
   return Boolean(prefs.screenLockSet) && minutes > 0 && lastActive > 0 && Date.now() - lastActive >= minutes * 60_000;
@@ -1129,7 +1146,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     notify(`当前模式：${next === "system" ? "跟随系统" : next === "dark" ? "暗黑" : "亮色"}`);
   };
 
-  return <div className="vault-page">
+  const handlePagePointerDown = (event: { target: EventTarget | null; nativeEvent: PointerEvent }) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("button, a, summary, .vault-card, .vault-setting-row, .vault-received-group-head, .vault-share-list > article")) spawnPressBurst(event.nativeEvent);
+  };
+
+  return <div className="vault-page" onPointerDown={handlePagePointerDown}>
     <section className="vault-head">
       <div className="vault-brand"><span className="vault-brand-mark"><KeyRound size={20} /></span><div><span className="vault-kicker">PRIVATE VAULT</span><h1>OTP Vault</h1><p>你的私人身份保险库</p></div></div>
       <div className="vault-head-actions"><button type="button" className="vault-ghost vault-head-action vault-notif-action" onClick={() => setNotifOpen(true)} aria-label={`通知中心${unread.count ? `（${unread.count} 条未读）` : ""}`}><BellRing size={16} /><span>通知</span>{unread.count > 0 ? <i className="vault-notif-badge">{unread.count > 99 ? "99+" : unread.count}</i> : null}</button><button type="button" className="vault-ghost vault-head-action vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={16} /> : themeMode === "dark" ? <Moon size={16} /> : <Sun size={16} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button><button type="button" className="vault-ghost vault-head-action vault-lock-action" onClick={lockScreen} aria-label={prefs.screenLockSet ? "锁定保险库" : "设置锁屏密码"}><LockKeyhole size={16} /><span>锁定</span></button></div>
