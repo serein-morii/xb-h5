@@ -1,0 +1,18 @@
+app/systems/otp/OtpVaultWorkspace.tsx
+  h_d554d32aa9d663 83-99,1149-1154
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 2,1881-1882,1887,1961,1969-1977,2028-2033,2068
+tests/otp-vault-ui.test.mjs
+  h_d554d32aa9d663 105,108-109,111-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "60e6000a39ceb292132a1e774877d4376f45cd57",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
