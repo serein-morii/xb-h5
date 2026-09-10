@@ -45,6 +45,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(lockPage, /visualViewport/);
   assert.match(lockPage, /vault-screen-lock-gate/);
   assert.match(lockPage, /vault-screen-lock-hero/);
+  assert.match(lockPage, /vault-screen-lock-panel/);
   assert.match(lockPage, /keyboardInset/);
   assert.match(lockPage, /onComplete/);
   assert.match(lockPage, /submitPassword/);

@@ -164,11 +164,13 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
       <h2>保险库已锁定</h2>
       <p>{usePassword ? "输入锁屏密码继续" : "用 Passkey 解锁，也可改用锁定密码"}</p>
     </div>
-    {usePassword ? <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} onComplete={type === "complex" ? undefined : (value) => void submitPassword(value)} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} /> : <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button>}
-    {passkeyEnabled && !usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(true); setMessage(""); }}>用锁定密码解锁</button> : null}
-    {passkeyEnabled && usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(false); setPassword(""); setMessage(""); }}>使用 Passkey 解锁</button> : null}
+    <div className="vault-screen-lock-panel">
+      {usePassword ? <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} onComplete={type === "complex" ? undefined : (value) => void submitPassword(value)} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} /> : <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button>}
+      {usePassword ? <button className="vault-primary vault-screen-lock-unlock-btn" disabled={busy !== ""}>{busy === "password" ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}{busy === "password" ? "解锁中" : "解锁"}</button> : null}
+      {passkeyEnabled && !usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(true); setMessage(""); }}>用锁定密码解锁</button> : null}
+      {passkeyEnabled && usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(false); setPassword(""); setMessage(""); }}>使用 Passkey 解锁</button> : null}
+    </div>
     <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
-    {usePassword ? <button className="vault-primary vault-screen-lock-unlock-btn" disabled={busy !== ""}>{busy === "password" ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}{busy === "password" ? "解锁中" : "解锁"}</button> : null}
   </form></div>;
 }
 

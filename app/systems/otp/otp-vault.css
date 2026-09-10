@@ -1406,18 +1406,19 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
   padding: 0;
   place-items: stretch;
   background:
-    radial-gradient(circle at 50% 12%, rgba(72, 92, 199, .16), transparent 34%),
-    linear-gradient(180deg, #f6f7fb 0%, #eef1f8 46%, #f7f8fc 100%);
+    radial-gradient(circle at 18% 8%, rgba(91, 107, 212, .22), transparent 28%),
+    radial-gradient(circle at 86% 92%, rgba(72, 92, 199, .16), transparent 32%),
+    linear-gradient(180deg, #f4f6fd 0%, #eef1f8 48%, #f7f8fc 100%);
 }
 .vault-screen-lock-gate {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   margin: auto;
   display: grid;
-  justify-items: center;
+  justify-items: stretch;
   align-content: center;
-  gap: 18px;
+  gap: 22px;
   min-height: 100%;
-  padding: max(36px, env(safe-area-inset-top)) 28px max(28px, env(safe-area-inset-bottom));
+  padding: max(40px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
   border: 0;
   background: transparent;
   color: var(--utility-text);
@@ -1425,39 +1426,71 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
 }
 .vault-screen-lock-hero { display: grid; justify-items: center; gap: 8px; text-align: center; }
 .vault-screen-lock-emblem {
-  width: 72px; height: 72px; margin-bottom: 6px;
+  position: relative;
+  width: 84px; height: 84px; margin-bottom: 8px;
   display: grid; place-items: center;
-  border: 1px solid rgba(72, 92, 199, .16);
-  border-radius: 22px;
-  background: linear-gradient(160deg, #eef1ff, #dfe5fb);
+  border: 1px solid rgba(72, 92, 199, .18);
+  border-radius: 28px;
+  background: linear-gradient(160deg, #f7f8ff, #dfe5fb 62%, #cfd8f8);
   color: var(--vault-accent);
-  box-shadow: 0 18px 40px rgba(40, 51, 91, .12), inset 0 1px 0 rgba(255,255,255,.8);
+  box-shadow: 0 22px 48px rgba(40, 51, 91, .16), inset 0 1px 0 rgba(255,255,255,.88);
 }
-.vault-screen-lock-hero small { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: #7180d7; }
-.vault-screen-lock-hero h2 { margin: 0; font-size: 26px; letter-spacing: -.04em; color: var(--utility-text); }
+.vault-screen-lock-emblem::before {
+  content: "";
+  position: absolute;
+  inset: -18px;
+  z-index: -1;
+  border-radius: 36px;
+  background: radial-gradient(circle, rgba(72, 92, 199, .2), transparent 68%);
+}
+.vault-screen-lock-hero small { font-size: 10px; font-weight: 800; letter-spacing: .2em; color: #6674cf; }
+.vault-screen-lock-hero h2 { margin: 0; font-size: 28px; letter-spacing: -.045em; color: var(--utility-text); }
 .vault-screen-lock-hero p { margin: 0; max-width: min(22em, 100%); color: var(--utility-muted); font-size: 13px; line-height: 1.55; }
+.vault-screen-lock-panel {
+  width: 100%;
+  display: grid;
+  gap: 16px;
+  padding: 22px 20px 18px;
+  border: 1px solid rgba(72, 92, 199, .12);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(246,248,255,.78));
+  box-shadow: 0 18px 48px rgba(34, 44, 76, .1);
+  backdrop-filter: blur(18px);
+}
 .vault-screen-lock-gate .vault-screen-lock-pin,
 .vault-screen-lock-gate .vault-screen-lock-complex { width: 100%; }
 .vault-screen-lock-gate .vault-screen-lock-pin-caption,
 .vault-screen-lock-gate .vault-screen-lock-complex > span { color: var(--utility-muted); }
 .vault-screen-lock-gate .vault-screen-lock-password-link { color: var(--vault-accent); }
+.vault-screen-lock-mask.is-locked .vault-primary {
+  background: var(--vault-accent, #485cc7);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(72, 92, 199, .24);
+}
 html.theme-dark .vault-screen-lock-mask.is-locked {
   background:
-    radial-gradient(circle at 50% 12%, rgba(88, 104, 214, .28), transparent 34%),
-    linear-gradient(180deg, #151b2b 0%, #0f1420 46%, #121826 100%);
+    radial-gradient(circle at 18% 8%, rgba(88, 104, 214, .34), transparent 30%),
+    radial-gradient(circle at 86% 92%, rgba(72, 92, 199, .2), transparent 34%),
+    linear-gradient(180deg, #151b2b 0%, #0f1420 48%, #121826 100%);
 }
 html.theme-dark .vault-screen-lock-gate { color: #eef1f8; }
 html.theme-dark .vault-screen-lock-emblem {
   border-color: rgba(177, 186, 255, .22);
-  background: linear-gradient(160deg, rgba(92, 108, 214, .42), rgba(24, 32, 52, .9));
+  background: linear-gradient(160deg, rgba(92, 108, 214, .5), rgba(24, 32, 52, .92));
   color: #d7dcff;
-  box-shadow: 0 18px 40px rgba(8, 12, 24, .35), inset 0 1px 0 rgba(255,255,255,.16);
+  box-shadow: 0 22px 48px rgba(8, 12, 24, .4), inset 0 1px 0 rgba(255,255,255,.16);
 }
+html.theme-dark .vault-screen-lock-emblem::before { background: radial-gradient(circle, rgba(109, 125, 255, .28), transparent 68%); }
 html.theme-dark .vault-screen-lock-hero small { color: #9aa6d8; }
 html.theme-dark .vault-screen-lock-hero h2 { color: #f5f7ff; }
 html.theme-dark .vault-screen-lock-hero p,
 html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pin-caption,
 html.theme-dark .vault-screen-lock-gate .vault-screen-lock-complex > span { color: #9aa3b8; }
+html.theme-dark .vault-screen-lock-panel {
+  border-color: rgba(177, 186, 255, .14);
+  background: linear-gradient(180deg, rgba(32, 41, 64, .78), rgba(18, 24, 38, .72));
+  box-shadow: 0 18px 48px rgba(4, 8, 18, .34);
+}
 html.theme-dark .vault-screen-lock-gate .vault-screen-lock-password-link { color: #b7c0e8; }
 html.theme-dark .vault-screen-lock-gate .vault-screen-lock-pins > i {
   background: linear-gradient(180deg, rgba(38, 48, 74, .95), rgba(22, 29, 46, .96));
@@ -1471,7 +1504,7 @@ html.theme-dark .vault-screen-lock-gate .vault-screen-lock-field {
   border-color: rgba(177, 186, 255, .16);
   color: #cfd6ea;
 }
-.vault-screen-lock-unlock-btn { width: 100%; min-height: 46px; }
+.vault-screen-lock-unlock-btn { width: 100%; min-height: 48px; border-radius: 16px; }
 .vault-screen-lock-mask.is-keyboard { align-items: stretch; }
 .vault-screen-lock-mask.is-keyboard .vault-screen-lock-gate { align-content: end; padding-bottom: 16px; }
 @media (max-width: 560px) {
@@ -1485,6 +1518,7 @@ html.theme-dark .vault-screen-lock-gate .vault-screen-lock-field {
   }
   .vault-screen-lock-mask.is-keyboard .vault-screen-lock-hero p { display: none; }
   .vault-screen-lock-mask.is-keyboard .vault-screen-lock-emblem { width: 56px; height: 56px; border-radius: 18px; }
+  .vault-screen-lock-mask.is-keyboard .vault-screen-lock-panel { padding: 16px 16px 14px; border-radius: 22px; }
 }
 .vault-screen-lock { display: grid; gap: 12px; }
 .vault-screen-lock-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px; border: 1px solid var(--utility-line); border-radius: 14px; background: color-mix(in srgb, var(--utility-paper) 70%, var(--utility-bg)); }
