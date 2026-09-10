@@ -1,0 +1,18 @@
+app/components/AppStartup.tsx
+  h_d554d32aa9d663 2,5-39,42-54
+index.html
+  h_d554d32aa9d663 47-49,51,66,73,79-92,101-106
+tests/otp-vault-ui.test.mjs
+  h_d554d32aa9d663 118-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "f038704a968d4d09890fa4e83143e7afbfffef9b",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
