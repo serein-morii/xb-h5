@@ -1,0 +1,18 @@
+app/systems/otp/VaultScreenLock.tsx
+  h_d554d32aa9d663 167-172
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 1409-1411,1414,1417,1419,1421,1429-1430,1432-1434,1436,1438-1447,1449-1459,1465-1469,1472-1474,1479,1481,1483,1489-1493,1507,1521
+tests/otp-vault-ui.test.mjs
+  h_d554d32aa9d663 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "fb2a4100a16116a0f6fdddbbc9e9049b70b71ad4",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
