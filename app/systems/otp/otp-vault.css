@@ -1435,7 +1435,7 @@ html.theme-dark .vault-theme-options button.is-active { border-color: #49598d; b
 }
 .vault-screen-lock-hero small { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: #7180d7; }
 .vault-screen-lock-hero h2 { margin: 0; font-size: 26px; letter-spacing: -.04em; color: var(--utility-text); }
-.vault-screen-lock-hero p { margin: 0; max-width: 16em; color: var(--utility-muted); font-size: 13px; line-height: 1.55; }
+.vault-screen-lock-hero p { margin: 0; max-width: min(22em, 100%); color: var(--utility-muted); font-size: 13px; line-height: 1.55; }
 .vault-screen-lock-gate .vault-screen-lock-pin,
 .vault-screen-lock-gate .vault-screen-lock-complex { width: 100%; }
 .vault-screen-lock-gate .vault-screen-lock-pin-caption,
