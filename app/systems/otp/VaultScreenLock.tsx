@@ -124,19 +124,27 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
     };
   }, [usePassword]);
 
+  const submitPassword = async (value = password) => {
+    if (busy) return;
+    if (!value) return setMessage(type === "complex" ? "请输入锁屏密码" : "请输入锁屏数字");
+    setBusy("password"); setMessage("");
+    try {
+      await unlockVaultScreenLock({ password: await encryptSecret(value) });
+      onUnlocked();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "解锁失败");
+      setPassword("");
+    }
+    finally { setBusy(""); }
+  };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!usePassword) {
       void unlockPasskey();
       return;
     }
-    if (!password) return setMessage(type === "complex" ? "请输入锁屏密码" : "请输入锁屏数字");
-    setBusy("password"); setMessage("");
-    try {
-      await unlockVaultScreenLock({ password: await encryptSecret(password) });
-      onUnlocked();
-    } catch (error) { setMessage(error instanceof Error ? error.message : "解锁失败"); }
-    finally { setBusy(""); }
+    await submitPassword();
   };
 
   const unlockPasskey = async () => {
@@ -156,7 +164,7 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
       <h2>保险库已锁定</h2>
       <p>{usePassword ? "输入锁屏密码继续" : "用 Passkey 解锁，也可改用锁定密码"}</p>
     </div>
-    {usePassword ? <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} /> : <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button>}
+    {usePassword ? <LockPasswordField autoFocus label={type === "complex" ? "复杂密码" : `${type === "pin4" ? "4" : "6"} 位数字`} lockType={type} value={password} onChange={setPassword} onComplete={type === "complex" ? undefined : (value) => void submitPassword(value)} placeholder={type === "complex" ? "输入复杂密码" : "输入锁屏数字"} /> : <button type="button" className="vault-primary vault-screen-lock-passkey-btn" disabled={busy !== ""} onClick={() => void unlockPasskey()}>{busy === "passkey" ? <LoaderCircle className="spin" size={16} /> : <Fingerprint size={16} />}{busy === "passkey" ? "等待设备" : "使用 Passkey 解锁"}</button>}
     {passkeyEnabled && !usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(true); setMessage(""); }}>用锁定密码解锁</button> : null}
     {passkeyEnabled && usePassword ? <button type="button" className="vault-screen-lock-password-link" onClick={() => { setUsePassword(false); setPassword(""); setMessage(""); }}>使用 Passkey 解锁</button> : null}
     <VaultToastMessage message={message} onDismiss={() => setMessage("")} />
@@ -164,16 +172,22 @@ function UnlockForm({ prefs, onUnlocked }: { prefs: VaultPrefs; onUnlocked: () =
   </form></div>;
 }
 
-function LockPasswordField({ label, lockType, value, onChange, autoFocus, placeholder }: {
+function LockPasswordField({ label, lockType, value, onChange, onComplete, autoFocus, placeholder }: {
   label: string;
   lockType: LockType;
   value: string;
   onChange: (value: string) => void;
+  onComplete?: (value: string) => void;
   autoFocus?: boolean;
   placeholder?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pinLen = lockType === "pin4" ? 4 : lockType === "pin6" ? 6 : 0;
+  const applyValue = (next: string) => {
+    const sanitized = sanitizeLockInput(lockType, next);
+    onChange(sanitized);
+    if (onComplete && pinLen && sanitized.length === pinLen) onComplete(sanitized);
+  };
   if (pinLen) {
     return (
       <label className="vault-screen-lock-pin">
@@ -191,7 +205,7 @@ function LockPasswordField({ label, lockType, value, onChange, autoFocus, placeh
             maxLength={pinLen}
             aria-label={label}
             placeholder={placeholder}
-            onChange={(event) => onChange(sanitizeLockInput(lockType, event.target.value))}
+            onChange={(event) => applyValue(event.target.value)}
           />
         </div>
         <span className="vault-screen-lock-pin-caption">{label}</span>

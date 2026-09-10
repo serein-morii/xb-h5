@@ -46,6 +46,9 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(lockPage, /vault-screen-lock-gate/);
   assert.match(lockPage, /vault-screen-lock-hero/);
   assert.match(lockPage, /keyboardInset/);
+  assert.match(lockPage, /onComplete/);
+  assert.match(lockPage, /submitPassword/);
+  assert.match(lockPage, /sanitized.length === pinLen/);
   assert.match(security, /无操作自动锁屏/);
   assert.match(security, /仍可手动锁屏/);
 });
