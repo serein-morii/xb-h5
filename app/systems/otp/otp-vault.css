@@ -1880,8 +1880,8 @@ html.theme-dark .vault-filters select { background: #171e2c; color: #e8edf8; }
 
 html:has(.vault-page) { scrollbar-gutter: stable; }
 
-.vault-panel-head > .vault-import-action,
-.vault-panel-head > .vault-create-share {
+.vault-page > .vault-import-action,
+.vault-page > .vault-create-share {
   position: fixed;
   z-index: 121;
   right: calc(max(24px, (100% - 1120px) / 2) + 24px);
@@ -1906,8 +1906,8 @@ html:has(.vault-page) { scrollbar-gutter: stable; }
 }
 
 @media (max-width: 560px) {
-  .vault-panel-head > .vault-import-action,
-  .vault-panel-head > .vault-create-share {
+  .vault-page > .vault-import-action,
+  .vault-page > .vault-create-share {
     right: 17px;
     bottom: calc(max(10px, env(safe-area-inset-bottom)) + 76px);
     width: 48px;
@@ -1915,13 +1915,13 @@ html:has(.vault-page) { scrollbar-gutter: stable; }
     border-radius: 50%;
     box-shadow: 0 8px 22px rgba(35, 49, 99, .16);
   }
-  .vault-panel-head > .vault-import-action span,
-  .vault-panel-head > .vault-create-share span { display: none; }
-  .vault-panel-head > .vault-create-share svg { width: 18px; height: 18px; }
+  .vault-page > .vault-import-action span,
+  .vault-page > .vault-create-share span { display: none; }
+  .vault-page > .vault-create-share svg { width: 18px; height: 18px; }
 }
 
-html.theme-dark .vault-panel-head > .vault-import-action,
-html.theme-dark .vault-panel-head > .vault-create-share {
+html.theme-dark .vault-page > .vault-import-action,
+html.theme-dark .vault-page > .vault-create-share {
   border-color: #3b4664;
   background: rgba(23, 30, 44, .94);
   color: #b1baff;

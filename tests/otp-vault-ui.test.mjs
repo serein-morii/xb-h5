@@ -104,10 +104,10 @@ test("adds press, view switch and sheet motion without fighting reduced-motion",
 test("floats credential add and share create actions on PC", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
-  assert.match(styles, /\.vault-panel-head > \.vault-import-action,[\s\S]{0,80}\.vault-panel-head > \.vault-create-share \{[\s\S]{0,120}position:\s*fixed/);
+  assert.match(styles, /\.vault-page > \.vault-import-action,[\s\S]{0,80}\.vault-page > \.vault-create-share \{[\s\S]{0,120}position:\s*fixed/);
   assert.match(styles, /scrollbar-gutter:\s*stable/);
-  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,360}right:\s*calc\(max\(24px, \(100% - 1120px\) \/ 2\) \+ 24px\)/);
-  assert.match(styles, /\.vault-panel-head > \.vault-create-share \{[\s\S]{0,420}bottom:\s*28px/);
+  assert.match(styles, /\.vault-page > \.vault-create-share \{[\s\S]{0,360}right:\s*calc\(max\(24px, \(100% - 1120px\) \/ 2\) \+ 24px\)/);
+  assert.match(styles, /\.vault-page > \.vault-create-share \{[\s\S]{0,420}bottom:\s*28px/);
   assert.match(workspace, /spawnPressBurst/);
   assert.match(styles, /\.vault-press-burst/);
   assert.match(styles, /@keyframes vault-burst-spark/);
