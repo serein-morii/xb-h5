@@ -1507,10 +1507,10 @@ html.theme-dark .vault-screen-lock-gate .vault-screen-lock-field {
 .vault-screen-lock-unlock-btn { width: 100%; min-height: 48px; border-radius: 16px; }
 .vault-screen-lock-mask.is-keyboard { align-items: stretch; }
 .vault-screen-lock-mask.is-keyboard .vault-screen-lock-gate {
-  min-height: calc(100dvh - var(--keyboard-inset, 0px));
-  max-height: calc(100dvh - var(--keyboard-inset, 0px));
+  min-height: calc(100dvh - var(--keyboard-inset, 0px) - 56px);
+  max-height: calc(100dvh - var(--keyboard-inset, 0px) - 56px);
   align-content: end;
-  padding-bottom: 16px;
+  padding-bottom: 28px;
   overflow: auto;
 }
 @media (max-width: 560px) {
@@ -1523,8 +1523,8 @@ html.theme-dark .vault-screen-lock-gate .vault-screen-lock-field {
     border-radius: 0;
   }
   .vault-screen-lock-mask.is-keyboard .vault-screen-lock-gate {
-    min-height: calc(100dvh - var(--keyboard-inset, 0px));
-    max-height: calc(100dvh - var(--keyboard-inset, 0px));
+    min-height: calc(100dvh - var(--keyboard-inset, 0px) - 56px);
+    max-height: calc(100dvh - var(--keyboard-inset, 0px) - 56px);
   }
   .vault-screen-lock-mask.is-keyboard .vault-screen-lock-hero p { display: none; }
   .vault-screen-lock-mask.is-keyboard .vault-screen-lock-emblem { width: 56px; height: 56px; border-radius: 18px; }
