@@ -1,0 +1,34 @@
+app/systems/otp/OtpVaultChangelogPage.tsx
+  h_d554d32aa9d663 9-18,28
+app/systems/otp/OtpVaultGuidePage.tsx
+  h_d554d32aa9d663 169,217,223,229,240,243-244
+app/systems/otp/OtpVaultWorkspace.tsx
+  h_d554d32aa9d663 5,30-52,359,681,1217,1221-1222,1238,1241-1260
+app/systems/otp/VaultScreenLock.tsx
+  h_d554d32aa9d663 24,90
+app/systems/otp/VaultSecurityCenter.tsx
+  h_d554d32aa9d663 30,165-166,178
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 858-861,865-866,874
+app/systems/otp/otpVersion.ts
+  h_d554d32aa9d663 2
+app/systems/otp/vaultApi.ts
+  h_d554d32aa9d663 139
+docs/otp-vault-user-guide.md
+  h_d554d32aa9d663 16,19
+tests/otp-vault-ui.test.mjs
+  h_d554d32aa9d663 36,62-64
+tests/system-center-split.test.mjs
+  h_d554d32aa9d663 78,81,84-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3ffabea7eb93991eba5fb68053fd685033a8cdc2",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
