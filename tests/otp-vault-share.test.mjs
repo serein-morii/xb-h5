@@ -11,6 +11,7 @@ import {
   groupCredentials,
   groupReceivedBySource,
   listSharedByOptions,
+  matchesCredentialKind,
   matchesCredentialTab,
   matchesSharedByFilter,
   parseShareClipboard,
@@ -25,6 +26,7 @@ import {
   selectShareItems,
   shareHandoffAfterRestore,
   shareLoginNext,
+  splitCredentialTags,
   shareReturnPath,
   shouldOfferClipboardShare,
   shouldShowShareHandoff,
@@ -42,6 +44,24 @@ test("share authorization caps at 50 items", () => {
   const blocked = toggleShareSelection(full, 99);
   assert.equal(blocked.limited, true);
   assert.deepEqual(blocked.selected, full);
+});
+
+test("credential kind filter separates otp, password and notes", () => {
+  const otp = { otpConfigured: true, passwordConfigured: false };
+  const both = { otpConfigured: true, passwordConfigured: true };
+  const password = { otpConfigured: false, passwordConfigured: true };
+  const note = { otpConfigured: false, passwordConfigured: false };
+  const liveOtp = { currentOtp: "123456", passwordConfigured: false };
+  assert.equal(matchesCredentialKind(otp, "all"), true);
+  assert.equal(matchesCredentialKind(otp, "otp"), true);
+  assert.equal(matchesCredentialKind(both, "otp"), true);
+  assert.equal(matchesCredentialKind(both, "password"), true);
+  assert.equal(matchesCredentialKind(password, "otp"), false);
+  assert.equal(matchesCredentialKind(password, "password"), true);
+  assert.equal(matchesCredentialKind(password, "note"), false);
+  assert.equal(matchesCredentialKind(note, "note"), true);
+  assert.equal(matchesCredentialKind(liveOtp, "otp"), true);
+  assert.deepEqual(splitCredentialTags("工作, 家庭  家庭，银行"), ["工作", "家庭", "银行"]);
 });
 
 test("credential tabs keep received items in all and favorites", () => {

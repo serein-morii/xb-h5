@@ -98,6 +98,11 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /Boolean\(prefs.concealOtp\)/);
   assert.match(workspace, /prefs.listSort \|\| "name"/);
   assert.match(workspace, /点按显示并复制/);
+  assert.match(workspace, /matchesCredentialKind\(item, kindFilter\)/);
+  assert.match(workspace, /aria-label="类型"/);
+  assert.match(workspace, /<option value="otp">动态口令<\/option>/);
+  assert.match(workspace, /vault-card-tags/);
+  assert.match(workspace, /安全笔记/);
   assert.match(workspace, /最近使用/);
   assert.match(workspace, /findSameAccountCredential/);
   assert.match(workspace, /shouldConfirmDuplicateAdd/);

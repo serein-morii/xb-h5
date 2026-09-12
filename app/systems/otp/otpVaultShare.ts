@@ -65,6 +65,31 @@ export function matchesCredentialTab(item: { shared?: boolean; favorite?: boolea
   return showShared || !item.shared;
 }
 
+export type CredentialKindFilter = "all" | "otp" | "password" | "note";
+
+export function hasCredentialOtp(item: { otpConfigured?: boolean; currentOtp?: string }) {
+  return Boolean(item.otpConfigured || item.currentOtp);
+}
+
+export function credentialKind(item: { otpConfigured?: boolean; passwordConfigured?: boolean; currentOtp?: string }): Exclude<CredentialKindFilter, "all"> {
+  if (hasCredentialOtp(item)) return "otp";
+  if (item.passwordConfigured) return "password";
+  return "note";
+}
+
+export function matchesCredentialKind(item: { otpConfigured?: boolean; passwordConfigured?: boolean; currentOtp?: string }, filter: CredentialKindFilter) {
+  if (!filter || filter === "all") return true;
+  const otp = hasCredentialOtp(item);
+  const password = Boolean(item.passwordConfigured);
+  if (filter === "otp") return otp;
+  if (filter === "password") return password;
+  return !otp && !password;
+}
+
+export function splitCredentialTags(value?: string) {
+  return [...new Set((value || "").split(/[,，\s]+/).map((tag) => tag.trim()).filter(Boolean))].slice(0, 8);
+}
+
 export type ReceivedGroupMeta = {
   label: string;
   title: string;

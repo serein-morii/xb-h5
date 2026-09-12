@@ -1109,6 +1109,10 @@ html.theme-dark {
 .vault-head-actions .vault-logout { padding: 0 9px; }
 .vault-create-share { border-color: #cfd5f3; background: transparent; }
 
+.vault-card-tags { margin: 8px 0 2px; display: flex; flex-wrap: wrap; gap: 5px; }
+.vault-card-tags b { max-width: 7.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 7px; border-radius: 999px; background: #edf0fc; color: #485cc7; font-size: 8px; font-weight: 750; }
+html.theme-dark .vault-card-tags b { background: #273154; color: #c8ceff; }
+.vault-card.is-compact .vault-card-tags { margin-top: 6px; }
 .vault-card.is-shared { border: 1px solid #dfe3f7; background: linear-gradient(145deg, #fff, #f7f8ff); }
 .vault-card-top-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .vault-shared-badge { padding: 4px 7px; border-radius: 8px; background: #eef0fb; color: #586bcf; font-size: 8px; font-weight: 750; }
