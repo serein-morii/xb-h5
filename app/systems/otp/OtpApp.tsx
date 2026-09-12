@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { AppStartup } from "../../components/AppStartup";
+import { AppStartup, hideAppStartup } from "../../components/AppStartup";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
 import OtpInstallHint from "./OtpInstallHint";
@@ -26,6 +26,9 @@ export default function OtpApp() {
     document.title = changelog ? "更新日志｜OTP Vault" : guide ? "使用指南｜OTP Vault" : share ? "临时凭据授权｜OTP Vault" : "OTP Vault｜私人身份保险库";
     const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     if (meta) meta.content = changelog ? "查看 OTP Vault 最近功能更新。" : guide ? "了解 OTP Vault 的添加、使用、分享、安全保护与备份恢复。" : share ? "通过访问码查看限时授权凭据。" : "独立管理 OTP 凭据并创建限时访问授权。";
+  }, [changelog, guide, share]);
+  useEffect(() => {
+    if (share || guide || changelog) hideAppStartup();
   }, [changelog, guide, share]);
   useEffect(() => {
     let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
