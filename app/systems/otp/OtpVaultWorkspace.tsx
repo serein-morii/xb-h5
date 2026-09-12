@@ -26,7 +26,29 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
+const NOTIFY_EVENTS = [
+  { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
+  { key: "backup-export", label: "保险库已导出", detail: "下载恢复包时提醒" },
+  { key: "migration-export", label: "验证器迁移已导出", detail: "生成迁移二维码时提醒" },
+  { key: "sessions-revoked", label: "其他设备已退出", detail: "退出其他登录设备时提醒" },
+  { key: "key-rotation", label: "加密密钥轮换完成", detail: "轮换保险库密钥时提醒" },
+  { key: "share-open", label: "分享授权被打开", detail: "别人打开你发出的授权" },
+  { key: "share-save", label: "分享被转存", detail: "别人把你的授权转到「我收到的」" },
+  { key: "share-released", label: "授权被解除", detail: "接收人主动解除你的授权" },
+  { key: "share-revoked", label: "转存授权被撤销", detail: "你转存的授权被分享者撤销" },
+  { key: "share-save-removed", label: "转存被移除", detail: "分享者移除了你转存的授权" },
+  { key: "share-save-restored", label: "转存已恢复", detail: "分享者恢复了你转存的授权" },
+  { key: "share-deleted", label: "转存授权被删除", detail: "分享者删除了你转存的授权" },
+  { key: "share-updated", label: "转存授权已更新", detail: "分享者修改了你转存的授权" },
+] as const;
+type NotifyChannel = "email" | "bark";
+function parseNotificationRules(raw?: string) {
+  try {
+    const parsed = JSON.parse(raw || "{}") as Record<string, { email?: boolean; bark?: boolean }>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch { return {}; }
+}
 type VaultView = "all" | "shares" | "settings";
 type SettingsSection = "security" | "account" | "appearance" | "notifications" | "about" | null;
 type BarcodeDetectorLike = { detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>> };
@@ -71,7 +93,7 @@ function canUseSystemShare() {
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
-const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", barkUrl: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
+const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", barkUrl: "", notificationRules: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
 function readLastScreenActive() {
   const value = Number(localStorage.getItem(SCREEN_LOCK_ACTIVE_KEY) || 0);
   return Number.isFinite(value) && value > 0 ? value : 0;
@@ -1207,6 +1229,22 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>安全事件提醒</b><small>连续验证失败、导出、设备退出和密钥轮换时提醒</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => void updatePrefs({ ...prefs, securityAlerts: event.target.checked })} /><i /></label>
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} defaultValue={prefs.notificationEmail || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.notificationEmail || "")) return; void updatePrefs({ ...prefs, notificationEmail: next }); }} /></label>
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>https://api.day.app/设备Key/ ，多个用英文逗号分隔</small></span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" defaultValue={prefs.barkUrl || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.barkUrl || "")) return; void updatePrefs({ ...prefs, barkUrl: next }); }} /></label>
+        <div className="vault-notify-rules">
+          <p className="vault-notify-rules-title"><b>按事件选择通知渠道</b><small>未单独设置的事件跟随「安全事件提醒」总开关</small></p>
+          {NOTIFY_EVENTS.map(({ key, label, detail }) => {
+            const rules = parseNotificationRules(prefs.notificationRules);
+            const saved = rules[key];
+            const rule = { email: saved?.email ?? prefs.securityAlerts, bark: saved?.bark ?? prefs.securityAlerts };
+            const toggleRule = (channel: NotifyChannel) => { const nextRules = { ...rules, [key]: { ...rule, [channel]: !rule[channel] } }; void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) }); };
+            return <div className="vault-notify-rule" key={key}>
+              <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
+              <span className="vault-notify-channels">
+                <label className={rule.email ? "is-on" : ""}><input type="checkbox" checked={rule.email} onChange={() => toggleRule("email")} />邮件</label>
+                <label className={rule.bark ? "is-on" : ""}><input type="checkbox" checked={rule.bark} onChange={() => toggleRule("bark")} />Bark</label>
+              </span>
+            </div>;
+          })}
+        </div>
       </div> : null}
       {settingsSection === "appearance" ? <div className="vault-settings-group vault-settings-appearance vault-subview-enter" key="settings-appearance">
         <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
