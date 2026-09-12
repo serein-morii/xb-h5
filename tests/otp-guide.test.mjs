@@ -85,9 +85,15 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.doesNotMatch(changelog, /otp-guide-hero/);
   assert.doesNotMatch(changelog, /otp-guide-timeline/);
   assert.match(changelog, /aria-label="更新记录"/);
+  assert.match(changelog, /2026-09-15/);
+  assert.match(changelog, /2026-09-14/);
   assert.match(changelog, /2026-09-09/);
   assert.match(changelog, /2026-09-07/);
   assert.match(changelog, /2026-09-06/);
+  const userGuide = await source("docs/otp-vault-user-guide.md");
+  assert.match(userGuide, /2026-09-15 : 标签、导入和浏览器推送/);
+  assert.match(userGuide, /2026-09-14 : 通知和设置入口/);
+  assert.match(userGuide, /2026-09-09 : 锁屏/);
   assert.match(guide, /顶栏小锁可随时锁定/);
   assert.match(guide, /锁屏密码忘了怎么办/);
   assert.match(changelog, /2026-09-02/);
