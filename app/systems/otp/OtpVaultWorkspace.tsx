@@ -54,7 +54,13 @@ type NotifyChannel = "email" | "bark";
 function parseNotificationRules(raw?: string) {
   try {
     const parsed = JSON.parse(raw || "{}") as Record<string, { email?: boolean; bark?: boolean }>;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    const next: Record<string, { email: boolean; bark: boolean }> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!value || typeof value !== "object") continue;
+      next[key] = { email: value.email !== false, bark: value.bark !== false };
+    }
+    return next;
   } catch { return {}; }
 }
 type VaultView = "all" | "shares" | "settings";
@@ -1246,14 +1252,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             {group.events.map(({ key, label, detail }) => {
               const rules = parseNotificationRules(prefs.notificationRules);
               const saved = rules[key];
-              const stored = { email: saved?.email ?? true, bark: saved?.bark ?? true };
+              const stored = { email: saved?.email !== false, bark: saved?.bark !== false };
               const rule = { email: stored.email && prefs.securityAlerts, bark: stored.bark && prefs.securityAlerts };
-              const toggleRule = (channel: NotifyChannel) => { const nextRules = { ...rules, [key]: { ...stored, [channel]: !stored[channel] } }; void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) }); };
+              const toggleRule = (channel: NotifyChannel) => {
+                const nextRules = { ...rules, [key]: { email: stored.email, bark: stored.bark, [channel]: !stored[channel] } };
+                void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) });
+              };
               return <div className="vault-notify-rule" key={key}>
                 <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
                 <span className="vault-notify-channels">
-                  <label className={rule.email ? "is-on" : ""}><input type="checkbox" checked={stored.email} disabled={!prefs.securityAlerts} onChange={() => toggleRule("email")} />邮件</label>
-                  <label className={rule.bark ? "is-on" : ""}><input type="checkbox" checked={stored.bark} disabled={!prefs.securityAlerts} onChange={() => toggleRule("bark")} />Bark</label>
+                  <label className={rule.email ? "is-on" : "is-off"} aria-pressed={rule.email}><input type="checkbox" checked={stored.email} disabled={!prefs.securityAlerts} onChange={() => toggleRule("email")} />{rule.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
+                  <label className={rule.bark ? "is-on" : "is-off"} aria-pressed={rule.bark}><input type="checkbox" checked={stored.bark} disabled={!prefs.securityAlerts} onChange={() => toggleRule("bark")} />{rule.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
                 </span>
               </div>;
             })}

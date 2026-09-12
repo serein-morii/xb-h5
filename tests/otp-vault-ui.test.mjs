@@ -62,6 +62,9 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /sendVaultTestNotice/);
   assert.match(workspace, /NOTIFY_GROUPS/);
   assert.match(workspace, /邮件和 Bark/);
+  assert.match(workspace, /vault-notify-channels/);
+  assert.match(workspace, /<Check size=\{11\} strokeWidth=\{3\} \/>/);
+  assert.match(workspace, /aria-pressed=\{rule.email\}/);
 });
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
