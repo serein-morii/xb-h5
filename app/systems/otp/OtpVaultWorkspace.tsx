@@ -787,6 +787,24 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 						: Notification.permission === "denied"
 							? "系统通知权限已关闭，请先在浏览器设置中允许"
 							: "桌面 Chrome 等浏览器会先请求系统通知权限";
+		const pushStatusLabel = !browserPushSupported
+			? "不可用"
+			: pushServerEnabled === false
+				? "未配置"
+				: pushBusy
+					? "检测中"
+					: pushStatusError
+						? "需处理"
+						: pushEnabled
+							? pushSynced ? "已开启" : "待同步"
+							: iosNeedsHomeScreen
+								? "需安装"
+								: Notification.permission === "denied" ? "已阻止" : "未开启";
+		const pushStatusTone = pushEnabled && pushSynced
+			? "is-active"
+			: pushStatusError || iosNeedsHomeScreen || (browserPushSupported && Notification.permission === "denied")
+				? "is-warning"
+				: "is-muted";
 		async function toggleBrowserPush() {
 			if (pushBusy) return;
 			setPushBusy(true);
@@ -1480,8 +1498,18 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}。换成其他邮箱需要验证码</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></label>
         {notifyEmailDraft.trim() && notifyEmailDraft.trim().toLowerCase() !== (prefs.notificationEmail || "").toLowerCase() && notifyEmailDraft.trim().toLowerCase() !== (accountEmail || "").toLowerCase() ? <div className="vault-notify-verify"><input inputMode="numeric" maxLength={6} value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, ""))} placeholder="6 位验证码" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => { setNotifyEmailSending(true); void sendEmailCode(notifyEmailDraft.trim(), "otp-notify").then((result) => { const wait = Number((result as { resendAfter?: number }).resendAfter || 60); setNotifyEmailCountdown(wait); notify("验证码已发送"); }).catch((error) => notify(error instanceof Error ? error.message : "验证码发送失败", true)).finally(() => setNotifyEmailSending(false)); }}>{notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : notifyEmailSending ? "发送中" : "获取验证码"}</button><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim(), notificationEmailCode: notifyEmailCode }).then(() => { setNotifyEmailCode(""); notify("通知邮箱已更新"); }); }}>保存邮箱</button></div> : notifyEmailDraft.trim() !== (prefs.notificationEmail || "") ? <div className="vault-notify-verify"><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim() }).then(() => notify(notifyEmailDraft.trim() ? "通知邮箱已更新" : "已改回账号邮箱")); }}>保存邮箱</button></div> : null}
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>https://api.day.app/设备Key/ ，多个用英文逗号分隔</small></span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" defaultValue={prefs.barkUrl || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.barkUrl || "")) return; void updatePrefs({ ...prefs, barkUrl: next }); }} /></label>
-        <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><BellRing size={17} /></span><span className="vault-setting-copy"><b>浏览器推送</b><small>{pushStatusHint}</small></span><input type="checkbox" checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></label>
-        <div className="vault-notify-test"><button type="button" className="vault-primary" disabled={testNoticeBusy || !canSendTestNotice} onClick={() => void sendTestNotice()}>{testNoticeBusy ? <LoaderCircle className="spin" size={15} /> : <Bell size={15} />}{testNoticeBusy ? "发送中…" : "发送测试通知"}</button><small>{canSendTestNotice ? "会同时写入站内信，用来确认邮件、Bark 和浏览器推送是否可用" : "先填写通知邮箱、Bark 地址，或开启浏览器推送"}</small></div>
+        <div className="vault-notify-actions">
+          <label className={`vault-notify-action vault-notify-push ${pushStatusTone}`}>
+            <span className="vault-setting-icon is-blue"><BellRing size={17} /></span>
+            <span className="vault-notify-action-copy"><span><b>浏览器推送</b><em className={`vault-notify-status ${pushStatusTone}`}>{pushBusy ? <LoaderCircle className="spin" size={10} /> : null}{pushStatusLabel}</em></span><small aria-live="polite">{pushStatusHint}</small></span>
+            <span className="vault-notify-switch"><input type="checkbox" aria-label={pushEnabled ? "关闭浏览器推送" : "开启浏览器推送"} checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></span>
+          </label>
+          <div className="vault-notify-action vault-notify-test">
+            <span className="vault-setting-icon is-violet"><Bell size={17} /></span>
+            <span className="vault-notify-action-copy"><span><b>测试通知</b></span><small>{canSendTestNotice ? "按当前配置发送到可用渠道，并在站内信留下测试记录" : "先配置至少一种外部通知渠道"}</small></span>
+            <button type="button" disabled={testNoticeBusy || !canSendTestNotice} onClick={() => void sendTestNotice()}>{testNoticeBusy ? <LoaderCircle className="spin" size={13} /> : <Bell size={13} />}{testNoticeBusy ? "发送中…" : "发送测试"}</button>
+          </div>
+        </div>
         <div className={`vault-notify-rules${prefs.securityAlerts ? "" : " is-off"}`}>
           <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>{prefs.securityAlerts ? "未单独设置的事件跟随总开关；站内信不受影响" : "总开关已关闭，下面勾选会在重新开启后生效"}</small></p>
           {NOTIFY_GROUPS.map((group) => <div className="vault-notify-group" key={group.title}>

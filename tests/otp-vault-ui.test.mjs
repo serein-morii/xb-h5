@@ -15,6 +15,7 @@ test("maps common issuers to local brand colors without network icons", () => {
 
 test("puts a lock control beside theme switch and wires screen lock setup", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
   const lockPage = await source("app/systems/otp/VaultScreenLock.tsx");
   const security = await source("app/systems/otp/VaultSecurityCenter.tsx");
   assert.match(workspace, /vault-lock-action/);
@@ -75,9 +76,18 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /aria-pressed=\{rule.push\}/);
   assert.match(workspace, /toggleBrowserPush/);
   assert.match(workspace, /<b>浏览器推送<\/b>/);
-  assert.match(workspace, /发送测试通知/);
+  assert.match(workspace, /vault-notify-actions/);
+  assert.match(workspace, /vault-notify-status/);
+  assert.match(workspace, /aria-label=\{pushEnabled \? "关闭浏览器推送" : "开启浏览器推送"\}/);
+  assert.match(workspace, /<b>测试通知<\/b>/);
+  assert.match(workspace, /发送测试/);
   assert.match(workspace, /iPhone \/ iPad 需先用 Safari 添加到主屏幕/);
   assert.match(workspace, /已与服务器同步/);
+  assert.match(styles, /\.vault-notify-action[\s\S]{0,260}grid-template-columns:\s*auto minmax\(0,1fr\) auto/);
+  assert.match(styles, /\.vault-notify-status\.is-active/);
+  assert.match(styles, /\.vault-notify-switch input:checked \+ i/);
+  assert.match(styles, /\.vault-notify-test \{ grid-template-columns:\s*auto minmax\(0,1fr\); \}/);
+  assert.match(styles, /html\.theme-dark[\s\S]*\.vault-notify-action/);
 });
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
