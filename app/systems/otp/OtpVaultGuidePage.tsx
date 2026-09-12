@@ -142,9 +142,9 @@ export default function OtpVaultGuidePage() {
           </ol>
           <p>支持标准 OTP 二维码和 Google Authenticator 导出二维码。</p>
           <h3>手动录入</h3>
-          <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。</p>
+          <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。展开“更多信息”后可输入标签并按回车生成标签块，最多 8 个。</p>
           <h3>导入文本</h3>
-          <p>如果已有包含 <code>otpauth://</code> 地址的文本，点添加后选择导入。导入前先确认文件来源可信。</p>
+          <p>如果已有包含 <code>otpauth://</code> 地址的文本，或未加密的 Aegis / andOTP JSON，点添加后选择导入。系统会先预览新增、重复和冲突；重复项自动跳过，冲突项由你选择跳过或覆盖，大文件处理时会显示进度。</p>
           <h3>重复添加</h3>
           <p>同一系统和账号可以重复添加，例如两台设备各自的验证码。保存或批量导入时如果已经有相同系统和账号，会先确认，确认后仍可保存。</p>
           <aside className="otp-guide-callout"><AlertTriangle size={14} /><div><b>Secret 不是普通登录密码</b><p>它可以持续生成验证码，只能从服务方的双重验证设置页面获取，不要截图或明文转发。</p></div></aside>
@@ -226,7 +226,7 @@ export default function OtpVaultGuidePage() {
             { type: "step", text: "新设备登录后先校验再导入" },
             { type: "end", text: "换机也能找回" },
           ]} />
-          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、通知、显示、安全和关于都在“我的”里。</p></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、通知、显示、安全和关于都在“我的”里。通知可发到账号邮箱、额外验证过的通知邮箱、Bark 和浏览器推送；iPhone / iPad 需先用 Safari 添加到主屏幕，桌面浏览器需允许系统通知。</p></div>
         </div>
       </section>
 

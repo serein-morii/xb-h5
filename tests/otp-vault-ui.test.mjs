@@ -61,10 +61,23 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /barkUrl/);
   assert.match(workspace, /sendVaultTestNotice/);
   assert.match(workspace, /NOTIFY_GROUPS/);
-  assert.match(workspace, /邮件和 Bark/);
+  assert.match(workspace, /邮件、Bark 和浏览器推送/);
+  assert.match(workspace, /commitVaultImport/);
+  assert.match(workspace, /previewVaultImport/);
+  assert.match(workspace, /新增、重复和冲突/);
+  assert.match(workspace, /importReplaceExisting/);
+  assert.match(workspace, /vault-import-progress/);
+  assert.match(workspace, /vault-tag-editor/);
+  assert.match(workspace, /输入后按回车，最多 8 个/);
   assert.match(workspace, /vault-notify-channels/);
   assert.match(workspace, /<Check size=\{11\} strokeWidth=\{3\} \/>/);
   assert.match(workspace, /aria-pressed=\{rule.email\}/);
+  assert.match(workspace, /aria-pressed=\{rule.push\}/);
+  assert.match(workspace, /toggleBrowserPush/);
+  assert.match(workspace, /<b>浏览器推送<\/b>/);
+  assert.match(workspace, /发送测试通知/);
+  assert.match(workspace, /iPhone \/ iPad 需先用 Safari 添加到主屏幕/);
+  assert.match(workspace, /已与服务器同步/);
 });
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {

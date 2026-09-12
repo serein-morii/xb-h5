@@ -75,6 +75,12 @@ test("keeps OTP navigation network-first and refreshes the cached shell", async 
   assert.deepEqual(worker.puts, ["/"]);
 });
 
+test("registers web push display handlers", () => {
+  const worker = createWorker();
+  assert.equal(typeof worker.handlers.get("push"), "function");
+  assert.equal(typeof worker.handlers.get("notificationclick"), "function");
+});
+
 test("never intercepts API or shared-authorization requests", () => {
   const worker = createWorker();
 

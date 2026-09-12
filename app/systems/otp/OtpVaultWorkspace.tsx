@@ -1,9 +1,9 @@
 import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
-		listVaultRecipients, getVaultPreferences, getVaultScreenLockState, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
-	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
+			banVaultShareSave, commitVaultImport, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
+				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
+	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, previewVaultImport, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
 import VaultSecurityCenter from "./VaultSecurityCenter";
@@ -15,6 +15,9 @@ import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, duplicateImportCount, findSam
 import { DEFAULT_SHARE_SECONDS, PENDING_SAVE_KEY, SHARED_BY_SELF, SHARE_ITEM_LIMIT, clipboardReadBlocked, defaultShareName, groupCredentials, groupReceivedBySource, listSharedByOptions, matchesCredentialTab, matchesSharedByFilter, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shareDetailCredentials, sharedByFilterLabel, sharerDisplay, shouldOfferClipboardShare, toggleShareSelection, type CredentialGroup, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { OTP_VAULT_VERSION } from "./otpVersion";
+import { parseVaultImportText } from "./vaultImport";
+import { decodeWebPushPublicKey, webPushKeyMatchesSubscription, webPushSubscriptionBody } from "./vaultPush";
+import { sendEmailCode } from "../../lib/api";
 import { setThemePreference } from "../../lib/theme";
 import { issuerStyle } from "./issuerStyle";
 import "./otp-vault.css";
@@ -50,15 +53,15 @@ const NOTIFY_GROUPS = [
 	    { key: "share-updated", label: "转存授权已更新", detail: "分享者修改了你转存的授权" },
 	  ]},
 	] as const;
-type NotifyChannel = "email" | "bark";
+type NotifyChannel = "email" | "bark" | "push";
 function parseNotificationRules(raw?: string) {
   try {
-    const parsed = JSON.parse(raw || "{}") as Record<string, { email?: boolean; bark?: boolean }>;
+    const parsed = JSON.parse(raw || "{}") as Record<string, { email?: boolean; bark?: boolean; push?: boolean }>;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    const next: Record<string, { email: boolean; bark: boolean }> = {};
+    const next: Record<string, { email: boolean; bark: boolean; push: boolean }> = {};
     for (const [key, value] of Object.entries(parsed)) {
       if (!value || typeof value !== "object") continue;
-      next[key] = { email: value.email !== false, bark: value.bark !== false };
+      next[key] = { email: value.email !== false, bark: value.bark !== false, push: value.push !== false };
     }
     return next;
   } catch { return {}; }
@@ -104,7 +107,7 @@ function readDeviceDisplayPrefs() {
 function canUseSystemShare() {
   return typeof navigator.share === "function" && window.matchMedia("(max-width: 820px), (pointer: coarse) and (hover: none)").matches;
 }
-const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", favorite: false, sensitivityLevel: "STANDARD" };
+const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", tags: "", favorite: false, sensitivityLevel: "STANDARD" };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", barkUrl: "", notificationRules: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
@@ -140,6 +143,23 @@ function shouldAutoLockByIdle(prefs: Pick<VaultPrefs, "screenLockSet" | "autoScr
 type ScannedCredential = Partial<typeof emptyCredential>;
 type ScannedPayload = { items: ScannedCredential[]; batchSize: number; batchIndex: number; batchId: string };
 type PendingDuplicate = { kind: "single"; issuer: string; accountName: string } | { kind: "batch"; items: ScannedCredential[]; count: number };
+type ImportPreviewItem = { issuer: string; accountName: string; status: "NEW" | "DUPLICATE" | "CONFLICT" };
+
+function splitCredentialTags(value: string) {
+  return [...new Set(value.split(/[,，\s]+/).map((item) => item.trim()).filter(Boolean))].slice(0, 8);
+}
+
+function readImportFile(file: File, onProgress: (percent: number) => void) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) onProgress(Math.max(1, Math.round((event.loaded / event.total) * 100)));
+    };
+    reader.onerror = () => reject(new Error("文件读取失败，请重新选择"));
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.readAsText(file);
+  });
+}
 
 function parseOtpPayload(raw: string): ScannedPayload {
   let url: URL;
@@ -353,6 +373,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [scanText, setScanText] = useState("");
   const [scanError, setScanError] = useState("");
   const [legacyText, setLegacyText] = useState("");
+	const [importItems, setImportItems] = useState<VaultTransferItem[]>([]);
+	const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
+	const [importReplaceExisting, setImportReplaceExisting] = useState(false);
+	const [importProgress, setImportProgress] = useState<{ label: string; percent: number } | null>(null);
+	const [tagDraft, setTagDraft] = useState("");
 	const [selected, setSelected] = useState<number[]>([]);
 	const [sharePickerOpen, setSharePickerOpen] = useState(false);
 	const [shareForm, setShareForm] = useState({ name: "", shareMode: "LINK", recipientUsername: "", durationSeconds: DEFAULT_SHARE_SECONDS, accessCodeEnabled: true, accessCodeMode: "AUTO", accessCode: "", showAccount: true, showPassword: true, showOtp: true, showLoginUrl: true, showNote: true, allowCopy: true, forbidSave: false, oneTime: false, maxAccessCount: "" });
@@ -363,6 +388,16 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	const [created, setCreated] = useState<{ name?: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
   const [testNoticeBusy, setTestNoticeBusy] = useState(false);
+  const [notifyEmailDraft, setNotifyEmailDraft] = useState("");
+  const [notifyEmailCode, setNotifyEmailCode] = useState("");
+  const [notifyEmailSending, setNotifyEmailSending] = useState(false);
+  const [notifyEmailCountdown, setNotifyEmailCountdown] = useState(0);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+	const [pushSynced, setPushSynced] = useState(false);
+	const [pushStatusError, setPushStatusError] = useState("");
+	const [pushServerEnabled, setPushServerEnabled] = useState<boolean | null>(null);
+  const [tagFilter, setTagFilter] = useState("");
   // 通知中心：OTP 安全审查通知（分享被打开、验证失败等）与系统通知，分类展示
   const [notifOpen, setNotifOpen] = useState(false);
   const unread = useMessageUnread(otpApiRequest as MessageRequest);
@@ -518,6 +553,55 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     void refreshOfflineVault(zeroKnowledgeKey, async () => (await exportVaultLocalSync()).data).catch(() => undefined);
   }, [zeroKnowledgeKey]);
   useEffect(() => { syncOfflineCopy(); }, [syncOfflineCopy]);
+  useEffect(() => {
+    if (notifyEmailCountdown <= 0) return;
+    const timer = window.setTimeout(() => setNotifyEmailCountdown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [notifyEmailCountdown]);
+  useEffect(() => {
+    if (settingsSection !== "notifications") return;
+    let cancelled = false;
+    setPushBusy(true);
+    setPushStatusError("");
+    void Promise.all([
+      getVaultPushPublicKey(),
+      "serviceWorker" in navigator
+        ? navigator.serviceWorker.getRegistration().then((registration) => registration?.pushManager.getSubscription())
+        : Promise.resolve(null),
+    ]).then(async ([keyResult, subscription]) => {
+      if (cancelled) return;
+	  setPushServerEnabled(Boolean(keyResult.data.enabled && keyResult.data.publicKey));
+      if (!keyResult.data.enabled || !keyResult.data.publicKey) {
+        setPushEnabled(false);
+        setPushSynced(false);
+        return;
+      }
+      if (!subscription) {
+        setPushEnabled(false);
+        setPushSynced(false);
+        return;
+      }
+      if (!webPushKeyMatchesSubscription(subscription, keyResult.data.publicKey)) {
+        await deleteVaultPushSubscription(subscription.endpoint).catch(() => undefined);
+        await subscription.unsubscribe().catch(() => false);
+        if (!cancelled) {
+          setPushEnabled(false);
+          setPushSynced(false);
+          setPushStatusError("推送密钥已更新，请重新开启这台设备");
+        }
+        return;
+      }
+      setPushEnabled(true);
+      await saveVaultPushSubscription(webPushSubscriptionBody(subscription));
+      if (!cancelled) setPushSynced(true);
+    }).catch((error) => {
+      if (!cancelled) {
+        setPushSynced(false);
+        setPushStatusError(error instanceof Error ? error.message : "订阅状态同步失败");
+      }
+    }).finally(() => { if (!cancelled) setPushBusy(false); });
+    return () => { cancelled = true; };
+  }, [settingsSection]);
   useEffect(() => { void load(); const sent = Date.now(); void getVaultPreferences().then((result) => {
     const received = Date.now();
     const remote = { ...defaultPrefs, ...(result.data || {}) };
@@ -526,6 +610,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const device = readDeviceDisplayPrefs();
     const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
+    setNotifyEmailDraft(next.notificationEmail || "");
     setCredentialTab(Boolean(next.defaultFavorites) ? "favorite" : "all");
     setThemePreference(next.theme || "system");
     void getVaultScreenLockState().then((state) => {
@@ -682,7 +767,79 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 			throw error;
 		}
 	};
-	const protectCredential = async (value: Record<string, unknown>) => {
+		const browserPushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && typeof Notification !== "undefined";
+		const iosNeedsHomeScreen = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+		const canSendTestNotice = Boolean((prefs.notificationEmail || "").trim() || accountEmail || (prefs.barkUrl || "").trim() || pushEnabled);
+		const pushStatusHint = !browserPushSupported
+			? "当前浏览器不支持系统通知推送"
+			: pushServerEnabled === false
+				? "服务器暂未启用浏览器推送"
+			: pushStatusError
+				? pushStatusError
+			: pushBusy
+				? "正在核对这台设备与服务器的订阅"
+				: pushEnabled
+					? pushSynced
+						? "当前设备已订阅，并已与服务器同步"
+						: "当前设备已授权，但尚未同步到服务器"
+					: iosNeedsHomeScreen
+						? "iPhone / iPad 需先用 Safari 添加到主屏幕，再从主屏幕打开"
+						: Notification.permission === "denied"
+							? "系统通知权限已关闭，请先在浏览器设置中允许"
+							: "桌面 Chrome 等浏览器会先请求系统通知权限";
+		async function toggleBrowserPush() {
+			if (pushBusy) return;
+			setPushBusy(true);
+			try {
+				if (!browserPushSupported) throw new Error("当前浏览器不支持浏览器推送");
+				if (iosNeedsHomeScreen) throw new Error("请先用 Safari 添加到主屏幕，再从主屏幕打开 OTP");
+				setPushStatusError("");
+				if (pushEnabled) {
+					const existing = await navigator.serviceWorker.getRegistration().then((reg) => reg?.pushManager.getSubscription());
+					if (existing) {
+						await deleteVaultPushSubscription(existing.endpoint);
+						await existing.unsubscribe();
+					}
+					setPushEnabled(false);
+					setPushSynced(false);
+					notify("已关闭浏览器推送");
+					return;
+				}
+				const key = await getVaultPushPublicKey();
+				if (!key.data.publicKey) throw new Error("服务器尚未配置 Web Push 公钥");
+				setPushServerEnabled(Boolean(key.data.enabled));
+				await (navigator.serviceWorker.getRegistration() || navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" }));
+				const registration = await navigator.serviceWorker.ready;
+				const permission = await Notification.requestPermission();
+				if (permission !== "granted") throw new Error("浏览器未允许通知");
+				const bytes = decodeWebPushPublicKey(key.data.publicKey);
+				const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+				await saveVaultPushSubscription(webPushSubscriptionBody(subscription));
+				setPushEnabled(true);
+				setPushSynced(true);
+				notify("已开启浏览器推送");
+			} catch (error) {
+				setPushSynced(false);
+				setPushStatusError(error instanceof Error ? error.message : "浏览器推送设置失败");
+				notify(error instanceof Error ? error.message : "浏览器推送设置失败", true);
+			} finally {
+				setPushBusy(false);
+			}
+		}
+		async function sendTestNotice() {
+			if (testNoticeBusy) return;
+			setTestNoticeBusy(true);
+			try {
+				const result = await sendVaultTestNotice();
+				const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : "", result.data?.push ? "浏览器推送" : ""].filter(Boolean).join("和");
+				notify(sent ? `测试通知已发到${sent}` : "测试通知已发送");
+			} catch (error) {
+				notify(error instanceof Error ? error.message : "测试通知发送失败", true);
+			} finally {
+				setTestNoticeBusy(false);
+			}
+		}
+		const protectCredential = async (value: Record<string, unknown>) => {
 		if (!prefs.zeroKnowledgeEnabled) return value;
 		if (!zeroKnowledgeKey) throw new Error("请先到「我的」里的安全解锁零知识保护");
 		const body = { ...value };
@@ -701,8 +858,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
     const result = credentials.filter((item) => (
-      (!value || `${item.issuer} ${item.accountName} ${item.note || ""} ${item.sharedBy || ""} ${item.shareName || ""}`.toLowerCase().includes(value))
+      (!value || `${item.issuer} ${item.accountName} ${item.note || ""} ${item.tags || ""} ${item.sharedBy || ""} ${item.shareName || ""}`.toLowerCase().includes(value))
       && (!issuer || item.issuer === issuer)
+      && (!tagFilter || (item.tags || "").split(/[\s,，]+/).includes(tagFilter))
       && matchesSharedByFilter(item, sharedByFilter)
       && matchesCredentialTab(item, credentialTab, prefs.showShared)
     ));
@@ -714,8 +872,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       return a.issuer.localeCompare(b.issuer, "zh-CN") || a.accountName.localeCompare(b.accountName, "zh-CN");
     });
     return result;
-  }, [credentials, credentialTab, issuer, lastUsed, prefs.listSort, prefs.showShared, query, sharedByFilter]);
+  }, [credentials, credentialTab, issuer, lastUsed, prefs.listSort, prefs.showShared, query, sharedByFilter, tagFilter]);
   const issuers = useMemo(() => [...new Set(credentials.map((item) => item.issuer))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
+  const tagOptions = useMemo(() => [...new Set(credentials.flatMap((item) => (item.tags || "").split(/[\s,，]+/).filter(Boolean)))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
+  const importCounts = useMemo(() => ({
+    added: importPreview.filter((item) => item.status === "NEW").length,
+    duplicate: importPreview.filter((item) => item.status === "DUPLICATE").length,
+    conflict: importPreview.filter((item) => item.status === "CONFLICT").length,
+  }), [importPreview]);
   const sharedByOptions = useMemo(() => listSharedByOptions(credentials), [credentials]);
   const ownCredentials = useMemo(() => credentials.filter((item) => !item.shared), [credentials]);
   useEffect(() => {
@@ -733,7 +897,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     () => (credentialTab === "received" ? groupReceivedBySource(filtered) : []),
     [credentialTab, filtered],
   );
-  const clearListFilters = () => { setIssuer(""); setSharedByFilter(""); };
+  const clearListFilters = () => { setIssuer(""); setSharedByFilter(""); setTagFilter(""); };
   const setCredentialTabSafe = (tab: CredentialTab) => {
     setCredentialTab(tab);
     // 「我收到的」不含自己的凭据，清掉「我的」筛选。
@@ -750,11 +914,43 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     scanStreamRef.current?.getTracks().forEach((track) => track.stop());
     scanStreamRef.current = null;
   };
-  const closeModal = () => { if (!busy) { stopScanner(); setModal(null); } };
+  const resetImport = () => {
+    setLegacyText("");
+    setImportItems([]);
+    setImportPreview([]);
+    setImportReplaceExisting(false);
+    setImportProgress(null);
+  };
+  const updateImportText = (value: string) => {
+    setLegacyText(value);
+    setImportItems([]);
+    setImportPreview([]);
+    setImportProgress(null);
+  };
+  const closeModal = () => {
+    if (busy) return;
+    stopScanner();
+    if (modal === "import") resetImport();
+    setTagDraft("");
+    setModal(null);
+  };
   const openCredential = (item?: VaultCredential) => {
     setEditingId(item?.id || null);
-		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", favorite: item.favorite, sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
+		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", tags: item.tags || "", favorite: item.favorite, sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
+    setTagDraft("");
     setModal("credential");
+  };
+  const addCredentialTags = (raw = tagDraft) => {
+    const additions = splitCredentialTags(raw);
+    if (!additions.length) return;
+    const current = splitCredentialTags(form.tags);
+    const next = [...new Set([...current, ...additions])].slice(0, 8);
+    if (current.length + additions.length > 8) notify("最多添加 8 个标签", true);
+    setForm((value) => ({ ...value, tags: next.join(" ") }));
+    setTagDraft("");
+  };
+  const removeCredentialTag = (tag: string) => {
+    setForm((value) => ({ ...value, tags: splitCredentialTags(value.tags).filter((item) => item !== tag).join(" ") }));
   };
   const importScannedItems = async (items: ScannedCredential[], allowDuplicate = false) => {
     if (!items.length) throw new Error("二维码中没有可导入的验证器数据");
@@ -942,7 +1138,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   async function toggleFavorite(item: VaultCredential) {
     try {
       if (item.shared) await favoriteSharedCredential(Math.abs(item.id), !item.favorite);
-      else await saveVaultCredential(item.id, { issuer: item.issuer, accountName: item.accountName, favorite: !item.favorite, loginUrl: item.loginUrl, note: item.note, sensitivityLevel: item.sensitivityLevel });
+      else await saveVaultCredential(item.id, { issuer: item.issuer, accountName: item.accountName, favorite: !item.favorite, loginUrl: item.loginUrl, note: item.note, tags: item.tags, sensitivityLevel: item.sensitivityLevel });
       await load(true);
     }
     catch (error) { notify(error instanceof Error ? error.message : "更新失败", true); }
@@ -951,9 +1147,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setBusy(true);
     try {
 			const current = credentials.find((item) => item.id === id);
-			const result = current?.zeroKnowledge
-				? await saveVaultCredential(id, { issuer: current.issuer, accountName: current.accountName, hotpCounter: (current.hotpCounter || 0) + 1, favorite: current.favorite, loginUrl: current.loginUrl, note: current.note, sensitivityLevel: current.sensitivityLevel })
-				: await nextVaultHotp(id);
+				const result = current?.zeroKnowledge
+					? await saveVaultCredential(id, { issuer: current.issuer, accountName: current.accountName, hotpCounter: (current.hotpCounter || 0) + 1, favorite: current.favorite, loginUrl: current.loginUrl, note: current.note, tags: current.tags, sensitivityLevel: current.sensitivityLevel })
+					: await nextVaultHotp(id);
 			const hydrated = await hydrateClientCredential(result.data, zeroKnowledgeKey);
 	      setDetail(hydrated);
 	      setCredentials((items) => items.map((item) => item.id === id ? hydrated : item));
@@ -965,10 +1161,47 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     event.preventDefault(); if (!legacyText) return notify("请选择导入文件", true);
     setBusy(true);
     try {
-      const result = await importLegacyVault(legacyText);
-      notify(`已导入 ${result.data.total} 项到 ${result.data.ownerUsername}`); setModal(null); setLegacyText(""); await load(true); syncOfflineCopy();
+      if (!importItems.length) {
+        setImportProgress({ label: "正在解析文件", percent: 5 });
+        const parsed = parseVaultImportText(legacyText);
+        const items: VaultTransferItem[] = [];
+        for (let index = 0; index < parsed.length; index += 1) {
+          const item = parsed[index];
+          const body = await protectCredential({ ...emptyCredential, ...item });
+          items.push({
+            issuer: String(body.issuer || item.issuer),
+            accountName: String(body.accountName || item.accountName),
+            password: typeof body.password === "string" ? body.password : undefined,
+            otpSecret: typeof body.otpSecret === "string" ? body.otpSecret : undefined,
+            clientPasswordCiphertext: typeof body.clientPasswordCiphertext === "string" ? body.clientPasswordCiphertext : undefined,
+            clientOtpSecretCiphertext: typeof body.clientOtpSecretCiphertext === "string" ? body.clientOtpSecretCiphertext : undefined,
+            otpType: item.otpType,
+            hotpCounter: item.hotpCounter,
+            algorithm: item.algorithm,
+            digits: item.digits,
+            periodSeconds: item.periodSeconds,
+            note: item.note,
+            tags: item.tags,
+          });
+          setImportProgress({ label: prefs.zeroKnowledgeEnabled ? "正在本机加密" : "正在准备预览", percent: Math.round(((index + 1) / parsed.length) * 80) });
+          if ((index + 1) % 10 === 0) await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+        }
+        setImportProgress({ label: "正在检查重复和冲突", percent: 90 });
+        const preview = await previewVaultImport(items);
+        setImportItems(items);
+        setImportPreview(preview.data.items || []);
+        setImportProgress(null);
+        return;
+      }
+      setImportProgress({ label: "正在写入保险库", percent: 92 });
+      const result = await commitVaultImport(importItems, importReplaceExisting);
+      const created = result.data.created || 0;
+      const updated = result.data.updated || 0;
+      const skipped = result.data.skipped || 0;
+      notify(`已导入 ${created + updated} 项${skipped ? `，跳过 ${skipped} 项重复或冲突凭据` : ""}`);
+      setModal(null); resetImport(); await load(true); syncOfflineCopy();
     } catch (error) { notify(error instanceof Error ? error.message : "导入失败", true); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setImportProgress(null); }
   }
   const applyShareSelection = (id: number, checked: boolean) => {
     if (!checked) { setSelected(selected.filter((value) => value !== id)); return; }
@@ -1045,8 +1278,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     await copyAndScheduleClear(value);
     notify(message);
   };
+  const canCopyCredential = (item: VaultCredential) => !item.shared || item.allowCopy !== false;
   const copyOtp = async (item: VaultCredential) => {
-    if (!item.currentOtp || (item.shared && !item.allowCopy)) return;
+    if (!item.currentOtp || !canCopyCredential(item)) return;
     setLastUsed((current) => {
       const next = { ...current, [String(item.id)]: Date.now() };
       localStorage.setItem(LAST_USED_KEY, JSON.stringify(next));
@@ -1112,11 +1346,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const otpLabel = item.currentOtp ? item.currentOtp.replace(/(.{3})/, "$1 ") : "";
     const nextOtpLabel = item.nextOtp ? item.nextOtp.replace(/(.{3})/, "$1 ") : "";
     const shareValidity = item.shared ? formatShareValidity(item.shareExpireTime, now) : "";
+    const copyAllowed = canCopyCredential(item);
     return <article className={`vault-card${prefs.compact ? " is-compact" : ""}${item.shared ? " is-shared" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => void openDetail(item)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openDetail(item); } }}>
       <div className="vault-card-top"><span className="vault-service-mark" style={{ background: mark.background }}>{mark.letters}</span><div><b>{item.issuer}</b><small className={accountClass}>{item.accountName}</small></div><span className="vault-card-top-actions">{item.shared ? <span className="vault-shared-badge">共享</span> : null}<button type="button" className={item.favorite ? "is-favorite" : ""} onClick={(event) => { event.stopPropagation(); void toggleFavorite(item); }} aria-label={item.favorite ? "取消收藏" : "收藏"}><Star size={16} fill={item.favorite ? "currentColor" : "none"} /></button></span></div>
-      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? item.shared && !item.allowCopy ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : <div className="vault-no-code"><KeyRound size={16} />{item.shared ? "共享账号密码" : "已保存账号密码"}</div>}
-      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位`}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b><button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button></span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : shareValidity || (item.shared ? "" : "无 OTP")}</span></div>
-      <div className="vault-card-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openDetail(item); }} aria-label="查看"><Eye size={13} /><span>查看</span></button><button type="button" className={`vault-compact-favorite${item.favorite ? " is-favorite" : ""}`} onClick={(event) => { event.stopPropagation(); void toggleFavorite(item); }} aria-label={item.favorite ? "取消收藏" : "收藏"}><Star size={13} fill={item.favorite ? "currentColor" : "none"} /><span>收藏</span></button>{item.shared && item.shareId ? <button type="button" onClick={(event) => { event.stopPropagation(); const share = receivedShares.find((row) => row.id === item.shareId); if (share) openReceivedShareDetail(share); }} aria-label="分享详情"><Eye size={13} /><span>详情</span></button> : null}{!item.shared ? <><button type="button" onClick={(event) => { event.stopPropagation(); openShare(item.id); }} aria-label="分享"><Share2 size={13} /><span>分享</span></button><button type="button" onClick={(event) => { event.stopPropagation(); openCredential(item); }} aria-label="编辑"><Pencil size={13} /><span>编辑</span></button><button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete(item); setModal("deleteConfirm"); }} aria-label="删除"><Trash2 size={13} /><span>删除</span></button></> : null}</div>
+      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? !copyAllowed ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : <div className="vault-no-code"><KeyRound size={16} />{item.shared ? "共享账号密码" : "已保存账号密码"}</div>}
+      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位`}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b>{copyAllowed ? <button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button> : null}</span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : shareValidity || (item.shared ? "" : "无 OTP")}</span></div>
+      <div className="vault-card-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openDetail(item); }} aria-label="查看"><Eye size={13} /><span>查看</span></button>{item.shared && item.shareId ? <button type="button" onClick={(event) => { event.stopPropagation(); const share = receivedShares.find((row) => row.id === item.shareId); if (share) openReceivedShareDetail(share); }} aria-label="分享详情"><Eye size={13} /><span>详情</span></button> : null}{!item.shared ? <><button type="button" onClick={(event) => { event.stopPropagation(); openShare(item.id); }} aria-label="分享"><Share2 size={13} /><span>分享</span></button><button type="button" onClick={(event) => { event.stopPropagation(); openCredential(item); }} aria-label="编辑"><Pencil size={13} /><span>编辑</span></button><button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete(item); setModal("deleteConfirm"); }} aria-label="删除"><Trash2 size={13} /><span>删除</span></button></> : null}</div>
     </article>;
   };
   const renderGroupGrid = (items: VaultCredential[]) => (
@@ -1203,8 +1438,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </nav>
 
     {view === "all" ? <section className="vault-panel vault-view-enter" key="all">
-      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="凭据筛选"><button type="button" className={credentialTab === "all" ? "is-active" : ""} onClick={() => setCredentialTabSafe("all")}>全部</button><button type="button" className={credentialTab === "favorite" ? "is-active" : ""} onClick={() => setCredentialTabSafe("favorite")}>收藏</button><button type="button" className={credentialTab === "received" ? "is-active" : ""} onClick={() => setCredentialTabSafe("received")}>我收到的</button></div></span><p>{credentialTab === "favorite" ? `只显示收藏的凭据 · ${filtered.length} 项` : credentialTab === "received" ? `${sharedByFilter ? `来自 ${sharedByFilterLabel(sharedByFilter)} · ` : ""}${filtered.length} 项 · ${sourceSections.length} 人` : `${sharedByFilter ? `${sharedByFilter === SHARED_BY_SELF ? "只看我的" : `来自 ${sharedByFilterLabel(sharedByFilter)}`} · ` : ""}点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div><div className="vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div><div className="vault-view-toggles"><label className="vault-view-toggle" title="按系统名称分组"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label></div><div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select aria-label="系统" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>来自</span><select aria-label="来自" value={sharedByFilter} onChange={(event) => setSharedByFilter(event.target.value)}><option value="">全部</option>{credentialTab !== "received" ? <option value={SHARED_BY_SELF}>我的</option> : null}{sharedByOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select aria-label="排序" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer || sharedByFilter ? <button type="button" className="vault-filter-clear" onClick={clearListFilters} aria-label="清除筛选"><X size={13} /><span>清除</span></button> : null}</div></div></header>
-      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{credentialTab === "received" ? renderReceivedList() : groups.map((group) => <section className="vault-group" key={group.key}>{group.label ? <header><b>{group.label}</b><span>{group.items.length}</span></header> : null}{renderGroupGrid(group.items)}</section>)}</div> : <div className="vault-empty">{credentialTab === "received" ? <Inbox size={20} /> : <KeyRound size={20} />}<b>{credentialTab === "favorite" ? "还没有收藏凭据" : credentialTab === "received" ? (sharedByFilter || issuer ? "没有匹配的收到凭据" : "还没有收到的凭据") : "没有找到凭据"}</b><p>{credentialTab === "favorite" ? "点击凭据右上角的星标即可收藏。" : credentialTab === "received" ? (sharedByFilter || issuer ? "试试换一个来源或系统，或清除筛选。" : "指定给你的授权，或从分享链接转存的内容会出现在这里。") : "可以添加一项，或导入文件。"}</p></div>}
+      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="凭据筛选"><button type="button" className={credentialTab === "all" ? "is-active" : ""} onClick={() => setCredentialTabSafe("all")}>全部</button><button type="button" className={credentialTab === "favorite" ? "is-active" : ""} onClick={() => setCredentialTabSafe("favorite")}>收藏</button><button type="button" className={credentialTab === "received" ? "is-active" : ""} onClick={() => setCredentialTabSafe("received")}>我收到的</button></div></span><p>{credentialTab === "favorite" ? `只显示收藏的凭据 · ${filtered.length} 项` : credentialTab === "received" ? `${sharedByFilter ? `来自 ${sharedByFilterLabel(sharedByFilter)} · ` : ""}${filtered.length} 项 · ${sourceSections.length} 人` : `${sharedByFilter ? `${sharedByFilter === SHARED_BY_SELF ? "只看我的" : `来自 ${sharedByFilterLabel(sharedByFilter)}`} · ` : ""}点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div><div className="vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div><div className="vault-view-toggles"><label className="vault-view-toggle" title="按系统名称分组"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label></div><div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select aria-label="系统" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>来自</span><select aria-label="来自" value={sharedByFilter} onChange={(event) => setSharedByFilter(event.target.value)}><option value="">全部</option>{credentialTab !== "received" ? <option value={SHARED_BY_SELF}>我的</option> : null}{sharedByOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>标签</span><select aria-label="标签" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}><option value="">全部标签</option>{tagOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>排序</span><select aria-label="排序" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer || sharedByFilter || tagFilter ? <button type="button" className="vault-filter-clear" onClick={clearListFilters} aria-label="清除筛选"><X size={13} /><span>清除</span></button> : null}</div></div></header>
+      {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{credentialTab === "received" ? renderReceivedList() : groups.map((group) => <section className="vault-group" key={group.key}>{group.label ? <header><b>{group.label}</b><span>{group.items.length}</span></header> : null}{renderGroupGrid(group.items)}</section>)}</div> : <div className="vault-empty">{credentialTab === "received" ? <Inbox size={20} /> : <KeyRound size={20} />}<b>{credentialTab === "favorite" ? "还没有收藏凭据" : credentialTab === "received" ? (sharedByFilter || issuer || tagFilter ? "没有匹配的收到凭据" : "还没有收到的凭据") : "没有找到凭据"}</b><p>{credentialTab === "favorite" ? "点击凭据右上角的星标即可收藏。" : credentialTab === "received" ? (sharedByFilter || issuer || tagFilter ? "试试换一个来源、系统或标签，或清除筛选。" : "指定给你的授权，或从分享链接转存的内容会出现在这里。") : "可以添加一项，或导入文件。"}</p>{credentialTab !== "received" ? <button type="button" className="vault-primary" onClick={() => setModal("importChoice")}><Plus size={15} />添加凭据</button> : null}</div>}
     </section> : null}
 
     {view === "shares" ? <section className="vault-panel vault-view-enter" key="shares">
@@ -1217,13 +1452,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <span className={`vault-status is-${share.status.toLowerCase()}`}>{share.status === "ACTIVE" ? "有效" : share.status === "EXPIRED" ? "已过期" : share.status === "LIMIT_REACHED" ? "次数已用完" : "已撤销"}</span>
         <div><b>{share.name?.trim() || "临时凭据授权"}</b><small><Clock3 size={12} />{share.itemCount} 个凭据 · {share.shareMode === "DIRECT" ? `指定给 ${share.recipientUsername}` : share.accessCodeEnabled ? "访问码保护" : "链接访问"} · {share.status === "ACTIVE" ? `剩余 ${formatRemaining(share.expireTime, now)}` : new Date(normalizeDateTime(share.expireTime)).toLocaleString("zh-CN", { hour12: false })}{share.shareMode === "LINK" ? ` · 已访问 ${share.accessCount}${share.maxAccessCount ? `/${share.maxAccessCount}` : ""}` : ""}</small></div>
         <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openShareDetail(share); }}><Eye size={14} />详情</button>{share.status === "ACTIVE" ? <button type="button" onClick={(event) => { event.stopPropagation(); void openShareEdit(share); }}><Pencil size={14} />编辑</button> : null}{share.status === "ACTIVE" && share.sharePath ? <button type="button" onClick={(event) => { event.stopPropagation(); void copyShareInfo(share); }}><Copy size={14} />复制</button> : null}{share.status !== "REVOKED" ? <button type="button" onClick={(event) => { event.stopPropagation(); setPendingRevoke({ share, from: "list" }); setModal("revokeConfirm"); }}><X size={14} />撤销</button> : <button type="button" onClick={(event) => { event.stopPropagation(); setPendingShareDelete(share); setModal("shareDeleteConfirm"); }}><Trash2 size={14} />删除</button>}</div>
-      </article>) : <div className="vault-empty compact">还没有创建临时授权</div>}</div>}
+      </article>) : <div className="vault-empty compact"><Share2 size={20} /><b>还没有创建临时授权</b><p>选择自己的凭据，生成限时链接或指定给某个用户。</p><button type="button" className="vault-primary" disabled={!ownCredentials.length} onClick={() => openShare()}>创建授权</button></div>}</div>}
     </section> : null}
 
-    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "站内信始终送达；邮件和 Bark 可按事件选择" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
+    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "站内信始终送达；邮件、Bark 和浏览器推送可按事件选择" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
       {!settingsSection ? <div className="vault-settings-group vault-settings-hub vault-subview-enter" key="settings-hub">
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("account")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>用户名、账号、邮箱、密码和登录</small></span><ChevronRight size={15} /></button>
-        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("notifications")}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>通知</b><small>邮件、Bark 推送</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("notifications")}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>通知</b><small>邮件、Bark 和浏览器推送</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("appearance")}><span className="vault-setting-icon is-blue"><SunMoon size={17} /></span><span className="vault-setting-copy"><b>显示</b><small>主题、卡片和列表偏好</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("security")}><span className="vault-setting-icon is-violet"><ShieldCheck size={17} /></span><span className="vault-setting-copy"><b>安全</b><small>Passkey、备份、设备</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("about")}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>关于</b><small>版本 {OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></button>
@@ -1241,10 +1476,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </div>
       </div> : null}
       {settingsSection === "notifications" ? <div className="vault-settings-group vault-settings-notifications vault-subview-enter" key="settings-notifications">
-        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>邮件和 Bark</b><small>关闭后仍会写入站内信，只停掉邮件和 Bark</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启邮件和 Bark" : "已关闭邮件和 Bark")); }} /><i /></label>
-        <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} defaultValue={prefs.notificationEmail || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.notificationEmail || "")) return; void updatePrefs({ ...prefs, notificationEmail: next }); }} /></label>
+        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>邮件、Bark 和浏览器推送</b><small>关闭后仍会写入站内信，只停掉外部渠道</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
+        <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}。换成其他邮箱需要验证码</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></label>
+        {notifyEmailDraft.trim() && notifyEmailDraft.trim().toLowerCase() !== (prefs.notificationEmail || "").toLowerCase() && notifyEmailDraft.trim().toLowerCase() !== (accountEmail || "").toLowerCase() ? <div className="vault-notify-verify"><input inputMode="numeric" maxLength={6} value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, ""))} placeholder="6 位验证码" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => { setNotifyEmailSending(true); void sendEmailCode(notifyEmailDraft.trim(), "otp-notify").then((result) => { const wait = Number((result as { resendAfter?: number }).resendAfter || 60); setNotifyEmailCountdown(wait); notify("验证码已发送"); }).catch((error) => notify(error instanceof Error ? error.message : "验证码发送失败", true)).finally(() => setNotifyEmailSending(false)); }}>{notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : notifyEmailSending ? "发送中" : "获取验证码"}</button><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim(), notificationEmailCode: notifyEmailCode }).then(() => { setNotifyEmailCode(""); notify("通知邮箱已更新"); }); }}>保存邮箱</button></div> : notifyEmailDraft.trim() !== (prefs.notificationEmail || "") ? <div className="vault-notify-verify"><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim() }).then(() => notify(notifyEmailDraft.trim() ? "通知邮箱已更新" : "已改回账号邮箱")); }}>保存邮箱</button></div> : null}
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>https://api.day.app/设备Key/ ，多个用英文逗号分隔</small></span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" defaultValue={prefs.barkUrl || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.barkUrl || "")) return; void updatePrefs({ ...prefs, barkUrl: next }); }} /></label>
-        <div className="vault-notify-test"><button type="button" className="vault-ghost" disabled={testNoticeBusy || (!prefs.notificationEmail && !accountEmail && !prefs.barkUrl)} onClick={() => { setTestNoticeBusy(true); void sendVaultTestNotice().then((result) => { const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : ""].filter(Boolean).join("和"); notify(sent ? `测试通知已发到${sent}` : "测试通知已发送"); }).catch((error) => notify(error instanceof Error ? error.message : "测试通知发送失败", true)).finally(() => setTestNoticeBusy(false)); }}>{testNoticeBusy ? "发送中…" : "发送测试通知"}</button><small>会同时写入站内信，用来确认渠道是否可用</small></div>
+        <label className="vault-setting-row"><span className="vault-setting-icon is-blue"><BellRing size={17} /></span><span className="vault-setting-copy"><b>浏览器推送</b><small>{pushStatusHint}</small></span><input type="checkbox" checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></label>
+        <div className="vault-notify-test"><button type="button" className="vault-primary" disabled={testNoticeBusy || !canSendTestNotice} onClick={() => void sendTestNotice()}>{testNoticeBusy ? <LoaderCircle className="spin" size={15} /> : <Bell size={15} />}{testNoticeBusy ? "发送中…" : "发送测试通知"}</button><small>{canSendTestNotice ? "会同时写入站内信，用来确认邮件、Bark 和浏览器推送是否可用" : "先填写通知邮箱、Bark 地址，或开启浏览器推送"}</small></div>
         <div className={`vault-notify-rules${prefs.securityAlerts ? "" : " is-off"}`}>
           <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>{prefs.securityAlerts ? "未单独设置的事件跟随总开关；站内信不受影响" : "总开关已关闭，下面勾选会在重新开启后生效"}</small></p>
           {NOTIFY_GROUPS.map((group) => <div className="vault-notify-group" key={group.title}>
@@ -1252,10 +1489,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             {group.events.map(({ key, label, detail }) => {
               const rules = parseNotificationRules(prefs.notificationRules);
               const saved = rules[key];
-              const stored = { email: saved?.email !== false, bark: saved?.bark !== false };
-              const rule = { email: stored.email && prefs.securityAlerts, bark: stored.bark && prefs.securityAlerts };
+              const stored = { email: saved?.email !== false, bark: saved?.bark !== false, push: saved?.push !== false };
+              const rule = { email: stored.email && prefs.securityAlerts, bark: stored.bark && prefs.securityAlerts, push: stored.push && prefs.securityAlerts };
               const toggleRule = (channel: NotifyChannel) => {
-                const nextRules = { ...rules, [key]: { email: stored.email, bark: stored.bark, [channel]: !stored[channel] } };
+                const nextRules = { ...rules, [key]: { email: stored.email, bark: stored.bark, push: stored.push, [channel]: !stored[channel] } };
                 void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) });
               };
               return <div className="vault-notify-rule" key={key}>
@@ -1263,6 +1500,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
                 <span className="vault-notify-channels">
                   <label className={rule.email ? "is-on" : "is-off"} aria-pressed={rule.email}><input type="checkbox" checked={stored.email} disabled={!prefs.securityAlerts} onChange={() => toggleRule("email")} />{rule.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
                   <label className={rule.bark ? "is-on" : "is-off"} aria-pressed={rule.bark}><input type="checkbox" checked={stored.bark} disabled={!prefs.securityAlerts} onChange={() => toggleRule("bark")} />{rule.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
+                  <label className={rule.push ? "is-on" : "is-off"} aria-pressed={rule.push}><input type="checkbox" checked={stored.push} disabled={!prefs.securityAlerts} onChange={() => toggleRule("push")} />{rule.push ? <Check size={11} strokeWidth={3} /> : null}推送</label>
                 </span>
               </div>;
             })}
@@ -1294,11 +1532,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <div className="vault-share-scroll">
           <section className="vault-detail-overview"><span className="vault-service-mark" style={{ background: issuerStyle(liveDetail.issuer, liveDetail.loginUrl).background }}>{issuerStyle(liveDetail.issuer, liveDetail.loginUrl).letters}</span><div><small>{liveDetail.shared ? "SHARED CREDENTIAL" : "PRIVATE CREDENTIAL"}</small><b>{liveDetail.issuer}</b><p className={accountClass}>{liveDetail.accountName}</p></div><em>{liveDetail.shared ? "共享" : liveDetail.sensitivityLevel === "CRITICAL" ? "严格保护" : liveDetail.sensitivityLevel === "SENSITIVE" ? "再次验证" : "常规保护"}</em></section>
           <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>01</span><h3>登录信息</h3></div><small>{liveDetail.shared ? `${liveDetail.sharedBy} 分享 · ${liveDetail.shareExpireTime ? formatRemaining(liveDetail.shareExpireTime, now) : "临时有效"}` : "敏感信息仅在需要时显示"}</small></div><div className="vault-detail-values">
-            <section><span>账号</span><div><b>{liveDetail.accountName}</b>{!liveDetail.shared || liveDetail.allowCopy ? <button type="button" onClick={() => void copy(liveDetail.accountName, "账号已复制")} aria-label="复制账号"><Copy size={15} /></button> : null}</div></section>
-            {liveDetail.passwordConfigured ? <section><span>密码</span><div><b className={passwordVisible ? "" : "is-secret"}>{passwordVisible ? liveDetail.password : "••••••••••••"}</b><button type="button" onClick={() => setPasswordVisible(!passwordVisible)} aria-label={passwordVisible ? "隐藏密码" : "显示密码"}>{passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}</button>{liveDetail.password && (!liveDetail.shared || liveDetail.allowCopy) ? <button type="button" onClick={() => void copy(liveDetail.password || "", "密码已复制")} aria-label="复制密码"><Copy size={15} /></button> : null}</div></section> : null}
-            {liveDetail.currentOtp ? <section className="is-otp"><span className="vault-otp-label">{liveDetail.otpType === "HOTP" ? `HOTP 验证码 · 计数 ${liveDetail.hotpCounter || 0}` : "动态验证码"}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <em>{detailOtpLeft}s</em> : null}</span><div><b>{liveDetail.currentOtp.replace(/(.{3})/, "$1 ")}</b>{!liveDetail.shared || liveDetail.allowCopy ? <button type="button" onClick={() => void copyOtp(liveDetail)} aria-label="复制验证码"><Copy size={15} /></button> : null}{!liveDetail.shared && liveDetail.otpType === "HOTP" ? <button type="button" disabled={busy} onClick={() => void advanceHotp(liveDetail.id)}>下一个</button> : null}</div>{liveDetail.nextOtp && liveDetail.otpType !== "HOTP" ? <div className="vault-detail-next"><span>下一组</span><b>{liveDetail.nextOtp.replace(/(.{3})/, "$1 ")}</b><small>{detailOtpLeft}s 后启用</small><button type="button" className="vault-next-copy" onClick={() => void copy(liveDetail.nextOtp || "", "下一组验证码已复制")} aria-label="复制下一组验证码"><Copy size={12} /></button></div> : null}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <div className="vault-progress"><i style={{ width: `${detailOtpProgress}%` }} /></div> : null}</section> : null}
+            <section><span>账号</span><div><b>{liveDetail.accountName}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copy(liveDetail.accountName, "账号已复制")} aria-label="复制账号"><Copy size={15} /></button> : null}</div></section>
+            {liveDetail.passwordConfigured ? <section><span>密码</span><div><b className={passwordVisible ? "" : "is-secret"}>{passwordVisible ? liveDetail.password : "••••••••••••"}</b><button type="button" onClick={() => setPasswordVisible(!passwordVisible)} aria-label={passwordVisible ? "隐藏密码" : "显示密码"}>{passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}</button>{liveDetail.password && canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copy(liveDetail.password || "", "密码已复制")} aria-label="复制密码"><Copy size={15} /></button> : null}</div></section> : null}
+            {liveDetail.currentOtp ? <section className="is-otp"><span className="vault-otp-label">{liveDetail.otpType === "HOTP" ? `HOTP 验证码 · 计数 ${liveDetail.hotpCounter || 0}` : "动态验证码"}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <em>{detailOtpLeft}s</em> : null}</span><div><b>{liveDetail.currentOtp.replace(/(.{3})/, "$1 ")}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copyOtp(liveDetail)} aria-label="复制验证码"><Copy size={15} /></button> : null}{!liveDetail.shared && liveDetail.otpType === "HOTP" ? <button type="button" disabled={busy} onClick={() => void advanceHotp(liveDetail.id)}>下一个</button> : null}</div>{liveDetail.nextOtp && liveDetail.otpType !== "HOTP" ? <div className="vault-detail-next"><span>下一组</span><b>{liveDetail.nextOtp.replace(/(.{3})/, "$1 ")}</b><small>{detailOtpLeft}s 后启用</small>{canCopyCredential(liveDetail) ? <button type="button" className="vault-next-copy" onClick={() => void copy(liveDetail.nextOtp || "", "下一组验证码已复制")} aria-label="复制下一组验证码"><Copy size={12} /></button> : null}</div> : null}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <div className="vault-progress"><i style={{ width: `${detailOtpProgress}%` }} /></div> : null}</section> : null}
           </div></section>
-          {liveDetail.loginUrl || liveDetail.note ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>02</span><h3>补充信息</h3></div></div>{liveDetail.loginUrl ? <a className="vault-detail-link" href={liveDetail.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /><span>{liveDetail.loginUrl}</span></a> : null}{liveDetail.note ? <p className="vault-detail-note">{liveDetail.note}</p> : null}</section> : null}
+          {liveDetail.loginUrl || liveDetail.note || liveDetail.tags ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>02</span><h3>补充信息</h3></div></div>{liveDetail.loginUrl ? <a className="vault-detail-link" href={liveDetail.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /><span>{liveDetail.loginUrl}</span></a> : null}{liveDetail.note ? <p className="vault-detail-note">{liveDetail.note}</p> : null}{liveDetail.tags ? <div className="vault-detail-tags">{liveDetail.tags.split(/[\s,，]+/).filter(Boolean).map((tag) => <b key={tag}>{tag}</b>)}</div> : null}</section> : null}
         </div>
         <footer><span>{liveDetail.shared ? "共享凭据只允许查看" : "可继续分享或编辑这条凭据"}</span><div>{liveDetail.shared ? <button type="button" className="vault-primary" onClick={closeModal}>完成</button> : <><button type="button" className="vault-ghost" onClick={() => openShare(liveDetail.id)}><Share2 size={15} />分享</button><button type="button" className="vault-primary" onClick={() => openCredential(liveDetail)}><Pencil size={15} />编辑</button></>}</div></footer>
       </>}
@@ -1333,9 +1571,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <label><span>验证码位数</span><select disabled={form.otpType === "STEAM"} value={form.digits} onChange={(e) => setForm({ ...form, digits: Number(e.target.value) })}>{form.otpType === "STEAM" ? <option value={5}>5 位</option> : <><option value={6}>6 位</option><option value={8}>8 位</option></>}</select></label>
           {form.otpType !== "HOTP" ? <label><span>更新周期（秒）</span><input type="number" min={15} max={120} value={form.periodSeconds} onChange={(e) => setForm({ ...form, periodSeconds: Number(e.target.value) })} /></label> : null}
         </div></details>
-        <details className="vault-credential-advanced"><summary><span><Layers3 size={15} /><span><b>更多信息</b><small>登录地址、备注与查看保护</small></span></span><em>展开</em></summary><div className="vault-form-grid">
+        <details className="vault-credential-advanced"><summary><span><Layers3 size={15} /><span><b>更多信息</b><small>登录地址、备注、标签与查看保护</small></span></span><em>展开</em></summary><div className="vault-form-grid">
           <label className="wide"><span>登录地址</span><input type="url" value={form.loginUrl} onChange={(e) => setForm({ ...form, loginUrl: e.target.value })} placeholder="https://" /></label>
           <label className="wide"><span>备注</span><textarea rows={2} maxLength={500} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
+          <label className="wide"><span>标签</span><div className="vault-tag-editor">{splitCredentialTags(form.tags).map((tag) => <button type="button" className="vault-tag-chip" key={tag} onClick={() => removeCredentialTag(tag)} title="移除标签"><span>{tag}</span><X size={11} /></button>)}<input value={tagDraft} maxLength={20} onChange={(event) => setTagDraft(event.target.value.replace(/[,，]/g, ""))} onBlur={() => addCredentialTags()} onKeyDown={(event) => { if (event.key === "Enter" || event.key === "," || event.key === "，" || event.key === " ") { event.preventDefault(); addCredentialTags(); } }} placeholder={splitCredentialTags(form.tags).length ? "继续添加" : "输入后按回车，最多 8 个"} /><button type="button" className="vault-tag-add" disabled={!tagDraft.trim() || splitCredentialTags(form.tags).length >= 8} onMouseDown={(event) => event.preventDefault()} onClick={() => addCredentialTags()} aria-label="添加标签"><Plus size={13} /></button></div></label>
           <label><span>查看保护</span><select value={form.sensitivityLevel} onChange={(e) => setForm({ ...form, sensitivityLevel: e.target.value })}><option value="STANDARD">常规 · 登录后可查看</option><option value="SENSITIVE">验证 · 查看前再次验证</option><option value="CRITICAL">严格 · 验证且仅可指定用户</option></select></label>
           <label><span>收藏</span><select value={form.favorite ? "1" : "0"} onChange={(e) => setForm({ ...form, favorite: e.target.value === "1" })}><option value="0">不收藏</option><option value="1">加入收藏</option></select></label>
         </div></details>
@@ -1343,9 +1582,23 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <footer><span>{editingId ? "敏感值留空即保持不变" : "确认信息后加密保存"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}{busy ? "保存中" : "保存"}</button></div></footer>
     </form></div> : null}
 
-    {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写一条账号或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { setLegacyText(""); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button></div></section></div> : null}
+    {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写一条账号或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { resetImport(); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button></div></section></div> : null}
 
-    {modal === "import" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-import-form" onSubmit={submitImport}><header><div><small>IMPORT</small><h2>批量导入</h2><p>选择文件或直接粘贴文件内容，确认后加密保存到当前账号</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持包含 OTP 地址的文本文件</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取" : "选择文件"}</span><input type="file" accept=".txt,text/plain" onChange={async (event) => { const file = event.target.files?.[0]; if (file) setLegacyText(await file.text()); }} /></label></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>粘贴文件内容</h3></div></div><label><span>文件内容</span><textarea rows={7} value={legacyText} onChange={(event) => setLegacyText(event.target.value)} placeholder="把文件内容粘贴到这里，也可以直接选择文件自动填充" /></label></section></div><footer><span>{legacyText.trim() ? "内容已准备好，可以开始导入" : "请选择文件或粘贴文件内容"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy || !legacyText.trim()}>{busy ? "导入中" : "确认导入"}</button></div></footer></form></div> : null}
+    {modal === "import" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-import-form" onSubmit={submitImport}>
+      <header><div><small>IMPORT</small><h2>批量导入</h2><p>{importPreview.length ? "确认新增、重复和冲突项目，再决定是否覆盖" : "先读取并预览，确认后才会写入保险库"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll">
+        {!importPreview.length ? <>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持 otpauth 文本、Aegis 和 andOTP 的未加密 JSON</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取，可继续预览" : "选择文件"}</span><input type="file" accept=".txt,.json,text/plain,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; setImportProgress({ label: "正在读取文件", percent: 1 }); void readImportFile(file, (percent) => setImportProgress({ label: "正在读取文件", percent })).then((text) => { updateImportText(text); setImportProgress({ label: "文件读取完成", percent: 100 }); window.setTimeout(() => setImportProgress(null), 500); }).catch((error) => { setImportProgress(null); notify(error instanceof Error ? error.message : "文件读取失败", true); }); }} /></label></section>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>粘贴文件内容</h3></div></div><label><span>文件内容</span><textarea rows={7} value={legacyText} onChange={(event) => updateImportText(event.target.value)} placeholder="把文件内容粘贴到这里，也可以直接选择文件自动填充" /></label></section>
+        </> : <>
+          <section className="vault-share-section vault-import-summary"><div className="vault-section-title"><div><span>01</span><h3>预览结果</h3></div><span>{importPreview.length} 项</span></div><div className="vault-import-counts"><span className="is-new"><b>{importCounts.added}</b><small>新增</small></span><span className="is-duplicate"><b>{importCounts.duplicate}</b><small>重复</small></span><span className="is-conflict"><b>{importCounts.conflict}</b><small>冲突</small></span></div><p className="vault-section-help">重复项目内容相同，会自动跳过；冲突项目是同系统、同账号但密钥或内容不同。</p></section>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>逐项核对</h3></div></div><div className="vault-import-preview">{importPreview.slice(0, 100).map((item, index) => <article key={`${item.issuer}-${item.accountName}-${index}`}><span className={`is-${item.status.toLowerCase()}`}>{item.status === "NEW" ? "新增" : item.status === "DUPLICATE" ? "重复" : "冲突"}</span><div><b>{item.issuer}</b><small>{item.accountName}</small></div></article>)}</div>{importPreview.length > 100 ? <p className="vault-section-help">只展示前 100 项，其余 {importPreview.length - 100} 项会按同一规则处理。</p> : null}</section>
+          {importCounts.conflict ? <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>冲突处理</h3></div></div><label className="vault-check"><input type="checkbox" checked={importReplaceExisting} onChange={(event) => setImportReplaceExisting(event.target.checked)} /><span><b>用导入内容覆盖现有凭据</b><small>关闭时跳过冲突；重复项目始终跳过</small></span></label></section> : null}
+        </>}
+        {importProgress ? <div className="vault-import-progress" role="status"><span><b>{importProgress.label}</b><small>{importProgress.percent}%</small></span><i><b style={{ width: `${importProgress.percent}%` }} /></i></div> : null}
+      </div>
+      <footer><span>{importPreview.length ? `将新增 ${importCounts.added} 项${importReplaceExisting ? `、覆盖 ${importCounts.conflict} 项` : ""}` : legacyText.trim() ? "先预览，不会直接写入数据" : "请选择文件或粘贴文件内容"}</span><div>{importPreview.length ? <button type="button" className="vault-ghost" disabled={busy} onClick={() => { setImportItems([]); setImportPreview([]); setImportReplaceExisting(false); }}>返回修改</button> : <button type="button" className="vault-ghost" onClick={closeModal}>取消</button>}<button className="vault-primary" disabled={busy || !legacyText.trim()}>{busy ? <LoaderCircle className="spin" size={15} /> : importPreview.length ? <Check size={15} /> : <Eye size={15} />}{busy ? importProgress?.label || "处理中" : importPreview.length ? "确认导入" : "预览导入"}</button></div></footer>
+    </form></div> : null}
 
     {modal === "shareDetail" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-share-detail">
       <header><div><small>AUTHORIZATION DETAIL</small><h2>{shareDetail?.name?.trim() || "临时授权详情"}</h2><p>{shareDetail ? (shareDetail.inbound ? `${shareDetail.itemCount} 个凭据 · 来自 ${sharerDisplay(shareDetail)}` : `${shareDetail.itemCount} 个凭据 · ${shareDetail.shareMode === "DIRECT" ? "指定用户" : "链接分享"}`) : "正在读取授权配置"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>

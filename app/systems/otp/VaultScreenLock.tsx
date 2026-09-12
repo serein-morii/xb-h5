@@ -202,7 +202,7 @@ function LockPasswordField({ label, lockType, value, onChange, onComplete, autoF
             autoFocus={autoFocus}
             type="password"
             inputMode="numeric"
-            autoComplete="one-time-code"
+            autoComplete="off"
             value={value}
             maxLength={pinLen}
             aria-label={label}

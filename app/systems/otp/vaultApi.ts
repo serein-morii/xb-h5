@@ -63,7 +63,7 @@ export type VaultCredential = {
 	clientPasswordCiphertext?: string; clientOtpSecretCiphertext?: string; zeroKnowledge?: boolean;
   currentOtp?: string; nextOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
-  loginUrl?: string; note?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
+  loginUrl?: string; note?: string; tags?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
   shared?: boolean; shareId?: number; shareName?: string; sharedBy?: string; sharedByAccount?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
 };
 
@@ -90,7 +90,7 @@ export type VaultRecipient = {
 
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
-  autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; notificationEmail?: string; barkUrl?: string; notificationRules?: string; theme?: "light" | "dark" | "system";
+  autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; notificationEmail?: string; notificationEmailCode?: string; barkUrl?: string; notificationRules?: string; theme?: "light" | "dark" | "system";
   concealOtp?: boolean; listSort?: string; defaultFavorites?: boolean;
   zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
@@ -104,7 +104,7 @@ export type VaultSession = { id: string; deviceKey: string; displayName: string;
 export type VaultActivity = { id: number; action: string; targetType?: string; targetId?: number; ipAddress?: string; userAgent?: string; detail?: string; createTime: string };
 export type VaultSecurityStatus = { encryption: string; keyId: string; keyRotationNeeded: number; unlocked: boolean; stepUpExpiresIn: number; deviceCount: number; failedVerifications24h: number; lastBackupTime?: string; lastRecoveryCheckTime?: string; securityAlerts: boolean; zeroKnowledgeEnabled: boolean; credentialCount: number };
 export type VaultPasskey = { id: number; displayName: string; backupEligible: boolean; backedUp: boolean; lastUsedTime?: string; createTime: string };
-export type VaultTransferItem = { issuer: string; accountName: string; password?: string; otpSecret?: string; clientPasswordCiphertext?: string; clientOtpSecretCiphertext?: string; otpType?: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; algorithm?: string; digits?: number; periodSeconds?: number; loginUrl?: string; note?: string; favorite?: boolean; sensitivityLevel?: string };
+export type VaultTransferItem = { issuer: string; accountName: string; password?: string; otpSecret?: string; clientPasswordCiphertext?: string; clientOtpSecretCiphertext?: string; otpType?: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; algorithm?: string; digits?: number; periodSeconds?: number; loginUrl?: string; note?: string; tags?: string; favorite?: boolean; sensitivityLevel?: string };
 export type VaultBackup = { format: "xb-otp-vault"; version: number; createdAt: string; keyId: string; items: VaultTransferItem[] };
 
 export type ShareStatus = {
@@ -132,11 +132,15 @@ export const deleteVaultCredential = (id: number) => otpApiRequest(`${vault}/cre
 export const listDeletedVaultCredentials = () => otpApiRequest<{ data: VaultCredential[] }>(`${vault}/trash`);
 export const restoreVaultCredential = (id: number) => otpApiRequest(`${vault}/trash/${id}/restore`, { method: "POST" });
 export const purgeVaultCredential = (id: number) => otpApiRequest(`${vault}/trash/${id}`, { method: "DELETE" });
-export const importLegacyVault = (text: string, ownerUsername = "") => otpApiRequest<{ data: { total: number; created: number; updated: number; ownerUsername: string } }>(`${vault}/import/legacy`, { method: "POST", body: { text, ownerUsername } });
 export const listVaultRecipients = (keyword: string) => otpApiRequest<{ data: VaultRecipient[] }>(`${vault}/recipients?keyword=${encodeURIComponent(keyword)}`);
 export const getVaultPreferences = () => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`);
 export const saveVaultPreferences = (body: VaultPrefs) => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`, { method: "PUT", body });
-export const sendVaultTestNotice = () => otpApiRequest<{ data?: { email?: boolean; bark?: boolean } }>(`${vault}/preferences/test-notice`, { method: "POST" });
+export const sendVaultTestNotice = () => otpApiRequest<{ data?: { email?: boolean; bark?: boolean; push?: boolean } }>(`${vault}/preferences/test-notice`, { method: "POST" });
+export const getVaultPushPublicKey = () => otpApiRequest<{ data: { publicKey: string; enabled: boolean } }>(`${vault}/push/public-key`);
+export const saveVaultPushSubscription = (body: { endpoint: string; p256dh: string; auth: string; userAgent?: string }) =>
+  otpApiRequest(`${vault}/push/subscription`, { method: "PUT", body });
+export const deleteVaultPushSubscription = (endpoint: string) =>
+  otpApiRequest(`${vault}/push/subscription`, { method: "DELETE", body: { endpoint } });
 async function exportWithFreshVerification<T>(path: string) {
   clearOtpStepUpToken();
   try { return await otpApiRequest<T>(path); }

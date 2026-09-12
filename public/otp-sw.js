@@ -72,6 +72,34 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; }
+  catch { payload = { body: event.data ? event.data.text() : "" }; }
+  const title = payload.title || "OTP Vault";
+  const body = payload.body || "";
+  const url = payload.url || "/otp";
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: "/otp-icon.svg",
+    badge: "/otp-icon.svg",
+    data: { url },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/otp";
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    const existing = clients.find((client) => typeof client.url === "string" && client.url.includes("/otp"));
+    if (existing && typeof existing.focus === "function") {
+      if (typeof existing.navigate === "function") return existing.focus().then(() => existing.navigate(target));
+      return existing.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(target);
+  }));
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
