@@ -853,6 +853,20 @@ html.theme-dark {
 .vault-settings .vault-setting-row input:checked + i::after { transform: translateX(18px); }
 .vault-setting-select { margin-left: auto; min-width: 0; max-width: 148px; min-height: 34px; padding: 0 26px 0 10px; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .vault-setting-row:has(.vault-setting-select) { cursor: default; }
+.vault-setting-row.vault-notify-field { cursor: default; align-items: flex-start; flex-wrap: wrap; }
+.vault-notify-input {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--utility-line);
+  border-radius: 11px;
+  background: var(--utility-bg);
+  color: var(--utility-text);
+  font: inherit;
+  font-size: 12px;
+}
+.vault-notify-input:focus { outline: 0; border-color: color-mix(in srgb, var(--vault-accent) 55%, var(--utility-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vault-accent) 14%, transparent); }
 .vault-settings-stack { display: grid; }
 .vault-settings-block + .vault-settings-block { border-top: 1px solid rgba(38,50,77,.07); }
 .vault-settings-block-title { padding: 16px 17px 8px; }
@@ -983,7 +997,7 @@ html.theme-dark {
   .vault-account-link.is-danger { border-color: rgba(210,69,92,.28); }
   .vault-account-link.is-danger:hover { border-color: rgba(210,69,92,.5); background: rgba(210,69,92,.08); }
   .vault-account-link.is-danger b { color: #ef7f92; }
-  .vault-setting-select { border-color: rgba(225,231,248,.12); background: #222b3d; color: #e8edf8; }
+  .vault-setting-select, .vault-notify-input { border-color: rgba(225,231,248,.12); background: #222b3d; color: #e8edf8; }
   .vault-setting-row i,.vault-view-toggle i { background: #465269; box-shadow: inset 0 0 0 1px #68758f; }
   .vault-setting-row i::after,.vault-view-toggle i::after { background: #f5f7fc; box-shadow: 0 2px 6px rgba(0,0,0,.42); }
   .vault-setting-row input:checked + i,.vault-view-toggle input:checked + i { background: #7c8cff; box-shadow: inset 0 0 0 1px #a5b0ff,0 0 0 3px rgba(124,140,255,.16); }

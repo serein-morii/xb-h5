@@ -53,6 +53,12 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(lockPage, /sanitized.length === pinLen/);
   assert.match(security, /无操作自动锁屏/);
   assert.match(security, /仍可手动锁屏/);
+  assert.doesNotMatch(security, /安全事件邮件提醒/);
+  assert.match(workspace, /setSettingsSection\("notifications"\)/);
+  assert.match(workspace, /通知邮箱/);
+  assert.match(workspace, /Bark 地址/);
+  assert.match(workspace, /notificationEmail/);
+  assert.match(workspace, /barkUrl/);
 });
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
