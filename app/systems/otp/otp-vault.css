@@ -855,9 +855,15 @@ html.theme-dark {
 .vault-setting-row:has(.vault-setting-select) { cursor: default; }
 .vault-setting-row.vault-notify-field { cursor: default; align-items: flex-start; flex-wrap: wrap; }
 .vault-notify-rules { margin-top: 10px; border-top: 1px solid rgba(38,50,77,.07); }
+.vault-notify-rules.is-off { opacity: .55; }
+.vault-notify-test { display: grid; gap: 6px; padding: 12px 17px 4px; }
+.vault-notify-test button { width: max-content; min-height: 36px; }
+.vault-notify-test small { color: var(--utility-muted); font-size: 10px; line-height: 1.5; }
 .vault-notify-rules-title { padding: 14px 17px 6px; }
 .vault-notify-rules-title b { display: block; font-size: 12px; }
 .vault-notify-rules-title small { display: block; margin-top: 3px; color: var(--utility-muted); font-size: 10px; }
+.vault-notify-group + .vault-notify-group { margin-top: 6px; }
+.vault-notify-group-title { margin: 0; padding: 10px 17px 2px; color: var(--utility-muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 .vault-notify-rule { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 17px; }
 .vault-notify-rule + .vault-notify-rule { border-top: 1px solid rgba(38,50,77,.07); }
 .vault-notify-rule .vault-setting-copy b { font-size: 12px; }
@@ -865,6 +871,7 @@ html.theme-dark {
 .vault-notify-channels label { position: relative; display: inline-flex; align-items: center; padding: 4px 11px; border: 1px solid var(--utility-line); border-radius: 999px; font-size: 10px; color: var(--utility-muted); cursor: pointer; user-select: none; transition: .15s; }
 .vault-notify-channels label.is-on { border-color: color-mix(in srgb, var(--vault-accent) 60%, var(--utility-line)); color: var(--vault-accent); background: color-mix(in srgb, var(--vault-accent) 10%, transparent); }
 .vault-notify-channels input { position: absolute; opacity: 0; width: 0; height: 0; }
+.vault-notify-channels label:has(input:disabled) { cursor: not-allowed; }
 .vault-notify-input {
   width: 100%;
   min-height: 38px;

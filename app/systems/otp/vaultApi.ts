@@ -136,6 +136,7 @@ export const importLegacyVault = (text: string, ownerUsername = "") => otpApiReq
 export const listVaultRecipients = (keyword: string) => otpApiRequest<{ data: VaultRecipient[] }>(`${vault}/recipients?keyword=${encodeURIComponent(keyword)}`);
 export const getVaultPreferences = () => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`);
 export const saveVaultPreferences = (body: VaultPrefs) => otpApiRequest<{ data: VaultPrefs }>(`${vault}/preferences`, { method: "PUT", body });
+export const sendVaultTestNotice = () => otpApiRequest<{ data?: { email?: boolean; bark?: boolean } }>(`${vault}/preferences/test-notice`, { method: "POST" });
 async function exportWithFreshVerification<T>(path: string) {
   clearOtpStepUpToken();
   try { return await otpApiRequest<T>(path); }

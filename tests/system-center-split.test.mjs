@@ -75,13 +75,15 @@ test("otp settings page groups account security and appearance in one panel", as
   assert.match(workspace, /setSettingsSection\("account"\)/);
   assert.match(workspace, /setSettingsSection\("appearance"\)/);
   assert.match(workspace, /setSettingsSection\("about"\)/);
-  assert.match(workspace, /<b>安全中心<\/b>/);
+  assert.match(workspace, /<b>安全<\/b>/);
   assert.match(workspace, /Passkey、备份、设备/);
   assert.match(workspace, /<b>账号<\/b>/);
-  assert.match(workspace, /<b>账号<\/b>[\s\S]*<b>外观和显示<\/b>[\s\S]*<b>安全中心<\/b>/);
+  assert.match(workspace, /<b>账号<\/b>[\s\S]*<b>通知<\/b>[\s\S]*<b>显示<\/b>[\s\S]*<b>安全<\/b>/);
   assert.doesNotMatch(workspace, /账号与安全/);
   assert.doesNotMatch(workspace, /\['security', ShieldCheck, '安全'\]/);
-  assert.match(workspace, /外观和显示/);
+  assert.match(workspace, /<b>显示<\/b>/);
+  assert.doesNotMatch(workspace, /<b>外观和显示<\/b>/);
+  assert.doesNotMatch(workspace, /<b>安全中心<\/b>/);
   assert.match(workspace, /OTP_VAULT_VERSION/);
   assert.match(workspace, /<b>更新日志<\/b>/);
   assert.match(workspace, /<b>使用说明<\/b>/);

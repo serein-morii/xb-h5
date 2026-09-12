@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, C
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 	banVaultShareSave, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, importLegacyVault, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
-		listVaultRecipients, getVaultPreferences, getVaultScreenLockState, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, setVaultScreenLockState, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
+		listVaultRecipients, getVaultPreferences, getVaultScreenLockState, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
@@ -27,21 +27,29 @@ async function loadJsQR() {
 }
 
 type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
-const NOTIFY_EVENTS = [
-  { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
-  { key: "backup-export", label: "保险库已导出", detail: "下载恢复包时提醒" },
-  { key: "migration-export", label: "验证器迁移已导出", detail: "生成迁移二维码时提醒" },
-  { key: "sessions-revoked", label: "其他设备已退出", detail: "退出其他登录设备时提醒" },
-  { key: "key-rotation", label: "加密密钥轮换完成", detail: "轮换保险库密钥时提醒" },
-  { key: "share-open", label: "分享授权被打开", detail: "别人打开你发出的授权" },
-  { key: "share-save", label: "分享被转存", detail: "别人把你的授权转到「我收到的」" },
-  { key: "share-released", label: "授权被解除", detail: "接收人主动解除你的授权" },
-  { key: "share-revoked", label: "转存授权被撤销", detail: "你转存的授权被分享者撤销" },
-  { key: "share-save-removed", label: "转存被移除", detail: "分享者移除了你转存的授权" },
-  { key: "share-save-restored", label: "转存已恢复", detail: "分享者恢复了你转存的授权" },
-  { key: "share-deleted", label: "转存授权被删除", detail: "分享者删除了你转存的授权" },
-  { key: "share-updated", label: "转存授权已更新", detail: "分享者修改了你转存的授权" },
-] as const;
+const NOTIFY_GROUPS = [
+	  { title: "账号安全", events: [
+	    { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
+	    { key: "sessions-revoked", label: "其他设备已退出", detail: "退出其他登录设备时提醒" },
+	    { key: "key-rotation", label: "加密密钥轮换完成", detail: "轮换保险库密钥时提醒" },
+	  ]},
+	  { title: "备份与导出", events: [
+	    { key: "backup-export", label: "保险库已导出", detail: "下载恢复包时提醒" },
+	    { key: "migration-export", label: "验证器迁移已导出", detail: "生成迁移二维码时提醒" },
+	  ]},
+	  { title: "我发出的授权", events: [
+	    { key: "share-open", label: "分享授权被打开", detail: "别人打开你发出的授权" },
+	    { key: "share-save", label: "分享被转存", detail: "别人把你的授权转到「我收到的」" },
+	    { key: "share-released", label: "授权被解除", detail: "接收人主动解除你的授权" },
+	  ]},
+	  { title: "我收到的授权", events: [
+	    { key: "share-revoked", label: "转存授权被撤销", detail: "你转存的授权被分享者撤销" },
+	    { key: "share-save-removed", label: "转存被移除", detail: "分享者移除了你转存的授权" },
+	    { key: "share-save-restored", label: "转存已恢复", detail: "分享者恢复了你转存的授权" },
+	    { key: "share-deleted", label: "转存授权被删除", detail: "分享者删除了你转存的授权" },
+	    { key: "share-updated", label: "转存授权已更新", detail: "分享者修改了你转存的授权" },
+	  ]},
+	] as const;
 type NotifyChannel = "email" | "bark";
 function parseNotificationRules(raw?: string) {
   try {
@@ -348,6 +356,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	const [recipientLoading, setRecipientLoading] = useState(false);
 	const [created, setCreated] = useState<{ name?: string; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; shareUrl?: string; accessCode?: string; autoFillAllowed: boolean; expireTime: string } | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
+  const [testNoticeBusy, setTestNoticeBusy] = useState(false);
   // 通知中心：OTP 安全审查通知（分享被打开、验证失败等）与系统通知，分类展示
   const [notifOpen, setNotifOpen] = useState(false);
   const unread = useMessageUnread(otpApiRequest as MessageRequest);
@@ -669,7 +678,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	};
 	const protectCredential = async (value: Record<string, unknown>) => {
 		if (!prefs.zeroKnowledgeEnabled) return value;
-		if (!zeroKnowledgeKey) throw new Error("请先到「我的」里的安全中心解锁零知识保护");
+		if (!zeroKnowledgeKey) throw new Error("请先到「我的」里的安全解锁零知识保护");
 		const body = { ...value };
 		if (typeof body.password === "string" && body.password) body.clientPasswordCiphertext = await encryptZeroKnowledgeValue(body.password, zeroKnowledgeKey);
 		if (typeof body.otpSecret === "string" && body.otpSecret) body.clientOtpSecretCiphertext = await encryptZeroKnowledgeValue(body.otpSecret, zeroKnowledgeKey);
@@ -1205,12 +1214,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       </article>) : <div className="vault-empty compact">还没有创建临时授权</div>}</div>}
     </section> : null}
 
-    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "外观和显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "安全事件的邮件和 Bark 推送" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
+    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "站内信始终送达；邮件和 Bark 可按事件选择" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
       {!settingsSection ? <div className="vault-settings-group vault-settings-hub vault-subview-enter" key="settings-hub">
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("account")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>用户名、账号、邮箱、密码和登录</small></span><ChevronRight size={15} /></button>
-        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("appearance")}><span className="vault-setting-icon is-blue"><SunMoon size={17} /></span><span className="vault-setting-copy"><b>外观和显示</b><small>主题、卡片和列表偏好</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("notifications")}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>通知</b><small>邮件、Bark 推送</small></span><ChevronRight size={15} /></button>
-        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("security")}><span className="vault-setting-icon is-violet"><ShieldCheck size={17} /></span><span className="vault-setting-copy"><b>安全中心</b><small>Passkey、备份、设备</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("appearance")}><span className="vault-setting-icon is-blue"><SunMoon size={17} /></span><span className="vault-setting-copy"><b>显示</b><small>主题、卡片和列表偏好</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("security")}><span className="vault-setting-icon is-violet"><ShieldCheck size={17} /></span><span className="vault-setting-copy"><b>安全</b><small>Passkey、备份、设备</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("about")}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>关于</b><small>版本 {OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></button>
       </div> : null}
       {settingsSection === "security" ? <section className="vault-security-page vault-subview-enter" key="settings-security"><VaultSecurityCenter prefs={prefs} updatePrefs={updatePrefs} zeroKnowledgeKey={zeroKnowledgeKey} onZeroKnowledgeKey={setZeroKnowledgeKey} onEditScreenLock={() => setScreenLockSetup(true)} /></section> : null}
@@ -1226,24 +1235,29 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </div>
       </div> : null}
       {settingsSection === "notifications" ? <div className="vault-settings-group vault-settings-notifications vault-subview-enter" key="settings-notifications">
-        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>安全事件提醒</b><small>连续验证失败、导出、设备退出和密钥轮换时提醒</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => void updatePrefs({ ...prefs, securityAlerts: event.target.checked })} /><i /></label>
+        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>邮件和 Bark</b><small>关闭后仍会写入站内信，只停掉邮件和 Bark</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启邮件和 Bark" : "已关闭邮件和 Bark")); }} /><i /></label>
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} defaultValue={prefs.notificationEmail || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.notificationEmail || "")) return; void updatePrefs({ ...prefs, notificationEmail: next }); }} /></label>
         <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>https://api.day.app/设备Key/ ，多个用英文逗号分隔</small></span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" defaultValue={prefs.barkUrl || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.barkUrl || "")) return; void updatePrefs({ ...prefs, barkUrl: next }); }} /></label>
-        <div className="vault-notify-rules">
-          <p className="vault-notify-rules-title"><b>按事件选择通知渠道</b><small>未单独设置的事件跟随「安全事件提醒」总开关</small></p>
-          {NOTIFY_EVENTS.map(({ key, label, detail }) => {
-            const rules = parseNotificationRules(prefs.notificationRules);
-            const saved = rules[key];
-            const rule = { email: saved?.email ?? prefs.securityAlerts, bark: saved?.bark ?? prefs.securityAlerts };
-            const toggleRule = (channel: NotifyChannel) => { const nextRules = { ...rules, [key]: { ...rule, [channel]: !rule[channel] } }; void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) }); };
-            return <div className="vault-notify-rule" key={key}>
-              <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
-              <span className="vault-notify-channels">
-                <label className={rule.email ? "is-on" : ""}><input type="checkbox" checked={rule.email} onChange={() => toggleRule("email")} />邮件</label>
-                <label className={rule.bark ? "is-on" : ""}><input type="checkbox" checked={rule.bark} onChange={() => toggleRule("bark")} />Bark</label>
-              </span>
-            </div>;
-          })}
+        <div className="vault-notify-test"><button type="button" className="vault-ghost" disabled={testNoticeBusy || (!prefs.notificationEmail && !accountEmail && !prefs.barkUrl)} onClick={() => { setTestNoticeBusy(true); void sendVaultTestNotice().then((result) => { const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : ""].filter(Boolean).join("和"); notify(sent ? `测试通知已发到${sent}` : "测试通知已发送"); }).catch((error) => notify(error instanceof Error ? error.message : "测试通知发送失败", true)).finally(() => setTestNoticeBusy(false)); }}>{testNoticeBusy ? "发送中…" : "发送测试通知"}</button><small>会同时写入站内信，用来确认渠道是否可用</small></div>
+        <div className={`vault-notify-rules${prefs.securityAlerts ? "" : " is-off"}`}>
+          <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>{prefs.securityAlerts ? "未单独设置的事件跟随总开关；站内信不受影响" : "总开关已关闭，下面勾选会在重新开启后生效"}</small></p>
+          {NOTIFY_GROUPS.map((group) => <div className="vault-notify-group" key={group.title}>
+            <p className="vault-notify-group-title">{group.title}</p>
+            {group.events.map(({ key, label, detail }) => {
+              const rules = parseNotificationRules(prefs.notificationRules);
+              const saved = rules[key];
+              const stored = { email: saved?.email ?? true, bark: saved?.bark ?? true };
+              const rule = { email: stored.email && prefs.securityAlerts, bark: stored.bark && prefs.securityAlerts };
+              const toggleRule = (channel: NotifyChannel) => { const nextRules = { ...rules, [key]: { ...stored, [channel]: !stored[channel] } }; void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) }); };
+              return <div className="vault-notify-rule" key={key}>
+                <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
+                <span className="vault-notify-channels">
+                  <label className={rule.email ? "is-on" : ""}><input type="checkbox" checked={stored.email} disabled={!prefs.securityAlerts} onChange={() => toggleRule("email")} />邮件</label>
+                  <label className={rule.bark ? "is-on" : ""}><input type="checkbox" checked={stored.bark} disabled={!prefs.securityAlerts} onChange={() => toggleRule("bark")} />Bark</label>
+                </span>
+              </div>;
+            })}
+          </div>)}
         </div>
       </div> : null}
       {settingsSection === "appearance" ? <div className="vault-settings-group vault-settings-appearance vault-subview-enter" key="settings-appearance">

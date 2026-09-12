@@ -166,7 +166,7 @@ export default function OtpVaultGuidePage() {
           <ul>
             <li>常用凭据可以收藏；系统较多时开启按系统分组。</li>
             <li>紧凑模式适合电脑大屏或凭据数量较多的场景。</li>
-            <li>显示和排序开关在“我的”页的“外观和显示”里。</li>
+            <li>显示和排序开关在“我的”页的“显示”里。</li>
           </ul>
         </div>
       </section>
@@ -214,19 +214,19 @@ export default function OtpVaultGuidePage() {
         <div className="otp-guide-prose">
           <div className="otp-guide-security-grid">
             <section><Fingerprint size={16} /><h3>敏感操作验证</h3><p>默认关闭。开启后可用邮箱、密码或 Passkey 验证。登录、改密和敏感操作都可使用 Passkey。</p></section>
-            <section><LockKeyhole size={16} /><h3>锁屏</h3><p>顶栏小锁可随时锁定。未设置密码时会先设置 4 位或 6 位数字，或复杂密码。Passkey 解锁必须先有锁屏密码。自动锁屏在「我的 → 安全中心」设置。</p></section>
+            <section><LockKeyhole size={16} /><h3>锁屏</h3><p>顶栏小锁可随时锁定。未设置密码时会先设置 4 位或 6 位数字，或复杂密码。Passkey 解锁必须先有锁屏密码。自动锁屏在「我的 → 安全」设置。</p></section>
             <section><LockKeyhole size={16} /><h3>零知识保护</h3><p>敏感字段在浏览器加密。忘记保护密码无法恢复，并且零知识凭据不能创建服务器分享快照。</p></section>
             <section><Download size={16} /><h3>加密备份</h3><p>下载 .xbvault 文件，将文件和恢复密码分开保存。恢复前可以先校验和预览内容。</p></section>
             <section><Smartphone size={16} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。启用后，登录以及增删改、导入凭据会自动更新本机副本。</p></section>
           </div>
           <GuideFlow label="加密备份" nodes={[
-            { type: "start", text: "我的 → 安全中心" },
+            { type: "start", text: "我的 → 安全" },
             { type: "step", text: "导出 .xbvault" },
             { type: "step", text: "恢复密码和文件分开保管" },
             { type: "step", text: "新设备登录后先校验再导入" },
             { type: "end", text: "换机也能找回" },
           ]} />
-          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全中心”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、外观、安全中心和关于都在“我的”里。</p></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、通知、显示、安全和关于都在“我的”里。</p></div>
         </div>
       </section>
 
@@ -237,11 +237,11 @@ export default function OtpVaultGuidePage() {
           <details><summary>验证码一直不正确怎么办？</summary><p>先开启设备的自动日期、自动时间和自动时区，再核对 Secret、算法、位数和周期是否与服务方一致。</p></details>
           <details><summary>分享链接打不开怎么办？</summary><p>请发送方检查授权是否已到期、撤销、达到访问上限，以及访问码是否正确。</p></details>
           <details><summary>授权名称对方能看到吗？</summary><p>能。名称会显示在授权页标题和分享文案第一行，请不要写入敏感信息。</p></details>
-          <details><summary>误删凭据还能恢复吗？</summary><p>进入“我的 → 安全中心”的回收站恢复。永久删除后只能从加密备份重新导入。</p></details>
+          <details><summary>误删凭据还能恢复吗？</summary><p>进入“我的 → 安全”的回收站恢复。永久删除后只能从加密备份重新导入。</p></details>
           <details><summary>更换手机怎么迁移？</summary><p>在旧设备创建 .xbvault 加密备份，在新设备登录后校验并恢复。也可以生成迁移二维码导入兼容应用。</p></details>
           <details><summary>没有原密码还能修改登录密码吗？</summary><p>可以使用绑定邮箱验证码，或选择已绑定的 Passkey，通过指纹、面容或设备 PIN 验证后修改。</p></details>
-          <details><summary>发现陌生设备或来源 IP 怎么办？</summary><p>立即在“我的 → 安全中心”撤销设备、退出其他会话并修改登录密码，同时检查最近安全活动。</p></details>
-          <details><summary>锁屏密码忘了怎么办？</summary><p>锁屏不等于退出账号。若开了 Passkey 解锁，可用本机指纹或面容打开，然后再到「我的 → 安全中心」修改锁屏密码。Passkey 也不可用时，需要能验证登录身份的设备再处理。</p></details>
+          <details><summary>发现陌生设备或来源 IP 怎么办？</summary><p>立即在“我的 → 安全”撤销设备、退出其他会话并修改登录密码，同时检查最近安全活动。</p></details>
+          <details><summary>锁屏密码忘了怎么办？</summary><p>锁屏不等于退出账号。若开了 Passkey 解锁，可用本机指纹或面容打开，然后再到「我的 → 安全」修改锁屏密码。Passkey 也不可用时，需要能验证登录身份的设备再处理。</p></details>
           <details><summary>为什么提示已存在相同系统和账号？</summary><p>同一系统和账号可以重复添加。这是确认，不是拦截。确认后仍会保存，适合两台设备各自的验证码。</p></details>
           <details><summary>访问码链接第二次打开为什么会卡住？</summary><p>现在第二次打开会直接进入内容，不再停在“验证授权”。如果仍卡住，请硬刷新后再试。</p></details>
         </div>

@@ -33,7 +33,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /SCREEN_LOCK_ACTIVE_KEY/);
   assert.match(workspace, /shouldAutoLockByIdle/);
   assert.match(workspace, /autoScreenLockMinutes/);
-  assert.match(lockPage, /我的 → 安全中心/);
+  assert.match(lockPage, /我的 → 安全/);
   assert.match(lockPage, /保存后才能添加 Passkey/);
   assert.match(lockPage, /vault-screen-lock-pin/);
   assert.match(lockPage, /vault-screen-lock-pin-caption/);
@@ -59,6 +59,9 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /Bark 地址/);
   assert.match(workspace, /notificationEmail/);
   assert.match(workspace, /barkUrl/);
+  assert.match(workspace, /sendVaultTestNotice/);
+  assert.match(workspace, /NOTIFY_GROUPS/);
+  assert.match(workspace, /邮件和 Bark/);
 });
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
