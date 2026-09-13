@@ -1,10 +1,10 @@
 import {
   ArchiveRestore, Check, Clock3, Download, FileCheck2, FileKey, Fingerprint, KeyRound, Laptop,
-  LoaderCircle, LockKeyhole, Pencil, QrCode, RefreshCw, RotateCw, ShieldCheck, Trash2, Upload, X,
+  LoaderCircle, LockKeyhole, Pencil, QrCode, RefreshCw, RotateCw, ShieldAlert, ShieldCheck, Trash2, Upload, X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  commitVaultImport, deleteVaultPasskey, exportVaultBackup, exportVaultMigration, finishVaultPasskeyRegistration, getVaultPasskeyRegistrationOptions,
+  commitVaultImport, deleteVaultPasskey, exportVaultBackup, exportVaultLocalSync, exportVaultMigration, finishVaultPasskeyRegistration, getVaultPasskeyRegistrationOptions,
   getVaultSecurityStatus, listDeletedVaultCredentials, listVaultActivities, listVaultPasskeys, listVaultSessions,
   lockVaultSecurity, previewVaultImport, purgeVaultCredential, recordVaultRecoveryCheck, renameVaultPasskey,
   restoreVaultCredential, revokeOtherVaultSessions, revokeVaultDevice, rotateVaultKey, updateVaultDevice,
@@ -17,6 +17,7 @@ import {
 } from "./vaultCrypto";
 import { createPasskey } from "../../lib/passkey";
 import { buildMigrationQrs } from "./vaultQr";
+import { auditVaultPasswords, type PasswordHealthReport } from "./passwordTools";
 import VaultToastMessage from "./VaultToastMessage";
 
 type Props = {
@@ -46,7 +47,8 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
   const [offlineEnabled, setOfflineEnabled] = useState(hasOfflineVault() || hasOfflineDeviceCopy());
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
-  const [section, setSection] = useState<"protect" | "backup" | "activity">("protect");
+  const [section, setSection] = useState<"protect" | "password" | "backup" | "activity">("protect");
+  const [passwordReport, setPasswordReport] = useState<PasswordHealthReport | null>(null);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const [editingDevice, setEditingDevice] = useState("");
   const [deviceName, setDeviceName] = useState("");
@@ -160,10 +162,21 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
     onZeroKnowledgeKey(await unlockZeroKnowledgeKey(zkPassword, prefs.zeroKnowledgeSalt, prefs.zeroKnowledgeVerifier));
     setZkPassword(""); setMessage("零知识保险库已在当前页面解锁");
   });
+  const runPasswordHealth = () => run("password-health", async () => {
+    const result = await exportVaultLocalSync();
+    const items = await Promise.all(result.data.items.map(async (item) => {
+      if (!item.clientPasswordCiphertext) return item;
+      if (!zeroKnowledgeKey) throw new Error("请先到安全保护中解锁零知识保险库，再进行密码体检");
+      return { ...item, password: await decryptZeroKnowledgeValue(item.clientPasswordCiphertext, zeroKnowledgeKey) };
+    }));
+    const report = auditVaultPasswords(items);
+    setPasswordReport(report);
+    setMessage(report.total ? `体检完成：检查 ${report.total} 个密码，发现 ${report.issues.length} 个账号需要处理` : "体检完成：还没有保存登录密码");
+  });
 
   return <div className="vault-security-center">
     <header className="vault-security-hero"><span><ShieldCheck size={23} /></span><div><small>PROTECTION & RECOVERY</small><h2>安全</h2><p>保护状态、恢复能力和登录设备集中管理</p></div><span className="vault-security-running"><ShieldCheck size={13} />{status?.unlocked ? `已解锁 ${status.stepUpExpiresIn}s` : "保护运行中"}</span><button type="button" onClick={() => void run("lock", async () => { await lockVaultSecurity(); onZeroKnowledgeKey(null); setMessage("敏感操作授权已结束"); await load(); })}><LockKeyhole size={14} />重新保护</button><p className="vault-security-lock-help">不会退出账号，只结束敏感操作授权并清除当前页面内存中的零知识密钥。</p></header>
-    <nav className="vault-security-tabs" aria-label="安全分类">{([['protect', ShieldCheck, '安全保护'], ['backup', FileKey, '备份恢复'], ['activity', Laptop, '设备与记录']] as const).map(([key, Icon, label]) => <button type="button" className={section === key ? "is-active" : ""} onClick={() => setSection(key)} key={key}><Icon size={15} /><span>{label}</span>{key === "activity" && sessions.length ? <em>{sessions.length}</em> : null}</button>)}</nav>
+    <nav className="vault-security-tabs" aria-label="安全分类">{([['protect', ShieldCheck, '安全保护'], ['password', KeyRound, '密码体检'], ['backup', FileKey, '备份恢复'], ['activity', Laptop, '设备记录']] as const).map(([key, Icon, label]) => <button type="button" className={section === key ? "is-active" : ""} onClick={() => setSection(key)} key={key}><Icon size={15} /><span>{label}</span>{key === "activity" && sessions.length ? <em>{sessions.length}</em> : null}</button>)}</nav>
 
     {section === "protect" ? <div className="vault-security-layout is-protect">
       <section className="vault-settings-group vault-security-facts"><header><div><b>实时保护状态</b><small>数据来自当前密钥、会话与安全记录</small></div><span>{status?.encryption || "读取中"}</span></header><div className="vault-security-grid">
@@ -181,6 +194,14 @@ export default function VaultSecurityCenter({ prefs, updatePrefs, zeroKnowledgeK
         <label className="vault-setting-row"><span className="vault-setting-copy"><b>用 Passkey 解锁</b><small>{passkeys.length ? "必须先有锁屏密码，Passkey 不可用时仍可用数字或复杂密码" : "请先在上方添加 Passkey"}</small></span><input type="checkbox" disabled={!prefs.screenLockSet || passkeys.length === 0} checked={Boolean(prefs.screenLockPasskeyEnabled)} onChange={(event) => void updatePrefs({ ...prefs, screenLockPasskeyEnabled: event.target.checked })} /><i /></label>
       </section>
       <section className="vault-settings-group"><header><div><b>二次验证</b><small>控制敏感操作前是否需要再次确认身份</small></div><span>{prefs.stepUpEnabled ? `${prefs.autoLockMinutes} 分钟` : "已关闭"}</span></header><label className="vault-setting-row"><span className="vault-setting-copy"><b>敏感操作身份验证</b><small>开启后，查看、编辑、分享和导出敏感信息前需要再次验证</small></span><input type="checkbox" checked={prefs.stepUpEnabled} onChange={(event) => void updatePrefs({ ...prefs, stepUpEnabled: event.target.checked })} /><i /></label><label className="vault-security-field"><span>无操作多久后重新验证</span><select disabled={!prefs.stepUpEnabled} value={prefs.autoLockMinutes} onChange={(event) => void updatePrefs({ ...prefs, autoLockMinutes: Number(event.target.value) })}><option value={1}>1 分钟</option><option value={5}>5 分钟</option><option value={15}>15 分钟</option><option value={30}>30 分钟</option><option value={60}>60 分钟</option></select></label></section>
+    </div> : null}
+
+    {section === "password" ? <div className="vault-security-layout is-password">
+      <section className="vault-settings-group vault-password-health"><header><div><b>密码安全体检</b><small>在当前浏览器内检查强度、重复使用和 OTP 覆盖</small></div><span>{passwordReport ? `${passwordReport.score} 分` : "尚未扫描"}</span></header>
+        {passwordReport ? <><div className="vault-password-health-summary"><div className={`vault-password-health-score is-${passwordReport.score >= 80 ? "good" : passwordReport.score >= 60 ? "fair" : "risk"}`} style={{ background: `conic-gradient(currentColor ${passwordReport.score * 3.6}deg, color-mix(in srgb,currentColor 12%,transparent) 0)` }}><span><b>{passwordReport.score}</b><small>安全分</small></span></div><div><b>{passwordReport.total} 个已保存密码</b><small>体检结果只保留风险标签，不保留密码明文</small></div></div><div className="vault-password-health-stats"><article><b>{passwordReport.weak}</b><small>弱密码</small></article><article><b>{passwordReport.reused}</b><small>重复使用</small></article><article><b>{passwordReport.missingOtp}</b><small>未配置 OTP</small></article><article className="is-good"><b>{passwordReport.strong}</b><small>强密码</small></article></div></> : <div className="vault-password-health-empty"><ShieldCheck size={25} /><b>检查保险库中的登录密码</b><p>扫描会先进行敏感操作验证；分析全部在这个浏览器完成。</p></div>}
+        <div className="vault-security-actions"><button type="button" disabled={busy !== "" || (prefs.zeroKnowledgeEnabled && !zeroKnowledgeKey)} onClick={() => void runPasswordHealth()}>{busy === "password-health" ? <LoaderCircle className="spin" size={14} /> : <ShieldCheck size={14} />}{busy === "password-health" ? "正在体检" : passwordReport ? "重新体检" : "开始体检"}</button></div>{prefs.zeroKnowledgeEnabled && !zeroKnowledgeKey ? <p className="vault-transparency-note">零知识保险库当前已锁定，请先回到“安全保护”解锁后再扫描。</p> : null}
+      </section>
+      {passwordReport ? <section className="vault-settings-group vault-password-health-issues"><header><div><b>需要处理</b><small>优先修改重复和强度较低的密码</small></div><span>{passwordReport.issues.length} 项</span></header>{passwordReport.issues.length ? <div>{passwordReport.issues.map((item, index) => <article key={`${item.issuer}-${item.accountName}-${index}`}><span><ShieldAlert size={15} /></span><div><b>{item.issuer}</b><small>{item.accountName}</small></div><p>{item.reasons.map(passwordIssueLabel).join(" · ")}</p></article>)}</div> : <p className="vault-security-empty"><ShieldCheck size={17} />没有发现明显风险，继续保持。</p>}</section> : null}
     </div> : null}
 
     {section === "backup" ? <div className="vault-security-layout is-backup">
@@ -216,4 +237,8 @@ function screenLockTypeLabel(type?: string) {
 
 function activityLabel(action: string) {
 	return ({ UNLOCK: "完成二次身份验证", UNLOCK_FAILED: "二次身份验证失败", LOCK: "结束敏感操作授权", SCREEN_LOCK_SET: "设置锁屏密码", SCREEN_LOCK_CHANGE: "修改锁屏密码", SCREEN_LOCK_UNLOCK: "解锁锁屏", SCREEN_LOCK_UNLOCK_FAILED: "锁屏解锁失败", VIEW: "查看敏感凭据", CREATE: "新增凭据", UPDATE: "更新凭据", DELETE: "删除凭据", RESTORE: "恢复凭据", PURGE: "永久清除凭据", EXPORT: "导出恢复包", IMPORT: "恢复保险库", SHARE_CREATE: "创建授权", SHARE_UPDATE: "更新授权", SHARE_REVOKE: "撤销授权", SHARE_DELETE: "删除授权记录", HOTP_NEXT: "推进 HOTP 计数器", KEY_ROTATE: "完成密钥轮换", RECOVERY_CHECK: "验证恢复包", PASSKEY_ADD: "添加 Passkey", PASSKEY_DELETE: "移除 Passkey", SESSION_REVOKE: "退出设备会话", SESSION_REVOKE_OTHERS: "退出其他设备", DEVICE_UPDATE: "更新设备设置" } as Record<string, string>)[action] || action;
+}
+
+function passwordIssueLabel(reason: "weak" | "reused" | "missingOtp") {
+  return reason === "weak" ? "强度偏低" : reason === "reused" ? "重复使用" : "未配置 OTP";
 }

@@ -119,6 +119,24 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.doesNotMatch(workspace, /vault-primary vault-import-action/);
 });
 
+test("adds compact password generation, local health checks and password-manager imports", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const security = await source("app/systems/otp/VaultSecurityCenter.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(workspace, /generateStrongPassword/);
+  assert.match(workspace, /安全密码生成器/);
+  assert.match(workspace, /密码仅在当前浏览器中生成/);
+  assert.match(workspace, /vault-password-strength/);
+  assert.match(workspace, /Chrome、Edge、Safari、1Password CSV 和 Bitwarden JSON/);
+  assert.match(workspace, /accept="\.txt,\.json,\.csv/);
+  assert.match(security, /auditVaultPasswords/);
+  assert.match(security, /exportVaultLocalSync/);
+  assert.match(security, /密码安全体检/);
+  assert.match(security, /体检结果只保留风险标签，不保留密码明文/);
+  assert.match(styles, /html\.theme-dark[\s\S]*\.vault-password-generator/);
+  assert.match(styles, /@media \(max-width: 560px\)[\s\S]*\.vault-password-health-stats/);
+});
+
 test("keeps credential and share filter tabs right-aligned beside the titles", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");

@@ -142,9 +142,9 @@ export default function OtpVaultGuidePage() {
           </ol>
           <p>支持标准 OTP 二维码和 Google Authenticator 导出二维码。</p>
           <h3>手动录入</h3>
-          <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。展开“更多信息”后可输入标签并按回车生成标签块，最多 8 个。</p>
-          <h3>导入文本</h3>
-          <p>如果已有包含 <code>otpauth://</code> 地址的文本，或未加密的 Aegis / andOTP JSON，点添加后选择导入。系统会先预览新增、重复和冲突；重复项自动跳过，冲突项由你选择跳过或覆盖，大文件处理时会显示进度。</p>
+          <p>填写系统名称、账号和服务方提供的 Base32 Secret。多数服务使用 TOTP、SHA1、6 位、30 秒，无明确说明时不用修改。保存登录密码时可以打开生成器，按长度和字符类型生成高强度密码，并即时查看强度。展开“更多信息”后可输入标签并按回车生成标签块，最多 8 个。</p>
+          <h3>批量导入</h3>
+          <p>支持包含 <code>otpauth://</code> 地址的文本、未加密的 Aegis / andOTP / Bitwarden JSON，以及 Chrome、Edge、Safari 和 1Password 导出的密码 CSV。文件只在当前浏览器解析，系统会先预览新增、重复和冲突；重复项自动跳过，冲突项由你选择跳过或覆盖，大文件处理时会显示进度。</p>
           <h3>重复添加</h3>
           <p>同一系统和账号可以重复添加，例如两台设备各自的验证码。保存或批量导入时如果已经有相同系统和账号，会先确认，确认后仍可保存。</p>
           <aside className="otp-guide-callout"><AlertTriangle size={14} /><div><b>Secret 不是普通登录密码</b><p>它可以持续生成验证码，只能从服务方的双重验证设置页面获取，不要截图或明文转发。</p></div></aside>
@@ -216,6 +216,7 @@ export default function OtpVaultGuidePage() {
             <section><Fingerprint size={16} /><h3>敏感操作验证</h3><p>默认关闭。开启后可用邮箱、密码或 Passkey 验证。登录、改密和敏感操作都可使用 Passkey。</p></section>
             <section><LockKeyhole size={16} /><h3>锁屏</h3><p>顶栏小锁可随时锁定。未设置密码时会先设置 4 位或 6 位数字，或复杂密码。Passkey 解锁必须先有锁屏密码。自动锁屏在「我的 → 安全」设置。</p></section>
             <section><LockKeyhole size={16} /><h3>零知识保护</h3><p>敏感字段在浏览器加密。忘记保护密码无法恢复，并且零知识凭据不能创建服务器分享快照。</p></section>
+            <section><AlertTriangle size={16} /><h3>密码安全体检</h3><p>在当前浏览器检查弱密码、重复密码和未启用动态口令的账号。明文密码和检查结果都不会上传。</p></section>
             <section><Download size={16} /><h3>加密备份</h3><p>下载 .xbvault 文件，将文件和恢复密码分开保存。恢复前可以先校验和预览内容。</p></section>
             <section><Smartphone size={16} /><h3>离线应急</h3><p>可信设备可以保存加密只读副本。启用后，登录以及增删改、导入凭据会自动更新本机副本。</p></section>
           </div>

@@ -71,6 +71,11 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(guide, /我收到的/);
   assert.match(guide, /转存/);
   assert.match(guide, /添加到桌面/);
+  assert.match(guide, /Chrome、Edge、Safari 和 1Password/);
+  assert.match(guide, /密码安全体检/);
+  assert.match(guide, /明文密码和检查结果都不会上传/);
+  assert.match(changelog, /新增密码生成器/);
+  assert.match(changelog, /未加密 Bitwarden JSON/);
   assert.match(changelog, /同一系统和账号可以重复添加/);
   assert.match(changelog, /凭据和授权页的筛选标签改到标题右侧/);
   assert.match(changelog, /OTP_VAULT_VERSION/);

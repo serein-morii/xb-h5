@@ -1083,6 +1083,9 @@ html.theme-dark {
   .vault-account-link.is-danger:hover { border-color: rgba(210,69,92,.5); background: rgba(210,69,92,.08); }
   .vault-account-link.is-danger b { color: #ef7f92; }
   .vault-setting-select, .vault-notify-input { border-color: rgba(225,231,248,.12); background: #222b3d; color: #e8edf8; }
+  .vault-password-generator { border-color: rgba(157,168,243,.18); background: rgba(102,116,207,.08); }
+  .vault-password-generator > header button,.vault-password-copy,.vault-password-options label { border-color: rgba(225,231,248,.12); background: #202839; }
+  .vault-password-options label.is-on { border-color: rgba(157,168,243,.36); background: #273154; color: #c8ceff; }
   .vault-notify-actions { border-color: rgba(225,231,248,.08); }
   .vault-notify-action { border-color: rgba(225,231,248,.09); background: #151c29; }
   .vault-notify-action:hover { border-color: rgba(157,168,243,.2); background: #192231; }
@@ -1265,6 +1268,26 @@ html.theme-dark { @media (max-width: 560px) {
 .vault-credential-form input:not([type=checkbox]):not([type=radio]),.vault-credential-form select,.vault-credential-form textarea { min-height: 38px; padding: 7px 10px; border-radius: 10px; font-size: 11px; }
 .vault-credential-form textarea { min-height: 58px; }
 .vault-credential-form > footer { min-height: 58px; padding: 9px 17px max(9px, env(safe-area-inset-bottom)); }
+.vault-password-field { min-width: 0; display: grid; align-content: start; gap: 6px; }
+.vault-password-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--utility-muted); font-size: 9px; }
+.vault-password-field-head > button { padding: 0; display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: #5867c5; font: inherit; font-size: 8px; font-weight: 750; cursor: pointer; }
+.vault-password-input { position: relative; display: flex; }
+.vault-password-input > input { padding-right: 36px !important; }
+.vault-password-input > button { position: absolute; top: 50%; right: 4px; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--utility-muted); cursor: pointer; transform: translateY(-50%); }
+.vault-password-strength { display: flex; align-items: center; gap: 7px; color: var(--utility-muted); font-size: 7px; }
+.vault-password-strength > i { height: 4px; flex: 1; overflow: hidden; border-radius: 99px; background: color-mix(in srgb,var(--utility-line) 75%,transparent); }
+.vault-password-strength > i > b { height: 100%; display: block; border-radius: inherit; background: #d06168; transition: width .18s ease; }
+.vault-password-strength.is-2 > i > b { background: #d49b44; }.vault-password-strength.is-3 > i > b { background: #6688d2; }.vault-password-strength.is-4 > i > b { background: #4c9a72; }
+.vault-password-generator { padding: 9px; display: grid; gap: 8px; border: 1px solid color-mix(in srgb,#6674cf 18%,var(--utility-line)); border-radius: 11px; background: color-mix(in srgb,#6674cf 5%,var(--utility-paper)); }
+.vault-password-generator > header { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vault-password-generator > header b,.vault-password-generator > header small { display: block; }.vault-password-generator > header b { font-size: 9px; }.vault-password-generator > header small { margin-top: 2px; color: var(--utility-muted); font-size: 7px; }
+.vault-password-generator > header button,.vault-password-copy { min-height: 27px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid color-mix(in srgb,#6674cf 20%,var(--utility-line)); border-radius: 8px; background: var(--utility-paper); color: #5867c5; font: inherit; font-size: 8px; font-weight: 750; cursor: pointer; }
+.vault-password-generator > label { display: grid; gap: 4px; color: var(--utility-muted); font-size: 8px; }.vault-password-generator > label > span { display: flex; justify-content: space-between; }.vault-password-generator input[type=range] { width: 100%; min-height: 16px !important; padding: 0 !important; accent-color: #6674cf; }
+.vault-password-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.vault-password-options label { position: relative; min-height: 25px; padding: 0 7px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid var(--utility-line); border-radius: 99px; background: var(--utility-paper); color: var(--utility-muted); font-size: 7px; font-weight: 700; cursor: pointer; }
+.vault-password-options label.is-on { border-color: color-mix(in srgb,#6674cf 38%,var(--utility-line)); background: color-mix(in srgb,#6674cf 10%,var(--utility-paper)); color: #5867c5; }
+.vault-password-options input { position: absolute; opacity: 0; width: 0; height: 0; }.vault-password-options label:not(.is-on) svg { display: none; }
+.vault-password-copy { width: 100%; }
 .vault-credential-scan { width: 100%; min-height: 52px; margin-top: 8px; padding: 9px 12px; border-radius: 13px; }
 .vault-credential-section .vault-maintained-status { margin: 0 0 9px; padding: 8px 9px; grid-template-columns: auto 1fr; align-items: center; gap: 5px 9px; }
 .vault-credential-section .vault-maintained-status > div { justify-content: flex-end; }
@@ -1294,7 +1317,7 @@ html.theme-dark { @media (max-width: 560px) {
 .vault-security-hero > button,.vault-security-actions button,.vault-session-list button { min-height: 32px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid color-mix(in srgb, #6674cf 30%, var(--utility-line)); border-radius: 10px; background: color-mix(in srgb, #6674cf 8%, var(--utility-paper)); color: #5867c5; font: inherit; font-size: 9px; font-weight: 750; cursor: pointer; }
 .vault-security-actions button:disabled { opacity: .45; cursor: not-allowed; }
 .vault-security-actions button.is-danger,.vault-session-list button.is-danger { border-color: color-mix(in srgb, #d95766 28%, var(--utility-line)); background: color-mix(in srgb, #d95766 7%, var(--utility-paper)); color: #bf4352; }
-.vault-security-tabs { width: 100%; padding: 4px; display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; border: 1px solid var(--utility-line); border-radius: 13px; background: color-mix(in srgb, var(--utility-paper) 72%, var(--utility-bg)); }
+.vault-security-tabs { width: 100%; padding: 4px; display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; border: 1px solid var(--utility-line); border-radius: 13px; background: color-mix(in srgb, var(--utility-paper) 72%, var(--utility-bg)); }
 .vault-security-tabs button { position: relative; min-width: 0; min-height: 38px; padding: 0 10px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 10px; background: transparent; color: var(--utility-muted); font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; transition: background .18s ease,color .18s ease,box-shadow .18s ease; }
 .vault-security-tabs button.is-active { background: var(--utility-paper); color: #5867c5; box-shadow: 0 5px 14px rgba(40,51,91,.09); }
 .vault-security-tabs button:focus { outline: 0; }
@@ -1306,6 +1329,7 @@ html.theme-dark { @media (max-width: 560px) {
 .vault-security-layout.is-backup .vault-backup-restore { grid-column: 1 / -1; }
 .vault-security-layout.is-activity { grid-template-columns: minmax(0,1.35fr) minmax(260px,.65fr); }
 .vault-security-layout.is-activity > section:last-child { grid-column: 1 / -1; }
+.vault-security-layout.is-password { grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
 .vault-security-layout .vault-settings-group { padding: 0 15px 14px; border-radius: 18px; box-shadow: 0 6px 20px rgba(34,44,76,.055); }
 .vault-security-layout .vault-settings-group > header { margin: 0 -15px; padding: 14px 15px 11px; }
 .vault-security-layout .vault-check { margin-top: 10px; align-items: flex-start; font-size: 9px; line-height: 1.45; }
@@ -1316,6 +1340,14 @@ html.theme-dark { @media (max-width: 560px) {
 .vault-security-grid article > div,.vault-security-grid b,.vault-security-grid small { min-width: 0; display: block; }
 .vault-security-grid b { color: var(--utility-text); font-size: 10px; }
 .vault-security-grid small { margin-top: 3px; color: var(--utility-muted); font-size: 8px; line-height: 1.45; }
+.vault-password-health-summary { padding: 12px 0 10px; display: flex; align-items: center; gap: 12px; }
+.vault-password-health-summary > div:last-child b,.vault-password-health-summary > div:last-child small { display: block; }.vault-password-health-summary > div:last-child b { font-size: 12px; }.vault-password-health-summary > div:last-child small { margin-top: 3px; color: var(--utility-muted); font-size: 8px; }
+.vault-password-health-score { width: 66px; height: 66px; flex: none; padding: 6px; display: grid; place-items: center; border-radius: 50%; color: #d06168; }.vault-password-health-score.is-fair { color: #d49b44; }.vault-password-health-score.is-good { color: #4c9a72; }
+.vault-password-health-score > span { width: 54px; height: 54px; display: grid; place-items: center; align-content: center; border-radius: 50%; background: var(--utility-paper); color: var(--utility-text); }.vault-password-health-score b,.vault-password-health-score small { display: block; }.vault-password-health-score b { font-size: 20px; line-height: 1; }.vault-password-health-score small { margin-top: 3px; color: var(--utility-muted); font-size: 7px; }
+.vault-password-health-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }.vault-password-health-stats article { padding: 9px 5px; border: 1px solid var(--utility-line); border-radius: 10px; background: color-mix(in srgb,var(--utility-paper) 78%,var(--utility-bg)); text-align: center; }.vault-password-health-stats b,.vault-password-health-stats small { display: block; }.vault-password-health-stats b { color: #c45159; font-size: 15px; }.vault-password-health-stats article.is-good b { color: #428862; }.vault-password-health-stats small { margin-top: 2px; color: var(--utility-muted); font-size: 7px; }
+.vault-password-health-empty { min-height: 150px; display: grid; place-items: center; align-content: center; gap: 6px; color: #6674cf; text-align: center; }.vault-password-health-empty b { color: var(--utility-text); font-size: 11px; }.vault-password-health-empty p { max-width: 270px; margin: 0; color: var(--utility-muted); font-size: 8px; line-height: 1.55; }
+.vault-password-health .vault-security-actions { margin-top: 12px; }
+.vault-password-health-issues > div { max-height: 390px; overflow: auto; display: grid; }.vault-password-health-issues article { min-width: 0; padding: 9px 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; border-top: 1px solid var(--utility-line); }.vault-password-health-issues article > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb,#d06168 10%,var(--utility-paper)); color: #c45159; }.vault-password-health-issues article b,.vault-password-health-issues article small { min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.vault-password-health-issues article b { font-size: 10px; }.vault-password-health-issues article small { margin-top: 2px; color: var(--utility-muted); font-size: 8px; }.vault-password-health-issues article p { margin: 0; color: #b66f26; font-size: 8px; font-weight: 700; white-space: nowrap; }
 .vault-transparency-note { margin: 10px 0 0; padding: 9px 10px; border-radius: 10px; background: color-mix(in srgb, #d49b44 10%, var(--utility-paper)); color: color-mix(in srgb, #b27820 82%, var(--utility-text)); font-size: 9px; line-height: 1.6; }
 .vault-security-field { display: grid; gap: 5px; color: var(--utility-muted); font-size: 9px; }
 .vault-security-field input,.vault-security-field select { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid var(--utility-line); border-radius: 10px; outline: 0; background: var(--utility-paper); color: var(--utility-text); font: inherit; font-size: 10px; }
@@ -1433,7 +1465,7 @@ html.theme-dark { @media (max-width: 560px) {
   .vault-security-tabs button svg { width: 16px; height: 16px; }
   .vault-security-tabs em { position: absolute; top: 3px; right: 4px; }
   .vault-security-grid,.vault-restore-grid { grid-template-columns: 1fr; }
-  .vault-security-layout.is-protect,.vault-security-layout.is-backup,.vault-security-layout.is-activity { grid-template-columns: 1fr; }
+  .vault-security-layout.is-protect,.vault-security-layout.is-password,.vault-security-layout.is-backup,.vault-security-layout.is-activity { grid-template-columns: 1fr; }
   .vault-security-layout.is-backup .vault-backup-restore,.vault-security-layout.is-activity > section:last-child { grid-column: auto; }
   .vault-security-layout .vault-settings-group { padding: 0 12px 11px; }
   .vault-security-layout .vault-settings-group > header { margin: 0 -12px; padding: 11px 12px 9px; }
@@ -1441,6 +1473,10 @@ html.theme-dark { @media (max-width: 560px) {
   .vault-activity-list time { display: none; }
   .vault-maintained-status > div { display: grid; grid-template-columns: 1fr 1fr; }
   .vault-maintained-status em { text-align: center; }
+  .vault-security-tabs button { gap: 4px; font-size: 8px; }
+  .vault-password-health-stats { grid-template-columns: repeat(2,1fr); }
+  .vault-password-health-issues article { grid-template-columns: auto minmax(0,1fr); }
+  .vault-password-health-issues article p { grid-column: 2; white-space: normal; }
   .vault-credential-form { max-height: min(91dvh, 680px); padding: 0; border-radius: 18px 18px 10px 10px; }
   .vault-credential-form > header { margin: 0; padding: 12px 13px 10px; }
   .vault-credential-form > header h2 { font-size: 16px; }

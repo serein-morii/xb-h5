@@ -16,6 +16,7 @@ import { DEFAULT_SHARE_SECONDS, PENDING_SAVE_KEY, SHARED_BY_SELF, SHARE_ITEM_LIM
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { OTP_VAULT_VERSION } from "./otpVersion";
 import { parseVaultImportText } from "./vaultImport";
+import { DEFAULT_PASSWORD_OPTIONS, generateStrongPassword, passwordStrength, type PasswordGeneratorOptions } from "./passwordTools";
 import { decodeWebPushPublicKey, webPushKeyMatchesSubscription, webPushSubscriptionBody } from "./vaultPush";
 import { sendEmailCode } from "../../lib/api";
 import { setThemePreference } from "../../lib/theme";
@@ -365,6 +366,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [shareDetail, setShareDetail] = useState<VaultShare | null>(null);
   const [shareDetailLoading, setShareDetailLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [formPasswordVisible, setFormPasswordVisible] = useState(false);
+  const [passwordGeneratorOpen, setPasswordGeneratorOpen] = useState(false);
+  const [passwordOptions, setPasswordOptions] = useState<PasswordGeneratorOptions>({ ...DEFAULT_PASSWORD_OPTIONS });
   const [form, setForm] = useState({ ...emptyCredential });
   const [scanText, setScanText] = useState("");
   const [scanError, setScanError] = useState("");
@@ -896,6 +900,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     duplicate: importPreview.filter((item) => item.status === "DUPLICATE").length,
     conflict: importPreview.filter((item) => item.status === "CONFLICT").length,
   }), [importPreview]);
+  const formPasswordStrength = useMemo(() => passwordStrength(form.password), [form.password]);
   const sharedByOptions = useMemo(() => listSharedByOptions(credentials), [credentials]);
   const ownCredentials = useMemo(() => credentials.filter((item) => !item.shared), [credentials]);
   useEffect(() => {
@@ -948,13 +953,35 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     stopScanner();
     if (modal === "import") resetImport();
     setTagDraft("");
+    setPasswordGeneratorOpen(false);
+    setFormPasswordVisible(false);
     setModal(null);
   };
   const openCredential = (item?: VaultCredential) => {
     setEditingId(item?.id || null);
 		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", tags: item.tags || "", favorite: item.favorite, sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
     setTagDraft("");
+    setPasswordGeneratorOpen(false);
+    setFormPasswordVisible(false);
     setModal("credential");
+  };
+  const updatePasswordOption = (key: keyof Omit<PasswordGeneratorOptions, "length">, checked: boolean) => {
+    setPasswordOptions((current) => {
+      const next = { ...current, [key]: checked };
+      if (key !== "avoidAmbiguous" && !next.lowercase && !next.uppercase && !next.numbers && !next.symbols) {
+        notify("至少保留一种密码字符", true);
+        return current;
+      }
+      return next;
+    });
+  };
+  const generatePassword = () => {
+    try {
+      const password = generateStrongPassword(passwordOptions);
+      setForm((current) => ({ ...current, password }));
+      setFormPasswordVisible(true);
+      setPasswordGeneratorOpen(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "密码生成失败", true); }
   };
   const addCredentialTags = (raw = tagDraft) => {
     const additions = splitCredentialTags(raw);
@@ -1196,8 +1223,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             algorithm: item.algorithm,
             digits: item.digits,
             periodSeconds: item.periodSeconds,
+            loginUrl: item.loginUrl,
             note: item.note,
             tags: item.tags,
+            favorite: item.favorite,
+            sensitivityLevel: "STANDARD",
           });
           setImportProgress({ label: prefs.zeroKnowledgeEnabled ? "正在本机加密" : "正在准备预览", percent: Math.round(((index + 1) / parsed.length) * 80) });
           if ((index + 1) % 10 === 0) await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
@@ -1590,7 +1620,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </div></section>
         <section className="vault-share-section vault-credential-section"><div className="vault-section-title"><div><h3>敏感信息</h3></div></div>{editingCredential ? <div className="vault-maintained-status"><span><ShieldCheck size={14} /><b>已加密保存</b></span><div><em className={editingCredential.otpConfigured ? "is-ready" : ""}>{editingCredential.otpConfigured ? "OTP 密钥" : "无 OTP 密钥"}</em><em className={editingCredential.passwordConfigured ? "is-ready" : ""}>{editingCredential.passwordConfigured ? "登录密码" : "无登录密码"}</em></div><small>输入框留空不会清除原内容</small></div> : null}<div className="vault-form-grid vault-sensitive-fields">
           <label><span>OTP Secret</span><input value={form.otpSecret} onChange={(e) => setForm({ ...form, otpSecret: e.target.value.toUpperCase().replace(/[^A-Z2-7=\s-]/g, "") })} autoComplete="off" placeholder={editingCredential?.otpConfigured ? "已保存，填写可替换" : "Base32 Secret"} /></label>
-          <label><span>登录密码（可选）</span><input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" placeholder={editingCredential?.passwordConfigured ? "已保存，填写可替换" : "可保存登录密码"} /></label>
+          <div className="vault-password-field"><span className="vault-password-field-head"><span>登录密码（可选）</span><button type="button" onClick={() => { setPasswordGeneratorOpen(!passwordGeneratorOpen); if (!passwordGeneratorOpen && !form.password) window.setTimeout(generatePassword, 0); }}><KeyRound size={12} />{passwordGeneratorOpen ? "收起" : "生成密码"}</button></span><div className="vault-password-input"><input type={formPasswordVisible ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" placeholder={editingCredential?.passwordConfigured ? "已保存，填写可替换" : "可保存登录密码"} /><button type="button" onClick={() => setFormPasswordVisible(!formPasswordVisible)} aria-label={formPasswordVisible ? "隐藏输入密码" : "显示输入密码"}>{formPasswordVisible ? <EyeOff size={14} /> : <Eye size={14} />}</button></div>{form.password ? <div className={`vault-password-strength is-${formPasswordStrength.score}`}><i><b style={{ width: `${formPasswordStrength.percent}%` }} /></i><span>{formPasswordStrength.label} · 约 {formPasswordStrength.entropyBits} bit</span></div> : null}{passwordGeneratorOpen ? <div className="vault-password-generator"><header><span><b>安全密码生成器</b><small>密码仅在当前浏览器中生成</small></span><button type="button" onClick={generatePassword}><RotateCcw size={12} />换一个</button></header><label><span>长度 <b>{passwordOptions.length}</b></span><input type="range" min={12} max={40} step={1} value={passwordOptions.length} onChange={(event) => setPasswordOptions({ ...passwordOptions, length: Number(event.target.value) })} /></label><div className="vault-password-options">{([['lowercase','小写'],['uppercase','大写'],['numbers','数字'],['symbols','符号']] as const).map(([key, label]) => <label className={passwordOptions[key] ? "is-on" : ""} key={key}><input type="checkbox" checked={passwordOptions[key]} onChange={(event) => updatePasswordOption(key, event.target.checked)} /><Check size={10} />{label}</label>)}<label className={passwordOptions.avoidAmbiguous ? "is-on" : ""}><input type="checkbox" checked={passwordOptions.avoidAmbiguous} onChange={(event) => updatePasswordOption("avoidAmbiguous", event.target.checked)} /><Check size={10} />避开易混淆字符</label></div>{form.password ? <button type="button" className="vault-password-copy" onClick={() => void copy(form.password, "生成密码已复制")}><Copy size={12} />复制当前密码</button> : null}</div> : null}</div>
         </div></section>
         <details className="vault-credential-advanced"><summary><span><Settings2 size={15} /><span><b>验证器参数</b><small>{form.otpType} · {form.algorithm} · {form.digits} 位</small></span></span><em>调整</em></summary><div className="vault-form-grid">
           <label><span>验证码类型</span><select value={form.otpType} onChange={(e) => setForm({ ...form, otpType: e.target.value, digits: e.target.value === "STEAM" ? 5 : form.digits === 5 ? 6 : form.digits })}><option value="TOTP">TOTP · 定时刷新</option><option value="HOTP">HOTP · 计数器</option><option value="STEAM">Steam Guard</option></select></label>
@@ -1616,7 +1646,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <header><div><small>IMPORT</small><h2>批量导入</h2><p>{importPreview.length ? "确认新增、重复和冲突项目，再决定是否覆盖" : "先读取并预览，确认后才会写入保险库"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
       <div className="vault-share-scroll">
         {!importPreview.length ? <>
-          <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持 otpauth 文本、Aegis 和 andOTP 的未加密 JSON</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取，可继续预览" : "选择文件"}</span><input type="file" accept=".txt,.json,text/plain,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; setImportProgress({ label: "正在读取文件", percent: 1 }); void readImportFile(file, (percent) => setImportProgress({ label: "正在读取文件", percent })).then((text) => { updateImportText(text); setImportProgress({ label: "文件读取完成", percent: 100 }); window.setTimeout(() => setImportProgress(null), 500); }).catch((error) => { setImportProgress(null); notify(error instanceof Error ? error.message : "文件读取失败", true); }); }} /></label></section>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>选择文件</h3></div></div><p className="vault-section-help">支持 OTP 文本、Aegis / andOTP JSON，以及 Chrome、Edge、Safari、1Password CSV 和 Bitwarden JSON</p><label className="vault-file"><FileUp size={20} /><span>{legacyText ? "文件已读取，可继续预览" : "选择文件"}</span><input type="file" accept=".txt,.json,.csv,text/plain,text/csv,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; setImportProgress({ label: "正在读取文件", percent: 1 }); void readImportFile(file, (percent) => setImportProgress({ label: "正在读取文件", percent })).then((text) => { updateImportText(text); setImportProgress({ label: "文件读取完成", percent: 100 }); window.setTimeout(() => setImportProgress(null), 500); }).catch((error) => { setImportProgress(null); notify(error instanceof Error ? error.message : "文件读取失败", true); }); }} /></label></section>
           <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>粘贴文件内容</h3></div></div><label><span>文件内容</span><textarea rows={7} value={legacyText} onChange={(event) => updateImportText(event.target.value)} placeholder="把文件内容粘贴到这里，也可以直接选择文件自动填充" /></label></section>
         </> : <>
           <section className="vault-share-section vault-import-summary"><div className="vault-section-title"><div><span>01</span><h3>预览结果</h3></div><span>{importPreview.length} 项</span></div><div className="vault-import-counts"><span className="is-new"><b>{importCounts.added}</b><small>新增</small></span><span className="is-duplicate"><b>{importCounts.duplicate}</b><small>重复</small></span><span className="is-conflict"><b>{importCounts.conflict}</b><small>冲突</small></span></div><p className="vault-section-help">重复项目内容相同，会自动跳过；冲突项目是同系统、同账号但密钥或内容不同。</p></section>
