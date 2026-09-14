@@ -2066,10 +2066,9 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
   }
   .vault-panel-tools {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto;
     align-items: center;
-    justify-content: flex-start;
-    flex-wrap: wrap;
     gap: 10px;
   }
   .vault-view-toggles {
@@ -2107,11 +2106,11 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
   .vault-search input { font-size: 13px; }
   .vault-filters {
     display: grid;
-    width: 440px;
+    grid-column: 1 / -1;
+    width: 100%;
     min-width: 0;
-    flex: 0 1 440px;
-    grid-template-columns: repeat(3, minmax(110px, 1fr)) auto;
-    align-items: center;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
     gap: 8px;
     margin: 0;
     padding: 0;
@@ -2119,31 +2118,44 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
     border-radius: 0;
     background: transparent;
   }
+  .vault-filters:has(.vault-filter-clear) {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  }
   .vault-filters label {
     position: relative;
     min-width: 0;
-    display: grid;
-    gap: 6px;
+    display: block;
   }
   .vault-filters label > span {
-    display: none;
+    display: block;
+    position: absolute;
+    z-index: 1;
+    top: 6px;
+    left: 11px;
+    color: #8992a7;
+    font-size: 7px;
+    font-weight: 750;
+    letter-spacing: .06em;
+    pointer-events: none;
   }
   .vault-filters label::after {
-    top: auto;
-    bottom: 16px;
-    right: 14px;
+    top: 19px;
+    right: 12px;
   }
   .vault-filters select {
     min-width: 0;
+    width: 100%;
+    overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 42px;
-    padding: 0 32px 0 12px;
+    white-space: nowrap;
+    min-height: 46px;
+    padding: 17px 28px 4px 11px;
     border: 1px solid var(--utility-line);
     border-radius: 12px;
     background: #fff;
     box-shadow: none;
-    font-size: 13px;
-    font-weight: 650;
+    font-size: 12px;
+    font-weight: 700;
   }
   .vault-filter-clear {
     min-height: 42px;
@@ -2212,7 +2224,7 @@ html.theme-dark .vault-view-toggles .vault-view-toggle:has(input:checked) {
 html.theme-dark .vault-filters select { background: #171e2c; color: #e8edf8; }
 
 @media (min-width: 561px) and (max-width: 1000px) {
-  .vault-panel-tools > .vault-filters { width: 100%; flex-basis: 100%; }
+  .vault-panel-tools > .vault-filters { width: 100%; }
 }
 
 @media (max-width: 560px) {

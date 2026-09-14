@@ -119,6 +119,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
 
 test("keeps conceal, recent sort, duplicate guard and system share in the vault", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(workspace, /readDeviceDisplayPrefs/);
   assert.match(workspace, /concealOtp: device.concealOtp \?\? remote.concealOtp/);
   assert.match(workspace, /listSort: device.listSort \|\| remote.listSort/);
@@ -127,6 +128,8 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /点按显示并复制/);
   assert.match(workspace, /matchesCredentialKind\(item, kindFilter\)/);
   assert.match(workspace, /aria-label="类型"/);
+  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\) auto/);
   assert.match(workspace, /<option value="otp">验证器口令<\/option>/);
   assert.match(workspace, /vault-card-tags/);
   assert.match(workspace, /安全笔记/);
