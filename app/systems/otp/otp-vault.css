@@ -921,6 +921,11 @@ html.theme-dark {
   font-size: 12px;
 }
 .vault-notify-input:focus { outline: 0; border-color: color-mix(in srgb, var(--vault-accent) 55%, var(--utility-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vault-accent) 14%, transparent); }
+.vault-notify-bark-list { display: grid; gap: 8px; }
+.vault-notify-bark-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; }
+.vault-notify-bark-row .vault-notify-input { margin-top: 0; }
+.vault-notify-bark-remove { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-paper); color: var(--utility-muted); cursor: pointer; }
+.vault-notify-bark-add { min-height: 36px; margin-top: 2px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px dashed color-mix(in srgb,var(--vault-accent) 28%,var(--utility-line)); border-radius: 10px; background: transparent; color: var(--vault-accent); font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
 .vault-notify-verify { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .vault-notify-verify input { min-width: 0; flex: 1 1 120px; min-height: 36px; padding: 0 12px; border: 1px solid var(--utility-line); border-radius: 11px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 13px; letter-spacing: .12em; }
 .vault-notify-verify button { min-height: 36px; }
@@ -1101,6 +1106,8 @@ html.theme-dark {
   .vault-notify-channel-open { border-color: rgba(157,168,243,.18); background: #1b2434; }
   .vault-notify-channel-open:hover { border-color: rgba(157,168,243,.36); background: #222c40; }
   .vault-notify-go { color: #b8c0ff; }
+  .vault-notify-bark-remove { border-color: rgba(225,231,248,.14); background: #222b3d; color: #9da7ba; }
+  .vault-notify-bark-add { border-color: rgba(157,168,243,.28); color: #b8c0ff; }
   .vault-notify-status { background: #283143; color: #a8b2c5; }
   .vault-notify-status.is-active { background: rgba(72,151,108,.2); color: #86c8a4; }
   .vault-notify-status.is-warning { background: rgba(168,101,32,.22); color: #e7b477; }

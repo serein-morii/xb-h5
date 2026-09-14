@@ -127,6 +127,13 @@ const emptyBindingForm = { channelId: 0, sourceType: "SMS" as DynamicCodeSource,
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", notificationEmailEnabled: true, barkUrl: "", barkEnabled: true, notificationRules: "", theme: "system", concealOtp: false, listSort: "name", groupBy: "system", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
+function parseBarkUrls(value: string) {
+  const items = (value || "").split(/[\n,，;；]+/).map((item) => item.trim()).filter(Boolean);
+  return items.length ? items : [""];
+}
+function joinBarkUrls(items: string[]) {
+  return items.map((item) => item.trim()).filter(Boolean).join(",");
+}
 function readLastScreenActive() {
   const value = Number(localStorage.getItem(SCREEN_LOCK_ACTIVE_KEY) || 0);
   return Number.isFinite(value) && value > 0 ? value : 0;
@@ -422,7 +429,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [notifyEmailCode, setNotifyEmailCode] = useState("");
   const [notifyEmailSending, setNotifyEmailSending] = useState(false);
   const [notifyEmailCountdown, setNotifyEmailCountdown] = useState(0);
-  const [notifyBarkDraft, setNotifyBarkDraft] = useState("");
+  const [notifyBarkDrafts, setNotifyBarkDrafts] = useState<string[]>([""]);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
 	const [pushSynced, setPushSynced] = useState(false);
@@ -645,7 +652,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
     setNotifyEmailDraft(next.notificationEmail || "");
-    setNotifyBarkDraft(next.barkUrl || "");
+    setNotifyBarkDrafts(parseBarkUrls(next.barkUrl || ""));
     setCredentialTab(Boolean(next.defaultFavorites) ? "favorite" : "all");
     setThemePreference(next.theme || "system");
     void getVaultScreenLockState().then((state) => {
@@ -807,7 +814,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 			const emailNotifyOn = prefs.notificationEmailEnabled !== false;
 			const barkNotifyOn = prefs.barkEnabled !== false;
 			const notifyEmailValue = (prefs.notificationEmail || "").trim() || accountEmail || "";
-			const notifyBarkValue = (prefs.barkUrl || "").trim();
+			const barkUrls = parseBarkUrls(prefs.barkUrl || "").filter(Boolean);
+			const notifyBarkValue = barkUrls.join(",");
+			const notifyBarkSummary = barkUrls.length > 1 ? `${barkUrls[0]} 等 ${barkUrls.length} 个` : (barkUrls[0] || "");
 			const canSendTestNotice = Boolean((emailNotifyOn && notifyEmailValue) || (barkNotifyOn && notifyBarkValue) || pushEnabled);
 		const pushStatusHint = !browserPushSupported
 			? "当前浏览器不支持系统通知推送"
@@ -928,18 +937,18 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 					closeModal();
 				} catch { /* updatePrefs already notified */ }
 			}
-			async function saveNotifyBark() {
-				const next = notifyBarkDraft.trim();
-				if (next === (prefs.barkUrl || "")) {
-					closeModal();
-					return;
+				async function saveNotifyBark() {
+					const next = joinBarkUrls(notifyBarkDrafts);
+					if (next === (prefs.barkUrl || "").trim()) {
+						closeModal();
+						return;
+					}
+					try {
+						await updatePrefs({ ...prefs, barkUrl: next });
+						notify(next ? "Bark 地址已更新" : "已清除 Bark 地址");
+						closeModal();
+					} catch { /* updatePrefs already notified */ }
 				}
-				try {
-					await updatePrefs({ ...prefs, barkUrl: next });
-					notify(next ? "Bark 地址已更新" : "已清除 Bark 地址");
-					closeModal();
-				} catch { /* updatePrefs already notified */ }
-			}
 		const protectCredential = async (value: Record<string, unknown>) => {
 		if (!prefs.zeroKnowledgeEnabled) return value;
 		if (!zeroKnowledgeKey) throw new Error("请先到「我的」里的安全解锁零知识保护");
@@ -1835,8 +1844,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               <span className="vault-notify-action-copy"><span><b>Bark 通知</b><em className={`vault-notify-status ${barkNotifyOn && notifyBarkValue ? "is-active" : barkNotifyOn ? "is-warning" : ""}`}>{barkNotifyOn ? "已开启" : "已关闭"}</em></span><small>{barkNotifyOn ? "按事件发送到 Bark 地址" : "已停发 Bark，地址仍保留"}</small></span>
               <label className="vault-notify-switch"><input type="checkbox" aria-label={barkNotifyOn ? "关闭 Bark 通知" : "开启 Bark 通知"} checked={barkNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, barkEnabled: on }).then(() => notify(on ? "已开启 Bark 通知" : "已关闭 Bark 通知")); }} /><i /></label>
             </div>
-            <button type="button" className="vault-notify-channel-open" aria-label={notifyBarkValue ? "修改 Bark 地址" : "设置 Bark 地址"} onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}>
-              <span className="vault-notify-dest"><b>Bark 地址</b><small>{notifyBarkValue || "未设置"}</small></span>
+            <button type="button" className="vault-notify-channel-open" aria-label={notifyBarkValue ? "修改 Bark 地址" : "设置 Bark 地址"} onClick={() => { setNotifyBarkDrafts(parseBarkUrls(prefs.barkUrl || "")); setModal("notifyBark"); }}>
+              <span className="vault-notify-dest"><b>Bark 地址</b><small>{notifyBarkSummary || "未设置"}</small></span>
               <em className="vault-notify-go">{notifyBarkValue ? "改地址" : "去设置"}<ChevronRight size={14} /></em>
             </button>
           </div>
@@ -2118,9 +2127,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </form></div> : null}
 
     {modal === "notifyBark" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-account-modal" onSubmit={(event) => { event.preventDefault(); void saveNotifyBark(); }}>
-      <header><div><small>BARK</small><h2>Bark 地址</h2><p>https://api.day.app/设备Key/ ，多个用英文逗号分隔</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
-      <div className="vault-share-scroll"><section className="vault-share-section"><label><span>推送地址</span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" value={notifyBarkDraft} onChange={(event) => setNotifyBarkDraft(event.target.value)} /></label></section></div>
-      <footer><span>保存后按事件发送到 Bark</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary">保存</button></div></footer>
+      <header><div><small>BARK</small><h2>Bark 地址</h2><p>每行一个，例如 https://api.day.app/设备Key/</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll"><section className="vault-share-section">
+        <div className="vault-notify-bark-list">
+          {notifyBarkDrafts.map((value, index) => <div className="vault-notify-bark-row" key={index}>
+            <input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" value={value} onChange={(event) => setNotifyBarkDrafts(notifyBarkDrafts.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} />
+            {notifyBarkDrafts.length > 1 ? <button type="button" className="vault-notify-bark-remove" onClick={() => setNotifyBarkDrafts(notifyBarkDrafts.filter((_, itemIndex) => itemIndex !== index))} aria-label="删除这个地址"><X size={14} /></button> : null}
+          </div>)}
+          <button type="button" className="vault-notify-bark-add" onClick={() => setNotifyBarkDrafts([...notifyBarkDrafts, ""])}><Plus size={14} />添加地址</button>
+        </div>
+      </section></div>
+      <footer><span>保存后按事件发送到这些地址</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary">保存</button></div></footer>
     </form></div> : null}
 
     <VaultScreenLock

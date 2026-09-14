@@ -71,6 +71,10 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /vault-notify-channel-open/);
   assert.match(workspace, /notificationEmail/);
   assert.match(workspace, /barkUrl/);
+  assert.match(workspace, /joinBarkUrls/);
+  assert.match(workspace, /vault-notify-bark-add/);
+  assert.match(workspace, /添加地址/);
+  assert.doesNotMatch(workspace, /多个用英文逗号分隔/);
   assert.match(workspace, /sendVaultTestNotice/);
   assert.match(workspace, /NOTIFY_GROUPS/);
   assert.match(workspace, /邮件、Bark 和系统通知/);
