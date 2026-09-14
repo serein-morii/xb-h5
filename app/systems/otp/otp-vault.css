@@ -856,9 +856,7 @@ html.theme-dark {
 .vault-settings .vault-setting-row input:checked + i::after { transform: translateX(18px); }
 .vault-setting-select { margin-left: auto; min-width: 0; max-width: 148px; min-height: 34px; padding: 0 26px 0 10px; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .vault-setting-row:has(.vault-setting-select) { cursor: default; }
-.vault-setting-row.vault-notify-field { cursor: default; align-items: flex-start; flex-wrap: wrap; }
 .vault-notify-rules { margin-top: 10px; border-top: 1px solid rgba(38,50,77,.07); }
-.vault-notify-rules.is-off { opacity: .55; }
 .vault-notify-actions { padding: 10px 12px 4px; display: grid; gap: 8px; border-top: 1px solid rgba(38,50,77,.07); }
 .vault-notify-action { min-width: 0; min-height: 62px; padding: 10px 11px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; border: 1px solid rgba(64,78,111,.1); border-radius: 15px; background: color-mix(in srgb,var(--utility-bg) 62%,#fff); transition: border-color .16s,background .16s,box-shadow .16s; }
 .vault-notify-action:hover { border-color: rgba(102,116,207,.22); background: color-mix(in srgb,var(--utility-bg) 78%,#fff); }
@@ -913,7 +911,7 @@ html.theme-dark {
   font-size: 12px;
 }
 .vault-notify-input:focus { outline: 0; border-color: color-mix(in srgb, var(--vault-accent) 55%, var(--utility-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vault-accent) 14%, transparent); }
-.vault-notify-verify { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 17px 8px; }
+.vault-notify-verify { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .vault-notify-verify input { min-width: 0; flex: 1 1 120px; min-height: 36px; padding: 0 12px; border: 1px solid var(--utility-line); border-radius: 11px; background: var(--utility-bg); color: var(--utility-text); font: inherit; font-size: 13px; letter-spacing: .12em; }
 .vault-notify-verify button { min-height: 36px; }
 .vault-settings-stack { display: grid; }
@@ -2156,8 +2154,7 @@ html.theme-dark .vault-page > .vault-create-share {
   transform: scale(.94);
   filter: brightness(.92);
 }
-.vault-page .vault-notify-channels label:active,
-.vault-page .vault-setting-row.vault-notify-field:active {
+.vault-page .vault-notify-channels label:active {
   transform: none;
   filter: none;
 }

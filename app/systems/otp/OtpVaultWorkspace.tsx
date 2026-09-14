@@ -392,6 +392,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [notifyEmailCode, setNotifyEmailCode] = useState("");
   const [notifyEmailSending, setNotifyEmailSending] = useState(false);
   const [notifyEmailCountdown, setNotifyEmailCountdown] = useState(0);
+  const [notifyBarkDraft, setNotifyBarkDraft] = useState("");
   const [pushBusy, setPushBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
 	const [pushSynced, setPushSynced] = useState(false);
@@ -612,6 +613,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const next = { ...remote, concealOtp: device.concealOtp ?? remote.concealOtp, listSort: device.listSort || remote.listSort };
     setPrefs(next);
     setNotifyEmailDraft(next.notificationEmail || "");
+    setNotifyBarkDraft(next.barkUrl || "");
     setCredentialTab(Boolean(next.defaultFavorites) ? "favorite" : "all");
     setThemePreference(next.theme || "system");
     void getVaultScreenLockState().then((state) => {
@@ -845,19 +847,63 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 				setPushBusy(false);
 			}
 		}
-		async function sendTestNotice() {
-			if (testNoticeBusy) return;
-			setTestNoticeBusy(true);
-			try {
-				const result = await sendVaultTestNotice();
-				const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : "", result.data?.push ? "浏览器推送" : ""].filter(Boolean).join("和");
-				notify(sent ? `测试通知已发到${sent}` : "测试通知已发送");
-			} catch (error) {
-				notify(error instanceof Error ? error.message : "测试通知发送失败", true);
-			} finally {
-				setTestNoticeBusy(false);
+			async function sendTestNotice() {
+				if (testNoticeBusy) return;
+				setTestNoticeBusy(true);
+				try {
+					const result = await sendVaultTestNotice();
+					const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : "", result.data?.push ? "浏览器推送" : ""].filter(Boolean).join("和");
+					notify(sent ? `测试通知已发到${sent}` : "测试通知已发送");
+				} catch (error) {
+					notify(error instanceof Error ? error.message : "测试通知发送失败", true);
+				} finally {
+					setTestNoticeBusy(false);
+				}
 			}
-		}
+			const notifyEmailNeedsCode = Boolean(notifyEmailDraft.trim() && notifyEmailDraft.trim().toLowerCase() !== (prefs.notificationEmail || "").toLowerCase() && notifyEmailDraft.trim().toLowerCase() !== (accountEmail || "").toLowerCase());
+			async function sendNotifyEmailCode() {
+				if (notifyEmailSending || notifyEmailCountdown > 0) return;
+				setNotifyEmailSending(true);
+				try {
+					const result = await sendEmailCode(notifyEmailDraft.trim(), "otp-notify");
+					const wait = Number((result as { resendAfter?: number }).resendAfter || 60);
+					setNotifyEmailCountdown(wait);
+					notify("验证码已发送");
+				} catch (error) {
+					notify(error instanceof Error ? error.message : "验证码发送失败", true);
+				} finally {
+					setNotifyEmailSending(false);
+				}
+			}
+			async function saveNotifyEmail() {
+				const email = notifyEmailDraft.trim();
+				if (email === (prefs.notificationEmail || "")) {
+					closeModal();
+					return;
+				}
+				if (notifyEmailNeedsCode && notifyEmailCode.length !== 6) {
+					notify("请输入 6 位验证码", true);
+					return;
+				}
+				try {
+					await updatePrefs({ ...prefs, notificationEmail: email, ...(notifyEmailNeedsCode ? { notificationEmailCode: notifyEmailCode } : {}) });
+					setNotifyEmailCode("");
+					notify(email ? "通知邮箱已更新" : "已改回账号邮箱");
+					closeModal();
+				} catch { /* updatePrefs already notified */ }
+			}
+			async function saveNotifyBark() {
+				const next = notifyBarkDraft.trim();
+				if (next === (prefs.barkUrl || "")) {
+					closeModal();
+					return;
+				}
+				try {
+					await updatePrefs({ ...prefs, barkUrl: next });
+					notify(next ? "Bark 地址已更新" : "已清除 Bark 地址");
+					closeModal();
+				} catch { /* updatePrefs already notified */ }
+			}
 		const protectCredential = async (value: Record<string, unknown>) => {
 		if (!prefs.zeroKnowledgeEnabled) return value;
 		if (!zeroKnowledgeKey) throw new Error("请先到「我的」里的安全解锁零知识保护");
@@ -1524,10 +1570,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </div>
       </div> : null}
       {settingsSection === "notifications" ? <div className="vault-settings-group vault-settings-notifications vault-subview-enter" key="settings-notifications">
-        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>邮件、Bark 和浏览器推送</b><small>关闭后仍会写入站内信，只停掉外部渠道</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
-        <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}。换成其他邮箱需要验证码</small></span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></label>
-        {notifyEmailDraft.trim() && notifyEmailDraft.trim().toLowerCase() !== (prefs.notificationEmail || "").toLowerCase() && notifyEmailDraft.trim().toLowerCase() !== (accountEmail || "").toLowerCase() ? <div className="vault-notify-verify"><input inputMode="numeric" maxLength={6} value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, ""))} placeholder="6 位验证码" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => { setNotifyEmailSending(true); void sendEmailCode(notifyEmailDraft.trim(), "otp-notify").then((result) => { const wait = Number((result as { resendAfter?: number }).resendAfter || 60); setNotifyEmailCountdown(wait); notify("验证码已发送"); }).catch((error) => notify(error instanceof Error ? error.message : "验证码发送失败", true)).finally(() => setNotifyEmailSending(false)); }}>{notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : notifyEmailSending ? "发送中" : "获取验证码"}</button><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim(), notificationEmailCode: notifyEmailCode }).then(() => { setNotifyEmailCode(""); notify("通知邮箱已更新"); }); }}>保存邮箱</button></div> : notifyEmailDraft.trim() !== (prefs.notificationEmail || "") ? <div className="vault-notify-verify"><button type="button" className="vault-ghost" onClick={() => { void updatePrefs({ ...prefs, notificationEmail: notifyEmailDraft.trim() }).then(() => notify(notifyEmailDraft.trim() ? "通知邮箱已更新" : "已改回账号邮箱")); }}>保存邮箱</button></div> : null}
-        <label className="vault-setting-row vault-notify-field"><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>https://api.day.app/设备Key/ ，多个用英文逗号分隔</small></span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" defaultValue={prefs.barkUrl || ""} onBlur={(event) => { const next = event.target.value.trim(); if (next === (prefs.barkUrl || "")) return; void updatePrefs({ ...prefs, barkUrl: next }); }} /></label>
+        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>外部通知</b><small>关闭后仍会写入站内信，只停掉邮件、Bark 和浏览器推送</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
+        <button type="button" className="vault-account-link" onClick={() => { setNotifyEmailDraft(prefs.notificationEmail || ""); setNotifyEmailCode(""); setModal("notifyEmail"); }}><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>{(prefs.notificationEmail || "").trim() || accountEmail || "未设置"}</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>{(prefs.barkUrl || "").trim() || "未设置"}</small></span><ChevronRight size={15} /></button>
+        {prefs.securityAlerts ? <>
         <div className="vault-notify-actions">
           <label className={`vault-notify-action vault-notify-push ${pushStatusTone}`}>
             <span className="vault-setting-icon is-blue"><BellRing size={17} /></span>
@@ -1540,15 +1586,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             <button type="button" disabled={testNoticeBusy || !canSendTestNotice} onClick={() => void sendTestNotice()}>{testNoticeBusy ? <LoaderCircle className="spin" size={13} /> : <Bell size={13} />}{testNoticeBusy ? "发送中…" : "发送测试"}</button>
           </div>
         </div>
-        <div className={`vault-notify-rules${prefs.securityAlerts ? "" : " is-off"}`}>
-          <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>{prefs.securityAlerts ? "未单独设置的事件跟随总开关；站内信不受影响" : "总开关已关闭，下面勾选会在重新开启后生效"}</small></p>
+        <div className="vault-notify-rules">
+          <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>未单独设置的事件跟随总开关；站内信不受影响</small></p>
           {NOTIFY_GROUPS.map((group) => <div className="vault-notify-group" key={group.title}>
             <p className="vault-notify-group-title">{group.title}</p>
             {group.events.map(({ key, label, detail }) => {
               const rules = parseNotificationRules(prefs.notificationRules);
               const saved = rules[key];
               const stored = { email: saved?.email !== false, bark: saved?.bark !== false, push: saved?.push !== false };
-              const rule = { email: stored.email && prefs.securityAlerts, bark: stored.bark && prefs.securityAlerts, push: stored.push && prefs.securityAlerts };
               const toggleRule = (channel: NotifyChannel) => {
                 const nextRules = { ...rules, [key]: { email: stored.email, bark: stored.bark, push: stored.push, [channel]: !stored[channel] } };
                 void updatePrefs({ ...prefs, notificationRules: JSON.stringify(nextRules) });
@@ -1556,14 +1601,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               return <div className="vault-notify-rule" key={key}>
                 <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
                 <span className="vault-notify-channels">
-                  <label className={rule.email ? "is-on" : "is-off"} aria-pressed={rule.email}><input type="checkbox" checked={stored.email} disabled={!prefs.securityAlerts} onChange={() => toggleRule("email")} />{rule.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
-                  <label className={rule.bark ? "is-on" : "is-off"} aria-pressed={rule.bark}><input type="checkbox" checked={stored.bark} disabled={!prefs.securityAlerts} onChange={() => toggleRule("bark")} />{rule.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
-                  <label className={rule.push ? "is-on" : "is-off"} aria-pressed={rule.push}><input type="checkbox" checked={stored.push} disabled={!prefs.securityAlerts} onChange={() => toggleRule("push")} />{rule.push ? <Check size={11} strokeWidth={3} /> : null}推送</label>
+                  <label className={stored.email ? "is-on" : "is-off"} aria-pressed={stored.email}><input type="checkbox" checked={stored.email} onChange={() => toggleRule("email")} />{stored.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
+                  <label className={stored.bark ? "is-on" : "is-off"} aria-pressed={stored.bark}><input type="checkbox" checked={stored.bark} onChange={() => toggleRule("bark")} />{stored.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
+                  <label className={stored.push ? "is-on" : "is-off"} aria-pressed={stored.push}><input type="checkbox" checked={stored.push} onChange={() => toggleRule("push")} />{stored.push ? <Check size={11} strokeWidth={3} /> : null}推送</label>
                 </span>
               </div>;
             })}
           </div>)}
         </div>
+        </> : null}
       </div> : null}
       {settingsSection === "appearance" ? <div className="vault-settings-group vault-settings-appearance vault-subview-enter" key="settings-appearance">
         <div className="vault-theme-options">{([["system", "跟随系统", SunMoon], ["light", "亮色", Sun], ["dark", "暗色", Moon]] as const).map(([value, label, Icon]) => <button type="button" key={value} className={prefs.theme === value ? "is-active" : ""} onClick={() => void updatePrefs({ ...prefs, theme: value })}><Icon size={16} />{label}</button>)}</div>
@@ -1726,6 +1772,18 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {modal === "email" ? <div className="vault-modal-mask"><section className="vault-modal share vault-share-form vault-account-modal"><header><div><small>EMAIL</small><h2>邮箱</h2><p>当前：{accountEmail || "未绑定"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><VaultAccountSetup initialUsername={accountName} email={accountEmail} only="email" cancellable onCancel={closeModal} onFinish={(result) => { setModal(null); if (result.email) onAccountEmailChange(result.email); notify("邮箱已更新"); }} /></div></section></div> : null}
 
     {modal === "password" ? <div className="vault-modal-mask"><section className="vault-modal share vault-share-form vault-account-modal"><header><div><small>PASSWORD</small><h2>登录密码</h2><p>验证身份后立即生效</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><VaultAccountSetup initialUsername={accountName} email={accountEmail} only="password" requireVerify cancellable onCancel={closeModal} onFinish={() => { setModal(null); notify("密码已更新，下次可用账号密码登录"); }} /></div></section></div> : null}
+
+    {modal === "notifyEmail" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-account-modal" onSubmit={(event) => { event.preventDefault(); void saveNotifyEmail(); }}>
+      <header><div><small>NOTIFY EMAIL</small><h2>通知邮箱</h2><p>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}。换成其他邮箱需要验证码</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll"><section className="vault-share-section"><label><span>邮箱地址</span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></label>{notifyEmailNeedsCode ? <div className="vault-notify-verify"><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, ""))} placeholder="6 位验证码" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => void sendNotifyEmailCode()}>{notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : notifyEmailSending ? "发送中" : "获取验证码"}</button></div> : null}</section></div>
+      <footer><span>{notifyEmailNeedsCode ? "验证后才会改到这个邮箱" : "保存后用于外部通知"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={notifyEmailNeedsCode && notifyEmailCode.length !== 6}>保存</button></div></footer>
+    </form></div> : null}
+
+    {modal === "notifyBark" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-account-modal" onSubmit={(event) => { event.preventDefault(); void saveNotifyBark(); }}>
+      <header><div><small>BARK</small><h2>Bark 地址</h2><p>https://api.day.app/设备Key/ ，多个用英文逗号分隔</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll"><section className="vault-share-section"><label><span>推送地址</span><input className="vault-notify-input" type="url" inputMode="url" autoComplete="off" placeholder="https://api.day.app/设备Key/" value={notifyBarkDraft} onChange={(event) => setNotifyBarkDraft(event.target.value)} /></label></section></div>
+      <footer><span>保存后按事件发送到 Bark</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary">保存</button></div></footer>
+    </form></div> : null}
 
     <VaultScreenLock
       prefs={prefs}

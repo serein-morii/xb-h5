@@ -58,11 +58,17 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /setSettingsSection\("notifications"\)/);
   assert.match(workspace, /通知邮箱/);
   assert.match(workspace, /Bark 地址/);
+  assert.match(workspace, /setModal\("notifyEmail"\)/);
+  assert.match(workspace, /setModal\("notifyBark"\)/);
+  assert.match(workspace, /modal === "notifyEmail"/);
+  assert.match(workspace, /modal === "notifyBark"/);
   assert.match(workspace, /notificationEmail/);
   assert.match(workspace, /barkUrl/);
   assert.match(workspace, /sendVaultTestNotice/);
   assert.match(workspace, /NOTIFY_GROUPS/);
   assert.match(workspace, /邮件、Bark 和浏览器推送/);
+  assert.match(workspace, /prefs\.securityAlerts \? <>/);
+  assert.doesNotMatch(workspace, /vault-notify-field/);
   assert.match(workspace, /commitVaultImport/);
   assert.match(workspace, /previewVaultImport/);
   assert.match(workspace, /新增、重复和冲突/);
@@ -72,8 +78,8 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /输入后按回车，最多 8 个/);
   assert.match(workspace, /vault-notify-channels/);
   assert.match(workspace, /<Check size=\{11\} strokeWidth=\{3\} \/>/);
-  assert.match(workspace, /aria-pressed=\{rule.email\}/);
-  assert.match(workspace, /aria-pressed=\{rule.push\}/);
+  assert.match(workspace, /aria-pressed=\{stored.email\}/);
+  assert.match(workspace, /aria-pressed=\{stored.push\}/);
   assert.match(workspace, /toggleBrowserPush/);
   assert.match(workspace, /<b>浏览器推送<\/b>/);
   assert.match(workspace, /vault-notify-actions/);
