@@ -910,10 +910,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 				if (notifyEmailSending || notifyEmailCountdown > 0) return;
 				setNotifyEmailSending(true);
 				try {
-					const result = await sendEmailCode(notifyEmailDraft.trim(), "otp-notify");
-					const wait = Number((result as { resendAfter?: number }).resendAfter || 60);
-					setNotifyEmailCountdown(wait);
-					notify("验证码已发送");
+						const result = await sendEmailCode(notifyEmailDraft.trim(), "otp-notify") as { expiresIn?: number; resendAfter?: number };
+						const wait = Number(result.resendAfter || 60);
+						setNotifyEmailCountdown(wait);
+						notify(`验证码已发送到新邮箱，请在 ${Math.round(Number(result.expiresIn || 300) / 60)} 分钟内完成验证`);
 				} catch (error) {
 					notify(error instanceof Error ? error.message : "验证码发送失败", true);
 				} finally {
@@ -2122,7 +2122,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
     {modal === "notifyEmail" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-account-modal" onSubmit={(event) => { event.preventDefault(); void saveNotifyEmail(); }}>
       <header><div><small>NOTIFY EMAIL</small><h2>通知邮箱</h2><p>空则使用账号邮箱{accountEmail ? `（${accountEmail}）` : ""}。换成其他邮箱需要验证码</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
-      <div className="vault-share-scroll"><section className="vault-share-section"><label><span>邮箱地址</span><input className="vault-notify-input" type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></label>{notifyEmailNeedsCode ? <div className="vault-notify-verify"><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, ""))} placeholder="6 位验证码" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => void sendNotifyEmailCode()}>{notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : notifyEmailSending ? "发送中" : "获取验证码"}</button></div> : null}</section></div>
+      <div className="vault-share-scroll"><section className="vault-share-section"><div className="otp-setup-step">
+        <label><span>邮箱地址</span><div><Mail size={16} /><input type="email" inputMode="email" autoComplete="email" placeholder={accountEmail || "name@example.com"} value={notifyEmailDraft} onChange={(event) => setNotifyEmailDraft(event.target.value)} /></div></label>
+        {notifyEmailNeedsCode ? <label><span>邮箱验证码</span><div className="otp-email-code"><ShieldCheck size={16} /><input inputMode="numeric" value={notifyEmailCode} onChange={(event) => setNotifyEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} autoComplete="one-time-code" placeholder="发送到新邮箱" /><button type="button" disabled={notifyEmailSending || notifyEmailCountdown > 0} onClick={() => void sendNotifyEmailCode()}>{notifyEmailSending ? "发送中" : notifyEmailCountdown > 0 ? `${notifyEmailCountdown}s` : "获取验证码"}</button></div></label> : null}
+        <p className="otp-setup-hint">{notifyEmailNeedsCode ? "验证码会发到新邮箱，验证后才会改到这个地址。" : "空则使用账号邮箱。换成其他邮箱需要验证码。"}</p>
+      </div></section></div>
       <footer><span>{notifyEmailNeedsCode ? "验证后才会改到这个邮箱" : "保存后用于外部通知"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={notifyEmailNeedsCode && notifyEmailCode.length !== 6}>保存</button></div></footer>
     </form></div> : null}
 

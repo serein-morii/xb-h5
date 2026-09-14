@@ -59,6 +59,8 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /通知邮箱/);
   assert.match(workspace, /Bark 地址/);
   assert.match(workspace, /setModal\("notifyEmail"\)/);
+  assert.match(workspace, /otp-email-code/);
+  assert.doesNotMatch(workspace, /vault-notify-verify/);
   assert.match(workspace, /setModal\("notifyBark"\)/);
   assert.match(workspace, /modal === "notifyEmail"/);
   assert.match(workspace, /modal === "notifyBark"/);
