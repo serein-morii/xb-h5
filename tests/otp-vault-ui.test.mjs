@@ -62,6 +62,13 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /setModal\("notifyBark"\)/);
   assert.match(workspace, /modal === "notifyEmail"/);
   assert.match(workspace, /modal === "notifyBark"/);
+  assert.match(workspace, /notificationEmailEnabled/);
+  assert.match(workspace, /barkEnabled/);
+  assert.match(workspace, /<b>邮件通知<\/b>/);
+  assert.match(workspace, /<b>Bark 通知<\/b>/);
+  assert.match(workspace, /aria-label=\{emailNotifyOn \? "关闭邮件通知" : "开启邮件通知"\}/);
+  assert.match(workspace, /aria-label=\{barkNotifyOn \? "关闭 Bark 通知" : "开启 Bark 通知"\}/);
+  assert.match(workspace, /vault-notify-channel-open/);
   assert.match(workspace, /notificationEmail/);
   assert.match(workspace, /barkUrl/);
   assert.match(workspace, /sendVaultTestNotice/);
@@ -90,6 +97,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /iPhone \/ iPad 需先用 Safari 添加到主屏幕/);
   assert.match(workspace, /已与服务器同步/);
   assert.match(styles, /\.vault-notify-action[\s\S]{0,260}grid-template-columns:\s*auto minmax\(0,1fr\) auto/);
+  assert.match(styles, /\.vault-notify-channel-open/);
   assert.match(styles, /\.vault-notify-status\.is-active/);
   assert.match(styles, /\.vault-notify-switch input:checked \+ i/);
   assert.match(styles, /\.vault-notify-test \{ grid-template-columns:\s*auto minmax\(0,1fr\); \}/);

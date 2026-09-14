@@ -111,7 +111,7 @@ function canUseSystemShare() {
 const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", tags: "", favorite: false, sensitivityLevel: "STANDARD" };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
-const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", barkUrl: "", notificationRules: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
+const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", notificationEmailEnabled: true, barkUrl: "", barkEnabled: true, notificationRules: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
 function readLastScreenActive() {
   const value = Number(localStorage.getItem(SCREEN_LOCK_ACTIVE_KEY) || 0);
   return Number.isFinite(value) && value > 0 ? value : 0;
@@ -772,7 +772,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	};
 		const browserPushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && typeof Notification !== "undefined";
 		const iosNeedsHomeScreen = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-		const canSendTestNotice = Boolean((prefs.notificationEmail || "").trim() || accountEmail || (prefs.barkUrl || "").trim() || pushEnabled);
+			const emailNotifyOn = prefs.notificationEmailEnabled !== false;
+			const barkNotifyOn = prefs.barkEnabled !== false;
+			const notifyEmailValue = (prefs.notificationEmail || "").trim() || accountEmail || "";
+			const notifyBarkValue = (prefs.barkUrl || "").trim();
+			const canSendTestNotice = Boolean((emailNotifyOn && notifyEmailValue) || (barkNotifyOn && notifyBarkValue) || pushEnabled);
 		const pushStatusHint = !browserPushSupported
 			? "当前浏览器不支持系统通知推送"
 			: pushServerEnabled === false
@@ -1571,10 +1575,22 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       </div> : null}
       {settingsSection === "notifications" ? <div className="vault-settings-group vault-settings-notifications vault-subview-enter" key="settings-notifications">
         <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>外部通知</b><small>关闭后仍会写入站内信，只停掉邮件、Bark 和浏览器推送</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
-        <button type="button" className="vault-account-link" onClick={() => { setNotifyEmailDraft(prefs.notificationEmail || ""); setNotifyEmailCode(""); setModal("notifyEmail"); }}><span className="vault-setting-icon is-green"><Mail size={17} /></span><span className="vault-setting-copy"><b>通知邮箱</b><small>{(prefs.notificationEmail || "").trim() || accountEmail || "未设置"}</small></span><ChevronRight size={15} /></button>
-        <button type="button" className="vault-account-link" onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>Bark 地址</b><small>{(prefs.barkUrl || "").trim() || "未设置"}</small></span><ChevronRight size={15} /></button>
         {prefs.securityAlerts ? <>
         <div className="vault-notify-actions">
+          <div className={`vault-notify-action vault-notify-channel ${emailNotifyOn && notifyEmailValue ? "is-active" : ""}`}>
+            <button type="button" className="vault-notify-channel-open" onClick={() => { setNotifyEmailDraft(prefs.notificationEmail || ""); setNotifyEmailCode(""); setModal("notifyEmail"); }}>
+              <span className="vault-setting-icon is-green"><Mail size={17} /></span>
+              <span className="vault-notify-action-copy"><span><b>邮件通知</b><em className={`vault-notify-status ${emailNotifyOn && notifyEmailValue ? "is-active" : emailNotifyOn ? "is-warning" : ""}`}>{emailNotifyOn ? (notifyEmailValue || "未设置") : "已关闭"}</em></span><small>{emailNotifyOn ? "按事件发送到这个邮箱；点这里改地址" : "已停发邮件，地址仍保留"}</small></span>
+            </button>
+            <span className="vault-notify-switch"><input type="checkbox" aria-label={emailNotifyOn ? "关闭邮件通知" : "开启邮件通知"} checked={emailNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, notificationEmailEnabled: on }).then(() => notify(on ? "已开启邮件通知" : "已关闭邮件通知")); }} /><i /></span>
+          </div>
+          <div className={`vault-notify-action vault-notify-channel ${barkNotifyOn && notifyBarkValue ? "is-active" : ""}`}>
+            <button type="button" className="vault-notify-channel-open" onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}>
+              <span className="vault-setting-icon is-blue"><Bell size={17} /></span>
+              <span className="vault-notify-action-copy"><span><b>Bark 通知</b><em className={`vault-notify-status ${barkNotifyOn && notifyBarkValue ? "is-active" : barkNotifyOn ? "is-warning" : ""}`}>{barkNotifyOn ? (notifyBarkValue || "未设置") : "已关闭"}</em></span><small>{barkNotifyOn ? "按事件发送到 Bark；点这里改地址" : "已停发 Bark，地址仍保留"}</small></span>
+            </button>
+            <span className="vault-notify-switch"><input type="checkbox" aria-label={barkNotifyOn ? "关闭 Bark 通知" : "开启 Bark 通知"} checked={barkNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, barkEnabled: on }).then(() => notify(on ? "已开启 Bark 通知" : "已关闭 Bark 通知")); }} /><i /></span>
+          </div>
           <label className={`vault-notify-action vault-notify-push ${pushStatusTone}`}>
             <span className="vault-setting-icon is-blue"><BellRing size={17} /></span>
             <span className="vault-notify-action-copy"><span><b>浏览器推送</b><em className={`vault-notify-status ${pushStatusTone}`}>{pushBusy ? <LoaderCircle className="spin" size={10} /> : null}{pushStatusLabel}</em></span><small aria-live="polite">{pushStatusHint}</small></span>
