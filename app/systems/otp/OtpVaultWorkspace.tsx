@@ -812,7 +812,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 		const pushStatusHint = !browserPushSupported
 			? "当前浏览器不支持系统通知推送"
 			: pushServerEnabled === false
-				? "服务器暂未启用浏览器推送"
+					? "服务器暂未启用系统通知"
 			: pushStatusError
 				? pushStatusError
 			: pushBusy
@@ -848,7 +848,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 			if (pushBusy) return;
 			setPushBusy(true);
 			try {
-				if (!browserPushSupported) throw new Error("当前浏览器不支持浏览器推送");
+				if (!browserPushSupported) throw new Error("当前浏览器不支持系统通知");
 				if (iosNeedsHomeScreen) throw new Error("请先用 Safari 添加到主屏幕，再从主屏幕打开 OTP");
 				setPushStatusError("");
 				if (pushEnabled) {
@@ -859,7 +859,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 					}
 					setPushEnabled(false);
 					setPushSynced(false);
-					notify("已关闭浏览器推送");
+						notify("已关闭系统通知");
 					return;
 				}
 				const key = await getVaultPushPublicKey();
@@ -874,11 +874,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 				await saveVaultPushSubscription(webPushSubscriptionBody(subscription));
 				setPushEnabled(true);
 				setPushSynced(true);
-				notify("已开启浏览器推送");
-			} catch (error) {
-				setPushSynced(false);
-				setPushStatusError(error instanceof Error ? error.message : "浏览器推送设置失败");
-				notify(error instanceof Error ? error.message : "浏览器推送设置失败", true);
+				notify("已开启系统通知");
+				} catch (error) {
+					setPushSynced(false);
+					setPushStatusError(error instanceof Error ? error.message : "系统通知设置失败");
+					notify(error instanceof Error ? error.message : "系统通知设置失败", true);
 			} finally {
 				setPushBusy(false);
 			}
@@ -888,7 +888,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 				setTestNoticeBusy(true);
 				try {
 					const result = await sendVaultTestNotice();
-					const sent = [result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : "", result.data?.push ? "浏览器推送" : ""].filter(Boolean).join("和");
+					const sent = [result.data?.push ? "系统通知" : "", result.data?.email ? "邮件" : "", result.data?.bark ? "Bark" : ""].filter(Boolean).join("和");
 					notify(sent ? `测试通知已发到${sent}` : "测试通知已发送");
 				} catch (error) {
 					notify(error instanceof Error ? error.message : "测试通知发送失败", true);
@@ -1789,10 +1789,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       </article>) : <div className="vault-empty compact"><Share2 size={20} /><b>还没有创建临时授权</b><p>选择自己的凭据，生成限时链接或指定给某个用户。</p><button type="button" className="vault-primary" disabled={!ownCredentials.length} onClick={() => openShare()}>创建授权</button></div>}</div>}
     </section> : null}
 
-    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "站内信始终送达；邮件、Bark 和浏览器推送可按事件选择" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
+    {view === "settings" ? <section className="vault-settings vault-view-enter" key="settings"><header className="vault-panel-head"><div>{settingsSection ? <button type="button" className="vault-settings-back" onClick={() => setSettingsSection(null)}><ArrowLeft size={15} />返回</button> : null}{settingsSection !== "security" ? <><h2>{settingsSection === "account" ? "账号" : settingsSection === "appearance" ? "显示" : settingsSection === "notifications" ? "通知" : settingsSection === "about" ? "关于" : "设置"}</h2><p>{settingsSection === "account" ? "用户名、账号、邮箱和登录" : settingsSection === "appearance" ? "主题、卡片和列表偏好" : settingsSection === "notifications" ? "站内信始终送达；邮件、Bark 和系统通知可按事件选择" : settingsSection === "about" ? "" : "安全、账号和显示偏好会跟随当前账号"}</p></> : null}</div></header>
       {!settingsSection ? <div className="vault-settings-group vault-settings-hub vault-subview-enter" key="settings-hub">
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("account")}><span className="vault-setting-icon is-green"><User size={17} /></span><span className="vault-setting-copy"><b>账号</b><small>用户名、账号、邮箱、密码和登录</small></span><ChevronRight size={15} /></button>
-        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("notifications")}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>通知</b><small>邮件、Bark 和浏览器推送</small></span><ChevronRight size={15} /></button>
+        <button type="button" className="vault-account-link" onClick={() => setSettingsSection("notifications")}><span className="vault-setting-icon is-blue"><Bell size={17} /></span><span className="vault-setting-copy"><b>通知</b><small>系统通知、邮件和 Bark</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("appearance")}><span className="vault-setting-icon is-blue"><SunMoon size={17} /></span><span className="vault-setting-copy"><b>显示</b><small>主题、卡片和列表偏好</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("security")}><span className="vault-setting-icon is-violet"><ShieldCheck size={17} /></span><span className="vault-setting-copy"><b>安全</b><small>Passkey、备份、设备</small></span><ChevronRight size={15} /></button>
         <button type="button" className="vault-account-link" onClick={() => setSettingsSection("about")}><span className="vault-setting-icon is-violet"><BookOpen size={17} /></span><span className="vault-setting-copy"><b>关于</b><small>版本 {OTP_VAULT_VERSION}</small></span><ChevronRight size={15} /></button>
@@ -1810,28 +1810,36 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </div>
       </div> : null}
       {settingsSection === "notifications" ? <div className="vault-settings-group vault-settings-notifications vault-subview-enter" key="settings-notifications">
-        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>外部通知</b><small>关闭后仍会写入站内信，只停掉邮件、Bark 和浏览器推送</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
+        <label className="vault-setting-row"><span className="vault-setting-icon is-violet"><BellRing size={17} /></span><span className="vault-setting-copy"><b>外部通知</b><small>关闭后仍会写入站内信，只停掉系统通知、邮件和 Bark</small></span><input type="checkbox" checked={prefs.securityAlerts} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, securityAlerts: on }).then(() => notify(on ? "已开启外部通知" : "已关闭外部通知")); }} /><i /></label>
         {prefs.securityAlerts ? <>
         <div className="vault-notify-actions">
-          <div className={`vault-notify-action vault-notify-channel ${emailNotifyOn && notifyEmailValue ? "is-active" : ""}`}>
-            <button type="button" className="vault-notify-channel-open" onClick={() => { setNotifyEmailDraft(prefs.notificationEmail || ""); setNotifyEmailCode(""); setModal("notifyEmail"); }}>
-              <span className="vault-setting-icon is-green"><Mail size={17} /></span>
-              <span className="vault-notify-action-copy"><span><b>邮件通知</b><em className={`vault-notify-status ${emailNotifyOn && notifyEmailValue ? "is-active" : emailNotifyOn ? "is-warning" : ""}`}>{emailNotifyOn ? (notifyEmailValue || "未设置") : "已关闭"}</em></span><small>{emailNotifyOn ? "按事件发送到这个邮箱；点这里改地址" : "已停发邮件，地址仍保留"}</small></span>
-            </button>
-            <span className="vault-notify-switch"><input type="checkbox" aria-label={emailNotifyOn ? "关闭邮件通知" : "开启邮件通知"} checked={emailNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, notificationEmailEnabled: on }).then(() => notify(on ? "已开启邮件通知" : "已关闭邮件通知")); }} /><i /></span>
-          </div>
-          <div className={`vault-notify-action vault-notify-channel ${barkNotifyOn && notifyBarkValue ? "is-active" : ""}`}>
-            <button type="button" className="vault-notify-channel-open" onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}>
-              <span className="vault-setting-icon is-blue"><Bell size={17} /></span>
-              <span className="vault-notify-action-copy"><span><b>Bark 通知</b><em className={`vault-notify-status ${barkNotifyOn && notifyBarkValue ? "is-active" : barkNotifyOn ? "is-warning" : ""}`}>{barkNotifyOn ? (notifyBarkValue || "未设置") : "已关闭"}</em></span><small>{barkNotifyOn ? "按事件发送到 Bark；点这里改地址" : "已停发 Bark，地址仍保留"}</small></span>
-            </button>
-            <span className="vault-notify-switch"><input type="checkbox" aria-label={barkNotifyOn ? "关闭 Bark 通知" : "开启 Bark 通知"} checked={barkNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, barkEnabled: on }).then(() => notify(on ? "已开启 Bark 通知" : "已关闭 Bark 通知")); }} /><i /></span>
-          </div>
           <label className={`vault-notify-action vault-notify-push ${pushStatusTone}`}>
             <span className="vault-setting-icon is-blue"><BellRing size={17} /></span>
-            <span className="vault-notify-action-copy"><span><b>浏览器推送</b><em className={`vault-notify-status ${pushStatusTone}`}>{pushBusy ? <LoaderCircle className="spin" size={10} /> : null}{pushStatusLabel}</em></span><small aria-live="polite">{pushStatusHint}</small></span>
-            <span className="vault-notify-switch"><input type="checkbox" aria-label={pushEnabled ? "关闭浏览器推送" : "开启浏览器推送"} checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></span>
+            <span className="vault-notify-action-copy"><span><b>系统通知</b><em className={`vault-notify-status ${pushStatusTone}`}>{pushBusy ? <LoaderCircle className="spin" size={10} /> : null}{pushStatusLabel}</em></span><small aria-live="polite">{pushStatusHint}</small></span>
+            <span className="vault-notify-switch"><input type="checkbox" aria-label={pushEnabled ? "关闭系统通知" : "开启系统通知"} checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></span>
           </label>
+          <div className={`vault-notify-action vault-notify-channel ${emailNotifyOn && notifyEmailValue ? "is-active" : ""}`}>
+            <div className="vault-notify-channel-head">
+              <span className="vault-setting-icon is-green"><Mail size={17} /></span>
+              <span className="vault-notify-action-copy"><span><b>邮件通知</b><em className={`vault-notify-status ${emailNotifyOn && notifyEmailValue ? "is-active" : emailNotifyOn ? "is-warning" : ""}`}>{emailNotifyOn ? "已开启" : "已关闭"}</em></span><small>{emailNotifyOn ? "按事件发送到通知邮箱" : "已停发邮件，地址仍保留"}</small></span>
+              <label className="vault-notify-switch"><input type="checkbox" aria-label={emailNotifyOn ? "关闭邮件通知" : "开启邮件通知"} checked={emailNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, notificationEmailEnabled: on }).then(() => notify(on ? "已开启邮件通知" : "已关闭邮件通知")); }} /><i /></label>
+            </div>
+            <button type="button" className="vault-notify-channel-open" aria-label={notifyEmailValue ? "修改通知邮箱" : "设置通知邮箱"} onClick={() => { setNotifyEmailDraft(prefs.notificationEmail || ""); setNotifyEmailCode(""); setModal("notifyEmail"); }}>
+              <span className="vault-notify-dest"><b>通知邮箱</b><small>{notifyEmailValue || "未设置"}</small></span>
+              <em className="vault-notify-go">{notifyEmailValue ? "改地址" : "去设置"}<ChevronRight size={14} /></em>
+            </button>
+          </div>
+          <div className={`vault-notify-action vault-notify-channel ${barkNotifyOn && notifyBarkValue ? "is-active" : ""}`}>
+            <div className="vault-notify-channel-head">
+              <span className="vault-setting-icon is-blue"><Bell size={17} /></span>
+              <span className="vault-notify-action-copy"><span><b>Bark 通知</b><em className={`vault-notify-status ${barkNotifyOn && notifyBarkValue ? "is-active" : barkNotifyOn ? "is-warning" : ""}`}>{barkNotifyOn ? "已开启" : "已关闭"}</em></span><small>{barkNotifyOn ? "按事件发送到 Bark 地址" : "已停发 Bark，地址仍保留"}</small></span>
+              <label className="vault-notify-switch"><input type="checkbox" aria-label={barkNotifyOn ? "关闭 Bark 通知" : "开启 Bark 通知"} checked={barkNotifyOn} onChange={(event) => { const on = event.target.checked; void updatePrefs({ ...prefs, barkEnabled: on }).then(() => notify(on ? "已开启 Bark 通知" : "已关闭 Bark 通知")); }} /><i /></label>
+            </div>
+            <button type="button" className="vault-notify-channel-open" aria-label={notifyBarkValue ? "修改 Bark 地址" : "设置 Bark 地址"} onClick={() => { setNotifyBarkDraft(prefs.barkUrl || ""); setModal("notifyBark"); }}>
+              <span className="vault-notify-dest"><b>Bark 地址</b><small>{notifyBarkValue || "未设置"}</small></span>
+              <em className="vault-notify-go">{notifyBarkValue ? "改地址" : "去设置"}<ChevronRight size={14} /></em>
+            </button>
+          </div>
           <div className="vault-notify-action vault-notify-test">
             <span className="vault-setting-icon is-violet"><Bell size={17} /></span>
             <span className="vault-notify-action-copy"><span><b>测试通知</b></span><small>{canSendTestNotice ? "按当前配置发送到可用渠道，并在站内信留下测试记录" : "先配置至少一种外部通知渠道"}</small></span>
@@ -1853,9 +1861,9 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               return <div className="vault-notify-rule" key={key}>
                 <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
                 <span className="vault-notify-channels">
+                  <label className={stored.push ? "is-on" : "is-off"} aria-pressed={stored.push}><input type="checkbox" checked={stored.push} onChange={() => toggleRule("push")} />{stored.push ? <Check size={11} strokeWidth={3} /> : null}系统</label>
                   <label className={stored.email ? "is-on" : "is-off"} aria-pressed={stored.email}><input type="checkbox" checked={stored.email} onChange={() => toggleRule("email")} />{stored.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
                   <label className={stored.bark ? "is-on" : "is-off"} aria-pressed={stored.bark}><input type="checkbox" checked={stored.bark} onChange={() => toggleRule("bark")} />{stored.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
-                  <label className={stored.push ? "is-on" : "is-off"} aria-pressed={stored.push}><input type="checkbox" checked={stored.push} onChange={() => toggleRule("push")} />{stored.push ? <Check size={11} strokeWidth={3} /> : null}推送</label>
                 </span>
               </div>;
             })}

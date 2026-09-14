@@ -227,7 +227,7 @@ export default function OtpVaultGuidePage() {
             { type: "step", text: "新设备登录后先校验再导入" },
             { type: "end", text: "换机也能找回" },
           ]} />
-          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、通知、显示、安全和关于都在“我的”里。通知可发到账号邮箱、额外验证过的通知邮箱、Bark 和浏览器推送；iPhone / iPad 需先用 Safari 添加到主屏幕，桌面浏览器需允许系统通知。</p></div>
+          <div className="otp-guide-copy-block"><b>设备与回收站</b><p>在“我的 → 安全”可以查看登录设备、撤销陌生会话，以及从回收站恢复误删凭据。永久删除后只能靠加密备份找回。账号、通知、显示、安全和关于都在“我的”里。通知可发到账号邮箱、额外验证过的通知邮箱、Bark 和系统通知；iPhone / iPad 需先用 Safari 添加到主屏幕，桌面浏览器需允许系统通知。</p></div>
         </div>
       </section>
 

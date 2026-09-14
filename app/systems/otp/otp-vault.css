@@ -872,9 +872,16 @@ html.theme-dark {
 .vault-notify-push { cursor: pointer; }
 .vault-notify-push:has(input:disabled) { cursor: not-allowed; }
 .vault-notify-push.is-active,.vault-notify-channel.is-active { border-color: rgba(55,130,91,.2); background: color-mix(in srgb,#e9f6ef 44%,#fff); box-shadow: 0 6px 16px rgba(55,130,91,.05); }
-.vault-notify-channel { align-items: stretch; }
-.vault-notify-channel-open { min-width: 0; margin: 0; padding: 0; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.vault-notify-channel-open .vault-notify-status { max-width: 9.5em; overflow: hidden; text-overflow: ellipsis; }
+.vault-notify-channel { grid-template-columns: minmax(0,1fr); align-items: stretch; gap: 8px; padding: 8px 9px 9px; }
+.vault-notify-channel-head { min-width: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; }
+.vault-notify-channel-open { min-width: 0; min-height: 40px; margin: 0; padding: 8px 10px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px dashed color-mix(in srgb,var(--vault-accent) 22%,var(--utility-line)); border-radius: 11px; background: color-mix(in srgb,var(--utility-paper) 78%,var(--utility-bg)); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.vault-notify-channel-open:hover { border-style: solid; border-color: color-mix(in srgb,var(--vault-accent) 42%,var(--utility-line)); background: color-mix(in srgb,var(--vault-accent) 8%,#fff); }
+.vault-notify-dest { min-width: 0; }
+.vault-notify-dest b,.vault-notify-dest small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-notify-dest b { font-size: 10px; font-weight: 800; color: var(--utility-text); }
+.vault-notify-dest small { margin-top: 2px; color: var(--utility-muted); font-size: 10px; font-style: normal; }
+.vault-notify-go { display: inline-flex; align-items: center; gap: 1px; color: var(--vault-accent); font-size: 10px; font-style: normal; font-weight: 800; white-space: nowrap; }
+.vault-notify-switch { cursor: pointer; }
 .vault-notify-switch { position: relative; width: 41px; height: 24px; flex: none; }
 .vault-notify-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .vault-notify-switch i { position: absolute; inset: 0; border-radius: 999px; background: #c8cdd8; box-shadow: inset 0 0 0 1px rgba(73,84,105,.08); transition: .18s; }
@@ -1091,6 +1098,9 @@ html.theme-dark {
   .vault-notify-action { border-color: rgba(225,231,248,.09); background: #151c29; }
   .vault-notify-action:hover { border-color: rgba(157,168,243,.2); background: #192231; }
   .vault-notify-push.is-active,.vault-notify-channel.is-active { border-color: rgba(91,166,126,.26); background: rgba(46,105,75,.13); box-shadow: none; }
+  .vault-notify-channel-open { border-color: rgba(157,168,243,.18); background: #1b2434; }
+  .vault-notify-channel-open:hover { border-color: rgba(157,168,243,.36); background: #222c40; }
+  .vault-notify-go { color: #b8c0ff; }
   .vault-notify-status { background: #283143; color: #a8b2c5; }
   .vault-notify-status.is-active { background: rgba(72,151,108,.2); color: #86c8a4; }
   .vault-notify-status.is-warning { background: rgba(168,101,32,.22); color: #e7b477; }

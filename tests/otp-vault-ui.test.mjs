@@ -73,7 +73,7 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /barkUrl/);
   assert.match(workspace, /sendVaultTestNotice/);
   assert.match(workspace, /NOTIFY_GROUPS/);
-  assert.match(workspace, /邮件、Bark 和浏览器推送/);
+  assert.match(workspace, /邮件、Bark 和系统通知/);
   assert.match(workspace, /prefs\.securityAlerts \? <>/);
   assert.doesNotMatch(workspace, /vault-notify-field/);
   assert.match(workspace, /commitVaultImport/);
@@ -88,10 +88,13 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /aria-pressed=\{stored.email\}/);
   assert.match(workspace, /aria-pressed=\{stored.push\}/);
   assert.match(workspace, /toggleBrowserPush/);
-  assert.match(workspace, /<b>浏览器推送<\/b>/);
+  assert.match(workspace, /<b>系统通知<\/b>/);
   assert.match(workspace, /vault-notify-actions/);
   assert.match(workspace, /vault-notify-status/);
-  assert.match(workspace, /aria-label=\{pushEnabled \? "关闭浏览器推送" : "开启浏览器推送"\}/);
+  assert.match(workspace, /vault-notify-dest/);
+  assert.match(workspace, /vault-notify-go/);
+  assert.match(workspace, /去设置/);
+  assert.match(workspace, /aria-label=\{pushEnabled \? "关闭系统通知" : "开启系统通知"\}/);
   assert.match(workspace, /<b>测试通知<\/b>/);
   assert.match(workspace, /发送测试/);
   assert.match(workspace, /iPhone \/ iPad 需先用 Safari 添加到主屏幕/);

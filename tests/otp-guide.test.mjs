@@ -96,7 +96,7 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.match(changelog, /2026-09-07/);
   assert.match(changelog, /2026-09-06/);
   const userGuide = await source("docs/otp-vault-user-guide.md");
-  assert.match(userGuide, /2026-09-15 : 标签、导入和浏览器推送/);
+  assert.match(userGuide, /2026-09-15 : 标签、导入和系统通知/);
   assert.match(userGuide, /2026-09-14 : 通知和设置入口/);
   assert.match(userGuide, /2026-09-09 : 锁屏/);
   assert.match(guide, /顶栏小锁可随时锁定/);
