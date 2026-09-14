@@ -90,6 +90,10 @@ test("puts a lock control beside theme switch and wires screen lock setup", asyn
   assert.match(workspace, /vault-tag-editor/);
   assert.match(workspace, /输入后按回车，最多 8 个/);
   assert.match(workspace, /vault-notify-channels/);
+  assert.match(workspace, /pushEnabled \|\| emailNotifyOn \|\| barkNotifyOn/);
+  assert.match(workspace, /\{pushEnabled \? <label className=\{stored.push/);
+  assert.match(workspace, /\{emailNotifyOn \? <label className=\{stored.email/);
+  assert.match(workspace, /\{barkNotifyOn \? <label className=\{stored.bark/);
   assert.match(workspace, /<Check size=\{11\} strokeWidth=\{3\} \/>/);
   assert.match(workspace, /aria-pressed=\{stored.email\}/);
   assert.match(workspace, /aria-pressed=\{stored.push\}/);

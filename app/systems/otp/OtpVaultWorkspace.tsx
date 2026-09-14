@@ -1855,7 +1855,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             <button type="button" disabled={testNoticeBusy || !canSendTestNotice} onClick={() => void sendTestNotice()}>{testNoticeBusy ? <LoaderCircle className="spin" size={13} /> : <Bell size={13} />}{testNoticeBusy ? "发送中…" : "发送测试"}</button>
           </div>
         </div>
-        <div className="vault-notify-rules">
+        {pushEnabled || emailNotifyOn || barkNotifyOn ? <div className="vault-notify-rules">
           <p className="vault-notify-rules-title"><b>按事件选择渠道</b><small>未单独设置的事件跟随总开关；站内信不受影响</small></p>
           {NOTIFY_GROUPS.map((group) => <div className="vault-notify-group" key={group.title}>
             <p className="vault-notify-group-title">{group.title}</p>
@@ -1870,14 +1870,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               return <div className="vault-notify-rule" key={key}>
                 <span className="vault-setting-copy"><b>{label}</b><small>{detail}</small></span>
                 <span className="vault-notify-channels">
-                  <label className={stored.push ? "is-on" : "is-off"} aria-pressed={stored.push}><input type="checkbox" checked={stored.push} onChange={() => toggleRule("push")} />{stored.push ? <Check size={11} strokeWidth={3} /> : null}系统</label>
-                  <label className={stored.email ? "is-on" : "is-off"} aria-pressed={stored.email}><input type="checkbox" checked={stored.email} onChange={() => toggleRule("email")} />{stored.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label>
-                  <label className={stored.bark ? "is-on" : "is-off"} aria-pressed={stored.bark}><input type="checkbox" checked={stored.bark} onChange={() => toggleRule("bark")} />{stored.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label>
+                  {pushEnabled ? <label className={stored.push ? "is-on" : "is-off"} aria-pressed={stored.push}><input type="checkbox" checked={stored.push} onChange={() => toggleRule("push")} />{stored.push ? <Check size={11} strokeWidth={3} /> : null}系统</label> : null}
+                  {emailNotifyOn ? <label className={stored.email ? "is-on" : "is-off"} aria-pressed={stored.email}><input type="checkbox" checked={stored.email} onChange={() => toggleRule("email")} />{stored.email ? <Check size={11} strokeWidth={3} /> : null}邮件</label> : null}
+                  {barkNotifyOn ? <label className={stored.bark ? "is-on" : "is-off"} aria-pressed={stored.bark}><input type="checkbox" checked={stored.bark} onChange={() => toggleRule("bark")} />{stored.bark ? <Check size={11} strokeWidth={3} /> : null}Bark</label> : null}
                 </span>
               </div>;
             })}
           </div>)}
-        </div>
+        </div> : null}
         </> : null}
       </div> : null}
       {settingsSection === "appearance" ? <div className="vault-settings-group vault-settings-appearance vault-subview-enter" key="settings-appearance">
