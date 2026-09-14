@@ -114,7 +114,8 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.doesNotMatch(workspace, /vault-sharer-toggle/);
   assert.match(workspace, /sharerDisplay\(section\)/);
   assert.match(workspace, /来自 \$\{sharerDisplay\(item\)\}/);
-  assert.match(workspace, /aria-label="分享详情"/);
+  assert.match(workspace, /aria-label="分享详情"><Link2 size=\{13\} \/>/);
+  assert.doesNotMatch(workspace, /aria-label="分享详情"><Eye size=\{13\} \/>/);
   assert.match(workspace, /分享配置/);
   assert.equal(DEFAULT_SHARE_DAYS, 30);
   assert.equal(DEFAULT_SHARE_SECONDS, 30 * 86400);
