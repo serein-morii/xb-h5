@@ -90,12 +90,18 @@ test("keeps the OTP guide public and reachable before and after login", async ()
   assert.doesNotMatch(changelog, /otp-guide-hero/);
   assert.doesNotMatch(changelog, /otp-guide-timeline/);
   assert.match(changelog, /aria-label="更新记录"/);
+  assert.match(changelog, /2026-09-16/);
+  assert.match(changelog, /短信 \/ 邮箱验证码自动接收/);
+  assert.match(changelog, /iPhone 快捷指令、邮件自动化转发和通用 Webhook/);
+  assert.match(guide, /自动接收短信 \/ 邮箱验证码/);
+  assert.match(guide, /先创建接收通道/);
   assert.match(changelog, /2026-09-15/);
   assert.match(changelog, /2026-09-14/);
   assert.match(changelog, /2026-09-09/);
   assert.match(changelog, /2026-09-07/);
   assert.match(changelog, /2026-09-06/);
   const userGuide = await source("docs/otp-vault-user-guide.md");
+  assert.match(userGuide, /2026-09-16 : 短信 \/ 邮箱验证码自动接收/);
   assert.match(userGuide, /2026-09-15 : 标签、导入和系统通知/);
   assert.match(userGuide, /2026-09-14 : 通知和设置入口/);
   assert.match(userGuide, /2026-09-09 : 锁屏/);
