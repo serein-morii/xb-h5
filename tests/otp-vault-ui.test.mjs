@@ -179,8 +179,8 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(api, /dynamicCodeChannelId\?: number/);
   assert.match(api, /markVaultDynamicCodeUsed/);
   assert.match(styles, /\.vault-code\.is-inbound/);
-  assert.match(styles, /\.vault-code\.is-waiting span \{[^}]*font-size: 23px/);
-  assert.match(styles, /\.vault-card\.is-compact \.vault-code\.is-waiting span \{ font-size: 17px/);
+  assert.match(styles, /\.vault-code\.is-waiting span \{[^}]*font-size: 18px/);
+  assert.match(styles, /\.vault-card\.is-compact \.vault-code\.is-waiting span \{ font-size: 14px/);
   assert.match(styles, /\.vault-wait-copy/);
   assert.match(styles, /\.vault-card-source\.is-active/);
   assert.match(workspace, /new Set<DynamicCodeSource>/);
