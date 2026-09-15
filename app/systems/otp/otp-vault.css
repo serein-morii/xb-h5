@@ -1785,10 +1785,8 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 
 /* 动态验证码：与 OTP 同款 code 位置展示，来源信息放卡片底部「下一组」位置。 */
 .vault-code.is-inbound { justify-content: flex-start; gap: 7px; }
-.vault-code.is-inbound > svg { flex: none; }
+.vault-code.is-inbound > svg { margin-left: auto; }
 .vault-code.is-inbound span { color: #3046b5; }
-.vault-code-timer { margin-left: auto; flex: none; color: #7b8499; font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; }
-html.theme-dark .vault-code-timer { color: #9aa5c3; }
 .vault-code.is-inbound em { flex: none; padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
 .vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
 .vault-code.is-waiting { cursor: default; color: var(--utility-muted); }

@@ -279,12 +279,12 @@ test("forbidden save toast uses a warning icon", async () => {
   assert.match(toast, /ERROR_TEXT\.test\(message\)/);
 });
 
-test("share cards lead with the new badge, time codes inline, and single-item shares expand details", async () => {
+test("share cards lead with the new badge, countdown only when expanded, and single-item shares expand details", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   assert.match(sharePage, /\{!item\.dynamicCodeUsed \? <em>新<\/em> : null\}<span>\{item\.dynamicCode\.replace/);
   assert.doesNotMatch(sharePage, /<small>已使用<\/small>/);
-  assert.match(sharePage, /<small className="vault-code-timer">\{formatCodeTime\(inboundTiming\.left\)\}<\/small>/);
-  assert.doesNotMatch(sharePage, /is-inbound-foot"><SourceBadges[\s\S]{0,120}formatCodeTime/);
+  assert.doesNotMatch(sharePage, /vault-code-timer/);
+  assert.match(sharePage, /\{open && item\.dynamicCode \? <span>\{formatCodeTime\(inboundTiming\.left\)\}<\/span> : null\}/);
   assert.match(sharePage, /defaultOpen=\{items\.length === 1\}/);
   assert.match(sharePage, /useState\(defaultOpen\)/);
 });
