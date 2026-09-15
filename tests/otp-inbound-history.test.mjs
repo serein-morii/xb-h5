@@ -33,6 +33,16 @@ test("creating a source group stays on the workspace instead of native-submittin
   assert.match(workspace, /onClick=\{\(\) => void submitInboundChannel\(\)/);
 });
 
+test("inbound channels can be renamed in place and bindings follow the new name", () => {
+  assert.match(workspace, /const renameInboundChannel = async \(channel: VaultInboundChannel\) => \{/);
+  assert.match(workspace, /updateVaultInboundChannel\(channel\.id, \{ name \}\)/);
+  assert.match(workspace, /setRenamingChannelId\(channel\.id\); setChannelNameDraft\(channel\.name\)/);
+  assert.match(workspace, /className="vault-channel-rename"/);
+  assert.match(workspace, /通道名称已更新/);
+  assert.match(workspace, /channelId === channel\.id \? \{ \.\.\.binding, channelName: updated\.name \}/);
+  assert.match(fs.readFileSync(new URL("../app/systems/otp/otp-vault.css", import.meta.url), "utf8"), /\.vault-channel-rename \{ display: flex/);
+});
+
 test("credential detail shows inbound codes like authenticator OTP and keeps visit URL in login info", async () => {
   const styles = fs.readFileSync(new URL("../app/systems/otp/otp-vault.css", import.meta.url), "utf8");
   assert.match(workspace, /className="is-otp is-inbound"/);

@@ -1900,6 +1900,9 @@ html.theme-dark .vault-card-source.is-active { border-color: rgba(105,190,143,.3
 .vault-channel-body input { min-width: 0; flex: 1; min-height: 42px; padding: 9px 11px; border: 1px solid var(--utility-line); border-radius: 11px; outline: 0; background: color-mix(in srgb,var(--utility-paper) 70%,var(--utility-bg)); color: var(--utility-text); font: inherit; font-size: 13px; }
 .vault-channel-body label button { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border: 1px solid var(--utility-line); border-radius: 11px; background: var(--utility-paper); color: var(--utility-text); cursor: pointer; }
 .vault-channel-hint { margin: 0; min-height: 42px; padding: 9px 11px; display: grid; align-items: center; border: 1px dashed var(--utility-line); border-radius: 12px; background: var(--utility-paper); color: var(--utility-muted); font-size: 11px; line-height: 1.55; }
+.vault-channel-rename { display: flex; align-items: center; gap: 6px; }
+.vault-channel-rename > input { min-width: 0; flex: 1; }
+.vault-channel-rename > .vault-primary, .vault-channel-rename > .vault-ghost { flex: none; min-height: 34px; padding: 0 12px; }
 .vault-channel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .vault-channel-actions > button { min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 11px; cursor: pointer; }
 .vault-channel-actions > button.is-danger { color: #a5483f; }

@@ -404,6 +404,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [channelTab, setChannelTab] = useState<"channels" | "unmatched">("channels");
   const [channelFormOpen, setChannelFormOpen] = useState(false);
   const [expandedChannelId, setExpandedChannelId] = useState<number | null>(null);
+  const [renamingChannelId, setRenamingChannelId] = useState<number | null>(null);
+  const [channelNameDraft, setChannelNameDraft] = useState("");
   const [bindingTab, setBindingTab] = useState<"list" | "channels">("list");
   const [bindingFormOpen, setBindingFormOpen] = useState(false);
   const [pendingChannelDelete, setPendingChannelDelete] = useState<VaultInboundChannel | null>(null);
@@ -1120,6 +1122,21 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     } catch (error) { notify(error instanceof Error ? error.message : "Webhook 密钥更新失败", true); }
     finally { setBusy(false); }
   };
+  const renameInboundChannel = async (channel: VaultInboundChannel) => {
+    const name = channelNameDraft.trim();
+    if (!name) { notify("请填写通道名称", true); return; }
+    if (name === channel.name) { setRenamingChannelId(null); return; }
+    setBusy(true);
+    try {
+      const updated = (await updateVaultInboundChannel(channel.id, { name })).data;
+      setInboundChannels((current) => current.map((item) => item.id === channel.id ? updated : item));
+      if (tutorialChannel?.id === channel.id) setTutorialChannel(updated);
+      setCodeBindings((current) => current.map((binding) => binding.channelId === channel.id ? { ...binding, channelName: updated.name } : binding));
+      setRenamingChannelId(null);
+      notify("通道名称已更新");
+    } catch (error) { notify(error instanceof Error ? error.message : "通道名称更新失败", true); }
+    finally { setBusy(false); }
+  };
   const switchChannelAuthMode = async (channel: VaultInboundChannel) => {
     const nextMode = channel.authMode === "OPEN" ? "TOKEN" : "OPEN";
     setBusy(true);
@@ -1137,6 +1154,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       await deleteVaultInboundChannel(channel.id);
       setInboundChannels((current) => current.filter((item) => item.id !== channel.id));
       if (expandedChannelId === channel.id) setExpandedChannelId(null);
+      if (renamingChannelId === channel.id) setRenamingChannelId(null);
       if (tutorialChannel?.id === channel.id) setTutorialChannel(null);
       setPendingChannelDelete(null);
       if (bindingForm.channelId === channel.id) setBindingForm({ ...bindingForm, channelId: inboundChannels.find((item) => item.id !== channel.id)?.id || 0 });
@@ -1226,7 +1244,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       {open ? <div className="vault-channel-body">
         <label><span>Webhook 地址</span><div><input readOnly value={webhookUrlOf(channel)} /><button type="button" onClick={() => void copy(webhookUrlOf(channel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>
         {channel.authMode === "OPEN" ? <p className="vault-channel-hint">URL 本身即凭证，请求无需携带请求头，请勿外泄链接。</p> : <label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={channel.webhookToken} /><button type="button" onClick={() => void copy(channel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label>}
+        {renamingChannelId === channel.id ? <div className="vault-channel-rename">
+          <input value={channelNameDraft} maxLength={40} aria-label="通道名称" placeholder="输入新的通道名称" onChange={(event) => setChannelNameDraft(event.target.value)} />
+          <button type="button" className="vault-primary" disabled={busy || !channelNameDraft.trim()} onClick={() => void renameInboundChannel(channel)}>保存</button>
+          <button type="button" className="vault-ghost" onClick={() => setRenamingChannelId(null)}>取消</button>
+        </div> : null}
         <div className="vault-channel-actions">
+          <button type="button" onClick={() => { setRenamingChannelId(channel.id); setChannelNameDraft(channel.name); }}><Pencil size={13} />重命名</button>
           <button type="button" onClick={() => void switchChannelAuthMode(channel)}>{channel.authMode === "OPEN" ? "改用 Token" : "免请求头"}</button>
           <button type="button" onClick={() => void rotateInboundChannel(channel)}>换密钥</button>
           <button type="button" onClick={() => { setTutorialChannel(channel); setModal("inboundTutorial"); }}><BookOpen size={13} />教程</button>
