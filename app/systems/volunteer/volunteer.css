@@ -1,0 +1,183 @@
+.yv-page {
+  --yv-ink: #24332d;
+  --yv-muted: #68766f;
+  --yv-line: #dfe8e2;
+  --yv-green: #277455;
+  --yv-green-dark: #174d39;
+  --yv-coral: #e77755;
+  min-height: 100dvh;
+  color: var(--yv-ink);
+  background: radial-gradient(circle at 88% 7%, rgba(231, 119, 85, .13), transparent 27rem), linear-gradient(180deg, #fbfdfb, #f2f7f3);
+  font-family: Inter, "PingFang SC", system-ui, sans-serif;
+}
+.yv-header { width: min(1120px, calc(100% - 40px)); height: 76px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.yv-brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.yv-brand > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 13px; color: #fff; background: linear-gradient(145deg, #277455, #43a276); box-shadow: 0 8px 22px rgba(39, 116, 85, .22); }
+.yv-brand b { font-size: 15px; letter-spacing: .02em; }
+.yv-brand div { display: grid; gap: 1px; }
+.yv-brand small { color: #89958f; font-size: 9px; letter-spacing: .12em; }
+.yv-header nav { display: flex; gap: 8px; }
+.yv-header nav a, .yv-back { color: var(--yv-muted); font-size: 12px; font-weight: 650; text-decoration: none; padding: 8px 12px; border-radius: 999px; }
+.yv-header nav a:hover, .yv-back:hover { color: var(--yv-green); background: #e7f2eb; }
+.yv-back { display: inline-flex; align-items: center; gap: 5px; }
+.yv-hero { width: min(1120px, calc(100% - 40px)); min-height: 560px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 70px; padding: 54px 0 80px; }
+.yv-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--yv-green); font-size: 10px; font-weight: 850; letter-spacing: .18em; }
+.yv-eyebrow i { width: 24px; height: 2px; background: var(--yv-coral); }
+.yv-hero h1 { margin: 22px 0 20px; font-size: clamp(42px, 6vw, 70px); line-height: 1.1; letter-spacing: -.055em; font-weight: 820; }
+.yv-hero h1 em { color: var(--yv-green); font-style: normal; }
+.yv-hero-copy > p { max-width: 580px; margin: 0; color: var(--yv-muted); font-size: 15px; line-height: 1.9; }
+.yv-hero-actions { display: flex; gap: 10px; margin-top: 32px; }
+.yv-hero-actions a, .yv-join-banner > a, .yv-success a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 19px; border: 1px solid var(--yv-line); border-radius: 13px; color: var(--yv-ink); background: rgba(255,255,255,.7); text-decoration: none; font-size: 13px; font-weight: 750; }
+.yv-hero-actions a.primary, .yv-join-banner > a { color: #fff; border-color: var(--yv-green); background: var(--yv-green); box-shadow: 0 11px 26px rgba(39, 116, 85, .2); }
+.yv-hero-art { position: relative; min-height: 370px; display: grid; place-items: center; border: 1px solid rgba(39,116,85,.14); border-radius: 42% 58% 55% 45% / 45% 44% 56% 55%; background: linear-gradient(145deg, #e8f4eb, #fff5ec); box-shadow: inset 0 0 70px rgba(255,255,255,.7); }
+.yv-hero-art::before, .yv-hero-art::after { content: ""; position: absolute; border-radius: 50%; background: rgba(231,119,85,.22); }
+.yv-hero-art::before { width: 62px; height: 62px; left: 9%; top: 16%; }
+.yv-hero-art::after { width: 28px; height: 28px; right: 12%; bottom: 18%; }
+.yv-heart { width: 120px; height: 120px; display: grid; place-items: center; border-radius: 36px; color: #fff; background: linear-gradient(145deg, var(--yv-coral), #ef9e76); transform: rotate(-7deg); box-shadow: 0 26px 50px rgba(179,82,52,.25); }
+.yv-heart svg { transform: rotate(7deg); }
+.yv-hero-art > div { position: absolute; left: 12%; bottom: 11%; display: grid; gap: 3px; padding: 12px 16px; border-radius: 15px; background: rgba(255,255,255,.82); box-shadow: 0 12px 30px rgba(35,68,53,.1); backdrop-filter: blur(10px); }
+.yv-hero-art > div b { font-size: 13px; }
+.yv-hero-art > div small { color: var(--yv-muted); font-size: 10px; }
+.yv-values { padding: 90px max(20px, calc((100% - 1120px) / 2)); background: #fff; }
+.yv-section-title small, .yv-join-banner small, .yv-form-heading > span { color: var(--yv-coral); font-size: 10px; font-weight: 850; letter-spacing: .16em; }
+.yv-section-title h2 { margin: 10px 0 30px; font-size: clamp(28px, 4vw, 39px); letter-spacing: -.04em; }
+.yv-value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.yv-value-grid article { padding: 26px; border: 1px solid var(--yv-line); border-radius: 21px; background: #fbfdfb; }
+.yv-value-grid article > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: var(--yv-green); background: #e6f2ea; }
+.yv-value-grid h3 { margin: 18px 0 7px; font-size: 17px; }
+.yv-value-grid p { margin: 0; color: var(--yv-muted); font-size: 12px; line-height: 1.75; }
+.yv-steps { width: min(920px, calc(100% - 40px)); margin: 0 auto; padding: 80px 0; display: grid; grid-template-columns: 1fr 50px 1fr 50px 1fr; align-items: center; }
+.yv-steps > div { display: grid; justify-items: center; gap: 7px; text-align: center; }
+.yv-steps > div span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--yv-green); }
+.yv-steps b { font-size: 13px; }
+.yv-steps small { color: var(--yv-muted); font-size: 10px; }
+.yv-steps > i { height: 1px; background: repeating-linear-gradient(90deg, #b7c9be 0 6px, transparent 6px 11px); }
+.yv-join-banner { width: min(1120px, calc(100% - 40px)); margin: 0 auto 70px; padding: 35px 40px; display: flex; align-items: center; justify-content: space-between; gap: 25px; border-radius: 25px; color: #fff; background: linear-gradient(120deg, #194d3a, #287757); }
+.yv-join-banner h2 { margin: 8px 0 0; font-size: clamp(21px, 3vw, 30px); }
+.yv-join-banner > a { border-color: #fff; color: var(--yv-green-dark); background: #fff; box-shadow: none; white-space: nowrap; }
+.yv-footer { width: min(1120px, calc(100% - 40px)); margin: auto; padding: 24px 0 34px; display: flex; justify-content: space-between; border-top: 1px solid var(--yv-line); color: #87938d; font-size: 11px; }
+.yv-footer a { color: inherit; text-decoration: none; }
+
+/* 登记表 */
+.yv-join-page { padding-bottom: 70px; }
+.yv-form-heading { width: min(860px, calc(100% - 40px)); margin: 50px auto 30px; }
+.yv-form-heading h1 { margin: 10px 0 8px; font-size: clamp(32px, 5vw, 47px); letter-spacing: -.045em; }
+.yv-form-heading p { margin: 0; color: var(--yv-muted); font-size: 13px; }
+.yv-form { width: min(860px, calc(100% - 40px)); margin: 0 auto; display: grid; gap: 16px; }
+.yv-form fieldset { margin: 0; padding: 26px; border: 1px solid var(--yv-line); border-radius: 22px; background: rgba(255,255,255,.88); box-shadow: 0 10px 40px rgba(38,73,54,.045); }
+.yv-form legend { padding: 0 10px 0 0; display: flex; align-items: center; gap: 11px; }
+.yv-form legend > span { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; color: #fff; background: var(--yv-green); font-size: 10px; font-weight: 800; }
+.yv-form legend > div { display: grid; gap: 2px; }
+.yv-form legend b { font-size: 14px; }
+.yv-form legend small { color: var(--yv-muted); font-size: 9px; }
+.yv-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; margin-top: 18px; }
+.yv-fields > label, .yv-choice-field, .yv-photo-field, .yv-review-modal label { display: grid; align-content: start; gap: 7px; }
+.yv-fields label > span, .yv-choice-field > span, .yv-photo-field > span, .yv-review-modal label > span { color: #56665e; font-size: 11px; font-weight: 700; }
+.yv-fields input, .yv-fields select, .yv-fields textarea, .yv-review-modal textarea { width: 100%; min-width: 0; min-height: 43px; padding: 0 13px; border: 1px solid #d7e2da; border-radius: 11px; outline: 0; color: var(--yv-ink); background: #fbfdfb; font: inherit; font-size: 12px; transition: border .15s, box-shadow .15s; }
+.yv-fields textarea, .yv-review-modal textarea { min-height: 90px; padding-top: 11px; resize: vertical; }
+.yv-fields input:focus, .yv-fields select:focus, .yv-fields textarea:focus, .yv-review-modal textarea:focus { border-color: #6aaa8c; box-shadow: 0 0 0 3px rgba(39,116,85,.1); }
+.yv-fields .wide { grid-column: 1 / -1; }
+.yv-choice-field > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.yv-choice-field button { min-height: 42px; min-width: 74px; padding: 0 14px; border: 1px solid #d7e2da; border-radius: 11px; color: #5d6d64; background: #fbfdfb; font: inherit; font-size: 12px; cursor: pointer; }
+.yv-choice-field button.is-selected { color: var(--yv-green); border-color: #78ae94; background: #e8f4ec; box-shadow: inset 0 0 0 1px rgba(39,116,85,.12); }
+.yv-photo-upload { position: relative; width: 110px; height: 110px; display: grid; place-items: center; overflow: hidden; border: 1px dashed #a9beb2; border-radius: 16px; color: #81948a; background: #f7fbf8; cursor: pointer; }
+.yv-photo-upload input { display: none; }
+.yv-photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+.yv-photo-upload em { position: absolute; left: 6px; right: 6px; bottom: 6px; min-height: 26px; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 8px; color: #fff; background: rgba(24,61,44,.78); font-size: 9px; font-style: normal; }
+.yv-commitment-copy { margin: 18px 0 14px; padding: 17px 19px; border-radius: 14px; color: #46584f; background: #f3f7f4; }
+.yv-commitment-copy h3 { margin: 0 0 7px; font-size: 13px; }
+.yv-commitment-copy p { margin: 0; font-size: 11px; line-height: 1.85; }
+.yv-consent { display: flex; align-items: flex-start; gap: 9px; color: var(--yv-green-dark); font-size: 11px; font-weight: 650; cursor: pointer; }
+.yv-consent input { width: 17px; height: 17px; accent-color: var(--yv-green); }
+.yv-consent span { display: inline-flex; align-items: center; gap: 6px; }
+.yv-form-message, .yv-admin-message { margin: 0; padding: 11px 14px; border-radius: 10px; color: #9a3d2b; background: #ffebe5; font-size: 11px; }
+.yv-submit { justify-self: end; min-height: 48px; padding: 0 23px; display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 13px; color: #fff; background: var(--yv-green); box-shadow: 0 11px 28px rgba(39,116,85,.2); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+.yv-submit:disabled { opacity: .55; cursor: wait; }
+.yv-success { width: min(520px, calc(100% - 40px)); margin: 12vh auto 0; padding: 48px; display: grid; justify-items: center; text-align: center; border: 1px solid var(--yv-line); border-radius: 26px; background: #fff; box-shadow: 0 18px 60px rgba(38,73,54,.09); }
+.yv-success > span { width: 72px; height: 72px; display: grid; place-items: center; border-radius: 24px; color: var(--yv-green); background: #e5f3e9; }
+.yv-success > small { margin-top: 20px; color: var(--yv-coral); font-weight: 850; letter-spacing: .14em; }
+.yv-success h1 { margin: 8px 0; font-size: 29px; }
+.yv-success p { margin: 0 0 22px; color: var(--yv-muted); font-size: 12px; line-height: 1.8; }
+
+/* 管理后台 */
+.yv-admin { min-height: 100dvh; display: grid; grid-template-columns: 224px 1fr; color: #25342d; background: #f3f6f4; font-family: Inter, "PingFang SC", system-ui, sans-serif; }
+.yv-admin-side { position: sticky; top: 0; height: 100dvh; padding: 24px 15px 17px; display: flex; flex-direction: column; border-right: 1px solid #dce5df; background: #fff; }
+.yv-admin-side .yv-brand { padding: 0 8px 24px; }
+.yv-admin-side nav { display: grid; gap: 5px; }
+.yv-admin-side nav button, .yv-admin-side > div a, .yv-admin-side > div button { min-height: 42px; padding: 0 12px; display: flex; align-items: center; gap: 9px; border: 0; border-radius: 10px; color: #68766f; background: transparent; text-decoration: none; font: inherit; font-size: 11px; font-weight: 680; cursor: pointer; }
+.yv-admin-side nav button.is-active { color: var(--yv-green, #277455); background: #e8f2eb; }
+.yv-admin-side > div { margin-top: auto; display: grid; gap: 3px; border-top: 1px solid #e4eae6; padding-top: 10px; }
+.yv-admin-main { min-width: 0; padding: 34px clamp(20px, 4vw, 54px) 50px; }
+.yv-admin-main > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
+.yv-admin-main > header small { color: #d76d4d; font-size: 9px; font-weight: 850; letter-spacing: .14em; }
+.yv-admin-main > header h1 { margin: 7px 0 4px; font-size: 29px; letter-spacing: -.04em; }
+.yv-admin-main > header p { margin: 0; color: #77837d; font-size: 11px; }
+.yv-admin-main > header > span { padding: 7px 11px; border-radius: 999px; color: #577065; background: #e7eee9; font-size: 10px; font-weight: 700; }
+.yv-admin-mobile-tabs { display: none; }
+.yv-admin-filter { display: grid; grid-template-columns: minmax(220px, 1fr) 140px auto; gap: 9px; margin-bottom: 14px; }
+.yv-admin-filter label { min-height: 42px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border: 1px solid #d9e2dc; border-radius: 11px; color: #89958f; background: #fff; }
+.yv-admin-filter input, .yv-admin-filter select { width: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 11px; }
+.yv-admin-filter select, .yv-admin-filter > button { border: 1px solid #d9e2dc; border-radius: 11px; padding: 0 12px; color: #51625a; background: #fff; font: inherit; font-size: 11px; }
+.yv-admin-filter > button { min-width: 70px; color: #fff; border-color: #277455; background: #277455; cursor: pointer; }
+.yv-admin-list { display: grid; gap: 11px; }
+.yv-application-card, .yv-member-grid > article { padding: 19px; border: 1px solid #dce5df; border-radius: 16px; background: #fff; }
+.yv-member-head { display: flex; align-items: center; gap: 11px; }
+.yv-member-head > img, .yv-member-head > span { width: 41px; height: 41px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; object-fit: cover; color: #fff; background: linear-gradient(145deg, #277455, #5aa27f); font-size: 13px; font-weight: 800; }
+.yv-member-head > div { min-width: 0; margin-right: auto; }
+.yv-member-head h2 { margin: 0; font-size: 14px; }
+.yv-member-head p { margin: 3px 0 0; color: #7a8881; font-size: 9px; }
+.yv-member-head em { padding: 5px 8px; border-radius: 999px; font-size: 9px; font-style: normal; font-weight: 750; }
+.status-pending { color: #a35e19; background: #fff1d9; }.status-approved,.status-active { color: #247052; background: #e2f3e8; }.status-rejected,.status-exited { color: #a94436; background: #fce6e2; }.status-paused { color: #5e6870; background: #e9edef; }
+.yv-application-card > dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; margin: 17px 0; padding: 15px 0; border-top: 1px solid #edf1ee; border-bottom: 1px solid #edf1ee; }
+.yv-application-card dl div, .yv-member-grid dl div { min-width: 0; }
+.yv-application-card dl .wide { grid-column: span 3; }
+.yv-application-card dt, .yv-member-grid dt { margin-bottom: 4px; color: #8a9690; font-size: 8px; }
+.yv-application-card dd, .yv-member-grid dd { margin: 0; overflow-wrap: anywhere; color: #3c4c44; font-size: 10px; line-height: 1.55; }
+.yv-application-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.yv-application-card > footer small, .yv-application-card > footer > span { color: #919b96; font-size: 9px; }
+.yv-application-card > footer > div { display: flex; gap: 7px; }
+.yv-application-card button, .yv-review-modal > div button { min-height: 32px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid #dce4df; border-radius: 9px; background: #fff; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.yv-application-card button.approve, .yv-review-modal button.approve { color: #fff; border-color: #277455; background: #277455; }.yv-application-card button.reject, .yv-review-modal button.reject { color: #a94436; border-color: #efd1cc; background: #fff5f3; }
+.yv-member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 11px; }
+.yv-member-specialty { min-height: 36px; margin: 15px 0; overflow: hidden; color: #64736b; font-size: 10px; line-height: 1.7; }
+.yv-member-grid dl { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 0; padding-top: 13px; border-top: 1px solid #edf1ee; }
+.yv-admin-empty { min-height: 240px; display: grid; place-content: center; justify-items: center; gap: 9px; color: #8a9690; font-size: 11px; }
+.yv-pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; color: #839089; font-size: 10px; }
+.yv-pagination div { display: flex; gap: 7px; }
+.yv-pagination button { min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #d9e2dc; border-radius: 9px; color: #596961; background: #fff; font: inherit; font-size: 10px; cursor: pointer; }
+.yv-pagination button:disabled { opacity: .4; cursor: default; }
+.yv-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(20,34,27,.42); backdrop-filter: blur(5px); }
+.yv-review-modal { position: relative; width: min(430px, 100%); padding: 28px; border-radius: 20px; background: #fff; box-shadow: 0 25px 80px rgba(20,34,27,.22); }
+.yv-modal-close { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; color: #718078; background: #f0f4f1; cursor: pointer; }
+.yv-review-modal > small { color: #d76d4d; font-size: 9px; font-weight: 850; letter-spacing: .13em; }
+.yv-review-modal h2 { margin: 8px 0; font-size: 21px; }
+.yv-review-modal > p { margin: 0 0 18px; color: #718078; font-size: 11px; }
+.yv-review-modal > div { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; }
+
+.yv-admin-login { min-height: 100dvh; display: grid; place-items: center; padding: 30px 20px; color: #25342d; background: radial-gradient(circle at 50% 0, #e5f3e9, transparent 35rem), #f5f8f6; font-family: Inter, "PingFang SC", system-ui, sans-serif; }
+.yv-admin-login > .yv-brand { position: absolute; top: 24px; left: 28px; }
+.yv-admin-login > section { width: min(410px, 100%); padding: 34px; border: 1px solid #dce5df; border-radius: 23px; background: #fff; box-shadow: 0 22px 65px rgba(38,73,54,.1); }
+.yv-admin-login > section > span { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; color: #fff; background: #277455; }
+.yv-admin-login section > small { display: block; margin-top: 18px; color: #d76d4d; font-size: 9px; font-weight: 850; letter-spacing: .14em; }
+.yv-admin-login h1 { margin: 7px 0 5px; font-size: 27px; }.yv-admin-login section > p { margin: 0; color: #78857e; font-size: 11px; }
+.yv-admin-login form { display: grid; gap: 13px; margin-top: 22px; }
+.yv-admin-login form label { display: grid; gap: 6px; }.yv-admin-login form label > span { color: #596961; font-size: 10px; font-weight: 700; }
+.yv-admin-login form label > div { min-height: 43px; padding-left: 11px; display: flex; align-items: center; gap: 7px; border: 1px solid #d9e2dc; border-radius: 11px; color: #8a9690; }
+.yv-admin-login input { min-width: 0; flex: 1; border: 0; outline: 0; font: inherit; font-size: 11px; }.yv-admin-login label button { align-self: stretch; padding: 0 11px; border: 0; border-left: 1px solid #e2e8e4; color: #277455; background: transparent; font-size: 10px; cursor: pointer; }
+.yv-admin-login form > p { margin: 0; color: #a94436; font-size: 10px; }.yv-login-submit { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 11px; color: #fff; background: #277455; font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }.yv-admin-login section > a { display: block; margin-top: 15px; color: #738078; text-align: center; font-size: 9px; text-decoration: none; }
+
+@media (max-width: 760px) {
+  .yv-header { width: calc(100% - 28px); height: 66px; }.yv-header nav a:first-child { display: none; }
+  .yv-hero { width: calc(100% - 32px); min-height: 0; grid-template-columns: 1fr; gap: 42px; padding: 60px 0 70px; }
+  .yv-hero h1 { font-size: 42px; }.yv-hero-copy > p { font-size: 13px; }.yv-hero-art { min-height: 300px; }
+  .yv-values { padding: 62px 16px; }.yv-value-grid { grid-template-columns: 1fr; }.yv-value-grid article { padding: 22px; }
+  .yv-steps { width: calc(100% - 32px); grid-template-columns: 1fr; gap: 13px; padding: 60px 0; }.yv-steps > i { width: 1px; height: 22px; justify-self: center; background: repeating-linear-gradient(180deg, #b7c9be 0 5px, transparent 5px 9px); }
+  .yv-join-banner { width: calc(100% - 32px); padding: 27px 23px; flex-direction: column; align-items: flex-start; }.yv-join-banner > a { width: 100%; }
+  .yv-form-heading, .yv-form { width: calc(100% - 28px); }.yv-form-heading { margin-top: 28px; }.yv-form fieldset { padding: 20px 16px; border-radius: 18px; }.yv-fields { grid-template-columns: 1fr; }.yv-fields .wide { grid-column: auto; }.yv-submit { width: 100%; justify-content: center; }
+  .yv-admin { display: block; }.yv-admin-side { position: static; width: auto; height: 64px; padding: 0 15px; flex-direction: row; align-items: center; border: 0; border-bottom: 1px solid #dce5df; }.yv-admin-side .yv-brand { padding: 0; }.yv-admin-side nav { display: none; }.yv-admin-side > div { margin: 0 0 0 auto; padding: 0; border: 0; }.yv-admin-side > div a { display: none; }.yv-admin-side > div button { width: 38px; padding: 0; justify-content: center; font-size: 0; }
+  .yv-admin-main { padding: 25px 14px 40px; }.yv-admin-main > header { align-items: flex-start; }.yv-admin-main > header > span { white-space: nowrap; }.yv-admin-mobile-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 12px; padding: 4px; border-radius: 11px; background: #e6ece8; }.yv-admin-mobile-tabs button { min-height: 36px; border: 0; border-radius: 8px; color: #6a7770; background: transparent; font: inherit; font-size: 10px; font-weight: 700; }.yv-admin-mobile-tabs button.is-active { color: #277455; background: #fff; box-shadow: 0 2px 9px rgba(38,73,54,.08); }
+  .yv-admin-filter { grid-template-columns: 1fr 115px; }.yv-admin-filter > button { grid-column: 1 / -1; min-height: 39px; }.yv-application-card { padding: 15px; }.yv-application-card > dl { grid-template-columns: 1fr 1fr; }.yv-application-card dl .wide { grid-column: span 2; }.yv-application-card > footer { align-items: flex-start; flex-direction: column; }.yv-application-card > footer > div { width: 100%; }.yv-application-card > footer button { flex: 1; }
+  .yv-admin-login > .yv-brand { top: 18px; left: 18px; }.yv-admin-login > section { padding: 27px 21px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .yv-page *, .yv-admin * { scroll-behavior: auto !important; } }

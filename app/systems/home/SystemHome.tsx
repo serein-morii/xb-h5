@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight, Beaker, KeyRound, PackageCheck, Settings2, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Beaker, HandHeart, KeyRound, PackageCheck, Settings2, ShieldCheck } from "lucide-react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import "../system-home.css";
 
@@ -20,6 +20,14 @@ const systems = [
     meta: "VAULT",
   },
   {
+		href: APP_ROUTES.volunteer,
+		name: "鱼片志愿",
+		desc: "志愿者档案、登记审核与服务记录，连接每一次热心行动。",
+		icon: HandHeart,
+		tone: "volunteer",
+		meta: "VOLUNTEER",
+	},
+	{
     href: APP_ROUTES.lab,
     name: "Handy Lab",
     desc: "和订单无关的小工具、实验作品与灵感原型。",
@@ -55,7 +63,7 @@ export default function SystemHome() {
     <section className="system-hero">
       <span className="system-status"><i aria-hidden="true" />全部系统运行正常</span>
       <h1>一个入口，<em>管好所有业务</em>。</h1>
-      <p>订单、OTP、LAB 各自独立运行，共享一套账号与权限；平台级的系统管理收敛到系统中心，界面、权限与审计保持一致。</p>
+      <p>订单、OTP、鱼片志愿与 LAB 各自独立运行，共享一套账号与权限；平台级管理统一收敛到系统中心。</p>
     </section>
 
     <section className="system-grid" aria-label="系统入口">

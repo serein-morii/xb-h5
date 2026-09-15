@@ -99,7 +99,7 @@
 /* ---------- 系统卡片 ---------- */
 .system-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 13px;
 }
 .system-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -165,6 +165,8 @@
 .system-card.is-order .system-card-top span { background: linear-gradient(135deg, #1f5c41, #58a173); }
 .system-card.is-otp { --sh-glow: rgba(111, 127, 240, 0.24); --sh-chip-shadow: rgba(64, 85, 195, 0.42); }
 .system-card.is-otp .system-card-top span { background: linear-gradient(135deg, #4055c3, #7887e5); }
+.system-card.is-volunteer { --sh-glow: rgba(226, 112, 79, 0.24); --sh-chip-shadow: rgba(130, 58, 38, 0.4); }
+.system-card.is-volunteer .system-card-top span { background: linear-gradient(135deg, #b84f34, #ee8a68); }
 .system-card.is-lab { --sh-glow: rgba(141, 102, 220, 0.22); --sh-chip-shadow: rgba(80, 56, 140, 0.4); }
 .system-card.is-lab .system-card-top span { background: linear-gradient(135deg, #4c3d86, #8d66dc); }
 .system-card.is-console { --sh-glow: rgba(70, 198, 255, 0.2); --sh-chip-shadow: rgba(23, 68, 96, 0.4); }

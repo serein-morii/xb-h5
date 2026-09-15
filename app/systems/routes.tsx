@@ -4,6 +4,7 @@ import { labRoutes } from "./lab/routes";
 import { isStoreQueryRoute, orderRoutes, resolveOrderDynamicRoute } from "./order/routes";
 import { otpRoutes } from "./otp/routes";
 import { systemRoutes } from "./system/routes";
+import { volunteerRoutes } from "./volunteer/routes";
 import type { RouteConfig } from "./types";
 
 const OrderToolsLayout = lazy(() => import("./order/tools/layout"));
@@ -15,6 +16,7 @@ export const routes = {
   ...labRoutes,
   ...otpRoutes,
   ...systemRoutes,
+	...volunteerRoutes,
 };
 
 export { isStoreQueryRoute };

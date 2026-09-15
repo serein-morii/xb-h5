@@ -24,6 +24,9 @@ export const APP_ROUTES = {
   otp: "/otp",
   otpGuide: "/otp/guide",
   otpChangelog: "/otp/changelog",
+	volunteer: "/volunteer",
+	volunteerJoin: "/volunteer/join",
+	volunteerManage: "/volunteer/manage",
   systemCenter: "/system",
 } as const;
 
@@ -53,6 +56,9 @@ export const LOCAL_ROUTES = [
   APP_ROUTES.otp,
   APP_ROUTES.otpGuide,
   APP_ROUTES.otpChangelog,
+	APP_ROUTES.volunteer,
+	APP_ROUTES.volunteerJoin,
+	APP_ROUTES.volunteerManage,
   APP_ROUTES.systemCenter,
 ];
 
@@ -124,6 +130,10 @@ export const API_PATHS = {
     vaultAccount: "/otp/vault/account",
     share: "/otp/share",
   },
+	volunteer: {
+		public: "/volunteer/public",
+		admin: "/volunteer/admin",
+	},
   message: {
     root: "/message",
     unreadCount: "/message/unread-count",
