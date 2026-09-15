@@ -287,7 +287,7 @@ test("share cards lead with the new badge, countdown only when expanded, and sin
   assert.doesNotMatch(sharePage, /<small>已使用<\/small>/);
   assert.doesNotMatch(sharePage, /vault-code-timer/);
   assert.doesNotMatch(styles, /\.vault-code\.is-inbound span \{ font-size: 17px/);
-  assert.doesNotMatch(sharePage, /is-inbound-foot[\s\S]{0,120}formatCodeTime/);
+  assert.match(sharePage, /\{open && item\.dynamicCode \? <span>\{formatCodeTime\(inboundTiming\.left\)\}<\/span> : null\}/);
   assert.match(sharePage, /defaultOpen=\{items\.length === 1\}/);
   assert.match(sharePage, /useState\(defaultOpen\)/);
 });

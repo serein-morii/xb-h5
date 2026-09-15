@@ -36,7 +36,7 @@ test("countdowns read as Chinese minutes and seconds in every code slot", () => 
   assert.doesNotMatch(workspace, /vault-code-timer/);
   assert.match(workspace, /prefs\.compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null/);
   assert.match(workspace, /!prefs\.compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null/);
-  assert.doesNotMatch(share, /\{open && item\.dynamicCode \? <span>\{formatCodeTime/);
+  assert.match(share, /\{open && item\.dynamicCode \? <span>\{formatCodeTime\(inboundTiming\.left\)\}<\/span> : null\}/);
 });
 
 test("creating a source group stays on the workspace instead of native-submitting into splash", () => {
