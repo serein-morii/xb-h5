@@ -18,7 +18,7 @@ export function formatCodeTime(seconds: number) {
   return minutes ? `${minutes}分${rest ? `${rest}秒` : ""}` : `${rest}秒`;
 }
 
-export default function InboundCodeHistory({ rows, total, loading, allowCopy, now, onCopy, onLoadMore }: {
+export default function InboundCodeHistory({ rows, total, loading, allowCopy, now, onCopy, onLoadMore, step = "02" }: {
   rows: VaultDynamicCode[];
   total: number;
   loading: boolean;
@@ -26,9 +26,10 @@ export default function InboundCodeHistory({ rows, total, loading, allowCopy, no
   now: number;
   onCopy: (value: string) => void;
   onLoadMore: () => void;
+  step?: string;
 }) {
   return <section className="vault-share-section vault-detail-section vault-code-history">
-    <div className="vault-section-title"><div><span>02</span><h3>历史验证码</h3></div><small>加密保留 30 天 · 每次 5 条</small></div>
+    <div className="vault-section-title"><div><span>{step}</span><h3>历史验证码</h3></div><small>加密保留 30 天 · 每次 5 条</small></div>
     {rows.length ? <div className="vault-code-history-list">{rows.map((item) => {
       const timing = inboundCodeTiming(item.receivedTime, item.expireTime, now);
       return <article key={item.id} className={timing.left ? "is-live" : "is-expired"}>

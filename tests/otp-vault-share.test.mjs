@@ -110,7 +110,8 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /<span>来自<\/span>/);
   assert.match(workspace, /SHARED_BY_SELF/);
   assert.match(workspace, />我的</);
-  assert.doesNotMatch(workspace, /<span>来源<\/span>/);
+  assert.doesNotMatch(workspace, /<label><span>来源<\/span>/);
+  assert.match(workspace, /<div className="vault-detail-next"><span>来源<\/span>/);
   assert.doesNotMatch(workspace, /vault-sharer-toggle/);
   assert.match(workspace, /sharerDisplay\(section\)/);
   assert.match(workspace, /来自 \$\{sharerDisplay\(item\)\}/);
