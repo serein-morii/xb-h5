@@ -227,6 +227,8 @@ export const updateVaultInboundChannel = (id: number, body: { name?: string; cha
   otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}`, { method: "PUT", body });
 export const rotateVaultInboundChannelToken = (id: number) =>
   otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}/rotate-token`, { method: "POST" });
+export const deleteVaultInboundChannel = (id: number) =>
+  otpApiRequest(`${vault}/inbound-channels/${id}`, { method: "DELETE" });
 export const listVaultCodeBindings = (credentialId: number) =>
   otpApiRequest<{ data: VaultCodeBinding[] }>(`${vault}/credentials/${credentialId}/code-bindings`);
 export const saveVaultCodeBinding = (credentialId: number, id: number | null, body: Record<string, unknown>) =>

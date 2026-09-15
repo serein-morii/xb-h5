@@ -1832,6 +1832,8 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-list article > footer small { color: var(--utility-muted); font-size: 10px; }
 .vault-channel-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .vault-channel-actions > button { min-height: 32px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 10px; cursor: pointer; }
+.vault-channel-actions > button.is-danger { color: #a5483f; }
+.vault-channel-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .vault-tutorial-steps { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; color: var(--utility-muted); font-size: 12px; line-height: 1.65; }
 .vault-tutorial-steps code { padding: 1px 6px; border-radius: 6px; background: rgba(72,92,199,.08); color: var(--vault-accent); font-size: 11px; }
 .vault-tutorial-curl { display: block; margin-top: 8px; padding: 11px; border-radius: 11px; background: rgba(95,127,107,.09); color: var(--utility-text); font-size: 11px; line-height: 1.55; word-break: break-all; user-select: all; }
@@ -1855,8 +1857,17 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-inbound-code { min-height: 52px; grid-template-columns: minmax(0,1fr) auto auto; }
   .vault-inbound-code > b { font-size: 17px; }
   .vault-inbound-modal,.vault-binding-modal { width: 100%; max-height: 92dvh; }
-  .vault-modal-tabs { margin-top: 4px; }
-  .vault-channel-create > .vault-primary,.vault-channel-add { width: 100%; justify-content: center; }
+  .vault-modal-tabs { margin-top: 4px; flex-wrap: wrap; }
+  .vault-modal-tabs > button { min-width: calc(50% - 3px); flex: 1 1 42%; min-height: 38px; font-size: 12px; }
+  .vault-channel-create > .vault-primary,.vault-channel-add,.vault-channel-form-actions { width: 100%; justify-content: center; }
+  .vault-channel-form-actions { flex-direction: column; }
+  .vault-channel-form-actions > button { width: 100%; min-height: 42px; }
+  .vault-channel-list article > header { gap: 8px; }
+  .vault-channel-list article > header > span { width: 32px; height: 32px; }
+  .vault-channel-list article > header b { font-size: 13px; }
+  .vault-channel-list article > header small { white-space: normal; }
+  .vault-binding-list article b { font-size: 13px; }
+  .vault-binding-list article small { white-space: normal; }
   .vault-channel-toolbar { align-items: stretch; flex-direction: column; }
   .vault-channel-list article > footer { align-items: stretch; flex-direction: column; }
   .vault-channel-actions { width: 100%; }
