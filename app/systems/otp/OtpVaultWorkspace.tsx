@@ -1886,10 +1886,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         <section className="vault-share-section"><div className="vault-section-title"><div><span>00</span><h3>通道信息</h3></div></div><label><span>Webhook 地址（点右侧复制）</span><div><input readOnly value={webhookUrlOf(tutorialChannel)} /><button type="button" onClick={() => void copy(webhookUrlOf(tutorialChannel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>{tutorialChannel.authMode === "OPEN" ? <p className="vault-section-help">当前为免请求头模式：地址本身即凭证，快捷指令里无需配置请求头。</p> : <label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={tutorialChannel.webhookToken} /><button type="button" onClick={() => void copy(tutorialChannel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label>}<p className="vault-section-help">验证码号码会自动从短信或邮件正文中提取，不需要你手动指定；正文关键词等归属规则可在「验证码来源」里配置。</p></section>
         {tutorialChannel.channelType === "IPHONE" ? <>
           <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>创建快捷指令「推送验证码」</h3></div></div><ol className="vault-tutorial-steps">
-            <li>打开「快捷指令」App，切到「快捷指令」标签，点右上角 <b>＋</b> 新建，名字改为「推送验证码」。</li>
-            <li>添加操作 <b>「匹配文本」</b>：文本选「快捷指令输入」，正则打开，内容填 <code>[0-9]{'{'}4,8{'}'}</code>。</li>
-            <li>添加操作 <b>「获取文本分组」</b>：从「匹配文本」的结果取第 1 组——这一步的输出就是验证码。</li>
-            <li>添加操作 <b>「获取 URL 内容」</b>：URL 粘贴上方地址；展开箭头把方法改为 <b>POST</b>；展开「请求头」添加 <code>X-Otp-Webhook-Token</code> = 上方 Token（免请求头模式跳过这步）；展开「请求体」选 JSON，添加字段：<code>code</code> ← 文本分组、<code>sourceType</code> ← SMS、<code>content</code> ← 快捷指令输入。</li>
+            <li>打开「快捷指令」App，点右上角 <b>＋</b> 新建，名字改为「推送验证码」。</li>
+            <li>只需添加一个操作 <b>「获取 URL 内容」</b>：URL 粘贴上方 Webhook 地址；展开箭头把方法改为 <b>POST</b>。</li>
+            {tutorialChannel.authMode === "OPEN" ? <li>展开「请求体」，类型选 <b>JSON</b>，添加一个字段：<code>content</code>，值选「快捷指令输入」。免请求头模式无需配置请求头。</li> : <li>展开「请求头」添加 <code>X-Otp-Webhook-Token</code> = 上方 Token；再展开「请求体」选 <b>JSON</b>，添加一个字段：<code>content</code>，值选「快捷指令输入」。</li>}
+            <li>验证码号码不需要你在手机上提取——后台会自动从 content 正文里识别。</li>
           </ol></section>
           <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>创建自动化：收到短信自动推送</h3></div></div><ol className="vault-tutorial-steps">
             <li>「快捷指令」App 底部切到「自动化」标签，点 <b>＋</b> 创建个人自动化。</li>
