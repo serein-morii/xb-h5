@@ -1792,7 +1792,7 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-code.is-inbound em { flex: none; padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
 .vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
 .vault-code.is-waiting { cursor: default; color: var(--utility-muted); }
-.vault-code.is-waiting span { color: var(--utility-muted); font-size: 18px; font-weight: 780; letter-spacing: .025em; }
+.vault-code.is-waiting span { color: var(--utility-muted); font-size: 20px; font-weight: 780; letter-spacing: .025em; }
 .vault-wait-copy { padding: 0; display: grid; place-items: center; border: 0; background: transparent; color: var(--utility-muted); opacity: .34; cursor: not-allowed; }
 .vault-card-sources { min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden; }
 .vault-card-foot.is-inbound-foot { justify-content: flex-start; }
@@ -1802,7 +1802,7 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-card.is-compact .vault-card-sources { max-width: none; }
 .vault-card.is-compact .vault-card-foot.is-inbound-foot > .vault-card-sources { display: flex; }
 .vault-card.is-compact .vault-card-source { width: 24px; height: 24px; border-radius: 8px; }
-.vault-card.is-compact .vault-code.is-waiting span { font-size: 14px; letter-spacing: .015em; }
+.vault-card.is-compact .vault-code.is-waiting span { font-size: 17px; letter-spacing: .015em; }
 html.theme-dark .vault-card-source { border-color: transparent; background: rgba(216,224,255,.07); color: #9aa5c3; }
 html.theme-dark .vault-card-source.is-active { border-color: rgba(105,190,143,.38); background: rgba(72,154,113,.2); color: #8fd1ad; }
 .vault-source-unconfigured { color: var(--utility-muted); font-size: 8px; }
