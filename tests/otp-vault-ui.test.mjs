@@ -143,13 +143,13 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(workspace, /<option value="SMS">短信<\/option>/);
   assert.match(workspace, /<option value="EMAIL">邮箱<\/option>/);
   assert.match(workspace, /<option value="WEBHOOK">Webhook<\/option>/);
-  assert.match(workspace, /vault-inbound-code/);
+  assert.match(workspace, /vault-code is-inbound/);
   assert.match(workspace, /等待短信或邮件验证码/);
   assert.match(workspace, /X-Otp-Webhook-Token/);
   assert.match(api, /listVaultInboundChannels/);
   assert.match(api, /listVaultCodeBindings/);
   assert.match(api, /markVaultDynamicCodeUsed/);
-  assert.match(styles, /\.vault-inbound-code/);
+  assert.match(styles, /\.vault-code\.is-inbound/);
   assert.match(styles, /\.vault-channel-list/);
   assert.match(styles, /\.vault-binding-list/);
   assert.match(styles, /grid-template-columns:\s*repeat\(4, minmax\(120px, 1fr\)\)/);

@@ -1760,23 +1760,11 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .share-handoff-emblem > i,.share-handoff-progress > i { animation-duration: 4s; }
 }
 
-/* 动态验证码：与凭证聚合展示，接收通道和匹配规则仍保持独立。 */
-.vault-inbound-code {
-  width: 100%; min-height: 56px; margin: 10px 0 2px; padding: 8px 11px;
-  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
-  border: 1px solid rgba(72, 92, 199, .16); border-radius: 12px;
-  background: linear-gradient(135deg, rgba(238, 241, 255, .96), rgba(247, 248, 255, .9));
-  color: var(--utility-text); font: inherit; text-align: left; cursor: pointer;
-}
-.vault-inbound-code > span { min-width: 0; display: flex; align-items: center; gap: 5px; color: #667096; }
-.vault-inbound-code > span small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
-.vault-inbound-code > span em { flex: none; padding: 2px 5px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; }
-.vault-inbound-code > b { color: #3046b5; font-size: 20px; letter-spacing: .1em; white-space: nowrap; }
-.vault-inbound-code > svg { color: #6975ab; }
-.vault-inbound-code.is-used { opacity: .7; background: #f5f6fa; }
-.vault-inbound-code.is-fresh { box-shadow: 0 6px 18px rgba(72, 92, 199, .1); }
-.vault-card.is-compact .vault-inbound-code { min-height: 48px; margin-top: 7px; padding-block: 6px; }
-.vault-card.is-compact .vault-inbound-code > b { font-size: 17px; }
+/* 动态验证码：与 OTP 同款 code 位置展示，来源信息放卡片底部「下一组」位置。 */
+.vault-code.is-inbound span { color: #3046b5; }
+.vault-code.is-inbound em { padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
+.vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
+.vault-card-next > small > svg { display: block; }
 .vault-detail-values > section.is-inbound { border-color: rgba(72, 92, 199, .18); background: #f3f5ff; }
 .vault-detail-values > section.is-inbound > small { display: block; margin-top: 7px; color: #7e879f; font-size: 9px; }
 .vault-detail-values > section.is-inbound.is-waiting { background: #f7f8fb; }
@@ -1855,11 +1843,10 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-binding-list article > button:last-child:not(:first-child) { min-height: 32px; padding: 0 9px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: #a5483f; font: inherit; font-size: 10px; cursor: pointer; }
 
 @media (max-width: 560px) {
-  .vault-inbound-code { min-height: 52px; grid-template-columns: minmax(0,1fr) auto auto; }
-  .vault-inbound-code > b { font-size: 17px; }
+  .vault-code.is-inbound span { font-size: 17px; }
   .vault-inbound-modal,.vault-binding-modal { width: 100%; max-height: 92dvh; }
   .vault-modal-tabs { margin-top: 4px; }
-  .vault-modal-tabs > button { min-height: 38px; font-size: 12px; }
+  .vault-modal-tabs > button { min-height: 40px; font-size: 12.5px; padding: 0 8px; }
   .vault-channel-create > .vault-primary,.vault-channel-add,.vault-channel-form-actions { width: 100%; justify-content: center; }
   .vault-channel-form-actions { flex-direction: column; }
   .vault-channel-form-actions > button { width: 100%; min-height: 42px; }
@@ -1875,13 +1862,15 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-unmatched-codes article small { grid-column: 1 / 2; }
   .vault-unmatched-codes article button { grid-column: 3; grid-row: 1 / span 2; }
   .vault-binding-list > article { align-items: stretch; }
+  .vault-binding-list article > button:first-child { padding: 2px 0; align-items: flex-start; }
   .vault-binding-list article b { font-size: 13px; }
-  .vault-binding-list article small { white-space: normal; }
+  .vault-binding-list article small { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .vault-binding-list article em { flex: none; }
   .vault-binding-list article > button:last-child:not(:first-child) { min-height: 38px; }
 }
 
-html.theme-dark .vault-inbound-code,html.theme-dark .vault-detail-values > section.is-inbound,html.theme-dark .vault-dynamic-enable.is-on { border-color: rgba(153,165,255,.2); background: #20283c; }
-html.theme-dark .vault-inbound-code > b { color: #bdc6ff; }
+html.theme-dark .vault-detail-values > section.is-inbound,html.theme-dark .vault-dynamic-enable.is-on { border-color: rgba(153,165,255,.2); background: #20283c; }
+html.theme-dark .vault-code.is-inbound span { color: #bdc6ff; }
 html.theme-dark .vault-dynamic-enable { background: #171e2c; }
 html.theme-dark .vault-modal-tabs { background: #111826; }
 html.theme-dark .vault-modal-tabs > button.is-active { background: #242d40; color: #a9b3ff; box-shadow: none; }
