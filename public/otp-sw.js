@@ -1,7 +1,7 @@
 /* global self, caches, fetch, URL */
 const CACHE_PREFIX = "otp-vault-";
-const SHELL_CACHE = `${CACHE_PREFIX}shell-v2`;
-const ASSET_CACHE = `${CACHE_PREFIX}assets-v2`;
+const SHELL_CACHE = `${CACHE_PREFIX}shell-v3`;
+const ASSET_CACHE = `${CACHE_PREFIX}assets-v3`;
 const CURRENT_CACHES = new Set([SHELL_CACHE, ASSET_CACHE]);
 const OTP_HOST = self.location.hostname === "otp.gooop.top" || self.location.hostname.startsWith("otp.");
 const APP_SHELL = OTP_HOST ? "/" : "/otp";
