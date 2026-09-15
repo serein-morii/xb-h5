@@ -24,12 +24,17 @@ test("received-code countdown uses received and expiry timestamps", () => {
   assert.match(share, /shareDetailInboundTiming\.progress/);
 });
 
-test("inbound countdown matches the authenticator s-style units", () => {
-  assert.match(history, /`\$\{rest\}s`/);
-  assert.match(history, /`\$\{minutes\}m\$\{rest \? `\$\{rest\}s` : ""\}`/);
-  assert.match(history, /`\$\{Math\.floor\(minutes \/ 60\)}h/);
-  assert.doesNotMatch(history, /秒/);
-  assert.doesNotMatch(history, /小时/);
+test("countdowns read as Chinese minutes and seconds in every code slot", () => {
+  assert.match(history, /`\$\{minutes\}分\$\{rest \? `\$\{rest\}秒` : ""\}`/);
+  assert.match(history, /`\$\{Math\.floor\(minutes \/ 60\)}小时/);
+  assert.match(history, /`\$\{rest\}秒`/);
+  assert.match(workspace, /`\$\{left\}秒`/);
+  assert.match(workspace, /\{detailOtpLeft\}秒<\//);
+  assert.match(workspace, /秒后启用/);
+  assert.match(share, /`\$\{left\}秒`/);
+  assert.match(share, /秒后启用/);
+  assert.match(workspace, /vault-code-timer/);
+  assert.match(share, /vault-code-timer/);
 });
 
 test("creating a source group stays on the workspace instead of native-submitting into splash", () => {

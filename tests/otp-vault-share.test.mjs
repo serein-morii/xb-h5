@@ -279,8 +279,17 @@ test("forbidden save toast uses a warning icon", async () => {
   assert.match(toast, /ERROR_TEXT\.test\(message\)/);
 });
 
-test("share save sits in a collapsible bottom dock named 转存", async () => {
-  const [sharePage, styles] = await Promise.all([
+test("share cards lead with the new badge, time codes inline, and single-item shares expand details", async () => {
+  const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
+  assert.match(sharePage, /\{!item\.dynamicCodeUsed \? <em>新<\/em> : null\}<span>\{item\.dynamicCode\.replace/);
+  assert.doesNotMatch(sharePage, /<small>已使用<\/small>/);
+  assert.match(sharePage, /<small className="vault-code-timer">\{formatCodeTime\(inboundTiming\.left\)\}<\/small>/);
+  assert.doesNotMatch(sharePage, /is-inbound-foot"><SourceBadges[\s\S]{0,120}formatCodeTime/);
+  assert.match(sharePage, /defaultOpen=\{items\.length === 1\}/);
+  assert.match(sharePage, /useState\(defaultOpen\)/);
+});
+
+test("share save sits in a collapsible bottom dock named 转存", async () => {  const [sharePage, styles] = await Promise.all([
     source("app/systems/otp/VaultSharePage.tsx"),
     source("app/systems/otp/otp-vault.css"),
   ]);

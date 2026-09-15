@@ -14,8 +14,8 @@ export function inboundCodeTiming(receivedTime?: string, expireTime?: string, no
 export function formatCodeTime(seconds: number) {
   if (seconds <= 0) return "已过期";
   const minutes = Math.floor(seconds / 60), rest = seconds % 60;
-  if (minutes >= 60) return `${Math.floor(minutes / 60)}h${minutes % 60 ? `${minutes % 60}m` : ""}`;
-  return minutes ? `${minutes}m${rest ? `${rest}s` : ""}` : `${rest}s`;
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}小时${minutes % 60 ? `${minutes % 60}分` : ""}`;
+  return minutes ? `${minutes}分${rest ? `${rest}秒` : ""}` : `${rest}秒`;
 }
 
 export default function InboundCodeHistory({ rows, total, loading, allowCopy, now, onCopy, onLoadMore, step = "02" }: {
