@@ -65,12 +65,15 @@ export type VaultCredential = {
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; tags?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
   dynamicCodeEnabled?: boolean; dynamicSources?: DynamicCodeSource[];
+  dynamicCodeSources?: VaultCredentialCodeSource[];
   dynamicCodeId?: number; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string;
+  dynamicCodeChannelId?: number; dynamicCodeChannelName?: string;
   dynamicCodeUsed?: boolean; dynamicCodeReceivedTime?: string; dynamicCodeExpireTime?: string;
   shared?: boolean; shareId?: number; shareName?: string; sharedBy?: string; sharedByAccount?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
 };
 
 export type DynamicCodeSource = "SMS" | "EMAIL" | "WEBHOOK";
+export type VaultCredentialCodeSource = { channelId: number; channelName: string; sourceType: DynamicCodeSource };
 export type VaultInboundAuthMode = "TOKEN" | "OPEN";
 export type VaultInboundChannel = {
   id: number; name: string; channelType: "IPHONE" | "EMAIL" | "GENERIC";
@@ -79,7 +82,7 @@ export type VaultInboundChannel = {
 };
 export type VaultCodeBinding = {
   id: number; credentialId: number; channelId: number; channelName: string; channelType?: string;
-  sourceType: DynamicCodeSource; senderPattern?: string; keywordPattern?: string; recipientHint?: string;
+  sourceType: DynamicCodeSource; senderPattern?: string; keywordPattern?: string; keywordMode?: "ANY" | "ALL"; recipientHint?: string;
   expireSeconds: number; priority: number; enabled: boolean; createTime: string;
 };
 export type VaultDynamicCode = {
@@ -232,6 +235,8 @@ export const deleteVaultInboundChannel = (id: number) =>
   otpApiRequest(`${vault}/inbound-channels/${id}`, { method: "DELETE" });
 export const listVaultCodeBindings = (credentialId: number) =>
   otpApiRequest<{ data: VaultCodeBinding[] }>(`${vault}/credentials/${credentialId}/code-bindings`);
+export const listVaultCodeBindingTemplates = () =>
+  otpApiRequest<{ data: VaultCodeBinding[] }>(`${vault}/code-binding-templates`);
 export const saveVaultCodeBinding = (credentialId: number, id: number | null, body: Record<string, unknown>) =>
   otpApiRequest<{ data: VaultCodeBinding }>(`${vault}/credentials/${credentialId}/code-bindings${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body });
 export const disableVaultCodeBinding = (credentialId: number, id: number) =>

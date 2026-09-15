@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, MessageSquareText, Moon, Pencil, Plus, Radio, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-			banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultInboundChannel, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCodeBindings, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares,
+			banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultInboundChannel, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCodeBindings, listVaultCodeBindingTemplates, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares,
 				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundAuthMode, type VaultInboundChannel, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, previewVaultImport, updateVaultShare,
 } from "./vaultApi";
@@ -123,7 +123,7 @@ const dynamicCodeAge = (receivedTime: string | undefined, now: number) => {
   return `${Math.floor(seconds / 60)} 分钟前`;
 };
 const emptyChannelForm: { name: string; channelType: string; authMode: VaultInboundAuthMode } = { name: "我的 iPhone", channelType: "IPHONE", authMode: "TOKEN" };
-const emptyBindingForm = { channelId: 0, sourceType: "SMS" as DynamicCodeSource, senderPattern: "", keywordPattern: "验证码", recipientHint: "", expireSeconds: 600, priority: 0, enabled: true };
+const emptyBindingForm = { channelId: 0, sourceType: "SMS" as DynamicCodeSource, senderPattern: "", keywordPattern: "验证码", keywordMode: "ANY" as "ANY" | "ALL", recipientHint: "", expireSeconds: 600, priority: 0, enabled: true };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", notificationEmailEnabled: true, barkUrl: "", barkEnabled: true, notificationRules: "", theme: "system", concealOtp: false, listSort: "name", groupBy: "system", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
@@ -403,6 +403,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [bindingFormOpen, setBindingFormOpen] = useState(false);
   const [pendingChannelDelete, setPendingChannelDelete] = useState<VaultInboundChannel | null>(null);
   const [codeBindings, setCodeBindings] = useState<VaultCodeBinding[]>([]);
+  const [bindingTemplates, setBindingTemplates] = useState<VaultCodeBinding[]>([]);
+  const [selectedBindingTemplate, setSelectedBindingTemplate] = useState("");
   const [bindingTarget, setBindingTarget] = useState<VaultCredential | null>(null);
   const [channelReturnCredential, setChannelReturnCredential] = useState<VaultCredential | null>(null);
   const [editingBindingId, setEditingBindingId] = useState<number | null>(null);
@@ -1139,9 +1141,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const openCodeBindings = async (credential: VaultCredential) => {
     setBusy(true);
     try {
-      const [channels, bindings] = await Promise.all([listVaultInboundChannels(), listVaultCodeBindings(credential.id)]);
+      const [channels, bindings, templates] = await Promise.all([listVaultInboundChannels(), listVaultCodeBindings(credential.id), listVaultCodeBindingTemplates()]);
       setInboundChannels(channels.data);
       setCodeBindings(bindings.data);
+      setBindingTemplates(templates.data);
+      setSelectedBindingTemplate("");
       setBindingTarget(credential);
       setEditingBindingId(null);
       setBindingForm({ ...emptyBindingForm, channelId: channels.data[0]?.id || 0 });
@@ -1155,7 +1159,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   };
   const editCodeBinding = (binding: VaultCodeBinding) => {
     setEditingBindingId(binding.id);
-    setBindingForm({ channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: binding.enabled });
+    setSelectedBindingTemplate("");
+    setBindingForm({ channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", keywordMode: binding.keywordMode || "ANY", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: binding.enabled });
     setBindingFormOpen(true);
     setBindingTab("list");
   };
@@ -1165,13 +1170,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setBusy(true);
     try {
       await saveVaultCodeBinding(bindingTarget.id, editingBindingId, bindingForm);
-      const bindings = await listVaultCodeBindings(bindingTarget.id);
+      const [bindings, templates] = await Promise.all([listVaultCodeBindings(bindingTarget.id), listVaultCodeBindingTemplates()]);
       setCodeBindings(bindings.data);
+      setBindingTemplates(templates.data);
       setEditingBindingId(null);
       setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 });
+      setSelectedBindingTemplate("");
       setBindingTab("list");
       setBindingFormOpen(false);
-      notify(editingBindingId ? "验证码来源已更新" : "验证码来源已添加");
+      notify(editingBindingId ? "来源组已更新" : "来源组已创建");
       await load(true);
     } catch (error) { notify(error instanceof Error ? error.message : "验证码来源保存失败", true); }
     finally { setBusy(false); }
@@ -1181,16 +1188,22 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setBusy(true);
     try {
       if (enabled) {
-        await saveVaultCodeBinding(bindingTarget.id, binding.id, { channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: true });
+        await saveVaultCodeBinding(bindingTarget.id, binding.id, { channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", keywordMode: binding.keywordMode || "ANY", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: true });
       } else {
         await disableVaultCodeBinding(bindingTarget.id, binding.id);
       }
       const bindings = await listVaultCodeBindings(bindingTarget.id);
       setCodeBindings(bindings.data);
-      notify(enabled ? "验证码来源已启用" : "验证码来源已停用");
+      notify(enabled ? "来源组已启用" : "来源组已停用");
       await load(true);
     } catch (error) { notify(error instanceof Error ? error.message : "验证码来源更新失败", true); }
     finally { setBusy(false); }
+  };
+  const applyBindingTemplate = (templateId: string) => {
+    setSelectedBindingTemplate(templateId);
+    const template = bindingTemplates.find((item) => String(item.id) === templateId);
+    if (!template) return;
+    setBindingForm((current) => ({ ...current, sourceType: template.sourceType, senderPattern: template.senderPattern || "", keywordPattern: template.keywordPattern || "", keywordMode: template.keywordMode || "ANY", recipientHint: template.recipientHint || "", expireSeconds: template.expireSeconds, priority: template.priority }));
   };
   const renderChannelCard = (channel: VaultInboundChannel) => {
     const open = expandedChannelId === channel.id;
@@ -1203,7 +1216,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <span className="vault-binding-copy"><span><b>{channel.name}</b><em className={`vault-notify-status ${channel.enabled ? "is-active" : ""}`}>{channel.enabled ? "接收中" : "已暂停"}</em></span><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · 最近接收 ${dynamicCodeAge(channel.lastReceivedTime, now)}` : " · 点开复制地址和密钥"}</small></span>
           <ChevronDown size={15} className="vault-channel-chevron" />
         </button>
-        <span className="vault-notify-switch"><input type="checkbox" aria-label={channel.enabled ? "暂停接收通道" : "恢复接收通道"} checked={channel.enabled} disabled={busy} onChange={(event) => { event.stopPropagation(); void toggleInboundChannel(channel); }} /><i /></span>
+        <label className="vault-notify-switch"><input type="checkbox" aria-label={channel.enabled ? "暂停接收通道" : "恢复接收通道"} checked={channel.enabled} disabled={busy} onChange={(event) => { event.stopPropagation(); void toggleInboundChannel(channel); }} /><i /></label>
       </div>
       {open ? <div className="vault-channel-body">
         <label><span>Webhook 地址</span><div><input readOnly value={webhookUrlOf(channel)} /><button type="button" onClick={() => void copy(webhookUrlOf(channel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>
@@ -1673,12 +1686,16 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const shareValidity = item.shared ? formatShareValidity(item.shareExpireTime, now) : "";
     const copyAllowed = canCopyCredential(item);
     const cardTags = splitCredentialTags(item.tags);
-    const configuredSources = item.dynamicSources?.length ? item.dynamicSources.map(sourceLabel).join(" / ") : item.dynamicCode ? sourceLabel(item.dynamicCodeSource) : "";
+    const configuredCodeSources = (item.dynamicCodeSources?.length ? item.dynamicCodeSources : (item.dynamicSources || []).map((source, index) => ({ channelId: -(index + 1), channelName: sourceLabel(source), sourceType: source })))
+      .map((source) => ({ ...source, active: item.dynamicCodeChannelId ? source.channelId === item.dynamicCodeChannelId : Boolean(item.dynamicCode && source.sourceType === item.dynamicCodeSource) }))
+      .sort((leftSource, rightSource) => Number(rightSource.active) - Number(leftSource.active));
+    const visibleCodeSources = configuredCodeSources.slice(0, prefs.compact ? 2 : 3);
+    const hiddenCodeSourceCount = configuredCodeSources.length - visibleCodeSources.length;
     return <article className={`vault-card${prefs.compact ? " is-compact" : ""}${item.shared ? " is-shared" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => void openDetail(item)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openDetail(item); } }}>
       <div className="vault-card-top"><span className="vault-service-mark" style={{ background: mark.background }}>{mark.letters}</span><div><b>{item.issuer}</b><small className={accountClass}>{item.accountName}</small></div><span className="vault-card-top-actions">{item.shared ? <span className="vault-shared-badge">共享</span> : null}<button type="button" className={item.favorite ? "is-favorite" : ""} onClick={(event) => { event.stopPropagation(); void toggleFavorite(item); }} aria-label={item.favorite ? "取消收藏" : "收藏"}><Star size={16} fill={item.favorite ? "currentColor" : "none"} /></button></span></div>
-      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? !copyAllowed ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : item.dynamicCode ? (copyAllowed ? <button type="button" className={`vault-code is-inbound${item.dynamicCodeUsed ? " is-used" : ""}`} onClick={(event) => { event.stopPropagation(); void copyDynamicCode(item); }}>{!item.dynamicCodeUsed ? <em>新</em> : null}<span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span><Copy size={15} /></button> : <div className="vault-code is-readonly is-inbound"><span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span></div>) : item.dynamicCodeEnabled ? <div className="vault-code is-waiting"><Radio size={11} /><span>等待验证码</span></div> : <div className="vault-no-code"><KeyRound size={16} />{item.passwordConfigured ? (item.shared ? "共享账号密码" : "已保存账号密码") : (item.note ? "安全笔记" : "未保存验证器密钥")}</div>}
+      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? !copyAllowed ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : item.dynamicCode ? (copyAllowed ? <button type="button" className={`vault-code is-inbound${item.dynamicCodeUsed ? " is-used" : ""}`} onClick={(event) => { event.stopPropagation(); void copyDynamicCode(item); }}>{!item.dynamicCodeUsed ? <em>新</em> : null}<span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span><Copy size={15} /></button> : <div className="vault-code is-readonly is-inbound"><span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span></div>) : item.dynamicCodeEnabled ? <div className="vault-code is-waiting"><span>等待验证码</span><button type="button" className="vault-wait-copy" disabled aria-label="暂无验证码可复制"><Copy size={15} /></button></div> : <div className="vault-no-code"><KeyRound size={16} />{item.passwordConfigured ? (item.shared ? "共享账号密码" : "已保存账号密码") : (item.note ? "安全笔记" : "未保存验证器密钥")}</div>}
       {cardTags.length ? <div className="vault-card-tags">{cardTags.slice(0, 3).map((tag) => <b key={tag}>{tag}</b>)}{cardTags.length > 3 ? <b>+{cardTags.length - 3}</b> : null}</div> : null}
-      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : item.currentOtp || item.otpConfigured ? `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位` : item.dynamicCodeEnabled ? "接收验证码" : item.passwordConfigured ? "登录密码" : "安全笔记"}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b>{copyAllowed ? <button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button> : null}</span> : item.dynamicCodeEnabled && !item.currentOtp ? <span className="vault-card-next" title={configuredSources}><small>{item.dynamicCodeSource === "EMAIL" ? <Mail size={11} /> : item.dynamicCodeSource === "WEBHOOK" ? <Webhook size={11} /> : <MessageSquareText size={11} />}</small><b>{configuredSources}</b></span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" && (item.currentOtp || item.otpConfigured) ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : item.dynamicCodeEnabled ? (item.dynamicCode ? dynamicCodeAge(item.dynamicCodeReceivedTime, now) : "等待中") : shareValidity || (item.shared ? "" : item.passwordConfigured ? "密码" : "笔记")}</span></div>
+      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : item.currentOtp || item.otpConfigured ? `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位` : item.dynamicCodeEnabled ? "接收验证码" : item.passwordConfigured ? "登录密码" : "安全笔记"}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b>{copyAllowed ? <button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button> : null}</span> : item.dynamicCodeEnabled && !item.currentOtp && configuredCodeSources.length ? <span className="vault-card-sources" title={configuredCodeSources.map((source) => source.channelName).join("、")}>{visibleCodeSources.map((source) => <span className={`vault-card-source${source.active ? " is-active" : ""}`} key={`${source.channelId}-${source.sourceType}`}><small>{source.sourceType === "EMAIL" ? <Mail size={11} /> : source.sourceType === "WEBHOOK" ? <Webhook size={11} /> : <MessageSquareText size={11} />}</small><b>{source.channelName}</b></span>)}{hiddenCodeSourceCount > 0 ? <i aria-label={`另有 ${hiddenCodeSourceCount} 个通道`}>…</i> : null}</span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" && (item.currentOtp || item.otpConfigured) ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : item.dynamicCodeEnabled ? (item.dynamicCode ? dynamicCodeAge(item.dynamicCodeReceivedTime, now) : "等待中") : shareValidity || (item.shared ? "" : item.passwordConfigured ? "密码" : "笔记")}</span></div>
       <div className="vault-card-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openDetail(item); }} aria-label="查看"><Eye size={13} /><span>查看</span></button>{item.shared && item.shareId ? <button type="button" onClick={(event) => { event.stopPropagation(); const share = receivedShares.find((row) => row.id === item.shareId); if (share) openReceivedShareDetail(share); }} aria-label="分享详情"><Link2 size={13} /><span>详情</span></button> : null}{!item.shared ? <><button type="button" onClick={(event) => { event.stopPropagation(); openShare(item.id); }} aria-label="分享"><Share2 size={13} /><span>分享</span></button><button type="button" onClick={(event) => { event.stopPropagation(); openCredential(item); }} aria-label="编辑"><Pencil size={13} /><span>编辑</span></button><button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete(item); setModal("deleteConfirm"); }} aria-label="删除"><Trash2 size={13} /><span>删除</span></button></> : null}</div>
     </article>;
   };
@@ -1827,7 +1844,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <label className={`vault-notify-action vault-notify-push ${pushStatusTone}`}>
             <span className="vault-setting-icon is-blue"><BellRing size={17} /></span>
             <span className="vault-notify-action-copy"><span><b>系统通知</b><em className={`vault-notify-status ${pushStatusTone}`}>{pushBusy ? <LoaderCircle className="spin" size={10} /> : null}{pushStatusLabel}</em></span><small aria-live="polite">{pushStatusHint}</small></span>
-            <span className="vault-notify-switch"><input type="checkbox" aria-label={pushEnabled ? "关闭系统通知" : "开启系统通知"} checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></span>
+            <label className="vault-notify-switch"><input type="checkbox" aria-label={pushEnabled ? "关闭系统通知" : "开启系统通知"} checked={pushEnabled} disabled={pushBusy || !browserPushSupported || iosNeedsHomeScreen || pushServerEnabled === false} onChange={() => void toggleBrowserPush()} /><i /></label>
           </label>
           <div className={`vault-notify-action vault-notify-channel ${emailNotifyOn && notifyEmailValue ? "is-active" : ""}`}>
             <div className="vault-notify-channel-head">
@@ -2012,30 +2029,42 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {modal === "codeBindings" && bindingTarget ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-binding-modal" onSubmit={submitCodeBinding}>
       <header><div><small>CODE ROUTING</small><h2>验证码来源</h2><p>为「{bindingTarget.issuer} · {bindingTarget.accountName}」设置自动接收与归类</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
       <div className="vault-share-scroll">
-        <div className="vault-source-guide"><b>验证码怎么到这里？</b><p>先由接收通道把短信或邮件送进保险库，再由归属规则自动贴到当前账号。</p></div>
+        <div className="vault-source-guide"><b>一个来源组怎么工作？</b><p>来源组 = 一个接收通道 + 一套匹配规则。通道可以共用，已有规则也可以直接套用。</p></div>
         <div className="vault-source-tabs" role="tablist" aria-label="验证码自动归类步骤">
-          <button type="button" aria-selected={bindingTab === "channels"} className={bindingTab === "channels" ? "is-active" : ""} onClick={() => { setBindingTab("channels"); setEditingBindingId(null); setBindingFormOpen(false); }}><em>01</em><span><b>接收通道{inboundChannels.length ? ` · ${inboundChannels.length}` : ""}</b><small>把验证码收进来 · 全账号共用</small></span></button>
+          <button type="button" aria-selected={bindingTab === "channels"} className={bindingTab === "channels" ? "is-active" : ""} onClick={() => { setBindingTab("channels"); setEditingBindingId(null); setBindingFormOpen(false); }}><em>01</em><span><b>接收通道{inboundChannels.length ? ` · ${inboundChannels.length}` : ""}</b><small>只负责接收 · 可以复用</small></span></button>
           <i><ChevronRight size={15} /></i>
-          <button type="button" aria-selected={bindingTab === "list"} className={bindingTab === "list" ? "is-active" : ""} onClick={() => { setBindingTab("list"); setEditingBindingId(null); setBindingFormOpen(false); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); }}><em>02</em><span><b>归属规则{codeBindings.length ? ` · ${codeBindings.length}` : ""}</b><small>分到当前账号 · 仅此凭据</small></span></button>
+          <button type="button" aria-selected={bindingTab === "list"} className={bindingTab === "list" ? "is-active" : ""} onClick={() => { setBindingTab("list"); setEditingBindingId(null); setBindingFormOpen(false); setSelectedBindingTemplate(""); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); }}><em>02</em><span><b>来源组{codeBindings.length ? ` · ${codeBindings.length}` : ""}</b><small>选通道 + 定匹配规则</small></span></button>
         </div>
         {bindingTab === "list" ? <section className="vault-share-section">
-          <div className="vault-source-section-head"><div><b>当前账号的归属规则</b><small>命中后，验证码会显示在「{bindingTarget.issuer}」卡片；不会影响其他账号。</small></div>{!bindingFormOpen && inboundChannels.length ? <button type="button" className="vault-channel-add" onClick={() => { setEditingBindingId(null); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); setBindingFormOpen(true); }}><Plus size={13} />新建规则</button> : null}</div>
-          {bindingFormOpen ? <div className="vault-channel-create vault-rule-form"><div className="vault-source-form-head"><span className="vault-setting-icon is-blue"><Radio size={17} /></span><div><b>{editingBindingId ? "编辑归属规则" : "新建归属规则"}</b><small>填写多个条件时需要同时命中；可选条件留空表示不限制。</small></div></div>{inboundChannels.length ? <div className="vault-form-grid"><label><span>从哪个通道接收</span><select required value={bindingForm.channelId} onChange={(event) => setBindingForm({ ...bindingForm, channelId: Number(event.target.value) })}>{inboundChannels.map((channel) => <option value={channel.id} key={channel.id}>{channel.name}{channel.enabled ? "" : "（已暂停）"}</option>)}</select></label><label><span>消息类型</span><select value={bindingForm.sourceType} onChange={(event) => setBindingForm({ ...bindingForm, sourceType: event.target.value as DynamicCodeSource })}><option value="SMS">短信</option><option value="EMAIL">邮箱</option><option value="WEBHOOK">Webhook</option></select></label><label><span>发送方包含（可选）</span><input maxLength={120} value={bindingForm.senderPattern} onChange={(event) => setBindingForm({ ...bindingForm, senderPattern: event.target.value })} placeholder="例如 1069、GitHub" /></label><label><span>正文关键词（可选）</span><input maxLength={160} value={bindingForm.keywordPattern} onChange={(event) => setBindingForm({ ...bindingForm, keywordPattern: event.target.value })} placeholder="例如 验证码，逗号分隔" /></label><label><span>收件账号提示（可选）</span><input maxLength={160} value={bindingForm.recipientHint} onChange={(event) => setBindingForm({ ...bindingForm, recipientHint: event.target.value })} placeholder="邮箱或手机号尾号" /></label><label><span>验证码保留时间</span><select value={bindingForm.expireSeconds} onChange={(event) => setBindingForm({ ...bindingForm, expireSeconds: Number(event.target.value) })}><option value={300}>5 分钟</option><option value={600}>10 分钟</option><option value={900}>15 分钟</option><option value={1800}>30 分钟</option></select></label></div> : <button type="button" className="vault-scan-entry" onClick={() => setBindingTab("channels")}><Webhook size={17} /><span><b>先完成第 1 步</b><small>创建接收通道后，才能为当前账号设置归属规则。</small></span></button>}</div> : null}
+          <div className="vault-source-section-head"><div><b>当前账号的来源组</b><small>每组选择一个通道和一套规则；可添加多组，最先命中的一组生效。</small></div>{!bindingFormOpen && inboundChannels.length ? <button type="button" className="vault-channel-add" onClick={() => { setEditingBindingId(null); setSelectedBindingTemplate(""); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); setBindingFormOpen(true); }}><Plus size={13} />新建来源组</button> : null}</div>
+          {bindingFormOpen ? <div className="vault-channel-create vault-rule-form">
+            <div className="vault-source-form-head"><span className="vault-setting-icon is-blue"><Layers3 size={17} /></span><div><b>{editingBindingId ? "编辑来源组" : "新建来源组"}</b><small>选择通道后可以新写规则，也可以直接套用以前用过的规则。</small></div></div>
+            {inboundChannels.length ? <div className="vault-form-grid">
+              <label><span>接收通道</span><select required value={bindingForm.channelId} onChange={(event) => setBindingForm({ ...bindingForm, channelId: Number(event.target.value) })}>{inboundChannels.map((channel) => <option value={channel.id} key={channel.id}>{channel.name}{channel.enabled ? "" : "（已暂停）"}</option>)}</select></label>
+              <label><span>复用已有规则（可选）</span><select value={selectedBindingTemplate} onChange={(event) => applyBindingTemplate(event.target.value)}><option value="">新建一套规则</option>{bindingTemplates.map((template) => <option value={template.id} key={template.id}>{sourceLabel(template.sourceType)} · {template.senderPattern || "任意发送方"} · {template.keywordPattern || "任意正文"}</option>)}</select></label>
+              <label><span>消息类型</span><select value={bindingForm.sourceType} onChange={(event) => setBindingForm({ ...bindingForm, sourceType: event.target.value as DynamicCodeSource })}><option value="SMS">短信</option><option value="EMAIL">邮箱</option><option value="WEBHOOK">Webhook</option></select></label>
+              <label><span>发送方包含（可选）</span><input maxLength={120} value={bindingForm.senderPattern} onChange={(event) => setBindingForm({ ...bindingForm, senderPattern: event.target.value })} placeholder="多个发送方用逗号分隔，命中任意一个" /></label>
+              <label><span>关键词匹配方式</span><select value={bindingForm.keywordMode} onChange={(event) => setBindingForm({ ...bindingForm, keywordMode: event.target.value as "ANY" | "ALL" })}><option value="ANY">包含任意一个关键词</option><option value="ALL">必须包含全部关键词</option></select></label>
+              <label><span>正文关键词（可选）</span><input maxLength={150} value={bindingForm.keywordPattern} onChange={(event) => setBindingForm({ ...bindingForm, keywordPattern: event.target.value })} placeholder="例如 验证码，安全码（逗号分隔）" /></label>
+              <label><span>收件账号提示（可选）</span><input maxLength={160} value={bindingForm.recipientHint} onChange={(event) => setBindingForm({ ...bindingForm, recipientHint: event.target.value })} placeholder="邮箱、手机号或尾号，命中任意一个" /></label>
+              <label><span>验证码保留时间</span><select value={bindingForm.expireSeconds} onChange={(event) => setBindingForm({ ...bindingForm, expireSeconds: Number(event.target.value) })}><option value={300}>5 分钟</option><option value={600}>10 分钟</option><option value={900}>15 分钟</option><option value={1800}>30 分钟</option></select></label>
+            </div> : <button type="button" className="vault-scan-entry" onClick={() => setBindingTab("channels")}><Webhook size={17} /><span><b>先完成第 1 步</b><small>创建接收通道后，才能保存来源组。</small></span></button>}
+          </div> : null}
           <div className="vault-binding-list">{codeBindings.length ? codeBindings.map((binding) => <article className={`vault-source-card is-rule${binding.enabled ? "" : " is-disabled"}`} key={binding.id}>
             <button type="button" className="vault-binding-open" onClick={() => editCodeBinding(binding)}>
               <span className={`vault-setting-icon ${binding.sourceType === "SMS" ? "is-green" : binding.sourceType === "EMAIL" ? "is-violet" : "is-blue"}`}>{binding.sourceType === "SMS" ? <MessageSquareText size={17} /> : binding.sourceType === "EMAIL" ? <Mail size={17} /> : <Webhook size={17} />}</span>
-              <span className="vault-binding-copy"><span><b>{sourceLabel(binding.sourceType)} · {binding.channelName}</b><em className={`vault-notify-status ${binding.enabled ? "is-active" : ""}`}>{binding.enabled ? "启用" : "停用"}</em></span><small>{[binding.senderPattern && `发送方 ${binding.senderPattern}`, binding.keywordPattern && `关键词 ${binding.keywordPattern}`, binding.recipientHint && `账号提示 ${binding.recipientHint}`].filter(Boolean).join(" · ") || "接收该通道的全部验证码"}</small></span>
+              <span className="vault-binding-copy"><span><b>{sourceLabel(binding.sourceType)} · {binding.channelName}</b><em className={`vault-notify-status ${binding.enabled ? "is-active" : ""}`}>{binding.enabled ? "启用" : "停用"}</em></span><small>{[binding.senderPattern && `发送方任一：${binding.senderPattern}`, binding.keywordPattern && `${binding.keywordMode === "ALL" ? "关键词全部" : "关键词任一"}：${binding.keywordPattern}`, binding.recipientHint && `账号提示：${binding.recipientHint}`].filter(Boolean).join(" · ") || "不限制发送方与正文"}</small></span>
               <ChevronRight size={15} />
             </button>
-            <span className="vault-notify-switch"><input type="checkbox" aria-label={binding.enabled ? "停用验证码来源" : "启用验证码来源"} checked={binding.enabled} disabled={busy} onChange={(event) => void toggleCodeBinding(binding, event.target.checked)} /><i /></span>
-          </article>) : !bindingFormOpen ? <div className="vault-inline-empty"><Radio size={18} /><b>还没有归属规则</b><small>{inboundChannels.length ? "新建一条规则，把收到的验证码自动分到此账号。" : "请先在第 1 步创建接收通道。"}</small></div> : null}</div>
+            <label className="vault-notify-switch"><input type="checkbox" aria-label={binding.enabled ? "停用来源组" : "启用来源组"} checked={binding.enabled} disabled={busy} onChange={(event) => void toggleCodeBinding(binding, event.target.checked)} /><i /></label>
+          </article>) : !bindingFormOpen ? <div className="vault-inline-empty"><Layers3 size={18} /><b>还没有来源组</b><small>{inboundChannels.length ? "新建一组，选择通道并设置验证码的匹配条件。" : "请先在第 1 步创建接收通道。"}</small></div> : null}</div>
         </section> : <section className="vault-share-section">
           <div className="vault-source-section-head"><div><b>保险库的接收通道</b><small>所有账号共用，只负责接收验证码，不决定验证码显示在哪张卡片。</small></div>{inboundChannels.length && !channelFormOpen ? <button type="button" className="vault-channel-add" onClick={() => setChannelFormOpen(true)}><Plus size={13} />新建通道</button> : null}</div>
-          {channelFormOpen || !inboundChannels.length ? renderChannelForm((channel) => { setBindingForm({ ...emptyBindingForm, channelId: channel.id }); setBindingFormOpen(true); setBindingTab("list"); }) : null}
+          {channelFormOpen || !inboundChannels.length ? renderChannelForm((channel) => { setSelectedBindingTemplate(""); setBindingForm({ ...emptyBindingForm, channelId: channel.id }); setBindingFormOpen(true); setBindingTab("list"); }) : null}
           <div className="vault-channel-list">{inboundChannels.length ? inboundChannels.map(renderChannelCard) : <div className="vault-inline-empty"><Webhook size={18} />还没有接收通道</div>}</div>
         </section>}
       </div>
-      <footer><span>{bindingTab === "channels" ? "第 1 步：先把验证码送进保险库" : "第 2 步：只把匹配的验证码分给当前账号"}</span><div>{bindingFormOpen ? <button type="button" className="vault-ghost" onClick={() => { setEditingBindingId(null); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); setBindingFormOpen(false); }}>{editingBindingId ? "取消编辑" : "收起"}</button> : null}<button type="button" className="vault-ghost" onClick={closeModal}>关闭</button>{bindingFormOpen ? <button className="vault-primary" disabled={busy || !inboundChannels.length}><Check size={14} />{editingBindingId ? "保存规则" : "创建规则"}</button> : null}</div></footer>
+      <footer><span>{bindingTab === "channels" ? "第 1 步：通道建好后可以被多个来源组复用" : "第 2 步：一组就是一个通道加一套匹配规则"}</span><div>{bindingFormOpen ? <button type="button" className="vault-ghost" onClick={() => { setEditingBindingId(null); setSelectedBindingTemplate(""); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); setBindingFormOpen(false); }}>{editingBindingId ? "取消编辑" : "收起"}</button> : null}<button type="button" className="vault-ghost" onClick={closeModal}>关闭</button>{bindingFormOpen ? <button className="vault-primary" disabled={busy || !inboundChannels.length}><Check size={14} />{editingBindingId ? "保存来源组" : "创建来源组"}</button> : null}</div></footer>
     </form></div> : null}
 
     {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写账号、密码或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { resetImport(); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => void openInboundChannels()}><span className="vault-setting-icon is-green"><Webhook size={18} /></span><span><b>验证码接收通道</b><small>配置 iPhone、邮件或通用 Webhook</small></span><ChevronRight size={16} /></button></div></section></div> : null}
