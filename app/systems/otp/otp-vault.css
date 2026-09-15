@@ -1823,6 +1823,17 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-list article > footer button,.vault-section-title > button { border: 0; background: transparent; color: var(--vault-accent); font: inherit; font-size: 9px; cursor: pointer; }
 .vault-channel-actions { display: inline-flex; align-items: center; gap: 10px; flex: none; }
 .vault-channel-hint { padding: 8px 10px; border-radius: 9px; background: #f6f7fb; color: var(--utility-muted); font-size: 9px; }
+.vault-tabs { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; border-radius: 11px; background: #eef0f4; }
+.vault-tabs > button { flex: 1; min-height: 30px; border: 0; border-radius: 8px; background: transparent; color: #747d91; font: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
+.vault-tabs > button.is-active { background: #fff; color: var(--vault-accent); box-shadow: 0 1px 3px rgba(31,41,72,.12); }
+.vault-channel-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.vault-channel-toolbar small { color: var(--utility-muted); font-size: 9px; }
+.vault-channel-add { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--vault-accent); color: #fff; font: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
+.vault-channel-list article > header { cursor: pointer; }
+.vault-channel-list article.is-open > header { border-radius: 10px 10px 0 0; }
+.vault-channel-list article > header > .vault-channel-chevron { flex: none; color: #9aa3b5; transition: transform .18s ease; }
+.vault-channel-list article.is-open > header > .vault-channel-chevron { transform: rotate(180deg); }
+.vault-channel-list article.is-open { padding-bottom: 12px; }
 .vault-tutorial-steps { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; color: #697288; font-size: 11px; line-height: 1.65; }
 .vault-tutorial-steps code { padding: 1px 5px; border-radius: 5px; background: #eef1ff; color: #3448b5; font-size: 10px; }
 .vault-tutorial-curl { display: block; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: #f6f7fb; color: #3448b5; font-size: 9px; word-break: break-all; user-select: all; }
