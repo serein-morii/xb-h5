@@ -111,7 +111,7 @@ export type VaultRecipient = {
 export type VaultPrefs = {
   masked: boolean; compact: boolean; grouped: boolean; showShared: boolean; autoRefresh: boolean;
   autoLockMinutes: number; stepUpEnabled: boolean; securityAlerts: boolean; notificationEmail?: string; notificationEmailEnabled?: boolean; notificationEmailCode?: string; barkUrl?: string; barkEnabled?: boolean; notificationRules?: string; theme?: "light" | "dark" | "system";
-  concealOtp?: boolean; listSort?: string; defaultFavorites?: boolean;
+  concealOtp?: boolean; listSort?: string; groupBy?: "system" | "tag"; defaultFavorites?: boolean;
   zeroKnowledgeEnabled?: boolean;
   zeroKnowledgeSalt?: string; zeroKnowledgeVerifier?: string;
   screenLockSet?: boolean;

@@ -97,7 +97,7 @@ test("vault UI exposes received tab, 50-item cap and save-to-inbox", async () =>
   assert.match(workspace, /SHARE_ITEM_LIMIT/);
   assert.match(workspace, /单次最多(?:授权|选择) \$\{SHARE_ITEM_LIMIT\}/);
   assert.match(workspace, /credentialTab === "received"/);
-  assert.match(workspace, /groupCredentials\(filtered, credentialTab, prefs\.grouped\)/);
+  assert.match(workspace, /groupCredentials\(filtered, credentialTab, prefs\.grouped, true, prefs\.groupBy \|\| "system"\)/);
   assert.match(workspace, /groupReceivedBySource/);
   assert.match(workspace, /renderReceivedList/);
   assert.match(workspace, /is-received-source/);
@@ -214,6 +214,16 @@ test("received credentials group by share batch not issuer", () => {
   const issuerGroups = groupCredentials(items, "all", true);
   assert.equal(issuerGroups.length, 3);
   assert.equal(issuerGroups[0].label, "GitHub");
+  const tagged = [
+    { id: 1, issuer: "GitHub", tags: "工作,代码" },
+    { id: 2, issuer: "智谱", tags: "工作" },
+    { id: 3, issuer: "Steam", tags: "" },
+  ];
+  const tagGroups = groupCredentials(tagged, "all", true, true, "tag");
+  assert.deepEqual(tagGroups.map((group) => group.label), ["代码", "工作", "未加标签"]);
+  assert.deepEqual(tagGroups[0].items.map((item) => item.id), [1]);
+  assert.deepEqual(tagGroups[1].items.map((item) => item.id), [1, 2]);
+  assert.equal(groupCredentials(tagged, "all", false, true, "tag").length, 1);
   assert.deepEqual(listSharedByOptions(items), ["alice", "bob"]);
   assert.equal(matchesSharedByFilter(items[0], ""), true);
   assert.equal(matchesSharedByFilter(items[0], "alice"), true);

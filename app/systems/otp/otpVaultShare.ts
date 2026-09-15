@@ -265,13 +265,14 @@ export function groupReceivedBySource<T extends { issuer: string; shareId?: numb
 /**
  * 凭据列表分组。
  * - 「我收到的」默认按授权批次；UI 外层再用 groupReceivedBySource 按人。
- * - 其它 Tab 在 grouped 开启时按系统名分组
+ * - 其它 Tab 在 grouped 开启时按系统名或标签分组
  */
-export function groupCredentials<T extends { issuer: string; shareId?: number; shareName?: string; sharedBy?: string }>(
+export function groupCredentials<T extends { issuer: string; shareId?: number; shareName?: string; sharedBy?: string; tags?: string }>(
   items: T[],
   tab: CredentialTab,
   grouped: boolean,
   groupBySource = true,
+  groupBy: "system" | "tag" = "system",
 ): CredentialGroup<T>[] {
   if (tab === "received") {
     if (!groupBySource) {
@@ -282,6 +283,16 @@ export function groupCredentials<T extends { issuer: string; shareId?: number; s
     return groupShareBatches(items);
   }
   if (!grouped) return [{ key: "all", label: "", items }];
+  if (groupBy === "tag") {
+    const buckets = new Map<string, T[]>();
+    for (const item of items) {
+      const tags = splitCredentialTags(item.tags);
+      for (const tag of tags.length ? tags : [""]) buckets.set(tag, [...(buckets.get(tag) || []), item]);
+    }
+    return [...buckets.entries()]
+      .sort(([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b, "zh-Hans-CN"))
+      .map(([tag, list]) => ({ key: `tag:${tag}`, label: tag || "未加标签", title: tag || "未加标签", items: list }));
+  }
   const names = [...new Set(items.map((item) => item.issuer))];
   return names.map((name) => ({ key: `issuer:${name}`, label: name, title: name, items: items.filter((item) => item.issuer === name) }));
 }
