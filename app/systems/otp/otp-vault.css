@@ -1767,7 +1767,7 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-code.is-inbound em { flex: none; padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
 .vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
 .vault-code.is-waiting { cursor: default; }
-.vault-code.is-waiting span { color: var(--utility-muted); font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+.vault-code.is-waiting span { color: var(--utility-muted); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
 .vault-code.is-waiting > svg { opacity: .38; }
 .vault-card-next > small > svg { display: block; }
 .vault-card-next > b { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
