@@ -282,8 +282,8 @@ test("forbidden save toast uses a warning icon", async () => {
 test("share cards lead with the new badge, countdown only when expanded, and single-item shares expand details", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
-  assert.match(sharePage, /\{!open && !item\.dynamicCodeUsed \? <em>新<\/em> : null\}<span>\{item\.dynamicCode\.replace/);
-  assert.match(sharePage, /\{open && !item\.dynamicCodeUsed \? <em>新<\/em> : null\}/);
+  assert.match(sharePage, /\{compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null\}<span>\{item\.dynamicCode\.replace/);
+  assert.match(sharePage, /\{!compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null\}/);
   assert.doesNotMatch(sharePage, /<small>已使用<\/small>/);
   assert.doesNotMatch(sharePage, /vault-code-timer/);
   assert.doesNotMatch(styles, /\.vault-code\.is-inbound span \{ font-size: 17px/);

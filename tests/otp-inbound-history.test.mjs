@@ -34,6 +34,8 @@ test("countdowns read as Chinese minutes and seconds in every code slot", () => 
   assert.match(share, /`\$\{left\}秒`/);
   assert.match(share, /秒后启用/);
   assert.doesNotMatch(workspace, /vault-code-timer/);
+  assert.match(workspace, /prefs\.compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null/);
+  assert.match(workspace, /!prefs\.compact && !item\.dynamicCodeUsed \? <em>新<\/em> : null/);
   assert.match(share, /\{open && item\.dynamicCode \? <span>\{formatCodeTime\(inboundTiming\.left\)\}<\/span> : null\}/);
 });
 
