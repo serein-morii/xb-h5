@@ -1933,7 +1933,6 @@ html.theme-dark .vault-card-source.is-active { border-color: rgba(105,190,143,.3
 .vault-binding-add .vault-binding-copy b { color: var(--vault-accent); }
 
 @media (max-width: 560px) {
-  .vault-code.is-inbound span { font-size: 17px; }
   .vault-inbound-modal,.vault-binding-modal { width: 100%; max-height: 92dvh; }
   .vault-modal-tabs { margin-top: 4px; }
   .vault-modal-tabs > button { min-height: 40px; font-size: 12.5px; padding: 0 8px; }
