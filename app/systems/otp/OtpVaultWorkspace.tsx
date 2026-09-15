@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, C
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
 			banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCodeBindings, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares,
-				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundChannel, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
+				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundAuthMode, type VaultInboundChannel, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, previewVaultImport, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
@@ -14,6 +14,7 @@ import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCo
 import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, duplicateImportCount, findSameAccountCredential, measureClockDriftMs, shouldConfirmDuplicateAdd, shouldWarnClockDrift } from "./otpDailyUse";
 import { DEFAULT_SHARE_SECONDS, PENDING_SAVE_KEY, SHARED_BY_SELF, SHARE_ITEM_LIMIT, clipboardReadBlocked, defaultShareName, groupCredentials, groupReceivedBySource, listSharedByOptions, matchesCredentialKind, matchesCredentialTab, matchesSharedByFilter, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shareDetailCredentials, sharedByFilterLabel, sharerDisplay, shouldOfferClipboardShare, splitCredentialTags, toggleShareSelection, type CredentialGroup, type CredentialKindFilter, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
+import { API_BASE } from "../../lib/api";
 import { OTP_VAULT_VERSION } from "./otpVersion";
 import { parseVaultImportText } from "./vaultImport";
 import { DEFAULT_PASSWORD_OPTIONS, generateStrongPassword, passwordStrength, type PasswordGeneratorOptions } from "./passwordTools";
@@ -30,7 +31,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "inboundChannels" | "codeBindings" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "inboundChannels" | "inboundTutorial" | "codeBindings" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
 const NOTIFY_GROUPS = [
 	  { title: "账号安全", events: [
 	    { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
@@ -113,6 +114,7 @@ type DynamicSourceFilter = "all" | "TOTP" | DynamicCodeSource;
 type DynamicStateFilter = "all" | "fresh" | "configured" | "unconfigured";
 const sourceLabel = (source?: string) => source === "SMS" ? "短信" : source === "EMAIL" ? "邮箱" : source === "WEBHOOK" ? "Webhook" : "验证器";
 const channelTypeLabel = (type: string) => type === "IPHONE" ? "iPhone 快捷指令" : type === "EMAIL" ? "邮件自动化转发" : "通用 Webhook";
+const webhookUrlOf = (channel: VaultInboundChannel) => new URL(`${API_BASE}${channel.webhookPath}`, window.location.origin).toString();
 const dynamicCodeAge = (receivedTime: string | undefined, now: number) => {
   const received = receivedTime ? new Date(normalizeDateTime(receivedTime)).getTime() : 0;
   if (!received) return "刚刚收到";
@@ -120,7 +122,7 @@ const dynamicCodeAge = (receivedTime: string | undefined, now: number) => {
   if (seconds < 60) return seconds < 10 ? "刚刚收到" : `${seconds} 秒前`;
   return `${Math.floor(seconds / 60)} 分钟前`;
 };
-const emptyChannelForm = { name: "我的 iPhone", channelType: "IPHONE" };
+const emptyChannelForm: { name: string; channelType: string; authMode: VaultInboundAuthMode } = { name: "我的 iPhone", channelType: "IPHONE", authMode: "TOKEN" };
 const emptyBindingForm = { channelId: 0, sourceType: "SMS" as DynamicCodeSource, senderPattern: "", keywordPattern: "验证码", recipientHint: "", expireSeconds: 600, priority: 0, enabled: true };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
@@ -386,6 +388,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [inboundChannels, setInboundChannels] = useState<VaultInboundChannel[]>([]);
   const [recentDynamicCodes, setRecentDynamicCodes] = useState<VaultDynamicCode[]>([]);
   const [channelForm, setChannelForm] = useState({ ...emptyChannelForm });
+  const [tutorialChannel, setTutorialChannel] = useState<VaultInboundChannel | null>(null);
   const [codeBindings, setCodeBindings] = useState<VaultCodeBinding[]>([]);
   const [bindingTarget, setBindingTarget] = useState<VaultCredential | null>(null);
   const [channelReturnCredential, setChannelReturnCredential] = useState<VaultCredential | null>(null);
@@ -1087,6 +1090,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       setInboundChannels((current) => current.map((item) => item.id === channel.id ? updated : item));
       notify("Webhook 密钥已更新，旧快捷指令将停止接收");
     } catch (error) { notify(error instanceof Error ? error.message : "Webhook 密钥更新失败", true); }
+    finally { setBusy(false); }
+  };
+  const switchChannelAuthMode = async (channel: VaultInboundChannel) => {
+    const nextMode = channel.authMode === "OPEN" ? "TOKEN" : "OPEN";
+    setBusy(true);
+    try {
+      const updated = (await updateVaultInboundChannel(channel.id, { authMode: nextMode })).data;
+      setInboundChannels((current) => current.map((item) => item.id === channel.id ? updated : item));
+      if (tutorialChannel?.id === channel.id) setTutorialChannel(updated);
+      notify(nextMode === "OPEN" ? "已切换为 URL 即凭证，请求不再需要请求头" : "已启用请求头 Token 校验");
+    } catch (error) { notify(error instanceof Error ? error.message : "鉴权方式切换失败", true); }
     finally { setBusy(false); }
   };
   const openCodeBindings = async (credential: VaultCredential) => {
@@ -1859,11 +1873,46 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {modal === "inboundChannels" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-inbound-modal">
       <header><div><small>INBOUND CHANNELS</small><h2>验证码接收通道</h2><p>一条通道可以接收多个账号的短信或邮件验证码</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
       <div className="vault-share-scroll">
-        <form className="vault-share-section vault-channel-create" onSubmit={submitInboundChannel}><div className="vault-section-title"><div><span>01</span><h3>新建通道</h3></div></div><div className="vault-form-grid"><label><span>通道名称</span><input required maxLength={40} value={channelForm.name} onChange={(event) => setChannelForm({ ...channelForm, name: event.target.value })} placeholder="例如：我的 iPhone" /></label><label><span>通道类型</span><select value={channelForm.channelType} onChange={(event) => setChannelForm({ ...channelForm, channelType: event.target.value })}><option value="IPHONE">iPhone 快捷指令</option><option value="EMAIL">邮件自动化转发</option><option value="GENERIC">通用 Webhook</option></select></label></div><button className="vault-primary" disabled={busy}><Plus size={14} />创建接收通道</button></form>
-        <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>已配置通道</h3></div><small>{inboundChannels.length} 个</small></div><div className="vault-channel-list">{inboundChannels.length ? inboundChannels.map((channel) => <article className={channel.enabled ? "" : "is-disabled"} key={channel.id}><header><span>{channel.channelType === "IPHONE" ? <MessageSquareText size={16} /> : channel.channelType === "EMAIL" ? <Mail size={16} /> : <Webhook size={16} />}</span><div><b>{channel.name}</b><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · 最近接收 ${dynamicCodeAge(channel.lastReceivedTime, now)}` : ""}</small></div><button type="button" className={channel.enabled ? "is-on" : ""} onClick={() => void toggleInboundChannel(channel)}>{channel.enabled ? "接收中" : "已暂停"}</button></header><label><span>Webhook 地址</span><div><input readOnly value={`${window.location.origin}${channel.webhookPath}`} /><button type="button" onClick={() => void copy(`${window.location.origin}${channel.webhookPath}`, "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label><label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={channel.webhookToken} /><button type="button" onClick={() => void copy(channel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label><footer><small>POST JSON：code、sourceType、sender、content、accountHint</small><button type="button" onClick={() => void rotateInboundChannel(channel)}>重新生成密钥</button></footer></article>) : <div className="vault-inline-empty"><Webhook size={18} />还没有接收通道</div>}</div></section>
+        <form className="vault-share-section vault-channel-create" onSubmit={submitInboundChannel}><div className="vault-section-title"><div><span>01</span><h3>新建通道</h3></div></div><div className="vault-form-grid"><label><span>通道名称</span><input required maxLength={40} value={channelForm.name} onChange={(event) => setChannelForm({ ...channelForm, name: event.target.value })} placeholder="例如：我的 iPhone" /></label><label><span>通道类型</span><select value={channelForm.channelType} onChange={(event) => setChannelForm({ ...channelForm, channelType: event.target.value })}><option value="IPHONE">iPhone 快捷指令</option><option value="EMAIL">邮件自动化转发</option><option value="GENERIC">通用 Webhook</option></select></label><label><span>鉴权方式</span><select value={channelForm.authMode} onChange={(event) => setChannelForm({ ...channelForm, authMode: event.target.value as VaultInboundAuthMode })}><option value="TOKEN">请求头 Token 校验</option><option value="OPEN">URL 即凭证（飞书风格）</option></select></label></div><button className="vault-primary" disabled={busy}><Plus size={14} />创建接收通道</button></form>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>已配置通道</h3></div><small>{inboundChannels.length} 个</small></div><div className="vault-channel-list">{inboundChannels.length ? inboundChannels.map((channel) => <article className={channel.enabled ? "" : "is-disabled"} key={channel.id}><header><span>{channel.channelType === "IPHONE" ? <MessageSquareText size={16} /> : channel.channelType === "EMAIL" ? <Mail size={16} /> : <Webhook size={16} />}</span><div><b>{channel.name}</b><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · 最近接收 ${dynamicCodeAge(channel.lastReceivedTime, now)}` : ""}</small></div><button type="button" className={channel.enabled ? "is-on" : ""} onClick={() => void toggleInboundChannel(channel)}>{channel.enabled ? "接收中" : "已暂停"}</button></header><label><span>Webhook 地址</span><div><input readOnly value={webhookUrlOf(channel)} /><button type="button" onClick={() => void copy(webhookUrlOf(channel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>{channel.authMode === "OPEN" ? <label><span>鉴权方式</span><div className="vault-channel-hint">URL 本身即凭证，请求无需携带请求头，请勿外泄链接</div></label> : <label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={channel.webhookToken} /><button type="button" onClick={() => void copy(channel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label>}<footer><small>POST JSON：code、sourceType、sender、content、accountHint</small><span className="vault-channel-actions"><button type="button" onClick={() => void switchChannelAuthMode(channel)}>{channel.authMode === "OPEN" ? "改用 Token 校验" : "改为免请求头"}</button><button type="button" onClick={() => void rotateInboundChannel(channel)}>重新生成密钥</button><button type="button" onClick={() => { setTutorialChannel(channel); setModal("inboundTutorial"); }}><BookOpen size={13} />配置教程</button></span></footer></article>) : <div className="vault-inline-empty"><Webhook size={18} />还没有接收通道</div>}</div></section>
         <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>待归类验证码</h3></div><small>{recentDynamicCodes.filter((item) => !item.credentialId).length} 条</small></div><div className="vault-unmatched-codes">{recentDynamicCodes.filter((item) => !item.credentialId).map((item) => <article key={item.id}><span>{sourceLabel(item.sourceType)} · {item.sender || item.channelName}</span><b>{item.code.replace(/(.{3})(?=.)/, "$1 ")}</b><small>{dynamicCodeAge(item.receivedTime, now)}</small><button type="button" onClick={() => void copy(item.code, "验证码已复制")}><Copy size={13} /></button></article>)}{recentDynamicCodes.every((item) => item.credentialId) ? <div className="vault-inline-empty"><Check size={17} />当前没有待归类验证码</div> : null}</div></section>
       </div>
-      <footer><span>Token 只用于快捷指令请求，不要放进 URL</span><div>{channelReturnCredential ? <button type="button" className="vault-ghost" onClick={() => void openCodeBindings(channelReturnCredential)}>返回配置来源</button> : null}<button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
+      <footer><span>鉴权方式可随时切换；验证码自动从正文中提取</span><div>{channelReturnCredential ? <button type="button" className="vault-ghost" onClick={() => void openCodeBindings(channelReturnCredential)}>返回配置来源</button> : null}<button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
+    </section></div> : null}
+
+    {modal === "inboundTutorial" && tutorialChannel ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-inbound-modal">
+      <header><div><small>WEBHOOK GUIDE</small><h2>配置教程 · {tutorialChannel.name}</h2><p>{channelTypeLabel(tutorialChannel.channelType)} · {tutorialChannel.authMode === "OPEN" ? "URL 即凭证" : "请求头 Token 校验"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll">
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>00</span><h3>通道信息</h3></div></div><label><span>Webhook 地址（点右侧复制）</span><div><input readOnly value={webhookUrlOf(tutorialChannel)} /><button type="button" onClick={() => void copy(webhookUrlOf(tutorialChannel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>{tutorialChannel.authMode === "OPEN" ? <p className="vault-section-help">当前为免请求头模式：地址本身即凭证，快捷指令里无需配置请求头。</p> : <label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={tutorialChannel.webhookToken} /><button type="button" onClick={() => void copy(tutorialChannel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label>}<p className="vault-section-help">验证码号码会自动从短信或邮件正文中提取，不需要你手动指定；正文关键词等归属规则可在「验证码来源」里配置。</p></section>
+        {tutorialChannel.channelType === "IPHONE" ? <>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>创建快捷指令「推送验证码」</h3></div></div><ol className="vault-tutorial-steps">
+            <li>打开「快捷指令」App，切到「快捷指令」标签，点右上角 <b>＋</b> 新建，名字改为「推送验证码」。</li>
+            <li>添加操作 <b>「匹配文本」</b>：文本选「快捷指令输入」，正则打开，内容填 <code>[0-9]{'{'}4,8{'}'}</code>。</li>
+            <li>添加操作 <b>「获取文本分组」</b>：从「匹配文本」的结果取第 1 组——这一步的输出就是验证码。</li>
+            <li>添加操作 <b>「获取 URL 内容」</b>：URL 粘贴上方地址；展开箭头把方法改为 <b>POST</b>；展开「请求头」添加 <code>X-Otp-Webhook-Token</code> = 上方 Token（免请求头模式跳过这步）；展开「请求体」选 JSON，添加字段：<code>code</code> ← 文本分组、<code>sourceType</code> ← SMS、<code>content</code> ← 快捷指令输入。</li>
+          </ol></section>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>创建自动化：收到短信自动推送</h3></div></div><ol className="vault-tutorial-steps">
+            <li>「快捷指令」App 底部切到「自动化」标签，点 <b>＋</b> 创建个人自动化。</li>
+            <li>选择 <b>「信息」</b>：「信息内容」填「验证码」（想收全部短信就留空），点下一步。</li>
+            <li>选「立即运行」→ 选刚创建的「推送验证码」快捷指令。</li>
+            <li>关闭 <b>「运行前询问」</b>，完成。之后手机收到含验证码的短信会自动推到保险库。</li>
+          </ol></section>
+          <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>测试</h3></div></div><ol className="vault-tutorial-steps">
+            <li>让朋友给自己发一条短信，内容包含「验证码 123456」。</li>
+            <li>回到保险库：凭据卡片和「待归类验证码」里会出现这条验证码，10 分钟内有效。</li>
+            <li>想让它自动贴到某个账号卡片？在凭据详情的「验证码来源」里把发送方配成「智谱」这类关键词即可。</li>
+          </ol></section>
+        </> : tutorialChannel.channelType === "EMAIL" ? <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>邮件自动化推送</h3></div></div><ol className="vault-tutorial-steps">
+          <li>iPhone：在快捷指令「自动化」里选择「邮件」触发器，收到新邮件时运行「推送验证码」类似的快捷指令，把 <code>sourceType</code> 换成 <code>EMAIL</code>，正文传邮件内容。</li>
+          <li>电脑端：用邮箱的过滤器 + 转发脚本（或 Zapier 等自动化平台）向本地址发起 POST。</li>
+          <li>请求体字段：<code>code</code>（可省略，会从 content 自动提取）、<code>sourceType</code> ← EMAIL、<code>sender</code> ← 发件人、<code>content</code> ← 邮件正文、<code>accountHint</code> ← 收件邮箱（可选）。</li>
+        </ol></section> : <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>通用 Webhook 调用</h3></div></div><ol className="vault-tutorial-steps">
+          <li>向 Webhook 地址发起 <b>POST</b> 请求，Content-Type 为 <code>application/json</code>{tutorialChannel.authMode === "OPEN" ? "。" : <>，请求头携带 <code>X-Otp-Webhook-Token</code>。</>}</li>
+          <li>请求体字段：<code>code</code>（可省略，会从 content 自动提取）、<code>sourceType</code> ← SMS / EMAIL / WEBHOOK、<code>sender</code>、<code>content</code>、<code>accountHint</code>（后四项可选）。</li>
+          <li>重复验证码 10 分钟窗口内自动去重；同一验证码只收一次。</li>
+        </ol><p className="vault-section-help">curl 示例：<code className="vault-tutorial-curl">curl -X POST {webhookUrlOf(tutorialChannel)} -H "Content-Type: application/json"{tutorialChannel.authMode === "OPEN" ? "" : ` -H "X-Otp-Webhook-Token: ${tutorialChannel.webhookToken}"`} -d &apos;{"{"}"content":"【智谱】验证码 246810"{"}"}&apos;</code></p></section>}
+      </div>
+      <footer><span>验证码加密存储，到期自动清除</span><div><button type="button" className="vault-ghost" onClick={() => setModal("inboundChannels")}>返回通道</button><button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
     </section></div> : null}
 
     {modal === "codeBindings" && bindingTarget ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-binding-modal" onSubmit={submitCodeBinding}>

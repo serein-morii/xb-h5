@@ -1821,6 +1821,11 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-list article > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
 .vault-channel-list article > footer small { color: var(--utility-muted); font-size: 8px; }
 .vault-channel-list article > footer button,.vault-section-title > button { border: 0; background: transparent; color: var(--vault-accent); font: inherit; font-size: 9px; cursor: pointer; }
+.vault-channel-actions { display: inline-flex; align-items: center; gap: 10px; flex: none; }
+.vault-channel-hint { padding: 8px 10px; border-radius: 9px; background: #f6f7fb; color: var(--utility-muted); font-size: 9px; }
+.vault-tutorial-steps { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; color: #697288; font-size: 11px; line-height: 1.65; }
+.vault-tutorial-steps code { padding: 1px 5px; border-radius: 5px; background: #eef1ff; color: #3448b5; font-size: 10px; }
+.vault-tutorial-curl { display: block; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: #f6f7fb; color: #3448b5; font-size: 9px; word-break: break-all; user-select: all; }
 .vault-inline-empty { min-height: 72px; display: grid; place-content: center; justify-items: center; gap: 6px; color: var(--utility-muted); font-size: 10px; }
 .vault-unmatched-codes > article { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 10px; background: #f6f7fb; }
 .vault-unmatched-codes article span,.vault-unmatched-codes article small { color: var(--utility-muted); font-size: 9px; }

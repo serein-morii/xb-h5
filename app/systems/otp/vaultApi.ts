@@ -71,8 +71,10 @@ export type VaultCredential = {
 };
 
 export type DynamicCodeSource = "SMS" | "EMAIL" | "WEBHOOK";
+export type VaultInboundAuthMode = "TOKEN" | "OPEN";
 export type VaultInboundChannel = {
   id: number; name: string; channelType: "IPHONE" | "EMAIL" | "GENERIC";
+  authMode: VaultInboundAuthMode;
   webhookPath: string; webhookToken: string; enabled: boolean; lastReceivedTime?: string; createTime: string;
 };
 export type VaultCodeBinding = {
@@ -219,9 +221,9 @@ export const saveInboundShare = (token: string, sessionToken: string) => otpApiR
 export const favoriteSharedCredential = (itemId: number, favorite: boolean) => otpApiRequest<{ data: VaultCredential }>(`${vault}/shared/${itemId}/favorite`, { method: "PUT", body: { favorite } });
 
 export const listVaultInboundChannels = () => otpApiRequest<{ data: VaultInboundChannel[] }>(`${vault}/inbound-channels`);
-export const createVaultInboundChannel = (body: { name: string; channelType: string }) =>
+export const createVaultInboundChannel = (body: { name: string; channelType: string; authMode?: VaultInboundAuthMode }) =>
   otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels`, { method: "POST", body });
-export const updateVaultInboundChannel = (id: number, body: { name?: string; channelType?: string; enabled?: boolean }) =>
+export const updateVaultInboundChannel = (id: number, body: { name?: string; channelType?: string; enabled?: boolean; authMode?: VaultInboundAuthMode }) =>
   otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}`, { method: "PUT", body });
 export const rotateVaultInboundChannelToken = (id: number) =>
   otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}/rotate-token`, { method: "POST" });
