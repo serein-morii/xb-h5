@@ -709,6 +709,8 @@ html.theme-dark { @media (max-width: 560px) {
 .share-content h1 { margin: 4px 0 3px; color: #172033; font-size: 25px; }
 .share-content > header p { color: #747d90; }
 .share-expiry { min-width: 188px; padding: 4px 10px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; background: transparent; color: #172033; }
+.share-expiry > span { margin-top: 0; }
+.share-content > header > .share-expiry > span { margin-top: 0; }
 .share-expiry-ring { position: relative; width: 52px; height: 52px; flex: none; display: grid; place-items: center; color: #586bcf; }
 .share-expiry-progress { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
 .share-expiry-progress circle { fill: none; }
