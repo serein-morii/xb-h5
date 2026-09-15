@@ -1806,17 +1806,11 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-list,.vault-binding-list,.vault-unmatched-codes { display: grid; gap: 8px; }
 .vault-channel-list > article,.vault-unmatched-codes > article { overflow: hidden; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); }
 .vault-channel-list > article.is-disabled { opacity: .62; }
-.vault-channel-summary { width: 100%; min-height: 56px; padding: 10px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr) auto 16px; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.vault-channel-summary > span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: #fff; background: linear-gradient(135deg,#263f32,#5f7f6b); }
-.vault-channel-summary > div { min-width: 0; }
-.vault-channel-summary b,.vault-channel-summary small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vault-channel-summary b { font-size: 13px; }
-.vault-channel-summary small { margin-top: 3px; color: var(--utility-muted); font-size: 10px; }
-.vault-channel-summary > em { padding: 5px 8px; border-radius: 999px; background: rgba(125,125,125,.1); color: var(--utility-muted); font-size: 9px; font-style: normal; font-weight: 800; }
-.vault-channel-summary > em.is-on { background: rgba(55,145,92,.1); color: #2f8050; }
-.vault-channel-summary > svg { color: var(--utility-muted); transition: transform .18s ease; }
-.vault-channel-list article.is-open .vault-channel-summary { border-bottom: 1px solid var(--utility-line); }
-.vault-channel-list article.is-open .vault-channel-summary > svg { transform: rotate(180deg); }
+.vault-channel-summary.vault-notify-action { cursor: pointer; }
+.vault-channel-summary .vault-notify-channel-open { min-width: 0; padding: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.vault-channel-chevron { color: var(--utility-muted); transition: transform .18s ease; }
+.vault-channel-list article.is-open .vault-channel-chevron { transform: rotate(180deg); }
+.vault-channel-list article.is-open .vault-channel-summary { border-bottom: 1px solid var(--utility-line); border-radius: 15px 15px 0 0; }
 .vault-channel-body { display: grid; gap: 10px; padding: 12px; background: color-mix(in srgb,var(--utility-paper) 68%,var(--utility-bg)); }
 .vault-channel-body > label { display: grid; gap: 6px; }
 .vault-channel-body > label > span { color: var(--utility-muted); font-size: 11px; }
@@ -1847,7 +1841,6 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-binding-copy b,.vault-binding-copy small { display: block; }
 .vault-binding-copy b { color: var(--utility-text); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-binding-copy small { margin-top: 4px; overflow: hidden; color: var(--utility-muted); font-size: 9px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
-.vault-binding-stop { min-height: 30px; padding: 0 10px; border: 1px solid var(--utility-line); border-radius: 999px; background: var(--utility-paper); color: #a5483f; font: inherit; font-size: 10px; cursor: pointer; }
 .vault-binding-add { width: 100%; min-height: 62px; margin-top: 8px; padding: 10px 11px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; border: 1px dashed rgba(102,116,207,.32); border-radius: 15px; background: transparent; color: var(--vault-accent); font: inherit; text-align: left; cursor: pointer; transition: border-color .16s,background .16s; }
 .vault-binding-add:hover { border-color: var(--vault-accent); background: rgba(102,116,207,.05); }
 .vault-binding-add .vault-binding-copy b { color: var(--vault-accent); }
@@ -1860,10 +1853,8 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-channel-create > .vault-primary,.vault-channel-add,.vault-channel-form-actions { width: 100%; justify-content: center; }
   .vault-channel-form-actions { flex-direction: column; }
   .vault-channel-form-actions > button { width: 100%; min-height: 42px; }
-  .vault-channel-summary { min-height: 52px; padding: 10px; grid-template-columns: 32px minmax(0,1fr) 16px; gap: 8px; }
-  .vault-channel-summary > span { width: 32px; height: 32px; }
-  .vault-channel-summary > em { display: none; }
-  .vault-channel-summary small { white-space: normal; }
+  .vault-channel-summary.vault-notify-action { padding: 10px; }
+  .vault-binding-copy small { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .vault-channel-toolbar { align-items: stretch; flex-direction: column; }
   .vault-channel-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
   .vault-channel-actions > button { min-height: 40px; justify-content: center; }
@@ -1872,9 +1863,6 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-unmatched-codes article small { grid-column: 1 / 2; }
   .vault-unmatched-codes article button { grid-column: 3; grid-row: 1 / span 2; }
   .vault-binding-list > article { padding: 11px 10px; }
-  .vault-binding-copy b { font-size: 12.5px; }
-  .vault-binding-copy small { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  .vault-binding-stop { min-height: 38px; }
 }
 
 html.theme-dark .vault-detail-values > section.is-inbound,html.theme-dark .vault-dynamic-enable.is-on { border-color: rgba(153,165,255,.2); background: #20283c; }
@@ -1888,7 +1876,7 @@ html.theme-dark .vault-binding-add { border-color: rgba(153,165,255,.3); backgro
 html.theme-dark .vault-binding-add:hover { background: rgba(153,165,255,.06); }
 html.theme-dark .vault-channel-body { background: #111826; }
 html.theme-dark .vault-channel-body input,html.theme-dark .vault-channel-hint,html.theme-dark .vault-channel-actions > button,html.theme-dark .vault-unmatched-codes article button { background: #101725; color: var(--utility-text); }
-html.theme-dark .vault-channel-summary > span { background: linear-gradient(135deg,#3d4ea8,#6674cf); }
+html.theme-dark .vault-channel-list > article.vault-notify-action { border-color: rgba(64,78,111,.18); }
 html.theme-dark .vault-tutorial-curl { background: rgba(137,150,241,.11); }
 @media (max-width: 560px) {
   .vault-toast { bottom: max(14px,env(safe-area-inset-bottom)); }

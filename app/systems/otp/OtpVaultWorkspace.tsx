@@ -1166,31 +1166,39 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     } catch (error) { notify(error instanceof Error ? error.message : "验证码来源保存失败", true); }
     finally { setBusy(false); }
   };
-  const stopCodeBinding = async (binding: VaultCodeBinding) => {
+  const toggleCodeBinding = async (binding: VaultCodeBinding, enabled: boolean) => {
     if (!bindingTarget) return;
     setBusy(true);
     try {
-      await disableVaultCodeBinding(bindingTarget.id, binding.id);
-      setCodeBindings((current) => current.map((item) => item.id === binding.id ? { ...item, enabled: false } : item));
-      notify("验证码来源已停用");
+      if (enabled) {
+        await saveVaultCodeBinding(bindingTarget.id, binding.id, { channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: true });
+      } else {
+        await disableVaultCodeBinding(bindingTarget.id, binding.id);
+      }
+      const bindings = await listVaultCodeBindings(bindingTarget.id);
+      setCodeBindings(bindings.data);
+      notify(enabled ? "验证码来源已启用" : "验证码来源已停用");
       await load(true);
-    } catch (error) { notify(error instanceof Error ? error.message : "验证码来源停用失败", true); }
+    } catch (error) { notify(error instanceof Error ? error.message : "验证码来源更新失败", true); }
     finally { setBusy(false); }
   };
   const renderChannelCard = (channel: VaultInboundChannel) => {
     const open = expandedChannelId === channel.id;
+    const channelIcon = (size: number) => channel.channelType === "IPHONE" ? <MessageSquareText size={size} /> : channel.channelType === "EMAIL" ? <Mail size={size} /> : <Webhook size={size} />;
+    const channelTone = channel.channelType === "IPHONE" ? "is-green" : channel.channelType === "EMAIL" ? "is-violet" : "is-blue";
     return <article className={`${channel.enabled ? "" : "is-disabled"}${open ? " is-open" : ""}`} key={channel.id}>
-      <button type="button" className="vault-channel-summary" onClick={() => setExpandedChannelId(open ? null : channel.id)}>
-        <span>{channel.channelType === "IPHONE" ? <MessageSquareText size={16} /> : channel.channelType === "EMAIL" ? <Mail size={16} /> : <Webhook size={16} />}</span>
-        <div><b>{channel.name}</b><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · ${dynamicCodeAge(channel.lastReceivedTime, now)}` : " · 尚未收到验证码"}</small></div>
-        <em className={channel.enabled ? "is-on" : ""}>{channel.enabled ? "接收中" : "已暂停"}</em>
-        <ChevronDown size={15} />
-      </button>
+      <div className={`vault-notify-action vault-channel-summary${channel.enabled ? " is-active" : ""}`}>
+        <button type="button" className="vault-notify-channel-open" onClick={() => setExpandedChannelId(open ? null : channel.id)}>
+          <span className={`vault-setting-icon ${channelTone}`}>{channelIcon(17)}</span>
+          <span className="vault-binding-copy"><span><b>{channel.name}</b><em className={`vault-notify-status ${channel.enabled ? "is-active" : ""}`}>{channel.enabled ? "接收中" : "已暂停"}</em></span><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · 最近接收 ${dynamicCodeAge(channel.lastReceivedTime, now)}` : " · 点开复制地址和密钥"}</small></span>
+          <ChevronDown size={15} className="vault-channel-chevron" />
+        </button>
+        <span className="vault-notify-switch"><input type="checkbox" aria-label={channel.enabled ? "暂停接收通道" : "恢复接收通道"} checked={channel.enabled} disabled={busy} onChange={(event) => { event.stopPropagation(); void toggleInboundChannel(channel); }} /><i /></span>
+      </div>
       {open ? <div className="vault-channel-body">
         <label><span>Webhook 地址</span><div><input readOnly value={webhookUrlOf(channel)} /><button type="button" onClick={() => void copy(webhookUrlOf(channel), "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label>
         {channel.authMode === "OPEN" ? <p className="vault-channel-hint">URL 本身即凭证，请求无需携带请求头，请勿外泄链接。</p> : <label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={channel.webhookToken} /><button type="button" onClick={() => void copy(channel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label>}
         <div className="vault-channel-actions">
-          <button type="button" onClick={() => void toggleInboundChannel(channel)}>{channel.enabled ? "暂停接收" : "恢复接收"}</button>
           <button type="button" onClick={() => void switchChannelAuthMode(channel)}>{channel.authMode === "OPEN" ? "改用 Token" : "免请求头"}</button>
           <button type="button" onClick={() => void rotateInboundChannel(channel)}>换密钥</button>
           <button type="button" onClick={() => { setTutorialChannel(channel); setModal("inboundTutorial"); }}><BookOpen size={13} />教程</button>
@@ -1994,7 +2002,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               <span className="vault-binding-copy"><span><b>{sourceLabel(binding.sourceType)} · {binding.channelName}</b><em className={`vault-notify-status ${binding.enabled ? "is-active" : ""}`}>{binding.enabled ? "启用" : "停用"}</em></span><small>{[binding.senderPattern && `发送方 ${binding.senderPattern}`, binding.keywordPattern && `关键词 ${binding.keywordPattern}`, binding.recipientHint && `账号提示 ${binding.recipientHint}`].filter(Boolean).join(" · ") || "接收该通道的全部验证码"}</small></span>
               <ChevronRight size={15} />
             </button>
-            {binding.enabled ? <button type="button" className="vault-binding-stop" onClick={() => void stopCodeBinding(binding)}>停用</button> : null}
+            <span className="vault-notify-switch"><input type="checkbox" aria-label={binding.enabled ? "停用验证码来源" : "启用验证码来源"} checked={binding.enabled} disabled={busy} onChange={(event) => void toggleCodeBinding(binding, event.target.checked)} /><i /></span>
           </article>) : <div className="vault-inline-empty"><Radio size={18} />尚未绑定验证码来源</div>}</div>
           <button type="button" className="vault-binding-add" onClick={() => { setEditingBindingId(null); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); setBindingFormOpen(true); }}><span className="vault-setting-icon is-blue"><Plus size={17} /></span><span className="vault-binding-copy"><span><b>添加匹配规则</b></span><small>命中规则的验证码会自动贴到「{bindingTarget.issuer}」卡片</small></span></button>
         </section> : <section className="vault-share-section">
