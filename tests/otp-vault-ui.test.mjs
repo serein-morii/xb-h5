@@ -144,7 +144,7 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(workspace, /<option value="EMAIL">邮箱<\/option>/);
   assert.match(workspace, /<option value="WEBHOOK">Webhook<\/option>/);
   assert.match(workspace, /vault-code is-inbound/);
-  assert.match(workspace, /等待短信或邮件验证码/);
+  assert.match(workspace, /等待验证码/);
   assert.match(workspace, /X-Otp-Webhook-Token/);
   assert.match(api, /listVaultInboundChannels/);
   assert.match(api, /listVaultCodeBindings/);

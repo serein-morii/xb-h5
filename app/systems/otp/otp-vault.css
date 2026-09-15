@@ -1761,10 +1761,16 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 }
 
 /* 动态验证码：与 OTP 同款 code 位置展示，来源信息放卡片底部「下一组」位置。 */
+.vault-code.is-inbound { justify-content: flex-start; gap: 7px; }
+.vault-code.is-inbound > svg { margin-left: auto; }
 .vault-code.is-inbound span { color: #3046b5; }
-.vault-code.is-inbound em { padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
+.vault-code.is-inbound em { flex: none; padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
 .vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
+.vault-code.is-waiting { cursor: default; }
+.vault-code.is-waiting span { color: var(--utility-muted); font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+.vault-code.is-waiting > svg { opacity: .38; }
 .vault-card-next > small > svg { display: block; }
+.vault-card-next > b { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-detail-values > section.is-inbound { border-color: rgba(72, 92, 199, .18); background: #f3f5ff; }
 .vault-detail-values > section.is-inbound > small { display: block; margin-top: 7px; color: #7e879f; font-size: 9px; }
 .vault-detail-values > section.is-inbound.is-waiting { background: #f7f8fb; }
@@ -1798,8 +1804,8 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-toolbar small { color: var(--utility-muted); font-size: 10px; }
 .vault-channel-add { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--vault-accent); color: #fff; font: inherit; font-size: 11px; font-weight: 700; box-shadow: 0 7px 16px rgba(72,92,199,.18); cursor: pointer; }
 .vault-channel-list,.vault-binding-list,.vault-unmatched-codes { display: grid; gap: 8px; }
-.vault-channel-list > article,.vault-binding-list > article,.vault-unmatched-codes > article { overflow: hidden; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); }
-.vault-channel-list > article.is-disabled,.vault-binding-list > article.is-disabled { opacity: .62; }
+.vault-channel-list > article,.vault-unmatched-codes > article { overflow: hidden; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); }
+.vault-channel-list > article.is-disabled { opacity: .62; }
 .vault-channel-summary { width: 100%; min-height: 56px; padding: 10px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr) auto 16px; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .vault-channel-summary > span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: #fff; background: linear-gradient(135deg,#263f32,#5f7f6b); }
 .vault-channel-summary > div { min-width: 0; }
@@ -1831,16 +1837,20 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-unmatched-codes article span,.vault-unmatched-codes article small { color: var(--utility-muted); font-size: 10px; }
 .vault-unmatched-codes article b { color: var(--utility-text); font-size: 16px; font-weight: 850; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
 .vault-unmatched-codes article button { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--utility-line); border-radius: 11px; background: var(--utility-paper); color: var(--utility-text); cursor: pointer; }
-.vault-binding-list > article { display: flex; align-items: center; gap: 8px; }
-.vault-binding-list article > button:first-child { min-width: 0; flex: 1; padding: 0; display: flex; align-items: center; gap: 12px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.vault-binding-list article > button:first-child > span { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; color: #fff; background: linear-gradient(135deg,#263f32,#5f7f6b); }
-.vault-binding-list article > button:first-child > div { min-width: 0; flex: 1; }
-.vault-binding-list article b,.vault-binding-list article small { display: block; }
-.vault-binding-list article b { font-size: 12px; }
-.vault-binding-list article small { margin-top: 4px; overflow: hidden; color: var(--utility-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.vault-binding-list article em { padding: 5px 8px; border-radius: 999px; background: rgba(55,145,92,.1); color: #2f8050; font-size: 9px; font-style: normal; font-weight: 800; }
-.vault-binding-list article.is-disabled em { background: rgba(125,125,125,.1); color: var(--utility-muted); }
-.vault-binding-list article > button:last-child:not(:first-child) { min-height: 32px; padding: 0 9px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: #a5483f; font: inherit; font-size: 10px; cursor: pointer; }
+.vault-binding-list > article { min-width: 0; min-height: 62px; padding: 10px 11px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px solid rgba(64,78,111,.1); border-radius: 15px; background: color-mix(in srgb,var(--utility-bg) 62%,#fff); transition: border-color .16s,background .16s; }
+.vault-binding-list > article:hover { border-color: rgba(102,116,207,.22); }
+.vault-binding-list > article.is-disabled { opacity: .62; }
+.vault-binding-open { min-width: 0; padding: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.vault-binding-open > svg { color: var(--utility-muted); }
+.vault-binding-copy { min-width: 0; }
+.vault-binding-copy > span { min-width: 0; display: flex; align-items: center; gap: 7px; }
+.vault-binding-copy b,.vault-binding-copy small { display: block; }
+.vault-binding-copy b { color: var(--utility-text); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-binding-copy small { margin-top: 4px; overflow: hidden; color: var(--utility-muted); font-size: 9px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.vault-binding-stop { min-height: 30px; padding: 0 10px; border: 1px solid var(--utility-line); border-radius: 999px; background: var(--utility-paper); color: #a5483f; font: inherit; font-size: 10px; cursor: pointer; }
+.vault-binding-add { width: 100%; min-height: 62px; margin-top: 8px; padding: 10px 11px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; border: 1px dashed rgba(102,116,207,.32); border-radius: 15px; background: transparent; color: var(--vault-accent); font: inherit; text-align: left; cursor: pointer; transition: border-color .16s,background .16s; }
+.vault-binding-add:hover { border-color: var(--vault-accent); background: rgba(102,116,207,.05); }
+.vault-binding-add .vault-binding-copy b { color: var(--vault-accent); }
 
 @media (max-width: 560px) {
   .vault-code.is-inbound span { font-size: 17px; }
@@ -1861,12 +1871,10 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-unmatched-codes > article { grid-template-columns: minmax(0,1fr) auto auto; }
   .vault-unmatched-codes article small { grid-column: 1 / 2; }
   .vault-unmatched-codes article button { grid-column: 3; grid-row: 1 / span 2; }
-  .vault-binding-list > article { align-items: stretch; }
-  .vault-binding-list article > button:first-child { padding: 2px 0; align-items: flex-start; }
-  .vault-binding-list article b { font-size: 13px; }
-  .vault-binding-list article small { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  .vault-binding-list article em { flex: none; }
-  .vault-binding-list article > button:last-child:not(:first-child) { min-height: 38px; }
+  .vault-binding-list > article { padding: 11px 10px; }
+  .vault-binding-copy b { font-size: 12.5px; }
+  .vault-binding-copy small { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .vault-binding-stop { min-height: 38px; }
 }
 
 html.theme-dark .vault-detail-values > section.is-inbound,html.theme-dark .vault-dynamic-enable.is-on { border-color: rgba(153,165,255,.2); background: #20283c; }
@@ -1874,10 +1882,13 @@ html.theme-dark .vault-code.is-inbound span { color: #bdc6ff; }
 html.theme-dark .vault-dynamic-enable { background: #171e2c; }
 html.theme-dark .vault-modal-tabs { background: #111826; }
 html.theme-dark .vault-modal-tabs > button.is-active { background: #242d40; color: #a9b3ff; box-shadow: none; }
-html.theme-dark .vault-channel-list > article,html.theme-dark .vault-binding-list > article,html.theme-dark .vault-unmatched-codes > article { background: #171e2c; }
+html.theme-dark .vault-channel-list > article,html.theme-dark .vault-unmatched-codes > article { background: #171e2c; }
+html.theme-dark .vault-binding-list > article { border-color: rgba(64,78,111,.18); background: #171e2c; }
+html.theme-dark .vault-binding-add { border-color: rgba(153,165,255,.3); background: transparent; }
+html.theme-dark .vault-binding-add:hover { background: rgba(153,165,255,.06); }
 html.theme-dark .vault-channel-body { background: #111826; }
 html.theme-dark .vault-channel-body input,html.theme-dark .vault-channel-hint,html.theme-dark .vault-channel-actions > button,html.theme-dark .vault-unmatched-codes article button { background: #101725; color: var(--utility-text); }
-html.theme-dark .vault-channel-summary > span,html.theme-dark .vault-binding-list article > button:first-child > span { background: linear-gradient(135deg,#3d4ea8,#6674cf); }
+html.theme-dark .vault-channel-summary > span { background: linear-gradient(135deg,#3d4ea8,#6674cf); }
 html.theme-dark .vault-tutorial-curl { background: rgba(137,150,241,.11); }
 @media (max-width: 560px) {
   .vault-toast { bottom: max(14px,env(safe-area-inset-bottom)); }
