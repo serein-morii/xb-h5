@@ -360,4 +360,8 @@ test("share page leaves 验证授权 after a restored session loads", async () =
   assert.match(sharePage, /dynamicSources/);
   assert.match(sharePage, /vault-code is-waiting/);
   assert.match(sharePage, /active=\{item\.dynamicCode \? item\.dynamicCodeSource : undefined\}/);
+  assert.match(sharePage, /vault-card-foot is-inbound-foot/);
+  assert.match(sharePage, /title=\{sourceLabel\(source\)\}/);
+  assert.match(sharePage, /width: `\$\{progress\}%`/);
+  assert.doesNotMatch(sharePage, /hasInbound \? "等待中"/);
 });

@@ -136,10 +136,12 @@ export type ShareStatus = {
 };
 
 export type SharedItem = {
-  issuer: string; accountName?: string; password?: string; otp?: string; nextOtp?: string;
+  shareItemId: number; issuer: string; accountName?: string; password?: string; otp?: string; nextOtp?: string;
   otpValidUntil?: number; otpPeriodSeconds?: number; loginUrl?: string; note?: string;
-  dynamicSources?: DynamicCodeSource[]; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string; dynamicCodeUsed?: boolean;
+  dynamicSources?: DynamicCodeSource[]; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string; dynamicCodeUsed?: boolean; dynamicCodeReceivedTime?: string; dynamicCodeExpireTime?: string;
 };
+
+export type VaultCodeHistoryPage = { rows: VaultDynamicCode[]; total: number; page: number; pageSize: number };
 
 const { vault, vaultAccount, share } = API_PATHS.otp;
 
@@ -149,6 +151,8 @@ export const listVaultCredentials = () => otpApiRequest<{ data: VaultCredential[
 /** 共享凭据走显式语义路由；负数 ID 兼容旧数据不再使用。 */
 export const getVaultCredential = (id: number) =>
   otpApiRequest<{ data: VaultCredential }>(id < 0 ? `${vault}/shared/${-id}` : `${vault}/credentials/${id}`);
+export const listVaultCredentialDynamicCodes = (id: number, page = 1) =>
+  otpApiRequest<{ data: VaultCodeHistoryPage }>(id < 0 ? `${vault}/shared/${-id}/dynamic-codes?page=${page}&pageSize=5` : `${vault}/credentials/${id}/dynamic-codes?page=${page}&pageSize=5`);
 export const nextVaultHotp = (id: number) => otpApiRequest<{ data: VaultCredential }>(`${vault}/credentials/${id}/hotp/next`, { method: "POST" });
 export const saveVaultCredential = (id: number | null, body: Record<string, unknown>) => otpApiRequest<{ data: VaultCredential }>(id ? `${vault}/credentials/${id}` : `${vault}/credentials`, { method: id ? "PUT" : "POST", body });
 export const syncVaultCredentialShares = (id: number) => otpApiRequest<{ data: { synced: number } }>(`${vault}/credentials/${id}/sync-shares`, { method: "POST" });
@@ -220,6 +224,7 @@ export const deleteVaultShare = (id: number) => otpApiRequest(`${vault}/shares/$
 export const getShareStatus = (token: string) => apiRequest<{ data: ShareStatus }>(`${share}/${token}/status`, { auth: false });
 export const openVaultShare = (token: string, accessCode: string) => apiRequest<{ data: { sessionToken: string; sessionExpiresIn: number } }>(`${share}/${token}/open`, { auth: false, method: "POST", body: { accessCode } });
 export const getSharedContent = (token: string, sessionToken: string) => apiRequest<{ data: { items: SharedItem[]; name?: string; allowCopy: boolean; expireTime: string; serverTime: number } }>(`${share}/${token}/content`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
+export const listSharedDynamicCodes = (token: string, sessionToken: string, itemId: number, page = 1) => apiRequest<{ data: VaultCodeHistoryPage }>(`${share}/${token}/content/${itemId}/dynamic-codes?page=${page}&pageSize=5`, { auth: false, headers: { "X-Otp-Share-Session": sessionToken } });
 export const getInboundShareStatus = (token: string) => otpApiRequest<{ data: { saved: boolean; own: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`);
 export const saveInboundShare = (token: string, sessionToken: string) => otpApiRequest<{ data: { saved: boolean; alreadySaved: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`, { method: "POST", headers: { "X-Otp-Share-Session": sessionToken } });
 export const favoriteSharedCredential = (itemId: number, favorite: boolean) => otpApiRequest<{ data: VaultCredential }>(`${vault}/shared/${itemId}/favorite`, { method: "PUT", body: { favorite } });

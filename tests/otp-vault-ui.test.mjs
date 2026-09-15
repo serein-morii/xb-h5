@@ -185,6 +185,10 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(styles, /\.vault-card-source\.is-active/);
   assert.match(workspace, /new Set<DynamicCodeSource>/);
   assert.match(workspace, /item\.dynamicCode && source === item\.dynamicCodeSource/);
+  assert.match(workspace, /title=\{sourceLabel\(source\)\}/);
+  assert.match(workspace, /usesInboundSources \? inboundTiming\.progress : progress/);
+  assert.match(workspace, /vault-card-foot is-inbound-foot/);
+  assert.doesNotMatch(workspace, /item\.dynamicCode \? \(item\.dynamicCode \? dynamicCodeAge/);
   assert.match(workspace, /<label className="vault-notify-switch"><input type="checkbox" aria-label=\{binding\.enabled/);
   assert.match(styles, /\.vault-source-tabs/);
   assert.match(styles, /\.vault-source-section-head/);

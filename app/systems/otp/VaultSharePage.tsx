@@ -1,12 +1,13 @@
 import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { APP_ROUTES } from "../../lib/pathConventions";
-import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, openVaultShare, saveInboundShare, type DynamicCodeSource, type SharedItem, type ShareStatus } from "./vaultApi";
+import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, listSharedDynamicCodes, openVaultShare, saveInboundShare, type DynamicCodeSource, type SharedItem, type ShareStatus, type VaultDynamicCode } from "./vaultApi";
 import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareHandoffAfterRestore, shareLoginNext, shouldShowShareHandoff } from "./otpVaultShare";
 import { issuerStyle } from "./issuerStyle";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { scheduleClipboardClear } from "./otpDailyUse";
 import VaultToastMessage from "./VaultToastMessage";
+import InboundCodeHistory, { formatCodeTime, inboundCodeTiming } from "./InboundCodeHistory";
 import "./otp-vault.css";
 
 const sourceLabel = (source?: DynamicCodeSource) => source === "SMS" ? "短信" : source === "EMAIL" ? "邮箱" : "Webhook";
@@ -35,6 +36,10 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [saveCollapsed, setSaveCollapsed] = useState(false);
   const [detailItem, setDetailItem] = useState<SharedItem | null>(null);
   const [detailPasswordVisible, setDetailPasswordVisible] = useState(false);
+  const [detailCodeHistory, setDetailCodeHistory] = useState<VaultDynamicCode[]>([]);
+  const [detailCodeHistoryTotal, setDetailCodeHistoryTotal] = useState(0);
+  const [detailCodeHistoryPage, setDetailCodeHistoryPage] = useState(0);
+  const [detailCodeHistoryLoading, setDetailCodeHistoryLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [displayPrefs, setDisplayPrefs] = useState(() => {
     try { return { compact: true, grouped: true, ...JSON.parse(localStorage.getItem("otp-vault-share-prefs") || "{}") }; }
@@ -156,6 +161,18 @@ export default function VaultSharePage({ token }: { token: string }) {
     if (!status?.name) return;
     document.title = `${status.name}｜OTP Vault`;
   }, [status?.name]);
+  useEffect(() => {
+    setDetailCodeHistory([]); setDetailCodeHistoryTotal(0); setDetailCodeHistoryPage(0);
+    if (!detailItem?.shareItemId || !sessionToken || !(detailItem.dynamicSources?.length || detailItem.dynamicCode)) return;
+    let cancelled = false;
+    setDetailCodeHistoryLoading(true);
+    listSharedDynamicCodes(token, sessionToken, detailItem.shareItemId, 1).then((result) => {
+      if (cancelled) return;
+      setDetailCodeHistory(result.data.rows); setDetailCodeHistoryTotal(result.data.total); setDetailCodeHistoryPage(1);
+    }).catch((loadError) => { if (!cancelled) setToast(loadError instanceof Error ? loadError.message : "历史验证码加载失败"); })
+      .finally(() => { if (!cancelled) setDetailCodeHistoryLoading(false); });
+    return () => { cancelled = true; };
+  }, [detailItem?.shareItemId, sessionToken, token]);
 
   const copy = async (value: string, key: string, message = "已复制") => {
     if (!allowCopy) return;
@@ -168,6 +185,17 @@ export default function VaultSharePage({ token }: { token: string }) {
   const liveShareDetail = detailItem ? items.find((item) => item.issuer === detailItem.issuer && item.accountName === detailItem.accountName) || detailItem : null;
   const shareDetailLeft = liveShareDetail?.otpValidUntil ? Math.max(0, Math.ceil((liveShareDetail.otpValidUntil - syncedNow) / 1000)) : 0;
   const shareDetailProgress = liveShareDetail?.otpPeriodSeconds ? Math.max(0, Math.min(100, shareDetailLeft / liveShareDetail.otpPeriodSeconds * 100)) : 0;
+  const shareDetailInboundTiming = inboundCodeTiming(liveShareDetail?.dynamicCodeReceivedTime, liveShareDetail?.dynamicCodeExpireTime, syncedNow);
+  const loadMoreDetailCodes = async () => {
+    if (!liveShareDetail?.shareItemId || !sessionToken || detailCodeHistoryLoading) return;
+    setDetailCodeHistoryLoading(true);
+    try {
+      const result = await listSharedDynamicCodes(token, sessionToken, liveShareDetail.shareItemId, detailCodeHistoryPage + 1);
+      setDetailCodeHistory((current) => [...current, ...result.data.rows]);
+      setDetailCodeHistoryTotal(result.data.total); setDetailCodeHistoryPage(result.data.page);
+    } catch (loadError) { setToast(loadError instanceof Error ? loadError.message : "历史验证码加载失败"); }
+    finally { setDetailCodeHistoryLoading(false); }
+  };
   const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - syncedNow) / 1000)) : 0;
   const expiryProgress = expiryTotal.current ? Math.max(0, Math.min(100, expiresIn / expiryTotal.current * 100)) : 100;
   const secondsProgress = expiresIn ? ((expiresIn - 1) % 60 + 1) / 60 * 100 : 0;
@@ -213,9 +241,10 @@ export default function VaultSharePage({ token }: { token: string }) {
             {liveShareDetail.accountName ? <section><span>账号</span><div><b>{liveShareDetail.accountName}</b>{allowCopy ? <button type="button" onClick={() => void copy(liveShareDetail.accountName || "", "detail-account", "账号已复制")} aria-label="复制账号"><Copy size={15} /></button> : null}</div></section> : null}
             {liveShareDetail.password ? <section><span>密码</span><div><b className={detailPasswordVisible ? "" : "is-secret"}>{detailPasswordVisible ? liveShareDetail.password : "••••••••••••"}</b><button type="button" onClick={() => setDetailPasswordVisible(!detailPasswordVisible)} aria-label={detailPasswordVisible ? "隐藏密码" : "显示密码"}>{detailPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}</button>{allowCopy ? <button type="button" onClick={() => void copy(liveShareDetail.password || "", "detail-password", "密码已复制")} aria-label="复制密码"><Copy size={15} /></button> : null}</div></section> : null}
             {liveShareDetail.otp ? <section className="is-otp"><span className="vault-otp-label">动态验证码{liveShareDetail.otpValidUntil ? <em>{shareDetailLeft}s</em> : null}</span><div><b>{liveShareDetail.otp.replace(/(.{3})/, "$1 ")}</b>{allowCopy ? <button type="button" onClick={() => void copy(liveShareDetail.otp || "", "detail-otp", "验证码已复制")} aria-label="复制验证码"><Copy size={15} /></button> : null}</div>{liveShareDetail.nextOtp ? <div className="vault-detail-next"><span>下一组</span><b>{liveShareDetail.nextOtp.replace(/(.{3})/, "$1 ")}</b><small>{shareDetailLeft}s 后启用</small>{allowCopy ? <button type="button" className="vault-next-copy" onClick={() => void copy(liveShareDetail.nextOtp || "", "detail-next-otp", "下一组验证码已复制")} aria-label="复制下一组验证码"><Copy size={12} /></button> : null}</div> : null}{liveShareDetail.otpValidUntil ? <div className="vault-progress"><i style={{ width: `${shareDetailProgress}%` }} /></div> : null}</section> : null}
-            {liveShareDetail.dynamicCode ? <section className="is-inbound"><span className="vault-otp-label">{sourceLabel(liveShareDetail.dynamicCodeSource)}验证码<em>{liveShareDetail.dynamicCodeUsed ? "已使用" : "新"}</em></span><div><b>{liveShareDetail.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</b>{allowCopy ? <button type="button" onClick={() => void copy(liveShareDetail.dynamicCode || "", "detail-inbound", "接收验证码已复制")} aria-label="复制接收验证码"><Copy size={15} /></button> : null}</div><SourceBadges sources={liveShareDetail.dynamicSources} active={liveShareDetail.dynamicCodeSource} /><small>{liveShareDetail.dynamicCodeSender || "通过接收通道送达"}</small></section> : liveShareDetail.dynamicSources?.length ? <section className="is-inbound is-waiting"><span className="vault-otp-label">接收验证码</span><div><b>等待验证码</b><button type="button" disabled aria-label="暂无验证码可复制"><Copy size={15} /></button></div><SourceBadges sources={liveShareDetail.dynamicSources} /></section> : null}
+            {liveShareDetail.dynamicCode ? <section className="is-inbound"><span className="vault-otp-label">{sourceLabel(liveShareDetail.dynamicCodeSource)}验证码<em>{formatCodeTime(shareDetailInboundTiming.left)}</em></span><div><b>{liveShareDetail.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</b>{allowCopy ? <button type="button" onClick={() => void copy(liveShareDetail.dynamicCode || "", "detail-inbound", "接收验证码已复制")} aria-label="复制接收验证码"><Copy size={15} /></button> : null}</div><SourceBadges sources={liveShareDetail.dynamicSources} active={liveShareDetail.dynamicCodeSource} /><small>{liveShareDetail.dynamicCodeSender || "通过接收通道送达"}{liveShareDetail.dynamicCodeUsed ? " · 已使用" : ""}</small><div className="vault-progress"><i style={{ width: `${shareDetailInboundTiming.progress}%` }} /></div></section> : liveShareDetail.dynamicSources?.length ? <section className="is-inbound is-waiting"><span className="vault-otp-label">接收验证码</span><div><b>等待验证码</b><button type="button" disabled aria-label="暂无验证码可复制"><Copy size={15} /></button></div><SourceBadges sources={liveShareDetail.dynamicSources} /></section> : null}
           </div></section>
-          {liveShareDetail.loginUrl || liveShareDetail.note ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>02</span><h3>补充信息</h3></div></div>{liveShareDetail.loginUrl ? <a className="vault-detail-link" href={liveShareDetail.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /><span>{liveShareDetail.loginUrl}</span></a> : null}{liveShareDetail.note ? <p className="vault-detail-note">{liveShareDetail.note}</p> : null}</section> : null}
+          {liveShareDetail.dynamicSources?.length || detailCodeHistory.length || detailCodeHistoryLoading ? <InboundCodeHistory rows={detailCodeHistory} total={detailCodeHistoryTotal} loading={detailCodeHistoryLoading} allowCopy={allowCopy} now={syncedNow} onCopy={(value) => void copy(value, "detail-history", "历史验证码已复制")} onLoadMore={() => void loadMoreDetailCodes()} /> : null}
+          {liveShareDetail.loginUrl || liveShareDetail.note ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>{liveShareDetail.dynamicSources?.length ? "03" : "02"}</span><h3>补充信息</h3></div></div>{liveShareDetail.loginUrl ? <a className="vault-detail-link" href={liveShareDetail.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /><span>{liveShareDetail.loginUrl}</span></a> : null}{liveShareDetail.note ? <p className="vault-detail-note">{liveShareDetail.note}</p> : null}</section> : null}
         </div>
         <footer><span>共享凭据只允许查看</span><div><button type="button" className="vault-primary" onClick={() => setDetailItem(null)}>完成</button></div></footer>
       </section></div> : null}
@@ -234,14 +263,15 @@ export default function VaultSharePage({ token }: { token: string }) {
 function SourceBadges({ sources, active }: { sources?: DynamicCodeSource[]; active?: DynamicCodeSource }) {
   const configured = Array.from(new Set<DynamicCodeSource>([...(sources || []), ...(active ? [active] : [])]));
   if (!configured.length) return null;
-  return <span className="vault-card-sources" aria-label={`已配置${configured.map(sourceLabel).join("、")}`}>{configured.map((source) => <span className={`vault-card-source${active === source ? " is-active" : ""}`} key={source}><small>{source === "EMAIL" ? <Mail size={11} /> : source === "WEBHOOK" ? <Webhook size={11} /> : <MessageSquareText size={11} />}</small><b>{sourceLabel(source)}</b></span>)}</span>;
+  return <span className="vault-card-sources" aria-label={`已配置${configured.map(sourceLabel).join("、")}`}>{configured.map((source) => <span className={`vault-card-source${active === source ? " is-active" : ""}`} key={source} title={sourceLabel(source)} aria-label={sourceLabel(source)}>{source === "EMAIL" ? <Mail size={13} /> : source === "WEBHOOK" ? <Webhook size={13} /> : <MessageSquareText size={13} />}</span>)}</span>;
 }
 
 function SharedItemCard({ item, index, groupName, compact, allowCopy, copied, now, onCopy, onOpenDetail }: { item: SharedItem; index: number; groupName: string; compact: boolean; allowCopy: boolean; copied: string; now: number; onCopy: (value: string, key: string, message?: string) => void; onOpenDetail: () => void }) {
   const [open, setOpen] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const left = item.otpValidUntil ? Math.max(0, Math.ceil((item.otpValidUntil - now) / 1000)) : 0;
-  const progress = item.otpPeriodSeconds ? Math.max(0, Math.min(100, left / item.otpPeriodSeconds * 100)) : 0;
+  const inboundTiming = inboundCodeTiming(item.dynamicCodeReceivedTime, item.dynamicCodeExpireTime, now);
+  const progress = item.otp && item.otpPeriodSeconds ? Math.max(0, Math.min(100, left / item.otpPeriodSeconds * 100)) : item.dynamicCode ? inboundTiming.progress : 0;
   const mark = issuerStyle(item.issuer, item.loginUrl);
   const otpKey = `${groupName}-${index}-otp`;
   const nextOtpKey = `${groupName}-${index}-next-otp`;
@@ -254,8 +284,8 @@ function SharedItemCard({ item, index, groupName, compact, allowCopy, copied, no
   return <article className={`vault-card share-credential-card${item.otp || item.dynamicCode || hasInbound ? " has-otp" : " is-login"}${compact ? " is-compact" : ""}`}>
     <div className="vault-card-top share-item-title"><span className="vault-service-mark" style={{ background: mark.background }}>{mark.letters}</span><div><b>{item.issuer}</b>{item.accountName ? <small>{item.accountName}</small> : null}</div></div>
     {item.otp ? allowCopy ? <button type="button" className="vault-code" onClick={() => void onCopy(item.otp || "", otpKey, "验证码已复制")}><span>{item.otp.replace(/(.{3})/, "$1 ")}</span>{copied === otpKey ? <Check size={15} /> : <Copy size={15} />}</button> : <div className="vault-code is-readonly"><span>{item.otp.replace(/(.{3})/, "$1 ")}</span></div> : item.dynamicCode ? (allowCopy ? <button type="button" className={`vault-code is-inbound${item.dynamicCodeUsed ? " is-used" : ""}`} onClick={() => void onCopy(item.dynamicCode || "", inboundKey, `${sourceLabel(item.dynamicCodeSource)}验证码已复制`)}><span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span>{item.dynamicCodeUsed ? <small>已使用</small> : <em>新</em>}{copied === inboundKey ? <Check size={15} /> : <Copy size={15} />}</button> : <div className="vault-code is-readonly is-inbound"><span>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</span></div>) : hasInbound ? <div className="vault-code is-waiting"><span>等待验证码</span><button type="button" className="vault-wait-copy" disabled aria-label="暂无验证码可复制"><Copy size={15} /></button></div> : <div className="share-login-summary"><span><LockKeyhole size={15} /></span><div><small>授权内容</small><b>{item.password ? "账号与密码" : "账号信息"}</b></div><em>{item.password ? "含密码" : "仅账号"}</em></div>}
-    <div className="vault-progress"><i style={{ width: `${item.otp ? progress : 0}%` }} /></div>
-    <div className="vault-card-foot"><span>{item.otp ? "动态验证码" : hasInbound ? "接收验证码" : "账号密码"}</span>{item.nextOtp ? <span className="vault-card-next"><small>下一组</small><b>{item.nextOtp.replace(/(.{3})/, "$1 ")}</b>{allowCopy ? <button type="button" className="vault-next-copy" onClick={() => void onCopy(item.nextOtp || "", nextOtpKey, "下一组验证码已复制")} aria-label="复制下一组验证码">{copied === nextOtpKey ? <Check size={11} /> : <Copy size={11} />}</button> : null}</span> : hasInbound && !item.otp ? <SourceBadges sources={configuredSources} active={item.dynamicCode ? item.dynamicCodeSource : undefined} /> : null}<span>{item.otp ? `${left}s` : item.dynamicCode ? "限时" : hasInbound ? "等待中" : ""}</span></div>
+    <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div>
+    {hasInbound && !item.otp ? <div className="vault-card-foot is-inbound-foot"><SourceBadges sources={configuredSources} active={item.dynamicCode ? item.dynamicCodeSource : undefined} />{item.dynamicCode ? <span>{formatCodeTime(inboundTiming.left)}</span> : null}</div> : <div className="vault-card-foot"><span>{item.otp ? "动态验证码" : "账号密码"}</span>{item.nextOtp ? <span className="vault-card-next"><small>下一组</small><b>{item.nextOtp.replace(/(.{3})/, "$1 ")}</b>{allowCopy ? <button type="button" className="vault-next-copy" onClick={() => void onCopy(item.nextOtp || "", nextOtpKey, "下一组验证码已复制")} aria-label="复制下一组验证码">{copied === nextOtpKey ? <Check size={11} /> : <Copy size={11} />}</button> : null}</span> : null}<span>{item.otp ? `${left}s` : ""}</span></div>}
     <div className="vault-card-actions"><button type="button" onClick={onOpenDetail} aria-label="查看"><Eye size={13} /><span>查看</span></button>{hasDetails ? <button type="button" onClick={() => setOpen(!open)} aria-label={open ? "收起" : "展开"} className={open ? "is-expanded" : ""}><ChevronDown size={13} /><span>{open ? "收起" : "展开"}</span></button> : null}</div>
     {open ? <div className="share-card-detail">
       {item.accountName ? <section><span>账号</span><div><b>{item.accountName}</b>{allowCopy ? <button type="button" onClick={() => void onCopy(item.accountName || "", accountKey, "账号已复制")}>{copied === accountKey ? <Check size={15} /> : <Copy size={15} />}</button> : null}</div></section> : null}
