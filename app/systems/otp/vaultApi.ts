@@ -138,7 +138,7 @@ export type ShareStatus = {
 export type SharedItem = {
   issuer: string; accountName?: string; password?: string; otp?: string; nextOtp?: string;
   otpValidUntil?: number; otpPeriodSeconds?: number; loginUrl?: string; note?: string;
-  dynamicCode?: string; dynamicCodeSource?: string; dynamicCodeSender?: string; dynamicCodeUsed?: boolean;
+  dynamicSources?: DynamicCodeSource[]; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string; dynamicCodeUsed?: boolean;
 };
 
 const { vault, vaultAccount, share } = API_PATHS.otp;

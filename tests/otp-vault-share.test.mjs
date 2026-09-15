@@ -356,4 +356,8 @@ test("share page leaves 验证授权 after a restored session loads", async () =
   assert.match(sharePage, /shouldShowShareHandoff/);
   assert.match(sharePage, /shareHandoffAfterRestore\(ok\) === "show-content"/);
   assert.match(sharePage, /setAutoOpening\(false\)/);
+  assert.match(sharePage, /function SourceBadges/);
+  assert.match(sharePage, /dynamicSources/);
+  assert.match(sharePage, /vault-code is-waiting/);
+  assert.match(sharePage, /active=\{item\.dynamicCode \? item\.dynamicCodeSource : undefined\}/);
 });

@@ -179,12 +179,12 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(api, /dynamicCodeChannelId\?: number/);
   assert.match(api, /markVaultDynamicCodeUsed/);
   assert.match(styles, /\.vault-code\.is-inbound/);
-  assert.doesNotMatch(styles, /\.vault-code\.is-waiting span \{[^}]*font-size:/);
+  assert.match(styles, /\.vault-code\.is-waiting span \{[^}]*font-size: 23px/);
+  assert.match(styles, /\.vault-card\.is-compact \.vault-code\.is-waiting span \{ font-size: 17px/);
   assert.match(styles, /\.vault-wait-copy/);
   assert.match(styles, /\.vault-card-source\.is-active/);
-  assert.match(styles, /\.vault-card-sources > i/);
-  assert.match(workspace, /Number\(rightSource\.active\) - Number\(leftSource\.active\)/);
-  assert.match(workspace, /hiddenCodeSourceCount > 0/);
+  assert.match(workspace, /new Set<DynamicCodeSource>/);
+  assert.match(workspace, /item\.dynamicCode && source === item\.dynamicCodeSource/);
   assert.match(workspace, /<label className="vault-notify-switch"><input type="checkbox" aria-label=\{binding\.enabled/);
   assert.match(styles, /\.vault-source-tabs/);
   assert.match(styles, /\.vault-source-section-head/);
