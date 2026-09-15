@@ -1,0 +1,22 @@
+app/systems/otp/OtpVaultWorkspace.tsx
+  h_d554d32aa9d663 1660,1662
+app/systems/otp/VaultSharePage.tsx
+  h_d554d32aa9d663 1,214,240,244-245,247,249
+app/systems/otp/otp-vault.css
+  h_d554d32aa9d663 1763-1767,1846,1849,1865,1867-1868,1872-1873
+app/systems/otp/vaultApi.ts
+  h_d554d32aa9d663 138
+tests/otp-vault-ui.test.mjs
+  h_d554d32aa9d663 146,152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3be4d87deb2b59875b23a0cd47f767adfbcf27cc",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
