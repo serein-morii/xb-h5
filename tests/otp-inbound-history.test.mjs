@@ -24,6 +24,14 @@ test("received-code countdown uses received and expiry timestamps", () => {
   assert.match(share, /shareDetailInboundTiming\.progress/);
 });
 
+test("inbound countdown matches the authenticator s-style units", () => {
+  assert.match(history, /`\$\{rest\}s`/);
+  assert.match(history, /`\$\{minutes\}m\$\{rest \? `\$\{rest\}s` : ""\}`/);
+  assert.match(history, /`\$\{Math\.floor\(minutes \/ 60\)}h/);
+  assert.doesNotMatch(history, /秒/);
+  assert.doesNotMatch(history, /小时/);
+});
+
 test("creating a source group stays on the workspace instead of native-submitting into splash", () => {
   assert.match(workspace, /const submitCodeBinding = async \(\) => \{/);
   assert.match(workspace, /onClick=\{\(\) => void submitCodeBinding\(\)\}/);
