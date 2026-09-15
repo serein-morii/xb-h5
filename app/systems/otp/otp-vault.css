@@ -1783,9 +1783,11 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-code.is-inbound span { color: #3046b5; }
 .vault-code.is-inbound em { flex: none; padding: 2px 6px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: 0; }
 .vault-code.is-inbound.is-used span { color: inherit; opacity: .75; }
-.vault-code.is-waiting { cursor: default; }
-.vault-code.is-waiting span { color: var(--utility-muted); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
-.vault-code.is-waiting > svg { opacity: .38; }
+.vault-code.is-waiting { width: max-content; min-width: 0; justify-content: flex-start; gap: 5px; cursor: default; color: var(--utility-muted); }
+.vault-code.is-waiting span { color: var(--utility-muted); font-size: 9px; font-weight: 650; letter-spacing: 0; }
+.vault-code.is-waiting > svg { width: 11px; height: 11px; opacity: .5; }
+.vault-card.is-compact .vault-code.is-waiting { min-width: 70px; justify-content: flex-end; }
+.vault-card.is-compact .vault-code.is-waiting span { font-size: 8px; }
 .vault-card-next > small > svg { display: block; }
 .vault-card-next > b { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vault-detail-values > section.is-inbound { border-color: rgba(72, 92, 199, .18); background: #f3f5ff; }
@@ -1817,11 +1819,34 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-modal-tabs { display: flex; gap: 6px; margin: 8px 0 2px; padding: 5px; border: 1px solid var(--utility-line); border-radius: 14px; background: color-mix(in srgb,var(--utility-paper) 70%,var(--utility-bg)); }
 .vault-modal-tabs > button { flex: 1; min-height: 35px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--utility-muted); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .vault-modal-tabs > button.is-active { background: var(--utility-paper); color: var(--vault-accent); box-shadow: 0 5px 14px rgba(38,50,77,.08); }
+.vault-source-guide { margin: 4px 0 9px; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: baseline; gap: 8px; border: 1px solid color-mix(in srgb,var(--vault-accent) 14%,var(--utility-line)); border-radius: 12px; background: color-mix(in srgb,var(--vault-accent) 4%,var(--utility-paper)); }
+.vault-source-guide b { color: var(--vault-accent); font-size: 9px; white-space: nowrap; }
+.vault-source-guide p { margin: 0; color: var(--utility-muted); font-size: 9px; line-height: 1.55; }
+.vault-source-tabs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 7px; margin-bottom: 9px; }
+.vault-source-tabs > i { display: grid; place-items: center; color: color-mix(in srgb,var(--vault-accent) 46%,var(--utility-muted)); }
+.vault-source-tabs > button { min-width: 0; min-height: 58px; padding: 9px 10px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 9px; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; text-align: left; cursor: pointer; transition: border-color .16s,background .16s,box-shadow .16s; }
+.vault-source-tabs > button > em { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 9px; background: var(--utility-bg); color: var(--utility-muted); font-size: 8px; font-style: normal; font-weight: 800; }
+.vault-source-tabs > button span,.vault-source-tabs > button b,.vault-source-tabs > button small { min-width: 0; display: block; }
+.vault-source-tabs > button b { overflow: hidden; color: var(--utility-text); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.vault-source-tabs > button small { margin-top: 3px; overflow: hidden; color: var(--utility-muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.vault-source-tabs > button.is-active { border-color: color-mix(in srgb,var(--vault-accent) 35%,var(--utility-line)); background: color-mix(in srgb,var(--vault-accent) 7%,var(--utility-paper)); box-shadow: 0 7px 18px rgba(52,65,130,.07); }
+.vault-source-tabs > button.is-active > em { background: var(--vault-accent); color: #fff; }
+.vault-source-tabs > button.is-active b { color: var(--vault-accent); }
+.vault-source-section-head { min-height: 39px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.vault-source-section-head > div { min-width: 0; }
+.vault-source-section-head b,.vault-source-section-head small { display: block; }
+.vault-source-section-head b { color: var(--utility-text); font-size: 11px; }
+.vault-source-section-head small { margin-top: 3px; color: var(--utility-muted); font-size: 8px; line-height: 1.5; }
+.vault-source-form-head { padding-bottom: 10px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 9px; border-bottom: 1px solid var(--utility-line); }
+.vault-source-form-head b,.vault-source-form-head small { display: block; }
+.vault-source-form-head b { color: var(--utility-text); font-size: 10px; }
+.vault-source-form-head small { margin-top: 3px; color: var(--utility-muted); font-size: 8px; line-height: 1.5; }
 .vault-channel-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 2px; }
 .vault-channel-toolbar small { color: var(--utility-muted); font-size: 10px; }
 .vault-channel-add { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: var(--vault-accent); color: #fff; font: inherit; font-size: 11px; font-weight: 700; box-shadow: 0 7px 16px rgba(72,92,199,.18); cursor: pointer; }
 .vault-channel-list,.vault-binding-list,.vault-unmatched-codes { display: grid; gap: 8px; }
 .vault-channel-list > article,.vault-unmatched-codes > article { overflow: hidden; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); }
+.vault-channel-list > .vault-source-card,.vault-binding-list > .vault-source-card { border-color: color-mix(in srgb,var(--vault-accent) 11%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,var(--utility-paper) 82%,var(--utility-bg)); }
 .vault-channel-list > article.is-disabled { opacity: .62; }
 .vault-channel-summary.vault-notify-action { cursor: pointer; }
 .vault-channel-summary .vault-notify-channel-open { min-width: 0; padding: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -1839,11 +1864,13 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 .vault-channel-actions > button { min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--utility-line); border-radius: 9px; background: var(--utility-paper); color: var(--utility-muted); font: inherit; font-size: 11px; cursor: pointer; }
 .vault-channel-actions > button.is-danger { color: #a5483f; }
 .vault-channel-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.vault-channel-create { display: grid; gap: 12px; margin-bottom: 12px; }
+.vault-channel-create { display: grid; gap: 12px; margin-bottom: 12px; padding: 11px; border: 1px solid color-mix(in srgb,var(--vault-accent) 16%,var(--utility-line)); border-radius: 14px; background: color-mix(in srgb,var(--vault-accent) 4%,var(--utility-paper)); }
 .vault-tutorial-steps { display: grid; gap: 8px; margin: 10px 0 0; padding-left: 18px; color: var(--utility-muted); font-size: 12px; line-height: 1.65; }
 .vault-tutorial-steps code { padding: 1px 6px; border-radius: 6px; background: rgba(72,92,199,.08); color: var(--vault-accent); font-size: 11px; }
 .vault-tutorial-curl { display: block; margin-top: 8px; padding: 11px; border-radius: 11px; background: rgba(95,127,107,.09); color: var(--utility-text); font-size: 11px; line-height: 1.55; word-break: break-all; user-select: all; }
-.vault-inline-empty { min-height: 120px; display: grid; place-items: center; align-content: center; gap: 7px; text-align: center; color: var(--utility-muted); font-size: 12px; }
+.vault-inline-empty { min-height: 120px; display: grid; place-items: center; align-content: center; gap: 6px; text-align: center; color: var(--utility-muted); font-size: 11px; }
+.vault-inline-empty b { color: var(--utility-text); font-size: 10px; }
+.vault-inline-empty small { max-width: 280px; color: var(--utility-muted); font-size: 8px; line-height: 1.5; }
 .vault-unmatched-codes > article { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; align-items: center; gap: 12px; }
 .vault-unmatched-codes article span,.vault-unmatched-codes article small { color: var(--utility-muted); font-size: 10px; }
 .vault-unmatched-codes article b { color: var(--utility-text); font-size: 16px; font-weight: 850; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
@@ -1867,6 +1894,15 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
   .vault-inbound-modal,.vault-binding-modal { width: 100%; max-height: 92dvh; }
   .vault-modal-tabs { margin-top: 4px; }
   .vault-modal-tabs > button { min-height: 40px; font-size: 12.5px; padding: 0 8px; }
+  .vault-source-guide { grid-template-columns: 1fr; gap: 3px; padding: 9px 10px; }
+  .vault-source-tabs { gap: 4px; }
+  .vault-source-tabs > i svg { width: 12px; height: 12px; }
+  .vault-source-tabs > button { min-height: 56px; padding: 8px 7px; grid-template-columns: auto minmax(0,1fr); gap: 6px; border-radius: 12px; }
+  .vault-source-tabs > button > em { width: 23px; height: 23px; border-radius: 8px; }
+  .vault-source-tabs > button b { font-size: 9px; }
+  .vault-source-tabs > button small { font-size: 7px; }
+  .vault-source-section-head { align-items: flex-start; }
+  .vault-source-section-head .vault-channel-add { width: auto; min-height: 31px; padding: 0 10px; white-space: nowrap; }
   .vault-channel-create > .vault-primary,.vault-channel-add,.vault-channel-form-actions { width: 100%; justify-content: center; }
   .vault-channel-form-actions { flex-direction: column; }
   .vault-channel-form-actions > button { width: 100%; min-height: 42px; }
@@ -1887,6 +1923,10 @@ html.theme-dark .vault-code.is-inbound span { color: #bdc6ff; }
 html.theme-dark .vault-dynamic-enable { background: #171e2c; }
 html.theme-dark .vault-modal-tabs { background: #111826; }
 html.theme-dark .vault-modal-tabs > button.is-active { background: #242d40; color: #a9b3ff; box-shadow: none; }
+html.theme-dark .vault-source-guide,html.theme-dark .vault-source-tabs > button,html.theme-dark .vault-channel-create { border-color: rgba(153,165,255,.16); background: #171e2c; }
+html.theme-dark .vault-source-tabs > button.is-active { border-color: rgba(153,165,255,.34); background: #202942; box-shadow: none; }
+html.theme-dark .vault-source-tabs > button > em { background: #101725; }
+html.theme-dark .vault-source-tabs > button.is-active > em { background: #7f8ce8; }
 html.theme-dark .vault-channel-list > article,html.theme-dark .vault-unmatched-codes > article { background: #171e2c; }
 html.theme-dark .vault-binding-list > article { border-color: rgba(64,78,111,.18); background: #171e2c; }
 html.theme-dark .vault-binding-add { border-color: rgba(153,165,255,.3); background: transparent; }
