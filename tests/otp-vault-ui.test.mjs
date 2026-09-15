@@ -114,7 +114,7 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /点按显示并复制/);
   assert.match(workspace, /matchesCredentialKind\(item, kindFilter\)/);
   assert.match(workspace, /aria-label="类型"/);
-  assert.match(workspace, /<option value="otp">动态口令<\/option>/);
+  assert.match(workspace, /<option value="otp">验证器口令<\/option>/);
   assert.match(workspace, /vault-card-tags/);
   assert.match(workspace, /安全笔记/);
   assert.match(workspace, /最近使用/);
@@ -131,6 +131,28 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /className="vault-ghost vault-import-action"/);
   assert.match(workspace, /aria-label="添加或导入凭据"><Plus size=\{18\}/);
   assert.doesNotMatch(workspace, /vault-primary vault-import-action/);
+});
+
+test("keeps received codes with credentials and exposes source filters", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const api = await source("app/systems/otp/vaultApi.ts");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(workspace, /验证码接收通道/);
+  assert.match(workspace, /验证码来源/);
+  assert.match(workspace, /接收状态/);
+  assert.match(workspace, /<option value="SMS">短信<\/option>/);
+  assert.match(workspace, /<option value="EMAIL">邮箱<\/option>/);
+  assert.match(workspace, /<option value="WEBHOOK">Webhook<\/option>/);
+  assert.match(workspace, /vault-inbound-code/);
+  assert.match(workspace, /等待短信或邮件验证码/);
+  assert.match(workspace, /X-Otp-Webhook-Token/);
+  assert.match(api, /listVaultInboundChannels/);
+  assert.match(api, /listVaultCodeBindings/);
+  assert.match(api, /markVaultDynamicCodeUsed/);
+  assert.match(styles, /\.vault-inbound-code/);
+  assert.match(styles, /\.vault-channel-list/);
+  assert.match(styles, /\.vault-binding-list/);
+  assert.match(styles, /grid-template-columns:\s*repeat\(4, minmax\(120px, 1fr\)\)/);
 });
 
 test("adds compact password generation, local health checks and password-manager imports", async () => {

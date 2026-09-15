@@ -64,7 +64,25 @@ export type VaultCredential = {
   currentOtp?: string; nextOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; tags?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
+  dynamicCodeEnabled?: boolean; dynamicSources?: DynamicCodeSource[];
+  dynamicCodeId?: number; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string;
+  dynamicCodeUsed?: boolean; dynamicCodeReceivedTime?: string; dynamicCodeExpireTime?: string;
   shared?: boolean; shareId?: number; shareName?: string; sharedBy?: string; sharedByAccount?: string; allowCopy?: boolean; shareExpireTime?: string; activeShareCount?: number;
+};
+
+export type DynamicCodeSource = "SMS" | "EMAIL" | "WEBHOOK";
+export type VaultInboundChannel = {
+  id: number; name: string; channelType: "IPHONE" | "EMAIL" | "GENERIC";
+  webhookPath: string; webhookToken: string; enabled: boolean; lastReceivedTime?: string; createTime: string;
+};
+export type VaultCodeBinding = {
+  id: number; credentialId: number; channelId: number; channelName: string; channelType?: string;
+  sourceType: DynamicCodeSource; senderPattern?: string; keywordPattern?: string; recipientHint?: string;
+  expireSeconds: number; priority: number; enabled: boolean; createTime: string;
+};
+export type VaultDynamicCode = {
+  id: number; credentialId?: number; channelId: number; channelName: string; sourceType: DynamicCodeSource;
+  sender?: string; accountHint?: string; code: string; used: boolean; receivedTime: string; expireTime: string;
 };
 
 export type VaultShare = {
@@ -199,6 +217,22 @@ export const getSharedContent = (token: string, sessionToken: string) => apiRequ
 export const getInboundShareStatus = (token: string) => otpApiRequest<{ data: { saved: boolean; own: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`);
 export const saveInboundShare = (token: string, sessionToken: string) => otpApiRequest<{ data: { saved: boolean; alreadySaved: boolean } }>(`${vault}/inbound-shares/${encodeURIComponent(token)}`, { method: "POST", headers: { "X-Otp-Share-Session": sessionToken } });
 export const favoriteSharedCredential = (itemId: number, favorite: boolean) => otpApiRequest<{ data: VaultCredential }>(`${vault}/shared/${itemId}/favorite`, { method: "PUT", body: { favorite } });
+
+export const listVaultInboundChannels = () => otpApiRequest<{ data: VaultInboundChannel[] }>(`${vault}/inbound-channels`);
+export const createVaultInboundChannel = (body: { name: string; channelType: string }) =>
+  otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels`, { method: "POST", body });
+export const updateVaultInboundChannel = (id: number, body: { name?: string; channelType?: string; enabled?: boolean }) =>
+  otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}`, { method: "PUT", body });
+export const rotateVaultInboundChannelToken = (id: number) =>
+  otpApiRequest<{ data: VaultInboundChannel }>(`${vault}/inbound-channels/${id}/rotate-token`, { method: "POST" });
+export const listVaultCodeBindings = (credentialId: number) =>
+  otpApiRequest<{ data: VaultCodeBinding[] }>(`${vault}/credentials/${credentialId}/code-bindings`);
+export const saveVaultCodeBinding = (credentialId: number, id: number | null, body: Record<string, unknown>) =>
+  otpApiRequest<{ data: VaultCodeBinding }>(`${vault}/credentials/${credentialId}/code-bindings${id ? `/${id}` : ""}`, { method: id ? "PUT" : "POST", body });
+export const disableVaultCodeBinding = (credentialId: number, id: number) =>
+  otpApiRequest(`${vault}/credentials/${credentialId}/code-bindings/${id}`, { method: "DELETE" });
+export const listVaultDynamicCodes = () => otpApiRequest<{ data: VaultDynamicCode[] }>(`${vault}/dynamic-codes`);
+export const markVaultDynamicCodeUsed = (id: number) => otpApiRequest(`${vault}/dynamic-codes/${id}/used`, { method: "POST" });
 
 // ─── 注册与账号自助 ───────────────────────────────────────────
 

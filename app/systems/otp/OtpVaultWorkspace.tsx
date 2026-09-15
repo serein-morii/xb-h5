@@ -1,8 +1,8 @@
-import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, Moon, Pencil, Plus, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, X } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Copy, Eye, EyeOff, ExternalLink, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, MessageSquareText, Moon, Pencil, Plus, Radio, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-			banVaultShareSave, commitVaultImport, createVaultShare, deleteVaultCredential, deleteVaultShare, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCredentials, listVaultShares, listReceivedVaultShares,
-				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, saveInboundShare, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, type VaultCredential, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
+			banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCodeBindings, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares,
+				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundChannel, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, previewVaultImport, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";
@@ -30,7 +30,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "inboundChannels" | "codeBindings" | "share" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
 const NOTIFY_GROUPS = [
 	  { title: "账号安全", events: [
 	    { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
@@ -108,7 +108,20 @@ function readDeviceDisplayPrefs() {
 function canUseSystemShare() {
   return typeof navigator.share === "function" && window.matchMedia("(max-width: 820px), (pointer: coarse) and (hover: none)").matches;
 }
-const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", tags: "", favorite: false, sensitivityLevel: "STANDARD" };
+const emptyCredential = { issuer: "", accountName: "", otpSecret: "", password: "", otpType: "TOTP", hotpCounter: 0, algorithm: "SHA1", digits: 6, periodSeconds: 30, loginUrl: "", note: "", tags: "", favorite: false, dynamicCodeEnabled: false, sensitivityLevel: "STANDARD" };
+type DynamicSourceFilter = "all" | "TOTP" | DynamicCodeSource;
+type DynamicStateFilter = "all" | "fresh" | "configured" | "unconfigured";
+const sourceLabel = (source?: string) => source === "SMS" ? "短信" : source === "EMAIL" ? "邮箱" : source === "WEBHOOK" ? "Webhook" : "验证器";
+const channelTypeLabel = (type: string) => type === "IPHONE" ? "iPhone 快捷指令" : type === "EMAIL" ? "邮件自动化转发" : "通用 Webhook";
+const dynamicCodeAge = (receivedTime: string | undefined, now: number) => {
+  const received = receivedTime ? new Date(normalizeDateTime(receivedTime)).getTime() : 0;
+  if (!received) return "刚刚收到";
+  const seconds = Math.max(0, Math.floor((now - received) / 1000));
+  if (seconds < 60) return seconds < 10 ? "刚刚收到" : `${seconds} 秒前`;
+  return `${Math.floor(seconds / 60)} 分钟前`;
+};
+const emptyChannelForm = { name: "我的 iPhone", channelType: "IPHONE" };
+const emptyBindingForm = { channelId: 0, sourceType: "SMS" as DynamicCodeSource, senderPattern: "", keywordPattern: "验证码", recipientHint: "", expireSeconds: 600, priority: 0, enabled: true };
 const SCREEN_LOCK_KEY = "otp-vault-screen-lock";
 const SCREEN_LOCK_ACTIVE_KEY = "otp-vault-screen-lock-active";
 const defaultPrefs: VaultPrefs = { masked: false, compact: true, grouped: true, showShared: true, autoRefresh: true, autoLockMinutes: 5, stepUpEnabled: false, securityAlerts: true, notificationEmail: "", notificationEmailEnabled: true, barkUrl: "", barkEnabled: true, notificationRules: "", theme: "system", concealOtp: false, listSort: "name", defaultFavorites: false, screenLockSet: false, screenLockPasskeyEnabled: false, autoScreenLockMinutes: 0 };
@@ -370,6 +383,14 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [passwordGeneratorOpen, setPasswordGeneratorOpen] = useState(false);
   const [passwordOptions, setPasswordOptions] = useState<PasswordGeneratorOptions>({ ...DEFAULT_PASSWORD_OPTIONS });
   const [form, setForm] = useState({ ...emptyCredential });
+  const [inboundChannels, setInboundChannels] = useState<VaultInboundChannel[]>([]);
+  const [recentDynamicCodes, setRecentDynamicCodes] = useState<VaultDynamicCode[]>([]);
+  const [channelForm, setChannelForm] = useState({ ...emptyChannelForm });
+  const [codeBindings, setCodeBindings] = useState<VaultCodeBinding[]>([]);
+  const [bindingTarget, setBindingTarget] = useState<VaultCredential | null>(null);
+  const [channelReturnCredential, setChannelReturnCredential] = useState<VaultCredential | null>(null);
+  const [editingBindingId, setEditingBindingId] = useState<number | null>(null);
+  const [bindingForm, setBindingForm] = useState({ ...emptyBindingForm });
   const [scanText, setScanText] = useState("");
   const [scanError, setScanError] = useState("");
   const [legacyText, setLegacyText] = useState("");
@@ -400,6 +421,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 	const [pushServerEnabled, setPushServerEnabled] = useState<boolean | null>(null);
   const [tagFilter, setTagFilter] = useState("");
   const [kindFilter, setKindFilter] = useState<CredentialKindFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<DynamicSourceFilter>("all");
+  const [dynamicStateFilter, setDynamicStateFilter] = useState<DynamicStateFilter>("all");
   // 通知中心：OTP 安全审查通知（分享被打开、验证失败等）与系统通知，分类展示
   const [notifOpen, setNotifOpen] = useState(false);
   const unread = useMessageUnread(otpApiRequest as MessageRequest);
@@ -636,7 +659,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     }).catch(() => undefined);
   }).catch(() => undefined); }, [load]);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
-	useEffect(() => { if (!prefs.autoRefresh) return; const timer = window.setInterval(() => void load(true), 10_000); return () => window.clearInterval(timer); }, [load, prefs.autoRefresh]);
+	useEffect(() => { if (!prefs.autoRefresh) return; const timer = window.setInterval(() => void load(true), 5_000); return () => window.clearInterval(timer); }, [load, prefs.autoRefresh]);
 	useEffect(() => {
 		const keyword = shareForm.recipientUsername.trim();
 		if (modal !== "share" || shareForm.shareMode !== "DIRECT" || keyword.length < 2) {
@@ -931,6 +954,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       && (!issuer || item.issuer === issuer)
       && (!tagFilter || splitCredentialTags(item.tags).includes(tagFilter))
       && matchesCredentialKind(item, kindFilter)
+			&& (sourceFilter === "all" || (sourceFilter === "TOTP"
+				? Boolean(item.otpConfigured || item.currentOtp)
+				: Boolean(item.dynamicSources?.includes(sourceFilter))))
+			&& (dynamicStateFilter === "all"
+				|| (dynamicStateFilter === "fresh" && Boolean(item.dynamicCode) && !item.dynamicCodeUsed)
+				|| (dynamicStateFilter === "configured" && !item.shared && Boolean(item.dynamicCodeEnabled || item.dynamicSources?.length))
+				|| (dynamicStateFilter === "unconfigured" && !item.shared && !item.dynamicCodeEnabled && !item.dynamicSources?.length))
       && matchesSharedByFilter(item, sharedByFilter)
       && matchesCredentialTab(item, credentialTab, prefs.showShared)
     ));
@@ -942,7 +972,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       return a.issuer.localeCompare(b.issuer, "zh-CN") || a.accountName.localeCompare(b.accountName, "zh-CN");
     });
     return result;
-  }, [credentials, credentialTab, issuer, kindFilter, lastUsed, prefs.listSort, prefs.showShared, query, sharedByFilter, tagFilter]);
+  }, [credentials, credentialTab, dynamicStateFilter, issuer, kindFilter, lastUsed, prefs.listSort, prefs.showShared, query, sharedByFilter, sourceFilter, tagFilter]);
   const issuers = useMemo(() => [...new Set(credentials.map((item) => item.issuer))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
   const tagOptions = useMemo(() => [...new Set(credentials.flatMap((item) => splitCredentialTags(item.tags)))].sort((a, b) => a.localeCompare(b, "zh-CN")), [credentials]);
   const importCounts = useMemo(() => ({
@@ -968,7 +998,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     () => (credentialTab === "received" ? groupReceivedBySource(filtered) : []),
     [credentialTab, filtered],
   );
-  const clearListFilters = () => { setIssuer(""); setSharedByFilter(""); setTagFilter(""); setKindFilter("all"); };
+  const clearListFilters = () => { setIssuer(""); setSharedByFilter(""); setTagFilter(""); setKindFilter("all"); setSourceFilter("all"); setDynamicStateFilter("all"); };
   const setCredentialTabSafe = (tab: CredentialTab) => {
     setCredentialTab(tab);
     // 「我收到的」不含自己的凭据，清掉「我的」筛选。
@@ -1009,11 +1039,98 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   };
   const openCredential = (item?: VaultCredential) => {
     setEditingId(item?.id || null);
-		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", tags: item.tags || "", favorite: item.favorite, sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
+		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", tags: item.tags || "", favorite: item.favorite, dynamicCodeEnabled: Boolean(item.dynamicCodeEnabled), sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
     setTagDraft("");
     setPasswordGeneratorOpen(false);
     setFormPasswordVisible(false);
     setModal("credential");
+  };
+  const loadInboundChannelData = async () => {
+    const [channels, codes] = await Promise.all([listVaultInboundChannels(), listVaultDynamicCodes()]);
+    setInboundChannels(channels.data);
+    setRecentDynamicCodes(codes.data);
+    return channels.data;
+  };
+  const openInboundChannels = async (returnCredential?: VaultCredential) => {
+    setBusy(true);
+    try {
+      await loadInboundChannelData();
+      setChannelReturnCredential(returnCredential || null);
+      setChannelForm({ ...emptyChannelForm });
+      setModal("inboundChannels");
+    } catch (error) { notify(error instanceof Error ? error.message : "接收通道加载失败", true); }
+    finally { setBusy(false); }
+  };
+  const submitInboundChannel = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true);
+    try {
+      await createVaultInboundChannel(channelForm);
+      await loadInboundChannelData();
+      setChannelForm({ ...emptyChannelForm });
+      notify("接收通道已创建");
+    } catch (error) { notify(error instanceof Error ? error.message : "接收通道创建失败", true); }
+    finally { setBusy(false); }
+  };
+  const toggleInboundChannel = async (channel: VaultInboundChannel) => {
+    setBusy(true);
+    try {
+      const updated = (await updateVaultInboundChannel(channel.id, { enabled: !channel.enabled })).data;
+      setInboundChannels((current) => current.map((item) => item.id === channel.id ? updated : item));
+      notify(updated.enabled ? "接收通道已启用" : "接收通道已暂停");
+    } catch (error) { notify(error instanceof Error ? error.message : "接收通道更新失败", true); }
+    finally { setBusy(false); }
+  };
+  const rotateInboundChannel = async (channel: VaultInboundChannel) => {
+    setBusy(true);
+    try {
+      const updated = (await rotateVaultInboundChannelToken(channel.id)).data;
+      setInboundChannels((current) => current.map((item) => item.id === channel.id ? updated : item));
+      notify("Webhook 密钥已更新，旧快捷指令将停止接收");
+    } catch (error) { notify(error instanceof Error ? error.message : "Webhook 密钥更新失败", true); }
+    finally { setBusy(false); }
+  };
+  const openCodeBindings = async (credential: VaultCredential) => {
+    setBusy(true);
+    try {
+      const [channels, bindings] = await Promise.all([listVaultInboundChannels(), listVaultCodeBindings(credential.id)]);
+      setInboundChannels(channels.data);
+      setCodeBindings(bindings.data);
+      setBindingTarget(credential);
+      setEditingBindingId(null);
+      setBindingForm({ ...emptyBindingForm, channelId: channels.data[0]?.id || 0 });
+      setModal("codeBindings");
+    } catch (error) { notify(error instanceof Error ? error.message : "验证码来源加载失败", true); }
+    finally { setBusy(false); }
+  };
+  const editCodeBinding = (binding: VaultCodeBinding) => {
+    setEditingBindingId(binding.id);
+    setBindingForm({ channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: binding.enabled });
+  };
+  const submitCodeBinding = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!bindingTarget || !bindingForm.channelId) return notify("请先创建并选择接收通道", true);
+    setBusy(true);
+    try {
+      await saveVaultCodeBinding(bindingTarget.id, editingBindingId, bindingForm);
+      const bindings = await listVaultCodeBindings(bindingTarget.id);
+      setCodeBindings(bindings.data);
+      setEditingBindingId(null);
+      setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 });
+      notify(editingBindingId ? "验证码来源已更新" : "验证码来源已添加");
+      await load(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "验证码来源保存失败", true); }
+    finally { setBusy(false); }
+  };
+  const stopCodeBinding = async (binding: VaultCodeBinding) => {
+    if (!bindingTarget) return;
+    setBusy(true);
+    try {
+      await disableVaultCodeBinding(bindingTarget.id, binding.id);
+      setCodeBindings((current) => current.map((item) => item.id === binding.id ? { ...item, enabled: false } : item));
+      notify("验证码来源已停用");
+      await load(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "验证码来源停用失败", true); }
+    finally { setBusy(false); }
   };
   const updatePasswordOption = (key: keyof Omit<PasswordGeneratorOptions, "length">, checked: boolean) => {
     setPasswordOptions((current) => {
@@ -1161,6 +1278,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         await load(true);
         return;
       }
+			if (!editingId && form.dynamicCodeEnabled) {
+				notify("凭据已添加，请配置验证码来源");
+				await load(true);
+				await openCodeBindings(result.data);
+				syncOfflineCopy();
+				return;
+			}
       notify(editingId ? "凭据已更新" : "凭据已添加"); setModal(null); await load(true); syncOfflineCopy();
     }
     catch (error) { notify(error instanceof Error ? error.message : "保存失败", true); }
@@ -1385,6 +1509,17 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setRevealedOtp(item.id);
     await copy(item.currentOtp, "验证码已复制");
   };
+  const copyDynamicCode = async (item: VaultCredential) => {
+    if (!item.dynamicCode || !item.dynamicCodeId || !canCopyCredential(item)) return;
+    await copy(item.dynamicCode, `${sourceLabel(item.dynamicCodeSource)}验证码已复制`);
+    try {
+      await markVaultDynamicCodeUsed(item.dynamicCodeId);
+      setCredentials((current) => current.map((row) => row.id === item.id ? { ...row, dynamicCodeUsed: true } : row));
+      setDetail((current) => current?.id === item.id ? { ...current, dynamicCodeUsed: true } : current);
+    } catch (error) {
+      notify(error instanceof Error ? `验证码已复制；${error.message}` : "验证码已复制，但使用状态更新失败", true);
+    }
+  };
   const shareOrCopy = async (text: string) => {
     if (canUseSystemShare()) {
       try { await navigator.share({ title: "OTP Vault 授权", text }); return; }
@@ -1444,11 +1579,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     const shareValidity = item.shared ? formatShareValidity(item.shareExpireTime, now) : "";
     const copyAllowed = canCopyCredential(item);
     const cardTags = splitCredentialTags(item.tags);
+    const dynamicSources = item.dynamicSources?.map(sourceLabel).join(" / ") || "动态验证码";
     return <article className={`vault-card${prefs.compact ? " is-compact" : ""}${item.shared ? " is-shared" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => void openDetail(item)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openDetail(item); } }}>
       <div className="vault-card-top"><span className="vault-service-mark" style={{ background: mark.background }}>{mark.letters}</span><div><b>{item.issuer}</b><small className={accountClass}>{item.accountName}</small></div><span className="vault-card-top-actions">{item.shared ? <span className="vault-shared-badge">共享</span> : null}<button type="button" className={item.favorite ? "is-favorite" : ""} onClick={(event) => { event.stopPropagation(); void toggleFavorite(item); }} aria-label={item.favorite ? "取消收藏" : "收藏"}><Star size={16} fill={item.favorite ? "currentColor" : "none"} /></button></span></div>
-      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? !copyAllowed ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : <div className="vault-no-code"><KeyRound size={16} />{item.passwordConfigured ? (item.shared ? "共享账号密码" : "已保存账号密码") : (item.note ? "安全笔记" : "未保存动态口令")}</div>}
+			{item.dynamicCode ? <button type="button" className={`vault-inbound-code${item.dynamicCodeUsed ? " is-used" : " is-fresh"}`} onClick={(event) => { event.stopPropagation(); void copyDynamicCode(item); }}><span>{item.dynamicCodeSource === "SMS" ? <MessageSquareText size={13} /> : item.dynamicCodeSource === "EMAIL" ? <Mail size={13} /> : <Webhook size={13} />}<small>{sourceLabel(item.dynamicCodeSource)} · {item.dynamicCodeSender || dynamicCodeAge(item.dynamicCodeReceivedTime, now)}</small>{!item.dynamicCodeUsed ? <em>新</em> : null}</span><b>{item.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</b><Copy size={14} /></button> : null}
+      {item.requiresStepUp ? <button type="button" className="vault-no-code vault-unlock-code" onClick={(event) => { event.stopPropagation(); void openDetail(item); }}><LockKeyhole size={16} />验证身份后查看</button> : item.currentOtp ? !copyAllowed ? <div className="vault-code is-readonly"><span>{concealed ? "••• •••" : otpLabel}</span></div> : <button type="button" className={`vault-code${concealed ? " is-concealed" : ""}`} onClick={(event) => { event.stopPropagation(); void copyOtp(item); }}><span>{concealed ? "••• •••" : otpLabel}</span>{concealed ? <small>点按显示并复制</small> : <Copy size={15} />}</button> : <div className="vault-no-code"><KeyRound size={16} />{item.passwordConfigured ? (item.shared ? "共享账号密码" : "已保存账号密码") : (item.note ? "安全笔记" : item.dynamicCodeEnabled ? "等待短信或邮件验证码" : "未保存验证器密钥")}</div>}
       {cardTags.length ? <div className="vault-card-tags">{cardTags.slice(0, 3).map((tag) => <b key={tag}>{tag}</b>)}{cardTags.length > 3 ? <b>+{cardTags.length - 3}</b> : null}</div> : null}
-      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : item.currentOtp || item.otpConfigured ? `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位` : item.passwordConfigured ? "登录密码" : "安全笔记"}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b>{copyAllowed ? <button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button> : null}</span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" && (item.currentOtp || item.otpConfigured) ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : shareValidity || (item.shared ? "" : item.passwordConfigured ? "密码" : "笔记")}</span></div>
+      <div className="vault-progress"><i style={{ width: `${progress}%` }} /></div><div className="vault-card-foot"><span>{item.shared ? `来自 ${sharerDisplay(item)}` : item.currentOtp || item.otpConfigured ? `${item.otpType || "TOTP"} · ${item.algorithm} · ${item.digits} 位` : item.dynamicCodeEnabled ? `${dynamicSources}接收` : item.passwordConfigured ? "登录密码" : "安全笔记"}</span>{nextOtpLabel && item.otpType !== "HOTP" && !item.requiresStepUp ? <span className="vault-card-next"><small>下一组</small><b>{concealed ? "••• •••" : nextOtpLabel}</b>{copyAllowed ? <button type="button" className="vault-next-copy" onClick={(event) => { event.stopPropagation(); void copy(item.nextOtp || "", "下一组验证码已复制"); }} aria-label="复制下一组验证码"><Copy size={11} /></button> : null}</span> : null}<span>{item.requiresStepUp ? "已锁定" : item.otpType === "HOTP" && (item.currentOtp || item.otpConfigured) ? `计数 ${item.hotpCounter || 0}` : item.currentOtp ? `${left}s` : item.dynamicCodeEnabled ? (item.dynamicCode ? dynamicCodeAge(item.dynamicCodeReceivedTime, now) : "等待验证码") : shareValidity || (item.shared ? "" : item.passwordConfigured ? "密码" : "笔记")}</span></div>
       <div className="vault-card-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openDetail(item); }} aria-label="查看"><Eye size={13} /><span>查看</span></button>{item.shared && item.shareId ? <button type="button" onClick={(event) => { event.stopPropagation(); const share = receivedShares.find((row) => row.id === item.shareId); if (share) openReceivedShareDetail(share); }} aria-label="分享详情"><Eye size={13} /><span>详情</span></button> : null}{!item.shared ? <><button type="button" onClick={(event) => { event.stopPropagation(); openShare(item.id); }} aria-label="分享"><Share2 size={13} /><span>分享</span></button><button type="button" onClick={(event) => { event.stopPropagation(); openCredential(item); }} aria-label="编辑"><Pencil size={13} /><span>编辑</span></button><button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete(item); setModal("deleteConfirm"); }} aria-label="删除"><Trash2 size={13} /><span>删除</span></button></> : null}</div>
     </article>;
   };
@@ -1536,7 +1673,23 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </nav>
 
     {view === "all" ? <section className="vault-panel vault-view-enter" key="all">
-      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="凭据筛选"><button type="button" className={credentialTab === "all" ? "is-active" : ""} onClick={() => setCredentialTabSafe("all")}>全部</button><button type="button" className={credentialTab === "favorite" ? "is-active" : ""} onClick={() => setCredentialTabSafe("favorite")}>收藏</button><button type="button" className={credentialTab === "received" ? "is-active" : ""} onClick={() => setCredentialTabSafe("received")}>我收到的</button></div></span><p>{credentialTab === "favorite" ? `只显示收藏的凭据 · ${filtered.length} 项` : credentialTab === "received" ? `${sharedByFilter ? `来自 ${sharedByFilterLabel(sharedByFilter)} · ` : ""}${filtered.length} 项 · ${sourceSections.length} 人` : `${sharedByFilter ? `${sharedByFilter === SHARED_BY_SELF ? "只看我的" : `来自 ${sharedByFilterLabel(sharedByFilter)}`} · ` : ""}点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div><div className="vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div><div className="vault-view-toggles"><label className="vault-view-toggle" title="按系统名称分组"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label></div><div className={`vault-filters${filtersOpen ? " is-open" : ""}`}><label><span>系统</span><select aria-label="系统" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>来自</span><select aria-label="来自" value={sharedByFilter} onChange={(event) => setSharedByFilter(event.target.value)}><option value="">全部</option>{credentialTab !== "received" ? <option value={SHARED_BY_SELF}>我的</option> : null}{sharedByOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>标签</span><select aria-label="标签" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}><option value="">全部标签</option>{tagOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label><label><span>类型</span><select aria-label="类型" value={kindFilter} onChange={(event) => setKindFilter(event.target.value as CredentialKindFilter)}><option value="all">全部类型</option><option value="otp">动态口令</option><option value="password">登录密码</option><option value="note">安全笔记</option></select></label><label><span>排序</span><select aria-label="排序" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>{issuer || sharedByFilter || tagFilter || kindFilter !== "all" ? <button type="button" className="vault-filter-clear" onClick={clearListFilters} aria-label="清除筛选"><X size={13} /><span>清除</span></button> : null}</div></div></header>
+      <header className="vault-panel-head">
+        <div><span className="vault-panel-title-row"><h2>凭据</h2><div className="vault-fav-switch" role="tablist" aria-label="凭据筛选"><button type="button" className={credentialTab === "all" ? "is-active" : ""} onClick={() => setCredentialTabSafe("all")}>全部</button><button type="button" className={credentialTab === "favorite" ? "is-active" : ""} onClick={() => setCredentialTabSafe("favorite")}>收藏</button><button type="button" className={credentialTab === "received" ? "is-active" : ""} onClick={() => setCredentialTabSafe("received")}>我收到的</button></div></span><p>{credentialTab === "favorite" ? `只显示收藏的凭据 · ${filtered.length} 项` : credentialTab === "received" ? `${sharedByFilter ? `来自 ${sharedByFilterLabel(sharedByFilter)} · ` : ""}${filtered.length} 项 · ${sourceSections.length} 人` : `${sharedByFilter ? `${sharedByFilter === SHARED_BY_SELF ? "只看我的" : `来自 ${sharedByFilterLabel(sharedByFilter)}`} · ` : ""}点开卡片查看账号、密码和更多信息 · ${filtered.length} 项`}</p></div>
+        <div className="vault-panel-tools">
+          <div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}<button type="button" className="vault-filter-trigger" onClick={() => setFiltersOpen(!filtersOpen)} aria-label="筛选"><Settings2 size={15} /></button></div>
+          <div className="vault-view-toggles"><label className="vault-view-toggle" title="按系统名称分组"><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={prefs.grouped} onChange={(event) => void updatePrefs({ ...prefs, grouped: event.target.checked })} /><i /></label><label className="vault-view-toggle"><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={prefs.compact} onChange={(event) => void updatePrefs({ ...prefs, compact: event.target.checked })} /><i /></label></div>
+          <div className={`vault-filters${filtersOpen ? " is-open" : ""}`}>
+            <label><span>系统</span><select aria-label="系统" value={issuer} onChange={(event) => setIssuer(event.target.value)}><option value="">全部系统</option>{issuers.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
+            <label><span>来自</span><select aria-label="来自" value={sharedByFilter} onChange={(event) => setSharedByFilter(event.target.value)}><option value="">全部</option>{credentialTab !== "received" ? <option value={SHARED_BY_SELF}>我的</option> : null}{sharedByOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
+            <label><span>标签</span><select aria-label="标签" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}><option value="">全部标签</option>{tagOptions.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
+            <label><span>类型</span><select aria-label="类型" value={kindFilter} onChange={(event) => setKindFilter(event.target.value as CredentialKindFilter)}><option value="all">全部类型</option><option value="otp">验证器口令</option><option value="password">登录密码</option><option value="note">安全笔记</option></select></label>
+            <label><span>验证码来源</span><select aria-label="验证码来源" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as DynamicSourceFilter)}><option value="all">全部来源</option><option value="TOTP">验证器</option><option value="SMS">短信</option><option value="EMAIL">邮箱</option><option value="WEBHOOK">Webhook</option></select></label>
+            <label><span>接收状态</span><select aria-label="接收状态" value={dynamicStateFilter} onChange={(event) => setDynamicStateFilter(event.target.value as DynamicStateFilter)}><option value="all">全部状态</option><option value="fresh">有新验证码</option><option value="configured">已配置接收</option><option value="unconfigured">未配置接收</option></select></label>
+            <label><span>排序</span><select aria-label="排序" value={prefs.listSort || "name"} onChange={(event) => void updatePrefs({ ...prefs, listSort: event.target.value })}><option value="name">系统名称</option><option value="account">账号名称</option><option value="favorite">收藏优先</option><option value="recent">最近使用</option><option value="newest">最近添加</option></select></label>
+            {issuer || sharedByFilter || tagFilter || kindFilter !== "all" || sourceFilter !== "all" || dynamicStateFilter !== "all" ? <button type="button" className="vault-filter-clear" onClick={clearListFilters} aria-label="清除筛选"><X size={13} /><span>清除</span></button> : null}
+          </div>
+        </div>
+      </header>
       {loading ? <div className="vault-empty"><LoaderCircle className="spin" size={24} />正在加载安全数据…</div> : filtered.length ? <div className="vault-groups">{credentialTab === "received" ? renderReceivedList() : groups.map((group) => <section className="vault-group" key={group.key}>{group.label ? <header><b>{group.label}</b><span>{group.items.length}</span></header> : null}{renderGroupGrid(group.items)}</section>)}</div> : <div className="vault-empty">{credentialTab === "received" ? <Inbox size={20} /> : <KeyRound size={20} />}<b>{credentialTab === "favorite" ? "还没有收藏凭据" : credentialTab === "received" ? (sharedByFilter || issuer || tagFilter || kindFilter !== "all" ? "没有匹配的收到凭据" : "还没有收到的凭据") : "没有找到凭据"}</b><p>{credentialTab === "favorite" ? "点击凭据右上角的星标即可收藏。" : credentialTab === "received" ? (sharedByFilter || issuer || tagFilter || kindFilter !== "all" ? "试试换一个来源、系统、标签或类型，或清除筛选。" : "指定给你的授权，或从分享链接转存的内容会出现在这里。") : kindFilter !== "all" || issuer || tagFilter ? "试试换一个类型、系统或标签，或清除筛选。" : "可以添加一项，或导入文件。"}</p>{credentialTab !== "received" ? <button type="button" className="vault-primary" onClick={() => setModal("importChoice")}><Plus size={15} />添加凭据</button> : null}</div>}
     </section> : null}
 
@@ -1654,11 +1807,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>01</span><h3>登录信息</h3></div><small>{liveDetail.shared ? `${liveDetail.sharedBy} 分享 · ${liveDetail.shareExpireTime ? formatRemaining(liveDetail.shareExpireTime, now) : "临时有效"}` : "敏感信息仅在需要时显示"}</small></div><div className="vault-detail-values">
             <section><span>账号</span><div><b>{liveDetail.accountName}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copy(liveDetail.accountName, "账号已复制")} aria-label="复制账号"><Copy size={15} /></button> : null}</div></section>
             {liveDetail.passwordConfigured ? <section><span>密码</span><div><b className={passwordVisible ? "" : "is-secret"}>{passwordVisible ? liveDetail.password : "••••••••••••"}</b><button type="button" onClick={() => setPasswordVisible(!passwordVisible)} aria-label={passwordVisible ? "隐藏密码" : "显示密码"}>{passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}</button>{liveDetail.password && canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copy(liveDetail.password || "", "密码已复制")} aria-label="复制密码"><Copy size={15} /></button> : null}</div></section> : null}
-            {liveDetail.currentOtp ? <section className="is-otp"><span className="vault-otp-label">{liveDetail.otpType === "HOTP" ? `HOTP 验证码 · 计数 ${liveDetail.hotpCounter || 0}` : "动态验证码"}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <em>{detailOtpLeft}s</em> : null}</span><div><b>{liveDetail.currentOtp.replace(/(.{3})/, "$1 ")}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copyOtp(liveDetail)} aria-label="复制验证码"><Copy size={15} /></button> : null}{!liveDetail.shared && liveDetail.otpType === "HOTP" ? <button type="button" disabled={busy} onClick={() => void advanceHotp(liveDetail.id)}>下一个</button> : null}</div>{liveDetail.nextOtp && liveDetail.otpType !== "HOTP" ? <div className="vault-detail-next"><span>下一组</span><b>{liveDetail.nextOtp.replace(/(.{3})/, "$1 ")}</b><small>{detailOtpLeft}s 后启用</small>{canCopyCredential(liveDetail) ? <button type="button" className="vault-next-copy" onClick={() => void copy(liveDetail.nextOtp || "", "下一组验证码已复制")} aria-label="复制下一组验证码"><Copy size={12} /></button> : null}</div> : null}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <div className="vault-progress"><i style={{ width: `${detailOtpProgress}%` }} /></div> : null}</section> : null}
+			{liveDetail.dynamicCode ? <section className="is-inbound"><span className="vault-otp-label">{sourceLabel(liveDetail.dynamicCodeSource)}验证码<em>{dynamicCodeAge(liveDetail.dynamicCodeReceivedTime, now)}</em></span><div><b>{liveDetail.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copyDynamicCode(liveDetail)} aria-label={`复制${sourceLabel(liveDetail.dynamicCodeSource)}验证码`}><Copy size={15} /></button> : null}</div><small>{liveDetail.dynamicCodeSender || "通过已配置的接收通道送达"}{liveDetail.dynamicCodeUsed ? " · 已使用" : " · 新验证码"}</small></section> : liveDetail.dynamicCodeEnabled ? <section className="is-inbound is-waiting"><span>短信 / 邮件验证码</span><div><b>等待接收</b></div><small>{liveDetail.dynamicSources?.length ? `已配置 ${liveDetail.dynamicSources.map(sourceLabel).join("、")}` : "尚未配置接收来源"}</small></section> : null}
+            {liveDetail.currentOtp ? <section className="is-otp"><span className="vault-otp-label">{liveDetail.otpType === "HOTP" ? `HOTP 验证码 · 计数 ${liveDetail.hotpCounter || 0}` : "验证器验证码"}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <em>{detailOtpLeft}s</em> : null}</span><div><b>{liveDetail.currentOtp.replace(/(.{3})/, "$1 ")}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copyOtp(liveDetail)} aria-label="复制验证码"><Copy size={15} /></button> : null}{!liveDetail.shared && liveDetail.otpType === "HOTP" ? <button type="button" disabled={busy} onClick={() => void advanceHotp(liveDetail.id)}>下一个</button> : null}</div>{liveDetail.nextOtp && liveDetail.otpType !== "HOTP" ? <div className="vault-detail-next"><span>下一组</span><b>{liveDetail.nextOtp.replace(/(.{3})/, "$1 ")}</b><small>{detailOtpLeft}s 后启用</small>{canCopyCredential(liveDetail) ? <button type="button" className="vault-next-copy" onClick={() => void copy(liveDetail.nextOtp || "", "下一组验证码已复制")} aria-label="复制下一组验证码"><Copy size={12} /></button> : null}</div> : null}{liveDetail.otpType !== "HOTP" && liveDetail.otpValidUntil ? <div className="vault-progress"><i style={{ width: `${detailOtpProgress}%` }} /></div> : null}</section> : null}
           </div></section>
           {liveDetail.loginUrl || liveDetail.note || liveDetail.tags ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>02</span><h3>补充信息</h3></div></div>{liveDetail.loginUrl ? <a className="vault-detail-link" href={liveDetail.loginUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} /><span>{liveDetail.loginUrl}</span></a> : null}{liveDetail.note ? <p className="vault-detail-note">{liveDetail.note}</p> : null}{liveDetail.tags ? <div className="vault-detail-tags">{liveDetail.tags.split(/[\s,，]+/).filter(Boolean).map((tag) => <b key={tag}>{tag}</b>)}</div> : null}</section> : null}
         </div>
-        <footer><span>{liveDetail.shared ? "共享凭据只允许查看" : "可继续分享或编辑这条凭据"}</span><div>{liveDetail.shared ? <button type="button" className="vault-primary" onClick={closeModal}>完成</button> : <><button type="button" className="vault-ghost" onClick={() => openShare(liveDetail.id)}><Share2 size={15} />分享</button><button type="button" className="vault-primary" onClick={() => openCredential(liveDetail)}><Pencil size={15} />编辑</button></>}</div></footer>
+        <footer><span>{liveDetail.shared ? "共享凭据只允许查看" : "可继续分享、配置来源或编辑凭据"}</span><div>{liveDetail.shared ? <button type="button" className="vault-primary" onClick={closeModal}>完成</button> : <><button type="button" className="vault-ghost" onClick={() => void openCodeBindings(liveDetail)}><Radio size={15} />来源</button><button type="button" className="vault-ghost" onClick={() => openShare(liveDetail.id)}><Share2 size={15} />分享</button><button type="button" className="vault-primary" onClick={() => openCredential(liveDetail)}><Pencil size={15} />编辑</button></>}</div></footer>
       </>}
     </section></div> : null}
 
@@ -1680,7 +1834,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <label><span>系统名称</span><input required maxLength={80} value={form.issuer} onChange={(e) => setForm({ ...form, issuer: e.target.value })} placeholder="例如 GitHub" /></label>
       <label><span>账号</span><input required maxLength={160} value={form.accountName} onChange={(e) => setForm({ ...form, accountName: e.target.value })} placeholder="邮箱或用户名" /></label>
         </div></section>
-        <section className="vault-share-section vault-credential-section"><div className="vault-section-title"><div><h3>敏感信息</h3></div></div>{editingCredential ? <div className="vault-maintained-status"><span><ShieldCheck size={14} /><b>已加密保存</b></span><div><em className={editingCredential.otpConfigured ? "is-ready" : ""}>{editingCredential.otpConfigured ? "OTP 密钥" : "无 OTP 密钥"}</em><em className={editingCredential.passwordConfigured ? "is-ready" : ""}>{editingCredential.passwordConfigured ? "登录密码" : "无登录密码"}</em></div><small>输入框留空不会清除原内容</small></div> : null}<div className="vault-form-grid vault-sensitive-fields">
+        <section className="vault-share-section vault-credential-section"><div className="vault-section-title"><div><h3>敏感信息</h3></div></div>{editingCredential ? <div className="vault-maintained-status"><span><ShieldCheck size={14} /><b>已加密保存</b></span><div><em className={editingCredential.otpConfigured ? "is-ready" : ""}>{editingCredential.otpConfigured ? "OTP 密钥" : "无 OTP 密钥"}</em><em className={editingCredential.passwordConfigured ? "is-ready" : ""}>{editingCredential.passwordConfigured ? "登录密码" : "无登录密码"}</em><em className={editingCredential.dynamicCodeEnabled ? "is-ready" : ""}>{editingCredential.dynamicCodeEnabled ? "验证码接收" : "未配置接收"}</em></div><small>输入框留空不会清除原内容</small></div> : null}<label className={`vault-dynamic-enable${form.dynamicCodeEnabled ? " is-on" : ""}`}><input type="checkbox" checked={form.dynamicCodeEnabled} onChange={(event) => setForm({ ...form, dynamicCodeEnabled: event.target.checked })} /><span>{form.dynamicCodeEnabled ? <Radio size={17} /> : <Webhook size={17} />}<span><b>接收短信、邮件或 Webhook 验证码</b><small>保存后可在凭据详情中配置接收来源</small></span></span><i /></label><div className="vault-form-grid vault-sensitive-fields">
           <label><span>OTP Secret</span><input value={form.otpSecret} onChange={(e) => setForm({ ...form, otpSecret: e.target.value.toUpperCase().replace(/[^A-Z2-7=\s-]/g, "") })} autoComplete="off" placeholder={editingCredential?.otpConfigured ? "已保存，填写可替换" : "Base32 Secret"} /></label>
           <div className="vault-password-field"><span className="vault-password-field-head"><span>登录密码（可选）</span><button type="button" onClick={() => { setPasswordGeneratorOpen(!passwordGeneratorOpen); if (!passwordGeneratorOpen && !form.password) window.setTimeout(generatePassword, 0); }}><KeyRound size={12} />{passwordGeneratorOpen ? "收起" : "生成密码"}</button></span><div className="vault-password-input"><input type={formPasswordVisible ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" placeholder={editingCredential?.passwordConfigured ? "已保存，填写可替换" : "可保存登录密码"} /><button type="button" onClick={() => setFormPasswordVisible(!formPasswordVisible)} aria-label={formPasswordVisible ? "隐藏输入密码" : "显示输入密码"}>{formPasswordVisible ? <EyeOff size={14} /> : <Eye size={14} />}</button></div>{form.password ? <div className={`vault-password-strength is-${formPasswordStrength.score}`}><i><b style={{ width: `${formPasswordStrength.percent}%` }} /></i><span>{formPasswordStrength.label} · 约 {formPasswordStrength.entropyBits} bit</span></div> : null}{passwordGeneratorOpen ? <div className="vault-password-generator"><header><span><b>安全密码生成器</b><small>密码仅在当前浏览器中生成</small></span><button type="button" onClick={generatePassword}><RotateCcw size={12} />换一个</button></header><label><span>长度 <b>{passwordOptions.length}</b></span><input type="range" min={12} max={40} step={1} value={passwordOptions.length} onChange={(event) => setPasswordOptions({ ...passwordOptions, length: Number(event.target.value) })} /></label><div className="vault-password-options">{([['lowercase','小写'],['uppercase','大写'],['numbers','数字'],['symbols','符号']] as const).map(([key, label]) => <label className={passwordOptions[key] ? "is-on" : ""} key={key}><input type="checkbox" checked={passwordOptions[key]} onChange={(event) => updatePasswordOption(key, event.target.checked)} /><Check size={10} />{label}</label>)}<label className={passwordOptions.avoidAmbiguous ? "is-on" : ""}><input type="checkbox" checked={passwordOptions.avoidAmbiguous} onChange={(event) => updatePasswordOption("avoidAmbiguous", event.target.checked)} /><Check size={10} />避开易混淆字符</label></div>{form.password ? <button type="button" className="vault-password-copy" onClick={() => void copy(form.password, "生成密码已复制")}><Copy size={12} />复制当前密码</button> : null}</div> : null}</div>
         </div></section>
@@ -1702,7 +1856,26 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       <footer><span>{editingId ? "敏感值留空即保持不变" : "确认信息后加密保存"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}{busy ? "保存中" : "保存"}</button></div></footer>
     </form></div> : null}
 
-    {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写一条账号或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { resetImport(); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button></div></section></div> : null}
+    {modal === "inboundChannels" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-inbound-modal">
+      <header><div><small>INBOUND CHANNELS</small><h2>验证码接收通道</h2><p>一条通道可以接收多个账号的短信或邮件验证码</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll">
+        <form className="vault-share-section vault-channel-create" onSubmit={submitInboundChannel}><div className="vault-section-title"><div><span>01</span><h3>新建通道</h3></div></div><div className="vault-form-grid"><label><span>通道名称</span><input required maxLength={40} value={channelForm.name} onChange={(event) => setChannelForm({ ...channelForm, name: event.target.value })} placeholder="例如：我的 iPhone" /></label><label><span>通道类型</span><select value={channelForm.channelType} onChange={(event) => setChannelForm({ ...channelForm, channelType: event.target.value })}><option value="IPHONE">iPhone 快捷指令</option><option value="EMAIL">邮件自动化转发</option><option value="GENERIC">通用 Webhook</option></select></label></div><button className="vault-primary" disabled={busy}><Plus size={14} />创建接收通道</button></form>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>已配置通道</h3></div><small>{inboundChannels.length} 个</small></div><div className="vault-channel-list">{inboundChannels.length ? inboundChannels.map((channel) => <article className={channel.enabled ? "" : "is-disabled"} key={channel.id}><header><span>{channel.channelType === "IPHONE" ? <MessageSquareText size={16} /> : channel.channelType === "EMAIL" ? <Mail size={16} /> : <Webhook size={16} />}</span><div><b>{channel.name}</b><small>{channelTypeLabel(channel.channelType)}{channel.lastReceivedTime ? ` · 最近接收 ${dynamicCodeAge(channel.lastReceivedTime, now)}` : ""}</small></div><button type="button" className={channel.enabled ? "is-on" : ""} onClick={() => void toggleInboundChannel(channel)}>{channel.enabled ? "接收中" : "已暂停"}</button></header><label><span>Webhook 地址</span><div><input readOnly value={`${window.location.origin}${channel.webhookPath}`} /><button type="button" onClick={() => void copy(`${window.location.origin}${channel.webhookPath}`, "Webhook 地址已复制")} aria-label="复制 Webhook 地址"><Copy size={14} /></button></div></label><label><span>请求头 X-Otp-Webhook-Token</span><div><input readOnly value={channel.webhookToken} /><button type="button" onClick={() => void copy(channel.webhookToken, "Webhook Token 已复制")} aria-label="复制 Webhook Token"><Copy size={14} /></button></div></label><footer><small>POST JSON：code、sourceType、sender、content、accountHint</small><button type="button" onClick={() => void rotateInboundChannel(channel)}>重新生成密钥</button></footer></article>) : <div className="vault-inline-empty"><Webhook size={18} />还没有接收通道</div>}</div></section>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>03</span><h3>待归类验证码</h3></div><small>{recentDynamicCodes.filter((item) => !item.credentialId).length} 条</small></div><div className="vault-unmatched-codes">{recentDynamicCodes.filter((item) => !item.credentialId).map((item) => <article key={item.id}><span>{sourceLabel(item.sourceType)} · {item.sender || item.channelName}</span><b>{item.code.replace(/(.{3})(?=.)/, "$1 ")}</b><small>{dynamicCodeAge(item.receivedTime, now)}</small><button type="button" onClick={() => void copy(item.code, "验证码已复制")}><Copy size={13} /></button></article>)}{recentDynamicCodes.every((item) => item.credentialId) ? <div className="vault-inline-empty"><Check size={17} />当前没有待归类验证码</div> : null}</div></section>
+      </div>
+      <footer><span>Token 只用于快捷指令请求，不要放进 URL</span><div>{channelReturnCredential ? <button type="button" className="vault-ghost" onClick={() => void openCodeBindings(channelReturnCredential)}>返回配置来源</button> : null}<button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
+    </section></div> : null}
+
+    {modal === "codeBindings" && bindingTarget ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-binding-modal" onSubmit={submitCodeBinding}>
+      <header><div><small>CODE SOURCES</small><h2>验证码来源</h2><p>{bindingTarget.issuer} · {bindingTarget.accountName}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll">
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>已绑定来源</h3></div><small>{codeBindings.filter((item) => item.enabled).length} 个启用</small></div><div className="vault-binding-list">{codeBindings.length ? codeBindings.map((binding) => <article className={binding.enabled ? "" : "is-disabled"} key={binding.id}><button type="button" onClick={() => editCodeBinding(binding)}><span>{binding.sourceType === "SMS" ? <MessageSquareText size={15} /> : binding.sourceType === "EMAIL" ? <Mail size={15} /> : <Webhook size={15} />}</span><div><b>{sourceLabel(binding.sourceType)} · {binding.channelName}</b><small>{[binding.senderPattern && `发送方 ${binding.senderPattern}`, binding.keywordPattern && `关键词 ${binding.keywordPattern}`, binding.recipientHint && `账号提示 ${binding.recipientHint}`].filter(Boolean).join(" · ") || "接收该通道的全部验证码"}</small></div><em>{binding.enabled ? "启用" : "停用"}</em></button>{binding.enabled ? <button type="button" onClick={() => void stopCodeBinding(binding)}>停用</button> : null}</article>) : <div className="vault-inline-empty"><Radio size={18} />尚未绑定验证码来源</div>}</div></section>
+        <section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>{editingBindingId ? "编辑匹配规则" : "添加匹配规则"}</h3></div><button type="button" onClick={() => void openInboundChannels(bindingTarget)}>管理通道</button></div>{inboundChannels.length ? <div className="vault-form-grid"><label><span>接收通道</span><select required value={bindingForm.channelId} onChange={(event) => setBindingForm({ ...bindingForm, channelId: Number(event.target.value) })}>{inboundChannels.map((channel) => <option value={channel.id} key={channel.id}>{channel.name}{channel.enabled ? "" : "（已暂停）"}</option>)}</select></label><label><span>验证码来源</span><select value={bindingForm.sourceType} onChange={(event) => setBindingForm({ ...bindingForm, sourceType: event.target.value as DynamicCodeSource })}><option value="SMS">短信</option><option value="EMAIL">邮箱</option><option value="WEBHOOK">Webhook</option></select></label><label><span>发送方包含</span><input maxLength={120} value={bindingForm.senderPattern} onChange={(event) => setBindingForm({ ...bindingForm, senderPattern: event.target.value })} placeholder="例如 1069、GitHub" /></label><label><span>正文关键词</span><input maxLength={160} value={bindingForm.keywordPattern} onChange={(event) => setBindingForm({ ...bindingForm, keywordPattern: event.target.value })} placeholder="例如 验证码，逗号分隔" /></label><label><span>收件账号提示</span><input maxLength={160} value={bindingForm.recipientHint} onChange={(event) => setBindingForm({ ...bindingForm, recipientHint: event.target.value })} placeholder="邮箱或手机号尾号，可选" /></label><label><span>预计有效时间</span><select value={bindingForm.expireSeconds} onChange={(event) => setBindingForm({ ...bindingForm, expireSeconds: Number(event.target.value) })}><option value={300}>5 分钟</option><option value={600}>10 分钟</option><option value={900}>15 分钟</option><option value={1800}>30 分钟</option></select></label></div> : <button type="button" className="vault-scan-entry" onClick={() => void openInboundChannels(bindingTarget)}><Webhook size={17} /><span><b>先创建接收通道</b><small>创建后再回来为当前凭据配置匹配规则</small></span></button>}</section>
+      </div>
+      <footer><span>发送方、正文关键词和账号提示同时填写时需要全部匹配</span><div>{editingBindingId ? <button type="button" className="vault-ghost" onClick={() => { setEditingBindingId(null); setBindingForm({ ...emptyBindingForm, channelId: inboundChannels[0]?.id || 0 }); }}>取消编辑</button> : null}<button type="button" className="vault-ghost" onClick={closeModal}>关闭</button><button className="vault-primary" disabled={busy || !inboundChannels.length}><Check size={14} />{editingBindingId ? "保存规则" : "添加来源"}</button></div></footer>
+    </form></div> : null}
+
+    {modal === "importChoice" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal small vault-import-choice-modal"><header><div><small>ADD CREDENTIAL</small><h2>添加凭据</h2><p>选择一种录入方式</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header><div className="vault-import-choice-list"><button type="button" onClick={() => openCredential()}><span className="vault-setting-icon is-blue"><Plus size={18} /></span><span><b>单条录入</b><small>手动填写账号、密码或验证码</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => { resetImport(); setModal("import"); }}><span className="vault-setting-icon is-violet"><FileUp size={18} /></span><span><b>批量导入</b><small>从文件或文本一次导入多条</small></span><ChevronRight size={16} /></button><button type="button" onClick={() => void openInboundChannels()}><span className="vault-setting-icon is-green"><Webhook size={18} /></span><span><b>验证码接收通道</b><small>配置 iPhone、邮件或通用 Webhook</small></span><ChevronRight size={16} /></button></div></section></div> : null}
 
     {modal === "import" ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><form className="vault-modal share vault-share-form vault-import-form" onSubmit={submitImport}>
       <header><div><small>IMPORT</small><h2>批量导入</h2><p>{importPreview.length ? "确认新增、重复和冲突项目，再决定是否覆盖" : "先读取并预览，确认后才会写入保险库"}</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>

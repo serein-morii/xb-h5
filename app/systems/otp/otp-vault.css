@@ -1759,6 +1759,100 @@ html.theme-dark .share-handoff-steps > i,html.theme-dark .share-handoff-progress
 @media (prefers-reduced-motion: reduce) {
   .share-handoff-emblem > i,.share-handoff-progress > i { animation-duration: 4s; }
 }
+
+/* 动态验证码：与凭证聚合展示，接收通道和匹配规则仍保持独立。 */
+.vault-inbound-code {
+  width: 100%; min-height: 56px; margin: 10px 0 2px; padding: 8px 11px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
+  border: 1px solid rgba(72, 92, 199, .16); border-radius: 12px;
+  background: linear-gradient(135deg, rgba(238, 241, 255, .96), rgba(247, 248, 255, .9));
+  color: var(--utility-text); font: inherit; text-align: left; cursor: pointer;
+}
+.vault-inbound-code > span { min-width: 0; display: flex; align-items: center; gap: 5px; color: #667096; }
+.vault-inbound-code > span small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+.vault-inbound-code > span em { flex: none; padding: 2px 5px; border-radius: 999px; background: #e24a67; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; }
+.vault-inbound-code > b { color: #3046b5; font-size: 20px; letter-spacing: .1em; white-space: nowrap; }
+.vault-inbound-code > svg { color: #6975ab; }
+.vault-inbound-code.is-used { opacity: .7; background: #f5f6fa; }
+.vault-inbound-code.is-fresh { box-shadow: 0 6px 18px rgba(72, 92, 199, .1); }
+.vault-card.is-compact .vault-inbound-code { min-height: 48px; margin-top: 7px; padding-block: 6px; }
+.vault-card.is-compact .vault-inbound-code > b { font-size: 17px; }
+.vault-detail-values > section.is-inbound { border-color: rgba(72, 92, 199, .18); background: #f3f5ff; }
+.vault-detail-values > section.is-inbound > small { display: block; margin-top: 7px; color: #7e879f; font-size: 9px; }
+.vault-detail-values > section.is-inbound.is-waiting { background: #f7f8fb; }
+.vault-detail-values > section.is-inbound.is-waiting b { font-size: 15px; letter-spacing: 0; color: #747d91; }
+
+.vault-dynamic-enable {
+  min-height: 58px; margin-bottom: 14px; padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border: 1px solid var(--utility-line); border-radius: 13px; background: #f8f9fc; cursor: pointer;
+}
+.vault-dynamic-enable > input { position: absolute; opacity: 0; pointer-events: none; }
+.vault-dynamic-enable > span { min-width: 0; display: flex; align-items: center; gap: 10px; color: #768096; }
+.vault-dynamic-enable > span > span { display: grid; gap: 2px; }
+.vault-dynamic-enable b { color: var(--utility-text); font-size: 11px; }
+.vault-dynamic-enable small { color: var(--utility-muted); font-size: 9px; }
+.vault-dynamic-enable > i { width: 34px; height: 20px; flex: none; position: relative; border-radius: 999px; background: #cdd2dd; transition: background .16s; }
+.vault-dynamic-enable > i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(34,44,76,.2); transition: transform .16s; }
+.vault-dynamic-enable.is-on { border-color: rgba(72,92,199,.22); background: #f1f3ff; }
+.vault-dynamic-enable.is-on > span { color: var(--vault-accent); }
+.vault-dynamic-enable.is-on > i { background: var(--vault-accent); }
+.vault-dynamic-enable.is-on > i::after { transform: translateX(14px); }
+
+.vault-inbound-modal { width: min(780px, 94vw); }
+.vault-binding-modal { width: min(720px, 94vw); }
+.vault-channel-create { display: grid; gap: 12px; }
+.vault-channel-create > .vault-primary { justify-self: end; }
+.vault-channel-list,.vault-binding-list,.vault-unmatched-codes { display: grid; gap: 9px; }
+.vault-channel-list > article,.vault-binding-list > article { padding: 12px; border: 1px solid var(--utility-line); border-radius: 13px; background: var(--utility-paper); }
+.vault-channel-list > article.is-disabled,.vault-binding-list > article.is-disabled { opacity: .62; }
+.vault-channel-list article > header { display: flex; align-items: center; gap: 9px; }
+.vault-channel-list article > header > span { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; color: var(--vault-accent); background: #eef1ff; }
+.vault-channel-list article > header > div { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.vault-channel-list article > header b { font-size: 11px; }
+.vault-channel-list article > header small { color: var(--utility-muted); font-size: 9px; }
+.vault-channel-list article > header > button { min-height: 28px; padding: 0 9px; border: 0; border-radius: 999px; color: #747d91; background: #eef0f4; font: inherit; font-size: 9px; cursor: pointer; }
+.vault-channel-list article > header > button.is-on { color: #176b50; background: #e6f5ef; }
+.vault-channel-list article > label { display: grid; gap: 4px; margin-top: 10px; }
+.vault-channel-list article > label > span { color: var(--utility-muted); font-size: 8px; font-weight: 700; }
+.vault-channel-list article > label > div { display: flex; min-width: 0; border: 1px solid var(--utility-line); border-radius: 9px; overflow: hidden; }
+.vault-channel-list article input { min-width: 0; flex: 1; height: 34px; padding: 0 9px; border: 0; outline: 0; background: #f8f9fc; color: #697288; font: inherit; font-size: 9px; }
+.vault-channel-list article label button { width: 37px; flex: none; border: 0; border-left: 1px solid var(--utility-line); background: #fff; color: var(--vault-accent); cursor: pointer; }
+.vault-channel-list article > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+.vault-channel-list article > footer small { color: var(--utility-muted); font-size: 8px; }
+.vault-channel-list article > footer button,.vault-section-title > button { border: 0; background: transparent; color: var(--vault-accent); font: inherit; font-size: 9px; cursor: pointer; }
+.vault-inline-empty { min-height: 72px; display: grid; place-content: center; justify-items: center; gap: 6px; color: var(--utility-muted); font-size: 10px; }
+.vault-unmatched-codes > article { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 10px; background: #f6f7fb; }
+.vault-unmatched-codes article span,.vault-unmatched-codes article small { color: var(--utility-muted); font-size: 9px; }
+.vault-unmatched-codes article b { color: #3448b5; letter-spacing: .08em; }
+.vault-unmatched-codes article button { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: #fff; color: var(--vault-accent); cursor: pointer; }
+.vault-binding-list > article { display: flex; align-items: center; gap: 8px; }
+.vault-binding-list article > button:first-child { min-width: 0; flex: 1; padding: 0; display: flex; align-items: center; gap: 9px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.vault-binding-list article > button:first-child > span { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 9px; color: var(--vault-accent); background: #eef1ff; }
+.vault-binding-list article > button:first-child > div { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.vault-binding-list article b { font-size: 10px; }
+.vault-binding-list article small { overflow: hidden; color: var(--utility-muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.vault-binding-list article em { color: #667096; font-size: 8px; font-style: normal; }
+.vault-binding-list article > button:last-child:not(:first-child) { min-height: 30px; padding: 0 9px; border: 0; border-radius: 8px; background: #f7ecef; color: #bd3651; font: inherit; font-size: 9px; cursor: pointer; }
+
+@media (max-width: 560px) {
+  .vault-inbound-code { min-height: 52px; grid-template-columns: minmax(0,1fr) auto auto; }
+  .vault-inbound-code > b { font-size: 17px; }
+  .vault-inbound-modal,.vault-binding-modal { width: 100%; max-height: 92dvh; }
+  .vault-channel-create > .vault-primary { width: 100%; justify-content: center; }
+  .vault-channel-list article > footer { align-items: flex-start; flex-direction: column; }
+  .vault-channel-list article > footer button { min-height: 34px; padding: 0; }
+  .vault-unmatched-codes > article { grid-template-columns: minmax(0,1fr) auto auto; }
+  .vault-unmatched-codes article small { grid-column: 1 / 2; }
+  .vault-unmatched-codes article button { grid-column: 3; grid-row: 1 / span 2; }
+  .vault-binding-list > article { align-items: stretch; }
+  .vault-binding-list article > button:last-child:not(:first-child) { min-height: 38px; }
+}
+
+html.theme-dark .vault-inbound-code,html.theme-dark .vault-detail-values > section.is-inbound,html.theme-dark .vault-dynamic-enable.is-on { border-color: rgba(153,165,255,.2); background: #20283c; }
+html.theme-dark .vault-inbound-code > b,html.theme-dark .vault-unmatched-codes article b { color: #bdc6ff; }
+html.theme-dark .vault-dynamic-enable,html.theme-dark .vault-channel-list > article,html.theme-dark .vault-binding-list > article { background: #171e2c; }
+html.theme-dark .vault-channel-list article input,html.theme-dark .vault-unmatched-codes > article { background: #111826; color: #dfe5f2; }
 @media (max-width: 560px) {
   .vault-toast { bottom: max(14px,env(safe-area-inset-bottom)); }
   .vault-page .vault-toast { bottom: calc(78px + env(safe-area-inset-bottom)); }
@@ -2276,4 +2370,19 @@ html.theme-dark .vault-page > .vault-create-share {
   .vault-card,
   .vault-share-list > article { transition: none; transform: none !important; filter: none !important; }
   .vault-press-burst i { animation: none; }
+}
+
+@media (min-width: 761px) {
+  .vault-panel-tools > .vault-filters {
+    width: min(100%, 760px);
+    flex-basis: 760px;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+  }
+}
+
+@media (min-width: 561px) and (max-width: 760px) {
+  .vault-panel-tools > .vault-filters {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+  .vault-panel-tools > .vault-filters .vault-filter-clear { grid-column: 1 / -1; }
 }
