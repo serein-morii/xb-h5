@@ -243,7 +243,7 @@ export default function VaultSharePage({ token }: { token: string }) {
         <div className="vault-share-scroll"><ul className="share-usage-list">
           <li><span className="share-usage-icon is-blue"><MessageSquareText size={15} /></span><span>验证码到达后自动贴到对应卡片，带「新」标记，<b>点数字即可复制</b>。</span></li>
           <li><span className="share-usage-icon is-violet"><Clock3 size={15} /></span><span>卡片下方横条是剩余有效时间，走完即过期；新验证码到达会自动替换。</span></li>
-          <li><span className="share-usage-icon is-green"><Webhook size={15} /></span><span>显示「等待验证码」表示尚未收到，无需刷新，稍后会自动出现。</span></li>
+          <li><span className="share-usage-icon is-green"><Webhook size={15} /></span><span>卡片显示「等待验证码」时不用刷新页面，验证码一到就会自动出现。</span></li>
         </ul></div>
         <footer><div><button type="button" className="vault-primary" onClick={dismissUsageTip}>知道了</button></div></footer>
       </section></div> : null}
