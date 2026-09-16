@@ -160,7 +160,7 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-search { min-height: 38px; border: 0; border-radius: 12px; background: #fff; box-shadow: 0 4px 16px rgba(34, 44, 76, .06); }
 .vault-modal input:not([type=checkbox]):not([type=radio]),.vault-modal select,.vault-modal textarea { min-height: 38px; padding: 7px 10px; }
 .vault-filters { align-items: center; gap: 8px; margin: -3px 0 15px; padding: 7px; border: 1px solid rgba(72,92,199,.08); border-radius: 14px; background: rgba(233,236,246,.82); }
-.vault-filters label { position: relative; min-width: 152px; display: block; }
+.vault-filters label { position: relative; min-width: 0; display: block; }
 .vault-filters label > span { position: absolute; z-index: 1; top: 6px; left: 11px; color: #8992a7; font-size: 7px; font-weight: 750; letter-spacing: .06em; pointer-events: none; }
 .vault-filters label::after { content: ""; position: absolute; top: 19px; right: 12px; width: 6px; height: 6px; border-right: 1.5px solid #7d87a0; border-bottom: 1.5px solid #7d87a0; transform: rotate(45deg); pointer-events: none; }
 .vault-filters select { width: 100%; min-height: 46px; padding: 17px 32px 4px 11px; appearance: none; -webkit-appearance: none; border: 1px solid transparent; border-radius: 11px; outline: 0; background: rgba(255,255,255,.92); color: var(--utility-text); box-shadow: 0 3px 12px rgba(34,44,76,.055); font-size: 10px; font-weight: 700; cursor: pointer; transition: border-color .16s,box-shadow .16s,background .16s; }
@@ -2219,7 +2219,7 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
     grid-column: 1 / -1;
     width: 100%;
     min-width: 0;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
     gap: 8px;
     margin: 0;
@@ -2227,9 +2227,6 @@ html.theme-dark .vault-clock-banner { background: #3b2718; border-color: rgba(25
     border: 0;
     border-radius: 0;
     background: transparent;
-  }
-  .vault-filters:has(.vault-filter-clear) {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   }
   .vault-filters label {
     position: relative;
@@ -2540,13 +2537,12 @@ html.theme-dark .vault-page > .vault-create-share {
   .vault-panel-tools > .vault-filters {
     width: min(100%, 760px);
     flex-basis: 760px;
-    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 561px) and (max-width: 760px) {
   .vault-panel-tools > .vault-filters {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .vault-panel-tools > .vault-filters .vault-filter-clear { grid-column: 1 / -1; }
 }

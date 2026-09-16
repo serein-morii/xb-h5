@@ -128,8 +128,7 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /点按显示并复制/);
   assert.match(workspace, /matchesCredentialKind\(item, kindFilter\)/);
   assert.match(workspace, /aria-label="类型"/);
-  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
-  assert.match(styles, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\) auto/);
+  assert.match(styles, /\.vault-filters \{\s*\n?\s*display: grid;[\s\S]{0,220}grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(workspace, /<option value="otp">验证器口令<\/option>/);
   assert.match(workspace, /vault-card-tags/);
   assert.match(workspace, /安全笔记/);
@@ -195,7 +194,7 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(styles, /html\.theme-dark \.vault-source-guide/);
   assert.match(styles, /\.vault-channel-list/);
   assert.match(styles, /\.vault-binding-list/);
-  assert.match(styles, /grid-template-columns:\s*repeat\(4, minmax\(120px, 1fr\)\)/);
+  assert.match(styles, /grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/);
 });
 
 test("adds compact password generation, local health checks and password-manager imports", async () => {
