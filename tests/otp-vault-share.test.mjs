@@ -292,6 +292,19 @@ test("share cards lead with the new badge, countdown only when expanded, and sin
   assert.match(sharePage, /useState\(defaultOpen\)/);
 });
 
+test("first open of a shared link with inbound codes shows a dismissible usage tip", async () => {
+  const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(sharePage, /otp-vault-share-tip/);
+  assert.match(sharePage, /hasInboundShare = items\.some/);
+  assert.match(sharePage, /usageTipOpen && hasInboundShare/);
+  assert.match(sharePage, /带「新」标记，点数字即可复制/);
+  assert.match(sharePage, /「等待验证码」表示尚未收到/);
+  assert.match(sharePage, /新验证码到达会自动替换/);
+  assert.match(styles, /\.share-usage-tip \{/);
+  assert.match(styles, /html\.theme-dark \.share-usage-tip \{/);
+});
+
 test("share save sits in a collapsible bottom dock named 转存", async () => {  const [sharePage, styles] = await Promise.all([
     source("app/systems/otp/VaultSharePage.tsx"),
     source("app/systems/otp/otp-vault.css"),

@@ -724,6 +724,16 @@ html.theme-dark { @media (max-width: 560px) {
 .share-expiry small { margin: 0; color: #7c859a; font-size: 7px; font-weight: 750; letter-spacing: .08em; line-height: 1; }
 .share-expiry b { margin: 0; color: #26345d; font-size: 13px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.015em; white-space: nowrap; }
 .share-groups { margin-top: 14px; display: grid; gap: 14px; }
+.share-usage-tip { margin-top: 12px; padding: 11px 13px; border: 1px solid rgba(72, 92, 199, .16); border-radius: 14px; background: #eef1fe; }
+.share-usage-tip-head { display: flex; align-items: center; gap: 6px; color: #485cc7; }
+.share-usage-tip-head b { font-size: 11px; }
+.share-usage-tip-head > button { margin-left: auto; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #7c85a8; cursor: pointer; }
+.share-usage-tip-head > button:hover { background: rgba(72, 92, 199, .1); }
+.share-usage-tip ul { margin: 7px 0 0; padding-left: 15px; display: grid; gap: 3px; color: #56618f; font-size: 10px; line-height: 1.6; }
+html.theme-dark .share-usage-tip { border-color: rgba(153, 165, 255, .2); background: #1d2440; }
+html.theme-dark .share-usage-tip-head { color: #aeb7ff; }
+html.theme-dark .share-usage-tip-head > button { color: #8b95ab; }
+html.theme-dark .share-usage-tip ul { color: #a6afc9; }
 .share-group { min-width: 0; }
 .share-group > header { margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
 .share-group > header b { min-width: 0; flex: 1; overflow: hidden; color: var(--share-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
