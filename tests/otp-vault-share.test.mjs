@@ -297,12 +297,16 @@ test("first open of a shared link with inbound codes shows a dismissible usage t
   const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(sharePage, /otp-vault-share-tip/);
   assert.match(sharePage, /hasInboundShare = items\.some/);
-  assert.match(sharePage, /usageTipOpen && hasInboundShare/);
+  assert.match(sharePage, /usageTipOpen && hasInboundShare \? <div className="vault-modal-mask/);
+  assert.match(sharePage, /share-usage-modal/);
+  assert.match(sharePage, /share-help-action/);
+  assert.match(sharePage, /onClick=\{\(\) => setUsageTipOpen\(true\)\}/);
   assert.match(sharePage, /带「新」标记，点数字即可复制/);
   assert.match(sharePage, /「等待验证码」表示尚未收到/);
   assert.match(sharePage, /新验证码到达会自动替换/);
-  assert.match(styles, /\.share-usage-tip \{/);
-  assert.match(styles, /html\.theme-dark \.share-usage-tip \{/);
+  assert.match(sharePage, /点顶栏的 \? 可再次查看/);
+  assert.match(styles, /\.share-usage-list \{/);
+  assert.match(styles, /\.share-help-action \{/);
 });
 
 test("share save sits in a collapsible bottom dock named 转存", async () => {  const [sharePage, styles] = await Promise.all([

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
+import { Check, ChevronDown, CircleHelp, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, listSharedDynamicCodes, openVaultShare, saveInboundShare, type DynamicCodeSource, type SharedItem, type ShareStatus, type VaultDynamicCode } from "./vaultApi";
@@ -230,7 +230,7 @@ export default function VaultSharePage({ token }: { token: string }) {
     try { localStorage.setItem(`otp-vault-share-tip:${token}`, "1"); } catch { /* 无痕模式下仅本次关闭 */ }
   };
   return <main className={`share-page ${gateVisible ? "is-gate" : "is-open"}`}>
-    <header className="share-brand"><span className="share-vault-mark">OTP</span><div><b>OTP Vault</b><small>{status?.name || "临时凭据授权"}</small></div><button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button></header>
+    <header className="share-brand"><span className="share-vault-mark">OTP</span><div><b>OTP Vault</b><small>{status?.name || "临时凭据授权"}</small></div>{hasInboundShare ? <button type="button" className="vault-ghost vault-theme-action share-help-action" onClick={() => setUsageTipOpen(true)} aria-label="验证码使用说明"><CircleHelp size={18} /><span>说明</span></button> : null}<button type="button" className="vault-ghost vault-theme-action" onClick={toggleHeaderTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button></header>
     {gateVisible ? <section className="share-access-card">
       <div className="share-access-intro"><span className="share-lock"><LockKeyhole size={24} /></span><div><small>受保护的临时分享</small><h1>{status?.name || (status?.accessCodeRequired ? "验证后查看" : "查看临时授权")}</h1><p>授权人已为你临时开放凭据，验证前不会传输任何敏感内容。</p></div></div>
       <div className="share-access-summary"><span><small>授权内容</small><b>{status?.itemCount || 0} 项</b></span><span><small>剩余时间</small><b>{formatDuration(accessExpiresIn)}</b></span></div>
@@ -238,15 +238,16 @@ export default function VaultSharePage({ token }: { token: string }) {
       <footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
       <header><div><span>临时授权已验证</span><h1>{status?.name || "凭据内容"}</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
-      {usageTipOpen && hasInboundShare ? <section className="share-usage-tip" role="note" aria-label="验证码使用提示">
-        <div className="share-usage-tip-head"><MessageSquareText size={15} /><b>短信 / 邮箱验证码说明</b><button type="button" onClick={dismissUsageTip} aria-label="关闭提示"><X size={14} /></button></div>
-        <ul>
-          <li>验证码到达后会自动贴到对应卡片，带「新」标记，点数字即可复制。</li>
-          <li>卡片下方的横条表示剩余有效时间，走完即过期；新验证码到达会自动替换。</li>
-          <li>显示「等待验证码」表示尚未收到，无需刷新页面，稍后会自动出现。</li>
-          <li>本页无需登录，请在授权有效期内使用。</li>
-        </ul>
-      </section> : null}
+      {usageTipOpen && hasInboundShare ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) dismissUsageTip(); }}><section className="vault-modal small share-usage-modal" role="dialog" aria-label="验证码使用说明">
+        <header><div><small>USAGE TIP</small><h2>短信 / 邮箱验证码说明</h2><p>收到的验证码会自动出现在卡片上</p></div><button type="button" onClick={dismissUsageTip} aria-label="关闭"><X size={18} /></button></header>
+        <div className="vault-share-scroll"><ul className="share-usage-list">
+          <li><MessageSquareText size={14} />验证码到达后会自动贴到对应卡片，带「新」标记，点数字即可复制。</li>
+          <li><Clock3 size={14} />卡片下方的横条表示剩余有效时间，走完即过期；新验证码到达会自动替换。</li>
+          <li><Webhook size={14} />显示「等待验证码」表示尚未收到，无需刷新页面，稍后会自动出现。</li>
+          <li><ShieldCheck size={14} />本页无需登录，请在授权有效期内使用。</li>
+        </ul></div>
+        <footer><span>点顶栏的 ? 可再次查看</span><div><button type="button" className="vault-primary" onClick={dismissUsageTip}>知道了</button></div></footer>
+      </section></div> : null}
       <div className="share-toolbar vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div><div className="vault-view-toggles"><label className={`vault-view-toggle${displayPrefs.grouped ? " is-active" : ""}`}><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={displayPrefs.grouped} onChange={(event) => setDisplayPrefs({ ...displayPrefs, grouped: event.target.checked })} /><i /></label><label className={`vault-view-toggle${displayPrefs.compact ? " is-active" : ""}`}><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={displayPrefs.compact} onChange={(event) => setDisplayPrefs({ ...displayPrefs, compact: event.target.checked })} /><i /></label></div></div>
       <div className="share-groups">{groups.map(([name, groupItems]) => <section className="share-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{groupItems.length}</span></header> : null}<div className={`share-item-list${displayPrefs.compact ? " is-compact" : ""}`}>{groupItems.map((item, index) => <SharedItemCard key={`${item.issuer}-${item.accountName || ""}-${index}`} item={item} index={index} groupName={name} compact={displayPrefs.compact} allowCopy={allowCopy} copied={copied} now={syncedNow} defaultOpen={items.length === 1} onCopy={copy} onOpenDetail={() => { setDetailPasswordVisible(false); setDetailItem(item); }} />)}</div></section>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
