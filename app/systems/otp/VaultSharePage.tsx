@@ -241,9 +241,9 @@ export default function VaultSharePage({ token }: { token: string }) {
       {usageTipOpen && hasInboundShare ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) dismissUsageTip(); }}><section className="vault-modal small share-usage-modal" role="dialog" aria-label="验证码使用说明">
         <header><div><small>USAGE TIP</small><h2>短信 / 邮箱验证码说明</h2><p>收到的验证码会自动出现在卡片上</p></div><button type="button" onClick={dismissUsageTip} aria-label="关闭"><X size={18} /></button></header>
         <div className="vault-share-scroll"><ul className="share-usage-list">
-          <li><MessageSquareText size={14} />验证码到达后会自动贴到对应卡片，带「新」标记，点数字即可复制。</li>
-          <li><Clock3 size={14} />卡片下方的横条表示剩余有效时间，走完即过期；新验证码到达会自动替换。</li>
-          <li><Webhook size={14} />显示「等待验证码」表示尚未收到，无需刷新页面，稍后会自动出现。</li>
+          <li><span className="share-usage-icon is-blue"><MessageSquareText size={15} /></span><span>验证码到达后自动贴到对应卡片，带「新」标记，<b>点数字即可复制</b>。</span></li>
+          <li><span className="share-usage-icon is-violet"><Clock3 size={15} /></span><span>卡片下方横条是剩余有效时间，走完即过期；新验证码到达会自动替换。</span></li>
+          <li><span className="share-usage-icon is-green"><Webhook size={15} /></span><span>显示「等待验证码」表示尚未收到，无需刷新，稍后会自动出现。</span></li>
         </ul></div>
         <footer><div><button type="button" className="vault-primary" onClick={dismissUsageTip}>知道了</button></div></footer>
       </section></div> : null}

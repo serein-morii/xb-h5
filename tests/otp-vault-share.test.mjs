@@ -301,7 +301,8 @@ test("first open of a shared link with inbound codes shows a dismissible usage t
   assert.match(sharePage, /share-usage-modal/);
   assert.match(sharePage, /share-help-action/);
   assert.match(sharePage, /onClick=\{\(\) => setUsageTipOpen\(true\)\}/);
-  assert.match(sharePage, /带「新」标记，点数字即可复制/);
+  assert.match(sharePage, /带「新」标记/);
+  assert.match(sharePage, /share-usage-icon/);
   assert.match(sharePage, /「等待验证码」表示尚未收到/);
   assert.match(sharePage, /新验证码到达会自动替换/);
   assert.doesNotMatch(sharePage, /本页无需登录，请在授权有效期内使用/);
