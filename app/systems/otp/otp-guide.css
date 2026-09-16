@@ -23,6 +23,7 @@
 }
 .otp-guide-bar b { font-size: 14px; letter-spacing: -.02em; }
 .otp-guide-bar-back {
+  min-height: 34px; padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit;
   justify-self: start; display: inline-flex; align-items: center; gap: 4px;
   color: #596174; font-size: 13px; font-weight: 650; text-decoration: none;
 }
@@ -30,7 +31,7 @@
   justify-self: end; min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center;
   border-radius: 10px; color: #fff; background: var(--guide-accent); font-size: 12px; font-weight: 700; text-decoration: none;
 }
-.otp-guide-bar a:focus-visible, .otp-guide-toc a:focus-visible, .otp-guide-prose a:focus-visible {
+.otp-guide-bar a:focus-visible, .otp-guide-bar button:focus-visible, .otp-guide-toc a:focus-visible, .otp-guide-prose a:focus-visible {
   outline: 2px solid var(--guide-accent); outline-offset: 3px;
 }
 

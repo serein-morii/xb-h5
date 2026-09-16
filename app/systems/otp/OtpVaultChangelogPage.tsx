@@ -145,8 +145,7 @@ const changelog = [
   },
 ] as const;
 
-function backToPrevious(event: { preventDefault: () => void }) {
-  event.preventDefault();
+function backToPrevious() {
   try {
     if (document.referrer && new URL(document.referrer).origin === location.origin) {
       history.back();
@@ -163,7 +162,7 @@ export default function OtpVaultChangelogPage() {
 
   return <main className="otp-guide-page otp-changelog-page">
     <header className="otp-guide-bar">
-      <a className="otp-guide-bar-back" href={APP_ROUTES.otp} onClick={backToPrevious}><ArrowLeft size={16} /><span>返回</span></a>
+      <button type="button" className="otp-guide-bar-back" onClick={backToPrevious}><ArrowLeft size={16} /><span>返回</span></button>
       <b>更新日志</b>
       <a className="otp-guide-bar-open" href={APP_ROUTES.otp}>打开</a>
     </header>
