@@ -167,29 +167,25 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-filters label:focus-within select { border-color: rgba(72,92,199,.3); background: #fff; box-shadow: 0 0 0 3px rgba(72,92,199,.08); }
 .vault-filter-clear {
   flex: none;
-  min-height: 46px;
-  margin-left: 2px;
-  padding: 0 14px;
+  min-height: 28px;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  background: rgba(255,255,255,.92);
-  color: #5b66a8;
-  box-shadow: 0 3px 12px rgba(34,44,76,.055);
+  gap: 4px;
+  border: 1px solid rgba(72,92,199,.22);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--utility-paper) 80%, var(--utility-bg));
+  color: var(--vault-accent);
   font: inherit;
   font-size: 10px;
   font-weight: 750;
   cursor: pointer;
-  transition: border-color .16s, background .16s, color .16s, box-shadow .16s;
+  transition: border-color .16s, background .16s, color .16s;
 }
 .vault-filter-clear:hover {
-  border-color: rgba(72,92,199,.22);
-  background: #fff;
-  color: var(--vault-accent);
-  box-shadow: 0 0 0 3px rgba(72,92,199,.08), 0 3px 12px rgba(34,44,76,.06);
+  border-color: var(--vault-accent);
+  background: var(--utility-paper);
 }
 .vault-filter-clear:active { transform: translateY(1px); }
 .vault-filter-clear svg { flex: none; opacity: .85; }
@@ -198,7 +194,6 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
   .vault-filters label { min-width: 0; }
   .vault-filters select { min-height: 43px; padding-top: 16px; font-size: 9px; }
   .vault-filters label::after { top: 18px; }
-  .vault-filter-clear { grid-column: 1 / -1; min-height: 40px; width: 100%; border-radius: 10px; }
 }
 .vault-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .vault-card { padding: 16px; border-color: transparent; border-radius: 19px; background: #fff; box-shadow: 0 7px 24px rgba(34, 44, 76, .07); cursor: pointer; outline: 0; }
