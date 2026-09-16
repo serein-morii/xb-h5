@@ -1,0 +1,14 @@
+tests/otp-vault-share.test.mjs
+  h_d554d32aa9d663 306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5394420c065d00ede6e254a61e98e75485a15f3a",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
