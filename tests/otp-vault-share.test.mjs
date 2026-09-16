@@ -304,7 +304,7 @@ test("first open of a shared link with inbound codes shows a dismissible usage t
   assert.match(sharePage, /带「新」标记，点数字即可复制/);
   assert.match(sharePage, /「等待验证码」表示尚未收到/);
   assert.match(sharePage, /新验证码到达会自动替换/);
-  assert.match(sharePage, /本页无需登录，请在授权有效期内使用<\/span>/);
+  assert.doesNotMatch(sharePage, /本页无需登录，请在授权有效期内使用/);
   assert.doesNotMatch(sharePage, /点顶栏的 \? 可再次查看/);
   assert.match(styles, /\.share-usage-list \{/);
   assert.match(styles, /\.share-help-action \{/);
