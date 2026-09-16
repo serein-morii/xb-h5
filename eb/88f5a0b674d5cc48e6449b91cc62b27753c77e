@@ -1,0 +1,16 @@
+app/systems/otp/VaultSharePage.tsx
+  h_d554d32aa9d663 246
+tests/otp-vault-share.test.mjs
+  h_d554d32aa9d663 306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "eb88f5a0b674d5cc48e6449b91cc62b27753c77e",
+  "prompts": {},
+  "humans": {
+    "h_d554d32aa9d663": {
+      "author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
