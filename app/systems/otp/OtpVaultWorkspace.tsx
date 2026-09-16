@@ -1794,7 +1794,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       </section>
     );
   });
-  const liveDetail = detail ? { ...detail, ...(credentials.find((item) => item.id === detail.id) || {}), password: detail.password } : null;
+  const liveDetail = detail ? { ...detail, ...(credentials.find((item) => item.id === detail.id) || {}), password: detail.password, fields: detail.fields } : null;
   const detailOtpLeft = liveDetail?.otpValidUntil ? Math.max(0, Math.ceil((liveDetail.otpValidUntil - now) / 1000)) : 0;
   const detailOtpProgress = liveDetail?.periodSeconds ? Math.max(0, Math.min(100, detailOtpLeft / liveDetail.periodSeconds * 100)) : 0;
   const detailInboundTiming = inboundCodeTiming(liveDetail?.dynamicCodeReceivedTime, liveDetail?.dynamicCodeExpireTime, now);

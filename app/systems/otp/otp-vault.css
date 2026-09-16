@@ -237,7 +237,8 @@ html.theme-dark{.share-page{--share-paper:#20241f;--share-bg:#171a17;--share-tex
 .vault-detail-values section.is-otp { background: linear-gradient(135deg, #f5f6fd, #eef0fb); }
 .vault-detail-values section.is-otp .vault-otp-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .vault-detail-values section.is-otp .vault-otp-label em { color: #586bcf; font-size: 11px; font-style: normal; font-weight: 800; font-variant-numeric: tabular-nums; }
-.vault-detail-values section.is-otp .vault-detail-next { display: inline-flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; margin: 9px 0 0 auto; padding: 7px 8px; border: 1px solid rgba(86, 102, 158, .08); border-radius: 9px; background: rgba(86, 102, 158, .045); color: #66718b; white-space: nowrap; }
+.vault-detail-values section.is-otp .vault-detail-next { display: inline-flex; align-items: center; gap: 6px; width: max-content; max-width: 100%; margin: 9px 0 0 auto; padding: 7px 8px; border: 1px solid rgba(86, 102, 158, .08); border-radius: 9px; background: rgba(86, 102, 158, .045); color: #66718b; white-space: nowrap; overflow: hidden; }
+.vault-detail-next .vault-next-copy { flex: none; }
 .vault-detail-next span,.vault-detail-next small { flex: none; font-size: 9px; }
 .vault-detail-next span { font-weight: 750; }
 .vault-detail-next b { margin-left: 0; flex: none; color: #65708c; font-size: 15px !important; letter-spacing: .09em !important; font-variant-numeric: tabular-nums; }
@@ -1194,7 +1195,7 @@ html.theme-dark .vault-next-copy:hover { border-color: rgba(190,200,235,.24); ba
 .vault-card.is-compact .vault-card-next + span { display: none; }
 .vault-card.is-compact .vault-card-next { min-height: 24px; gap: 3px; padding: 2px 2px 2px 4px; }
 .vault-card.is-compact .vault-card-next b { font-size: 11px; }
-.vault-card.is-compact .vault-card-next .vault-next-copy { width: 18px; height: 18px; border-radius: 6px; }
+.vault-card.is-compact .vault-card-next .vault-next-copy { width: 20px; height: 20px; border-radius: 6px; flex: none; }
 .vault-card.is-compact .vault-card-actions { grid-area: actions; justify-content: flex-end; margin-top: 0; padding-top: 0; border-top: 0; gap: 2px; }
 .vault-card.is-compact .vault-card-actions button { width: 22px; height: 22px; justify-content: center; }
 .vault-card.is-compact .vault-card-actions button span { display: none; }
