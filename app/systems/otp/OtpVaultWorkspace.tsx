@@ -397,6 +397,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [passwordGeneratorOpen, setPasswordGeneratorOpen] = useState(false);
   const [passwordOptions, setPasswordOptions] = useState<PasswordGeneratorOptions>({ ...DEFAULT_PASSWORD_OPTIONS });
   const [form, setForm] = useState({ ...emptyCredential });
+  const [customFields, setCustomFields] = useState<{ label: string; value: string }[]>([]);
   const [inboundChannels, setInboundChannels] = useState<VaultInboundChannel[]>([]);
   const [recentDynamicCodes, setRecentDynamicCodes] = useState<VaultDynamicCode[]>([]);
   const [channelForm, setChannelForm] = useState({ ...emptyChannelForm });
@@ -1067,6 +1068,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const openCredential = (item?: VaultCredential) => {
     setEditingId(item?.id || null);
 		setForm(item ? { issuer: item.issuer, accountName: item.accountName, otpSecret: "", password: "", otpType: item.otpType || "TOTP", hotpCounter: item.hotpCounter || 0, algorithm: item.algorithm || "SHA1", digits: item.digits || 6, periodSeconds: item.periodSeconds || 30, loginUrl: item.loginUrl || "", note: item.note || "", tags: item.tags || "", favorite: item.favorite, dynamicCodeEnabled: Boolean(item.dynamicCodeEnabled), sensitivityLevel: item.sensitivityLevel || "STANDARD" } : { ...emptyCredential });
+		setCustomFields(item?.fields?.length ? item.fields.map((field) => ({ label: field.label, value: field.value })) : []);
     setTagDraft("");
     setPasswordGeneratorOpen(false);
     setFormPasswordVisible(false);
@@ -1421,7 +1423,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     }
     setBusy(true);
     try {
-      const result = await saveVaultCredential(editingId, await protectCredential(form));
+      const result = await saveVaultCredential(editingId, await protectCredential({ ...form, fields: customFields.filter((field) => field.label.trim() && field.value.trim()) }));
       setPendingDuplicate(null);
       if (editingId && (result.data.activeShareCount || 0) > 0) {
         setPendingSync({ id: editingId, issuer: form.issuer, accountName: form.accountName, count: result.data.activeShareCount || 0 });
@@ -1978,7 +1980,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             {liveDetail.dynamicCode ? <section className="is-otp is-inbound"><span className="vault-otp-label">{sourceLabel(liveDetail.dynamicCodeSource)}验证码{liveDetail.dynamicCodeUsed ? " · 已使用" : ""}<em>{formatCodeTime(detailInboundTiming.left)}</em></span><div><b>{liveDetail.dynamicCode.replace(/(.{3})(?=.)/, "$1 ")}</b>{canCopyCredential(liveDetail) ? <button type="button" onClick={() => void copyDynamicCode(liveDetail)} aria-label={`复制${sourceLabel(liveDetail.dynamicCodeSource)}验证码`}><Copy size={15} /></button> : null}</div><div className="vault-detail-next"><span>来源</span><span className="vault-card-sources" aria-label={`已配置${(liveDetail.dynamicSources || []).map(sourceLabel).join("、")}`}>{(liveDetail.dynamicSources || []).map((source) => <span className={`vault-card-source${source === liveDetail.dynamicCodeSource ? " is-active" : ""}`} key={source} title={sourceLabel(source)} aria-label={sourceLabel(source)}>{source === "EMAIL" ? <Mail size={13} /> : source === "WEBHOOK" ? <Webhook size={13} /> : <MessageSquareText size={13} />}</span>)}</span><small>{liveDetail.dynamicCodeSender || "接收通道"}</small></div><div className="vault-progress"><i style={{ width: `${detailInboundTiming.progress}%` }} /></div></section> : liveDetail.dynamicCodeEnabled ? <section className="is-otp is-inbound is-waiting"><span className="vault-otp-label">接收验证码</span><div><b>等待验证码</b><button type="button" disabled aria-label="暂无验证码可复制"><Copy size={15} /></button></div><div className="vault-detail-next"><span>来源</span><span className="vault-card-sources" aria-label={liveDetail.dynamicSources?.length ? `已配置${liveDetail.dynamicSources.map(sourceLabel).join("、")}` : "未配置来源"}>{liveDetail.dynamicSources?.length ? liveDetail.dynamicSources.map((source) => <span className="vault-card-source" key={source} title={sourceLabel(source)} aria-label={sourceLabel(source)}>{source === "EMAIL" ? <Mail size={13} /> : source === "WEBHOOK" ? <Webhook size={13} /> : <MessageSquareText size={13} />}</span>) : <span className="vault-source-unconfigured">未配置来源</span>}</span></div></section> : null}
           </div></section>
           {liveDetail.note || liveDetail.tags ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>02</span><h3>补充信息</h3></div></div>{liveDetail.note ? <p className="vault-detail-note">{liveDetail.note}</p> : null}{liveDetail.tags ? <div className="vault-detail-tags">{liveDetail.tags.split(/[\s,，]+/).filter(Boolean).map((tag) => <b key={tag}>{tag}</b>)}</div> : null}</section> : null}
-          {liveDetail.dynamicCodeEnabled || detailCodeHistory.length || detailCodeHistoryLoading ? <InboundCodeHistory rows={detailCodeHistory} total={detailCodeHistoryTotal} loading={detailCodeHistoryLoading} allowCopy={canCopyCredential(liveDetail)} now={now} step={liveDetail.note || liveDetail.tags ? "03" : "02"} onCopy={(value) => void copy(value, "历史验证码已复制")} onLoadMore={() => void loadDetailCodeHistory(liveDetail.id, detailCodeHistoryPage + 1)} /> : null}
+          {liveDetail.fields?.length ? <section className="vault-share-section vault-detail-section"><div className="vault-section-title"><div><span>03</span><h3>自定义字段</h3></div></div><div className="vault-detail-values">{liveDetail.fields.map((field) => <section key={field.label}><span>{field.label}</span><div><b>{field.value}</b><button type="button" onClick={() => void copy(field.value, `${field.label}已复制`)} aria-label={`复制${field.label}`}><Copy size={15} /></button></div></section>)}</div></section> : null}
+          {liveDetail.dynamicCodeEnabled || detailCodeHistory.length || detailCodeHistoryLoading ? <InboundCodeHistory rows={detailCodeHistory} total={detailCodeHistoryTotal} loading={detailCodeHistoryLoading} allowCopy={canCopyCredential(liveDetail)} now={now} step={liveDetail.fields?.length ? "04" : liveDetail.note || liveDetail.tags ? "03" : "02"} onCopy={(value) => void copy(value, "历史验证码已复制")} onLoadMore={() => void loadDetailCodeHistory(liveDetail.id, detailCodeHistoryPage + 1)} /> : null}
         </div>
         <footer><span>{liveDetail.shared ? "共享凭据只允许查看" : "可继续分享、配置来源或编辑凭据"}</span><div>{liveDetail.shared ? <button type="button" className="vault-primary" onClick={closeModal}>完成</button> : <><button type="button" className="vault-ghost" onClick={() => void openCodeBindings(liveDetail)}><Radio size={15} />来源</button><button type="button" className="vault-ghost" onClick={() => openShare(liveDetail.id)}><Share2 size={15} />分享</button><button type="button" className="vault-primary" onClick={() => openCredential(liveDetail)}><Pencil size={15} />编辑</button></>}</div></footer>
       </>}
@@ -2019,6 +2022,15 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <label className="wide"><span>标签</span><div className="vault-tag-editor">{splitCredentialTags(form.tags).map((tag) => <button type="button" className="vault-tag-chip" key={tag} onClick={() => removeCredentialTag(tag)} title="移除标签"><span>{tag}</span><X size={11} /></button>)}<input value={tagDraft} maxLength={20} onChange={(event) => setTagDraft(event.target.value.replace(/[,，]/g, ""))} onBlur={() => addCredentialTags()} onKeyDown={(event) => { if (event.key === "Enter" || event.key === "," || event.key === "，" || event.key === " ") { event.preventDefault(); addCredentialTags(); } }} placeholder={splitCredentialTags(form.tags).length ? "继续添加" : "输入后按回车，最多 8 个"} /><button type="button" className="vault-tag-add" disabled={!tagDraft.trim() || splitCredentialTags(form.tags).length >= 8} onMouseDown={(event) => event.preventDefault()} onClick={() => addCredentialTags()} aria-label="添加标签"><Plus size={13} /></button></div></label>
           <label><span>查看保护</span><select value={form.sensitivityLevel} onChange={(e) => setForm({ ...form, sensitivityLevel: e.target.value })}><option value="STANDARD">常规 · 登录后可查看</option><option value="SENSITIVE">验证 · 查看前再次验证</option><option value="CRITICAL">严格 · 验证且仅可指定用户</option></select></label>
           <label><span>收藏</span><select value={form.favorite ? "1" : "0"} onChange={(e) => setForm({ ...form, favorite: e.target.value === "1" })}><option value="0">不收藏</option><option value="1">加入收藏</option></select></label>
+        </div>
+        <div className="vault-custom-fields">
+          <div className="vault-custom-fields-head"><span>自定义字段</span><small>{customFields.length} / 5</small></div>
+          {customFields.map((field, index) => <div className="vault-custom-field-row" key={index}>
+            <input maxLength={40} value={field.label} onChange={(event) => setCustomFields(customFields.map((row, i) => i === index ? { ...row, label: event.target.value } : row))} placeholder="字段名" aria-label={`字段名 ${index + 1}`} />
+            <input maxLength={500} value={field.value} onChange={(event) => setCustomFields(customFields.map((row, i) => i === index ? { ...row, value: event.target.value } : row))} placeholder="字段值，加密保存" aria-label={`字段值 ${index + 1}`} />
+            <button type="button" onClick={() => setCustomFields(customFields.filter((_, i) => i !== index))} aria-label="删除字段"><Trash2 size={14} /></button>
+          </div>)}
+          {customFields.length < 5 ? <button type="button" className="vault-custom-field-add" onClick={() => setCustomFields([...customFields, { label: "", value: "" }])}><Plus size={13} />添加字段</button> : null}
         </div></details>
       </div>
       <footer><span>{editingId ? "敏感值留空即保持不变" : "确认信息后加密保存"}</span><div><button type="button" className="vault-ghost" onClick={closeModal}>取消</button><button className="vault-primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}{busy ? "保存中" : "保存"}</button></div></footer>

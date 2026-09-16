@@ -64,6 +64,7 @@ export type VaultCredential = {
   currentOtp?: string; nextOtp?: string; otpValidUntil?: number; periodSeconds: number; algorithm: string; digits: number;
   otpType: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; requiresStepUp?: boolean;
   loginUrl?: string; note?: string; tags?: string; favorite: boolean; sensitivityLevel: string; updateTime?: string;
+  fields?: { label: string; value: string }[];
   dynamicCodeEnabled?: boolean; dynamicSources?: DynamicCodeSource[];
   dynamicCodeSources?: VaultCredentialCodeSource[];
   dynamicCodeId?: number; dynamicCode?: string; dynamicCodeSource?: DynamicCodeSource; dynamicCodeSender?: string;

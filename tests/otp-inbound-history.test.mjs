@@ -66,7 +66,7 @@ test("credential detail shows inbound codes like authenticator OTP and keeps vis
   assert.match(workspace, /<div className="vault-detail-next"><span>来源<\/span>/);
   assert.match(workspace, /className="is-login-url"/);
   assert.match(workspace, /className="vault-detail-login-url"/);
-  assert.match(workspace, /step=\{liveDetail\.note \|\| liveDetail\.tags \? "03" : "02"\}/);
+  assert.match(workspace, /step=\{liveDetail\.fields\?\.length \? "04" : liveDetail\.note \|\| liveDetail\.tags \? "03" : "02"\}/);
   assert.ok(workspace.indexOf('className="is-otp"><span className="vault-otp-label">{liveDetail.otpType') < workspace.indexOf('className="is-otp is-inbound"><span'), "authenticator OTP renders above inbound codes");
   assert.ok(workspace.indexOf("vault-detail-open-url") < workspace.indexOf('aria-label="复制访问地址"'), "visit button precedes copy on the login-url row");
   assert.match(share, /className="is-otp is-inbound"/);
