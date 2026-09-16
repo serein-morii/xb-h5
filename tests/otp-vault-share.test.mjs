@@ -303,7 +303,7 @@ test("first open of a shared link with inbound codes shows a dismissible usage t
   assert.match(sharePage, /onClick=\{\(\) => setUsageTipOpen\(true\)\}/);
   assert.match(sharePage, /带「新」标记/);
   assert.match(sharePage, /share-usage-icon/);
-  assert.match(sharePage, /「等待验证码」时不用刷新页面/);
+  assert.match(sharePage, /验证码会自动转发到这里/);
   assert.match(sharePage, /新验证码到达会自动替换/);
   assert.doesNotMatch(sharePage, /本页无需登录，请在授权有效期内使用/);
   assert.doesNotMatch(sharePage, /点顶栏的 \? 可再次查看/);
