@@ -13,7 +13,9 @@ import {
   LoaderCircle,
   LockKeyhole,
   Mail,
+  MapPin,
   Pencil,
+  Phone,
   Plus,
   ReceiptText,
   RefreshCw,
@@ -24,6 +26,7 @@ import {
   Trash2,
   Truck,
   Upload,
+  User,
   X,
 } from "lucide-react";
 import { API_PATHS } from "../../../lib/pathConventions";
@@ -85,6 +88,38 @@ export type CrudConfig = {
   batchAction?: { label: string; title: string; fields: FieldConfig[]; submit: (values: DataRow, ids: Array<string | number>) => Promise<unknown>; successMessage?: (payload: unknown) => string };
   importable?: boolean;
 };
+
+type BillSummary = {
+  totalCount: number;
+  pendingCount: number;
+  paidCount: number;
+  saleAmount: number;
+  costAmount: number;
+  gainAmount: number;
+};
+
+const EMPTY_BILL_SUMMARY: BillSummary = {
+  totalCount: 0,
+  pendingCount: 0,
+  paidCount: 0,
+  saleAmount: 0,
+  costAmount: 0,
+  gainAmount: 0,
+};
+
+function billPayMeta(status: unknown) {
+  const value = Number(status);
+  if (value === 1) return { key: "paid", label: "已付款" };
+  if (value === 2) return { key: "refunded", label: "已退款" };
+  if (value === 3) return { key: "confirming", label: "待确认" };
+  return { key: "unpaid", label: "未付款" };
+}
+
+function formatMoney(value: unknown) {
+  const amount = Number(value || 0);
+  const sign = amount < 0 ? "-" : "";
+  return `${sign}¥${Math.abs(amount).toFixed(2)}`;
+}
 
 export function createCrudConfigs(dictionaries: Dictionaries, overrides: CrudOverridesConfig = { version: 1, overrides: {} }): Record<Exclude<MenuKey, "home" | "orders" | "orderEntry" | "batchOrder" | "orderLink" | "purchasers" | "tracking" | "logistics" | "shortLinks" | "products" | "onlinePayments" | "systemCenter" | "operationsCenter" | "mobileMenu" | "sysUsers" | "sysRoles" | "sysDepts" | "sysPosts" | "sysMenus" | "sysDictTypes" | "sysConfigs" | "sysRiskIps" | "sysNotices" | "opsOnline" | "opsJobs" | "opsJobLogs" | "opsOperLogs" | "opsLoginLogs" | "opsServer" | "opsCache" | "opsDruid" | "opsGenerator" | "opsSwagger" | "opsMessages">, CrudConfig> {
   const ov = overrides.overrides;
@@ -297,6 +332,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   const Icon = config.icon;
   const [rows, setRows] = useState<DataRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [billSummary, setBillSummary] = useState<BillSummary>(EMPTY_BILL_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [loadAllState, setLoadAllState] = useState<{ loading: boolean; current: number; total: number }>({ loading: false, current: 0, total: 0 });
   const [syncAllState, setSyncAllState] = useState<{ loading: boolean; current: number; total: number; success: number; failed: number }>({ loading: false, current: 0, total: 0, success: 0, failed: 0 });
@@ -309,15 +345,40 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   const [batchSaving, setBatchSaving] = useState(false);
   const [syncModeOpen, setSyncModeOpen] = useState(false);
   const [mailStore, setMailStore] = useState<DataRow | null>(null);
+  const [mailSaving, setMailSaving] = useState(false);
   const [noticeStore, setNoticeStore] = useState<DataRow | null>(null);
+  const [noticeSaving, setNoticeSaving] = useState(false);
   const [accessStore, setAccessStore] = useState<DataRow | null>(null);
+  const [accessSaving, setAccessSaving] = useState(false);
   const [payStore, setPayStore] = useState<DataRow | null>(null);
+  const [paySaving, setPaySaving] = useState(false);
   const [storeSwitchBusy, setStoreSwitchBusy] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
   const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
   const [filterPurchasers, setFilterPurchasers] = useState<DataRow[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const load = useCallback(async () => { setLoading(true); try { const result = await apiRequest<DataRow>(config.api, { query }); setRows(Array.isArray(result.rows) ? result.rows : []); setTotal(Number(result.total || 0)); } catch (error) { notify(error instanceof Error ? error.message : `${config.itemName}加载失败`, "error"); } finally { setLoading(false); } }, [config, notify, query]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (config.key === "bills") {
+        const [result, summaryResult] = await Promise.all([
+          apiRequest<DataRow>(config.api, { query }),
+          apiRequest<{ data?: BillSummary }>(`${config.api}/summary`, { query }),
+        ]);
+        setRows(Array.isArray(result.rows) ? result.rows : []);
+        setTotal(Number(result.total || 0));
+        setBillSummary({ ...EMPTY_BILL_SUMMARY, ...(summaryResult.data || {}) });
+      } else {
+        const result = await apiRequest<DataRow>(config.api, { query });
+        setRows(Array.isArray(result.rows) ? result.rows : []);
+        setTotal(Number(result.total || 0));
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : `${config.itemName}加载失败`, "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [config, notify, query]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setExpanded(new Set()); setPageKeyword(""); }, [config.key]);
   useEffect(() => {
@@ -365,6 +426,10 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
       }
       setRows(accumulated);
       setTotal(serverTotal);
+      if (config.key === "bills") {
+        const summaryResult = await apiRequest<{ data?: BillSummary }>(`${config.api}/summary`, { query });
+        setBillSummary({ ...EMPTY_BILL_SUMMARY, ...(summaryResult.data || {}) });
+      }
     } catch (error) {
       notify(error instanceof Error ? error.message : `${config.itemName}刷新失败`, "error");
     }
@@ -526,8 +591,8 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
     return "success";
   }
   return (
-    <div className={`module-page crud-page crud-page-${config.key}`}>
-      <div className="module-hero compact-hero"><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>共 {total} 条数据，支持手机端快速维护</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
+    <div className={`module-page crud-page crud-page-${config.key}${config.key === "bills" ? " finance-page" : ""}`}>
+      <div className={`module-hero${config.key === "bills" ? "" : " compact-hero"}`}><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>{config.key === "bills" ? "成本、售价与利润一目了然" : `共 ${total} 条数据，支持手机端快速维护`}</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
       <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
@@ -545,6 +610,12 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           <small>· 当前 {visibleRows.length} 条</small>
         </button> : null}
       </div>
+      {config.key === "bills" ? <section className="metric-grid finance-status-grid" aria-label="账单汇总">
+        <article><span className="metric-icon blue"><CreditCard size={15} /></span><p>销售金额</p><b>{formatMoney(billSummary.saleAmount)}</b><small>{billSummary.paidCount} 笔已付款</small></article>
+        <article><span className="metric-icon amber"><ReceiptText size={15} /></span><p>总成本</p><b>{formatMoney(billSummary.costAmount)}</b><small>商品、包装与快递</small></article>
+        <article className={billSummary.gainAmount < 0 ? "is-negative" : "is-positive"}><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>总利润</p><b>{formatMoney(billSummary.gainAmount)}</b><small>销售金额减总成本</small></article>
+        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待处理</p><b>{billSummary.pendingCount}</b><small>共 {billSummary.totalCount} 条账单</small></article>
+      </section> : null}
       <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条{pageKeyword.trim() ? ` · 本页匹配 ${visibleRows.length} 条` : ""}</span></div></div>
       <div className="mobile-card-list">
         {!visibleRows.length ? <EmptyState loading={loading} label={pageKeyword.trim() ? "本页匹配结果" : config.itemName} /> : visibleRows.map((row) => {
@@ -573,8 +644,34 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
               onDelete={() => setConfirm({ title: "删除店铺", message: `删除「${String(row.name || row.code || "该店铺")}」后无法恢复，是否继续？`, danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); await refreshLoadedRange(-1); } })}
             />;
           }
+          if (config.key === "bills") {
+            const payMeta = billPayMeta(row.payStatus);
+            const status = String(row.orderStatus || "");
+            const statusTone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning";
+            const action = resolveExtra(row);
+            const productName = String(row.orderNameDesc || optionLabel(row.orderName, dictionaries.products) || "未命名商品");
+            const specification = orderTypeLabel(row.orderType, dictionaries.sizes, row.orderTypeDesc);
+            return <article className="order-card finance-card bill-card" key={String(row.id)}>
+              <div className="card-topline">
+                <button className="order-number" type="button" onClick={() => void copyText(String(row.orderCode || ""), "订单号已复制")}>{String(row.orderCode || "暂无订单号")}<Copy size={13} /></button>
+                <div className="card-topline-badges"><span className={`order-pay-badge pay-${payMeta.key}`}><CreditCard size={11} />{payMeta.label}</span><span className={`status ${statusTone}`}><span />{billOrderStatusLabel(row, dictionaries)}</span></div>
+              </div>
+              <button className="card-main" type="button" onClick={() => void edit(row)}>
+                <span className="product-avatar">{productName.slice(-1)}</span>
+                <span className="product-copy"><b>{productName}</b><small>{specification} · 数量 {String(row.orderNum || 1)} · {String(row.purchaser || row.createBy || "--")}</small></span>
+                <span className="order-price"><small>销售价格</small><b>{formatMoney(row.salePrice)}</b></span>
+              </button>
+              <div className="finance-strip" aria-label="账单金额"><div><span>销售</span><b>{formatMoney(row.salePrice)}</b></div><div><span>成本</span><b>{formatMoney(row.totalPrice)}</b></div><div className={Number(row.gainPrice || 0) < 0 ? "is-negative" : "is-positive"}><span>利润</span><b>{formatMoney(row.gainPrice)}</b></div></div>
+              <div className="recipient-block"><div><User size={16} /><b>{String(row.customer || "--")}</b>{row.phone ? <a href={`tel:${String(row.phone)}`}><Phone size={14} />{String(row.phone)}</a> : null}</div><p><MapPin size={15} />{String(row.address || "暂无收货地址")}</p></div>
+              <div className="shipping-line"><span><ReceiptText size={15} />{String(row.createBy || "系统账单")}</span><span>{shortDate(row.orderTime || row.createTime, true)}</span></div>
+              {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
+              {hasExpand ? <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpand(row.id as string | number)} aria-expanded={isOpen}><span>{isOpen ? "收起成本明细" : "查看成本明细"}</span><ChevronDown size={15} /></button> : null}
+              {note ? <p className="data-note">{note}</p> : null}
+              <div className="card-actions"><button type="button" onClick={() => void edit(row)}><Pencil size={16} />修改</button>{action ? <button type="button" className={action.danger ? "primary-action danger-action" : "primary-action"} onClick={() => void extra(row)}><RefreshCw size={16} />{action.label}</button> : null}<button type="button" className="danger-text" onClick={() => setConfirm({ title: "删除账单", message: "删除后无法恢复，是否继续？", danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); await refreshLoadedRange(-1); } })}><Trash2 size={16} />删除</button></div>
+            </article>;
+          }
           return <article className={`data-card data-card-${config.key}`} key={String(row.id)}>
-            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : config.key === "bills" && row.orderStatus ? (() => { const status = String(row.orderStatus); const tone = status === "DSH" || status === "DFH" ? "status-success" : status === "YQX" || status === "YC" ? "status-neutral" : "status-warning"; const label = billOrderStatusLabel(row, dictionaries); return <span className={`status ${tone}`}><span />{label}</span>; })() : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
+            <div className="data-card-head"><span className="data-icon"><Icon size={20} /></span><div><b>{row[config.titleKey] || `未命名${config.itemName}`}</b><small>{config.subtitle?.(row) || shortDate(row.createTime, true)}</small></div>{config.key === "express" ? <StatusBadge row={row} /> : row.isDefault !== undefined ? <span className={`status ${Number(row.isDefault) === 1 ? "status-success" : "status-neutral"}`}><span />{Number(row.isDefault) === 1 ? "默认" : "普通"}</span> : null}</div>
             {summary?.length ? <div className={`data-card-summary data-card-summary-${summary.length}`}>{summary.map((item) => { const tone = summaryTone(row, item); return <div className={`summary-cell tone-${tone}`} key={item.key}><span>{item.label}</span><b>{summaryValue(row, item)}</b></div>; })}</div> : null}
             <div className="data-metrics">{config.display.map((item) => <div key={item.key} className={item.fullWidth ? "full-width" : ""}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div>
             {hasExpand ? <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner"><div className="data-metrics data-metrics-expand">{expand!.map((item) => <div key={item.key}><span>{item.label}</span><b className={item.money ? "money" : ""}>{displayValue(row, item)}</b></div>)}</div></div></div> : null}
@@ -639,17 +736,60 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           />
         ) : null}
       </Sheet>
-      <Sheet open={mailStore !== null} title={`邮件发送 · ${String(mailStore?.name || "店铺")}`} onClose={() => setMailStore(null)} wide>
-        {mailStore ? <StoreMailSettingsEditor store={mailStore} notify={notify} onClose={() => setMailStore(null)} onSaved={() => { void refreshLoadedRange(); }} /> : null}
+      <Sheet
+        open={mailStore !== null}
+        title={`邮件发送 · ${String(mailStore?.name || "店铺")}`}
+        onClose={() => { setMailStore(null); setMailSaving(false); }}
+        wide
+        headerAction={mailStore ? (
+          <button className="sheet-header-save" type="submit" form="store-mail-settings-form" disabled={mailSaving}>
+            {mailSaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+            {mailSaving ? "保存中" : "保存"}
+          </button>
+        ) : null}
+      >
+        {mailStore ? <StoreMailSettingsEditor store={mailStore} formId="store-mail-settings-form" onSavingChange={setMailSaving} notify={notify} onClose={() => { setMailStore(null); setMailSaving(false); }} onSaved={() => { void refreshLoadedRange(); }} /> : null}
       </Sheet>
-      <Sheet open={noticeStore !== null} title={`店铺通知 · ${String(noticeStore?.name || "店铺")}`} onClose={() => setNoticeStore(null)} wide>
-        {noticeStore ? <StoreNoticeEditor store={noticeStore} dictionaries={dictionaries} notify={notify} onClose={() => setNoticeStore(null)} onSaved={(updated) => patchStoreRow(noticeStore.id, updated)} /> : null}
+      <Sheet
+        open={noticeStore !== null}
+        title={`店铺通知 · ${String(noticeStore?.name || "店铺")}`}
+        onClose={() => { setNoticeStore(null); setNoticeSaving(false); }}
+        wide
+        headerAction={noticeStore ? (
+          <button className="sheet-header-save" type="submit" form="store-notice-form" disabled={noticeSaving}>
+            {noticeSaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+            {noticeSaving ? "保存中" : "保存"}
+          </button>
+        ) : null}
+      >
+        {noticeStore ? <StoreNoticeEditor store={noticeStore} formId="store-notice-form" onSavingChange={setNoticeSaving} dictionaries={dictionaries} notify={notify} onClose={() => { setNoticeStore(null); setNoticeSaving(false); }} onSaved={(updated) => patchStoreRow(noticeStore.id, updated)} /> : null}
       </Sheet>
-      <Sheet open={accessStore !== null} title={`访问设置 · ${String(accessStore?.name || "店铺")}`} onClose={() => setAccessStore(null)}>
-        {accessStore ? <StoreAccessEditor store={accessStore} notify={notify} onClose={() => setAccessStore(null)} onSaved={(updated) => patchStoreRow(accessStore.id, updated)} /> : null}
+      <Sheet
+        open={accessStore !== null}
+        title={`访问设置 · ${String(accessStore?.name || "店铺")}`}
+        onClose={() => { setAccessStore(null); setAccessSaving(false); }}
+        headerAction={accessStore ? (
+          <button className="sheet-header-save" type="submit" form="store-access-form" disabled={accessSaving}>
+            {accessSaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+            {accessSaving ? "保存中" : "保存"}
+          </button>
+        ) : null}
+      >
+        {accessStore ? <StoreAccessEditor store={accessStore} formId="store-access-form" onSavingChange={setAccessSaving} notify={notify} onClose={() => { setAccessStore(null); setAccessSaving(false); }} onSaved={(updated) => patchStoreRow(accessStore.id, updated)} /> : null}
       </Sheet>
-      <Sheet open={payStore !== null} title={`在线支付 · ${String(payStore?.name || "店铺")}`} onClose={() => setPayStore(null)} wide>
-        {payStore ? <StorePaySettingsEditor store={payStore} notify={notify} onClose={() => setPayStore(null)} onSaved={() => { void refreshLoadedRange(); }} /> : null}
+      <Sheet
+        open={payStore !== null}
+        title={`在线支付 · ${String(payStore?.name || "店铺")}`}
+        onClose={() => { setPayStore(null); setPaySaving(false); }}
+        wide
+        headerAction={payStore ? (
+          <button className="sheet-header-save" type="submit" form="store-pay-settings-form" disabled={paySaving}>
+            {paySaving ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}
+            {paySaving ? "保存中" : "保存"}
+          </button>
+        ) : null}
+      >
+        {payStore ? <StorePaySettingsEditor store={payStore} formId="store-pay-settings-form" onSavingChange={setPaySaving} notify={notify} onClose={() => { setPayStore(null); setPaySaving(false); }} onSaved={() => { void refreshLoadedRange(); }} /> : null}
       </Sheet>
       {config.batchAction ? (
         <Sheet
@@ -968,9 +1108,11 @@ function StoreManagementCard({
   );
 }
 
-function StoreNoticeEditor({ store, dictionaries, notify, onClose, onSaved }: { store: DataRow; dictionaries: Dictionaries; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void }) {
+function StoreNoticeEditor({ store, dictionaries, notify, onClose, onSaved, formId = "store-notice-form", onSavingChange }: { store: DataRow; dictionaries: Dictionaries; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void; formId?: string; onSavingChange?: (saving: boolean) => void }) {
   const [form, setForm] = useState({ notice: String(store.notice || ""), noticeType: String(store.noticeType || ""), noticeUrl: String(store.noticeUrl || "") });
   const [saving, setSaving] = useState(false);
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
@@ -984,18 +1126,19 @@ function StoreNoticeEditor({ store, dictionaries, notify, onClose, onSaved }: { 
       notify(error instanceof Error ? error.message : "店铺通知保存失败", "error");
     } finally { setSaving(false); }
   }
-  return <form className="store-setting-editor" onSubmit={submit}>
+  return <form id={formId} className="store-setting-editor sheet-editor-form" onSubmit={submit}>
     <section className="store-setting-intro"><span><Bell size={18} /></span><div><b>独立维护店铺通知</b><p>通知内容会在专属下单页展示。删除全部文字并保存即可清空通知。</p></div></section>
     <label className="span-full"><span>通知内容</span><textarea rows={5} value={form.notice} onChange={(event) => setForm((current) => ({ ...current, notice: event.target.value }))} placeholder="例如：欢迎购买本店商品，预计两日内发货" /></label>
     <div className="store-setting-grid"><label><span>通知类型</span><select value={form.noticeType} onChange={(event) => setForm((current) => ({ ...current, noticeType: event.target.value }))}><option value="">普通通知</option>{dictionaries.platforms.map((item) => <option key={String(item.value)} value={String(item.value)}>{item.label}</option>)}</select></label><label><span>跳转地址</span><input value={form.noticeUrl} onChange={(event) => setForm((current) => ({ ...current, noticeUrl: event.target.value }))} placeholder="https://...（可选）" /></label></div>
     <section className={`store-notice-live-preview${form.notice.trim() ? "" : " empty"}`}><Bell size={14} /><div><b>{form.noticeType ? optionLabel(form.noticeType, dictionaries.platforms) : "店铺通知"}</b><p>{form.notice.trim() || "通知清空后，专属下单页不会展示此模块"}</p></div></section>
-    <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存通知"}</button></div>
   </form>;
 }
 
-function StoreAccessEditor({ store, notify, onClose, onSaved }: { store: DataRow; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void }) {
+function StoreAccessEditor({ store, notify, onClose, onSaved, formId = "store-access-form", onSavingChange }: { store: DataRow; notify: (message: string, type?: "success" | "error" | "info") => void; onClose: () => void; onSaved: (updated: DataRow) => void; formId?: string; onSavingChange?: (saving: boolean) => void }) {
   const [form, setForm] = useState({ orderCodeRequirePwd: Number(store.orderCodeRequirePwd || 0), orderCodePwd: String(store.orderCodePwd || ""), blockDisplayType: String(store.blockDisplayType || "banner") });
   const [saving, setSaving] = useState(false);
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (form.orderCodeRequirePwd === 1 && !/^\d{4,6}$/.test(form.orderCodePwd)) return notify("下单码必须是 4-6 位数字", "info");
@@ -1010,12 +1153,11 @@ function StoreAccessEditor({ store, notify, onClose, onSaved }: { store: DataRow
       notify(error instanceof Error ? error.message : "访问设置保存失败", "error");
     } finally { setSaving(false); }
   }
-  return <form className="store-setting-editor" onSubmit={submit}>
+  return <form id={formId} className="store-setting-editor sheet-editor-form" onSubmit={submit}>
     <section className="store-setting-intro"><span><LockKeyhole size={18} /></span><div><b>下单访问与拦截展示</b><p>下单码用于店铺级统一验证；拦截展示形式只在禁止下单或查单时生效。</p></div></section>
     <label><span>店铺下单码</span><select value={String(form.orderCodeRequirePwd)} onChange={(event) => setForm((current) => ({ ...current, orderCodeRequirePwd: Number(event.target.value) }))}><option value="0">免下单码</option><option value="1">需要下单码</option></select></label>
     {form.orderCodeRequirePwd === 1 ? <label><span>4-6 位数字下单码</span><input inputMode="numeric" maxLength={6} value={form.orderCodePwd} onChange={(event) => setForm((current) => ({ ...current, orderCodePwd: event.target.value.replace(/\D/g, "") }))} placeholder="请输入下单码" /></label> : null}
     <label><span>拦截提示样式</span><select value={form.blockDisplayType} onChange={(event) => setForm((current) => ({ ...current, blockDisplayType: event.target.value }))}>{STORE_BLOCK_DISPLAY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-    <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存访问设置"}</button></div>
   </form>;
 }
 
@@ -1024,11 +1166,15 @@ function StorePaySettingsEditor({
   notify,
   onClose,
   onSaved,
+  formId = "store-pay-settings-form",
+  onSavingChange,
 }: {
   store: DataRow;
   notify: (message: string, type?: "success" | "error" | "info") => void;
   onClose: () => void;
   onSaved: () => void;
+  formId?: string;
+  onSavingChange?: (saving: boolean) => void;
 }) {
   const [form, setForm] = useState<DataRow>({
     enabled: 0,
@@ -1042,6 +1188,8 @@ function StorePaySettingsEditor({
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
 
   useEffect(() => {
     let active = true;
@@ -1082,7 +1230,7 @@ function StorePaySettingsEditor({
   if (loading) return <div className="mail-settings-loading"><LoaderCircle className="spin" size={21} />正在读取支付配置</div>;
   const enabled = Number(form.enabled) === 1;
   return (
-    <form className="mail-settings-editor" onSubmit={submit}>
+    <form id={formId} className="mail-settings-editor sheet-editor-form" onSubmit={submit}>
       <section className="mail-settings-intro">
         <span><CreditCard size={18} /></span>
         <div><b>在线支付（简付）</b><p>买家下单后可直接微信 / 支付宝付款，支付成功自动确认。商户 KEY 加密保存且不会回显。</p></div>
@@ -1098,7 +1246,6 @@ function StorePaySettingsEditor({
       <section className="mail-settings-options">
         <label><input type="checkbox" checked={Boolean(form.applyToAllStores)} onChange={(event) => update("applyToAllStores", event.target.checked)} /><span><b>同步到全部店铺</b><small>仅管理员可用，一次覆盖所有正常店铺，之后仍可单独修改</small></span></label>
       </section>
-      <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存支付配置"}</button></div>
     </form>
   );
 }
@@ -1108,11 +1255,15 @@ function StoreMailSettingsEditor({
   notify,
   onClose,
   onSaved,
+  formId = "store-mail-settings-form",
+  onSavingChange,
 }: {
   store: DataRow;
   notify: (message: string, type?: "success" | "error" | "info") => void;
   onClose: () => void;
   onSaved: () => void;
+  formId?: string;
+  onSavingChange?: (saving: boolean) => void;
 }) {
   const [form, setForm] = useState<DataRow>({
     enabled: 0,
@@ -1129,6 +1280,8 @@ function StoreMailSettingsEditor({
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
+  useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
 
   useEffect(() => {
     let active = true;
@@ -1174,7 +1327,7 @@ function StoreMailSettingsEditor({
   if (loading) return <div className="mail-settings-loading"><LoaderCircle className="spin" size={21} />正在读取邮件配置</div>;
   const enabled = Number(form.enabled) === 1;
   return (
-    <form className="mail-settings-editor" onSubmit={submit}>
+    <form id={formId} className="mail-settings-editor sheet-editor-form" onSubmit={submit}>
       <section className="mail-settings-intro">
         <span><Mail size={18} /></span>
         <div><b>SMTP 发件服务</b><p>客户注册、邮箱登录和找回密码均使用当前店铺配置。授权码加密保存且不会回显。</p></div>
@@ -1193,7 +1346,6 @@ function StoreMailSettingsEditor({
         <label><input type="checkbox" disabled={!enabled} checked={enabled && Number(form.defaultSender) === 1} onChange={(event) => update("defaultSender", event.target.checked ? 1 : 0)} /><span><b>设为系统默认发件配置</b><small>用于管理端邮箱登录等没有店铺上下文的场景</small></span></label>
         <label><input type="checkbox" checked={Boolean(form.applyToAllStores)} onChange={(event) => update("applyToAllStores", event.target.checked)} /><span><b>同步到全部店铺</b><small>一次覆盖所有正常店铺，之后仍可单独修改某个店铺</small></span></label>
       </section>
-      <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存邮件配置"}</button></div>
     </form>
   );
 }

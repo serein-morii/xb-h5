@@ -12,8 +12,8 @@ import VaultStepUpDialog from "./VaultStepUpDialog";
 import InboundCodeHistory, { formatCodeTime, inboundCodeTiming } from "./InboundCodeHistory";
 import NotificationCenter, { MessagePopupHost, useMessageUnread, type MessageRequest } from "../../components/NotificationCenter";
 import { decryptZeroKnowledgeValue, encryptZeroKnowledgeValue, generateOfflineCode, refreshOfflineVault } from "./vaultCrypto";
-import { CLIPBOARD_CLEAR_MS, copyAndScheduleClear, duplicateImportCount, findSameAccountCredential, measureClockDriftMs, shouldConfirmDuplicateAdd, shouldWarnClockDrift } from "./otpDailyUse";
-import { DEFAULT_SHARE_SECONDS, PENDING_SAVE_KEY, SHARED_BY_SELF, SHARE_ITEM_LIMIT, clipboardReadBlocked, defaultShareName, groupCredentials, groupReceivedBySource, listSharedByOptions, matchesCredentialKind, matchesCredentialTab, matchesSharedByFilter, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shareDetailCredentials, sharedByFilterLabel, sharerDisplay, shouldOfferClipboardShare, splitCredentialTags, toggleShareSelection, type CredentialGroup, type CredentialKindFilter, type CredentialTab, type ShareTab } from "./otpVaultShare";
+import { copyAndScheduleClear, duplicateImportCount, findSameAccountCredential, measureClockDriftMs, shouldConfirmDuplicateAdd, shouldWarnClockDrift } from "./otpDailyUse";
+import { DEFAULT_SHARE_SECONDS, PENDING_SAVE_KEY, SHARED_BY_SELF, SHARE_ITEM_LIMIT, clipboardReadBlocked, defaultShareName, groupCredentials, groupReceivedBySource, listSharedByOptions, matchesCredentialKind, matchesCredentialTab, matchesSharedByFilter, parseShareClipboard, receivedShareSourceLabel, rememberShareAccessCode, selectShareItems, shareDetailCredentials, sharedByFilterLabel, sharerDisplay, shouldOfferClipboardShare, splitCredentialTags, toggleShareSelection, type CredentialKindFilter, type CredentialTab, type ShareTab } from "./otpVaultShare";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { API_BASE } from "../../lib/api";
 import { OTP_VAULT_VERSION } from "./otpVersion";
@@ -414,7 +414,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [bindingTemplates, setBindingTemplates] = useState<VaultCodeBinding[]>([]);
   const [selectedBindingTemplate, setSelectedBindingTemplate] = useState("");
   const [bindingTarget, setBindingTarget] = useState<VaultCredential | null>(null);
-  const [channelReturnCredential, setChannelReturnCredential] = useState<VaultCredential | null>(null);
   const [editingBindingId, setEditingBindingId] = useState<number | null>(null);
   const [bindingForm, setBindingForm] = useState({ ...emptyBindingForm });
   const [scanText, setScanText] = useState("");
@@ -663,7 +662,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setPrefs(next);
     setNotifyEmailDraft(next.notificationEmail || "");
     setNotifyBarkDrafts(parseBarkUrls(next.barkUrl || ""));
-    setCredentialTab(Boolean(next.defaultFavorites) ? "favorite" : "all");
+    setCredentialTab(next.defaultFavorites ? "favorite" : "all");
     setThemePreference(next.theme || "system");
     void getVaultScreenLockState().then((state) => {
       const idleLocked = shouldAutoLockByIdle(remote);
@@ -1080,11 +1079,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     setRecentDynamicCodes(codes.data);
     return channels.data;
   };
-  const openInboundChannels = async (returnCredential?: VaultCredential) => {
+  const openInboundChannels = async () => {
     setBusy(true);
     try {
       await loadInboundChannelData();
-      setChannelReturnCredential(returnCredential || null);
       setChannelForm({ ...emptyChannelForm });
       setChannelTab("channels");
       setChannelFormOpen(false);
@@ -1750,25 +1748,6 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const renderGroupGrid = (items: VaultCredential[]) => (
     <div className={`vault-grid${prefs.compact ? " is-compact" : ""}`}>{items.map(renderCredential)}</div>
   );
-  const renderBatchGroup = (group: CredentialGroup<VaultCredential>, nested = false) => {
-    const collapsed = isCollapsed(group.key);
-    return (
-      <section className={`vault-group is-received-batch${nested ? " is-nested-batch" : ""}${collapsed ? " is-collapsed" : ""}`} key={group.key}>
-        {group.label ? (
-          <header className="vault-received-group-head is-batch" role="button" tabIndex={0} aria-expanded={!collapsed} onClick={() => toggleCollapsed(group.key)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleCollapsed(group.key); } }}>
-            <span className={`vault-group-chevron${collapsed ? "" : " is-open"}`} aria-hidden="true"><ChevronDown size={14} /></span>
-            <span className="vault-received-avatar is-batch" aria-hidden="true">{group.avatar || <Share2 size={13} />}</span>
-            <div className="vault-received-group-copy">
-              <b>{group.title || group.label}</b>
-              <small>{nested ? `${group.items.length} 项` : `${group.subtitle || group.label}${group.items.length ? ` · ${group.items.length} 项` : ""}`}</small>
-            </div>
-            <span className="vault-received-group-count">{group.items.length}</span>
-          </header>
-        ) : null}
-        {collapsed ? null : renderGroupGrid(group.items)}
-      </section>
-    );
-  };
   const renderReceivedList = () => sourceSections.map((section) => {
     const collapsed = isCollapsed(section.key);
     const bodyItems = prefs.grouped

@@ -29,6 +29,11 @@ export type PublicOrderRecord = Record<string, unknown> & {
   payStatus?: number;
   paidTime?: string;
   paidAmount?: number;
+  paymentNo?: string;
+  paymentAmount?: number;
+  payMethod?: string;
+  tradeOrderId?: string;
+  paymentStatus?: string;
   orderTime?: string;
   orderDesc?: string;
   store?: string;
@@ -77,6 +82,12 @@ function payStatusMeta(status: unknown) {
   if (value === 2) return { key: "refunded", label: "已退款" };
   if (value === 3) return { key: "confirming", label: "待确认" };
   return { key: "unpaid", label: "未付款" };
+}
+
+function payMethodLabel(method?: string) {
+  if (method === "wx") return "微信";
+  if (method === "alipay") return "支付宝";
+  return method || "—";
 }
 
 type EntryStatusFilter = "all" | "unpaid" | "pending" | "shipped" | "done" | "month";
@@ -205,7 +216,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
         <div className="tool-order-product"><b>{order.orderNameDesc || "未命名商品"}</b><span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span><time>{String(order.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</time></div>
         <div className="tool-order-address"><p><User size={14} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={14} />{order.address || "暂无地址"}</p></div>
         <div className="tool-order-exp"><Truck size={14} /><span><b>{order.expComDesc || "暂无快递"}</b><small>{order.expCode && order.expCode !== "无" ? order.expCode : "暂无快递单号"}</small></span></div>
-        {[1, 3].includes(Number(order.payStatus)) && order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} />{Number(order.payStatus) === 3 ? "提交确认时间" : "付款时间"}：{String(order.paidTime).replace("T", " ").slice(0, 16)}{order.paidAmount ? <b> · 金额 ¥{Number(order.paidAmount).toFixed(2)}</b> : null}</div> : null}
+        {order.paymentNo || order.payMethod || order.paidAmount || order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} /><span>{payMethodLabel(order.payMethod)}{order.paidAmount || order.paymentAmount ? ` · ¥${Number(order.paidAmount || order.paymentAmount).toFixed(2)}` : ""}{order.paymentNo ? ` · ${order.paymentNo}` : ""}{order.paidTime ? ` · ${String(order.paidTime).replace("T", " ").slice(0, 16)}` : ""}</span></div> : [1, 3].includes(Number(order.payStatus)) && order.paidTime ? <div className="tool-order-pay-row"><CreditCard size={13} />{Number(order.payStatus) === 3 ? "提交确认时间" : "付款时间"}：{String(order.paidTime).replace("T", " ").slice(0, 16)}{order.paidAmount ? <b> · 金额 ¥{Number(order.paidAmount).toFixed(2)}</b> : null}</div> : null}
         {order.totalPrice !== undefined && order.totalPrice !== null ? <div className="tool-order-cost-row"><div className="tool-order-cost-head"><span><Wallet size={13} /><b className="tool-order-cost-title">成本明细</b></span>{enableCostSelection ? <button type="button" className={`tool-order-cost-select${selectedCostOrders.has(order.id) ? " active" : ""}`} onClick={() => toggleCostOrder(order)}>{selectedCostOrders.has(order.id) ? <><Check size={12} />已选择</> : "选择订单"}</button> : null}</div><div className="tool-order-cost-grid">{order.goodsPrice !== undefined && order.goodsPrice !== null ? <span>商品 <b>¥{formatCost(order.goodsPrice)}</b></span> : null}{order.packagePrice !== undefined && order.packagePrice !== null ? <span>包装 <b>¥{formatCost(order.packagePrice)}</b></span> : null}{order.expPrice !== undefined && order.expPrice !== null ? <span>快递 <b>¥{formatCost(order.expPrice)}</b></span> : null}<span>合计 <b>¥{formatCost(order.totalPrice)}</b></span></div></div> : null}
         {(order.storeName || order.store || order.purchaser || order.createBy) ? <div className="tool-order-meta-row">{(order.storeName || order.store) ? <span><Store size={13} />店铺：{order.storeName || order.store}</span> : null}{order.purchaser || order.createBy ? <span><User size={13} />下单人：{order.purchaser || order.createBy}</span> : null}</div> : null}
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}

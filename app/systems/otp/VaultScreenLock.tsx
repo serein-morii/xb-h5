@@ -21,8 +21,6 @@ type Props = {
   onSaved: (patch: Partial<VaultPrefs>) => Promise<void>;
 };
 
-const HINT = "以后可在「我的 → 安全」修改锁屏密码、Passkey 和自动锁屏。";
-
 export default function VaultScreenLock({ prefs, locked, setupOpen, onUnlocked, onSetupClose, onSetupDone, onSaved }: Props) {
   if (setupOpen) return <SetupForm prefs={prefs} onClose={onSetupClose} onDone={onSetupDone} onSaved={onSaved} />;
   if (locked) return <UnlockForm prefs={prefs} onUnlocked={onUnlocked} />;

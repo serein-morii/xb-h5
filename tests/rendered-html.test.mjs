@@ -280,7 +280,7 @@ test("builds a self-contained static SPA for Nginx", async () => {
   assert.match(html, /<html lang="zh-CN">/i);
   assert.match(html, /<title>喜八移动订单管理<\/title>/i);
   assert.match(html, /id="root"/i);
-  assert.match(html, /正在启动移动工作台/);
+  assert.match(html, /正在启动订单系统|正在打开身份保险库|正在准备工具/);
   assert.match(html, /\/assets\/index-[^"']+\.js/);
   assert.ok(assets.some((name) => name.endsWith(".js")));
   assert.ok(assets.some((name) => name.endsWith(".css")));
@@ -289,12 +289,14 @@ test("builds a self-contained static SPA for Nginx", async () => {
 
 test("keeps every public route in the client-side route table", async () => {
   // 路径集中在 pathConventions（APP_ROUTES），标题分散在各系统 routes.tsx
-  const [app, pathConventions] = await Promise.all([
+  const [app, pathConventions, orderRoutes, homeRoutes] = await Promise.all([
     source("app/App.tsx"),
     source("app/lib/pathConventions.ts"),
+    source("app/systems/order/routes.tsx"),
+    source("app/systems/home/routes.tsx"),
   ]);
   const routes = [
-    ["/", "喜八移动订单管理"],
+    ["/", "XB Workspace｜系统入口"],
     ["/order", "订单查询｜喜八"],
     ["/tools", "公开工具｜喜八"],
     ["/tools/order-search", "订单查询｜喜八Tools"],
@@ -306,12 +308,12 @@ test("keeps every public route in the client-side route table", async () => {
     ["/tools/freight-compare", "运费对比｜喜八Tools"],
   ];
 
-  const routeTable = app + pathConventions;
+  const routeTable = app + pathConventions + orderRoutes + homeRoutes;
   for (const [pathname, title] of routes) {
-    assert.match(routeTable, new RegExp(`"${pathname.replaceAll("/", "\\/")}"`));
+    assert.match(pathConventions, new RegExp(`"${pathname.replaceAll("/", "\\/")}"`));
     assert.match(routeTable, new RegExp(title));
   }
-  assert.match(app, /lazy\(/);
+  assert.match(orderRoutes, /lazy\(/);
   assert.match(app, /Suspense/);
   assert.match(app, /resolveSubsystemPath/);
   assert.match(app, /window\.location\.pathname/);
@@ -328,7 +330,6 @@ test("contains all order module entries and authentication endpoints", async () 
     "app/systems/order/admin/crud.tsx",
     "app/systems/order/admin/orderCopyMenu.config.ts",
     "app/components/SliderCaptcha.tsx",
-    // API 路径常量已收敛到 pathConventions
     "app/lib/pathConventions.ts",
   );
   const api = await source("app/lib/api.ts");
@@ -339,7 +340,7 @@ test("contains all order module entries and authentication endpoints", async () 
   assert.match(app, /DashboardPage/);
   assert.match(app, /menu-home-entry/);
   assert.match(app, /recentPurchasers/);
-  assert.match(app, /\/customers\/purchasers/);
+  assert.match(app, /API_PATHS\.customers\.purchasers/);
   assert.match(app, /function ShippingEditor|export function ShippingEditor/);
   assert.match(app, /填写发货信息/);
   assert.match(app, /requestBatch\("send", "一键发货"\)/);
@@ -348,9 +349,10 @@ test("contains all order module entries and authentication endpoints", async () 
   assert.match(app, /function OrderCopyMenu|export function OrderCopyMenu/);
   for (const copyLabel of ["订单详情", "下单人链接", "收件人链接", "发货识别信息"]) assert.match(app, new RegExp(copyLabel));
   assert.match(app, /encodeURIComponent\(`v-\$\{signId\}`\)/);
-  for (const endpoint of ["/auth/public-key", "/auth/captcha", "/auth/login", "/orders", "/administration/dictionaries/entries/type/"]) {
-    assert.match(app, new RegExp(endpoint.replaceAll("/", "\\/")));
+  for (const endpoint of ["API_PATHS.auth.publicKey", "API_PATHS.auth.captchaImage", "API_PATHS.auth.login", "API_PATHS.orders.root", "API_PATHS.administration.dictionaryEntries"]) {
+    assert.match(app, new RegExp(endpoint.replaceAll(".", "\\.")));
   }
+  assert.match(app, /dictionaryEntries\}\/type\/\$\{type\}/);
   for (const billField of ["商品成本", "包装费", "快递费", "附加费", "总成本", "销售价格", "盈利", "收货地址"]) {
     assert.match(app, new RegExp(billField));
   }
@@ -371,9 +373,13 @@ test("keeps the migrated authenticated quick order entry workflow", async () => 
     source("app/lib/api.ts"),
   ]);
   assert.match(admin, /visibleActive === "orderEntry"/);
-  for (const endpoint of ["/customers/purchasers", "/customers/purchasers", "/stores/options", "/content/search/order-options", "/content/search/addr", "/logistics/shipments/companies", "/logistics/shipments/companies/match", "/orders"]) {
-    assert.match(entry, new RegExp(endpoint.replaceAll("/", "\\/")));
-  }
+  assert.match(entry, /API_PATHS\.customers\.purchasers/);
+  assert.match(entry, /API_PATHS\.stores\.root\}\/options/);
+  assert.match(entry, /API_PATHS\.content\.search\}\/order-options/);
+  assert.match(entry, /API_PATHS\.content\.search\}\/addr/);
+  assert.match(entry, /API_PATHS\.logistics\.shipments\}\/companies/);
+  assert.match(entry, /API_PATHS\.logistics\.shipments\}\/companies\/match/);
+  assert.match(entry, /API_PATHS\.orders\.root/);
   assert.match(entry, /purchaserShortId/);
   assert.match(entry, /readFromClipboard/);
   assert.match(api, /navigator\.clipboard\.readText/);
@@ -387,8 +393,8 @@ test("keeps the public order tracking route", async () => {
     sourceMany("app/systems/order/admin/orders.tsx", "app/systems/order/admin/shell.tsx", "app/systems/order/admin/orderCopyMenu.config.ts"),
   ]);
   assert.match(publicPage, /publicApiRequest/);
-  assert.match(publicPage, /\/search\/by/);
-  assert.match(admin, /\/tools\/order#\$\{encodeURIComponent/);
+  assert.match(publicPage, /API_PATHS\.content\.search\}\/by/);
+  assert.match(admin, /APP_ROUTES\.toolOrderDetail\}#\$\{encodeURIComponent/);
 });
 
 test("keeps OTP display preferences accessible and compact layouts dense", async () => {
@@ -496,8 +502,8 @@ test("keeps OTP display preferences accessible and compact layouts dense", async
 
 test("allows purchasers to edit and delete their own pending orders", async () => {
   const page = await source("app/systems/order/tools/place-order/PurchaserOrderPage.tsx");
-  assert.match(page, /\/search\/order\/\$\{editingOrder\.id\}/);
-  assert.match(page, /\/search\/order\/\$\{confirmingDelete\.id\}/);
+  assert.match(page, /API_PATHS\.content\.search\}\/order\/\$\{editingOrder\.id\}/);
+  assert.match(page, /API_PATHS\.content\.search\}\/order\/\$\{confirmingDelete\.id\}/);
   assert.match(page, /confirmingEdit/);
   assert.match(page, /confirmingDelete/);
   assert.match(page, /order\.orderStatus !== "DSH"/);
@@ -511,8 +517,8 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
     source("app/systems/order/tools/order-link/format.ts"),
     source("app/systems/order/tools/place-order/PurchaserOrderPage.tsx"),
   ]);
-  assert.match(creator, /\/biz\/purchaser\/match/);
-  assert.match(creator, /\/biz\/purchaser/);
+  assert.match(creator, /API_PATHS\.customers\.purchasers\}\/match/);
+  assert.match(creator, /API_PATHS\.customers\.purchasers/);
   assert.match(format, /tools\/order\//);
   assert.match(format, /buildOrderLink/);
   assert.match(format, /formatOrderLinkCopy/);
@@ -520,10 +526,10 @@ test("keeps purchaser naming and the short-link order workflow consistent", asyn
   assert.match(creator, /storeCode/);
   assert.doesNotMatch(creator, /buyer/i);
   assert.match(orderPage, /purchaserShortId/);
-  assert.match(orderPage, /\/search\/purchaser\/orders/);
-  assert.match(orderPage, /\/search\/order-options/);
+  assert.match(orderPage, /API_PATHS\.content\.search\}\/purchaser\/orders/);
+  assert.match(orderPage, /API_PATHS\.content\.search\}\/order-options/);
   assert.match(orderPage, /SliderCaptcha/);
-  assert.match(orderPage, /\/search\/order/);
+  assert.match(orderPage, /API_PATHS\.content\.search\}\/order/);
   assert.doesNotMatch(orderPage, /storeCode: linkKey/);
   assert.doesNotMatch(orderPage, /buyer/i);
 });
@@ -549,7 +555,7 @@ test("keeps theme settings behind admin login and allows registration without a 
   assert.match(authPage, /captchaCode\.trim\(\)/);
   assert.match(authPage, /uuid: captchaUuid/);
   assert.match(authPage, /isSelfRegistration/);
-  assert.match(authPage, /\/customer\/auth\/register-preview/);
+  assert.match(authPage, /API_PATHS\.customers\.root\}\/auth\/register-preview/);
   assert.match(authPage, /customer-register-confirm/);
   assert.match(authPage, /confirmExisting: confirmExisting \? "1" : "0"/);
 });
@@ -566,12 +572,14 @@ test("keeps the original public HTML capabilities in the integrated project", as
     sourceMany("app/systems/order/admin/shell.tsx", "app/systems/order/admin/orders.tsx", "app/systems/order/admin/mobileMenu.config.ts"),
     source("app/lib/api.ts"),
   ]);
-  for (const route of ["/tools/order-search", "/tools/freight-calculator", "/tools/freight-compare"]) assert.match(menu, new RegExp(route));
+  for (const route of ["APP_ROUTES.toolOrderSearch", "APP_ROUTES.toolFreightCalculator", "APP_ROUTES.toolFreightCompare"]) {
+    assert.match(menu, new RegExp(route.replaceAll(".", "\\.")));
+  }
   assert.ok(menu.indexOf("<LinkQueryCard />") < menu.indexOf("freightTools.map"));
-  assert.ok(menu.indexOf('href: "/tools/freight-compare"') < menu.indexOf('href: "/tools/freight-calculator"'));
+  assert.ok(menu.indexOf("APP_ROUTES.toolFreightCompare") < menu.indexOf("APP_ROUTES.toolFreightCalculator"));
   assert.match(menu, /LinkQueryCard/);
   assert.match(linkQuery, /链接查询/);
-  assert.match(linkQuery, /\/tools\/order#\$\{encodeURIComponent/);
+  assert.match(linkQuery, /APP_ROUTES\.toolOrderDetail\}#\$\{encodeURIComponent/);
   assert.match(linkQuery, /rawHash\.startsWith\("id="\)/);
   assert.match(linkQuery, /new URLSearchParams/);
   assert.match(search, /SliderCaptcha/);
@@ -585,6 +593,6 @@ test("keeps the original public HTML capabilities in the integrated project", as
   assert.match(api, /navigator\.clipboard\.writeText/);
   assert.match(compare, /downloadExcelJson|exportExcel/);
   for (const company of ["京东", "顺丰", "邮政"]) assert.match(freightData, new RegExp(company));
-  assert.match(admin, /toolboxHref: "\/tools"/);
+  assert.match(admin, /toolboxHref: APP_ROUTES\.tools/);
   assert.match(admin, /href=\{extras\.toolboxHref\}/);
 });

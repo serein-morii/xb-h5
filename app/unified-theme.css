@@ -3907,7 +3907,7 @@ html.theme-dark .purchaser-order-page .peach-tip .peach-tip-state {
 
 .purchaser-home-overview > div {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-block: 1px solid var(--xb-line);
 }
 
@@ -7285,15 +7285,15 @@ html.theme-dark .purchaser-address-error {
 }
 
 .purchaser-history-section .tool-order-status-filter button.active {
-  border-color: var(--xb-action) !important;
-  color: var(--xb-on-action) !important;
-  background: var(--xb-action) !important;
-  box-shadow: 0 6px 14px rgba(40, 103, 238, .16) !important;
+  border-color: #bcd0ff !important;
+  color: #174fc8 !important;
+  background: #e8f0ff !important;
+  box-shadow: none !important;
 }
 
 .purchaser-history-section .tool-order-status-filter button.active > b {
-  color: var(--xb-on-action) !important;
-  background: rgba(255, 255, 255, .22) !important;
+  color: #174fc8 !important;
+  background: rgba(40, 103, 238, .12) !important;
 }
 
 .purchaser-history-section .tool-order-status-filter button:not(.active):hover > b {
@@ -12374,15 +12374,15 @@ html.theme-dark .purchaser-order-page :is(
 
 .purchaser-order-page .purchaser-history-section .tool-order-status-filter button.active,
 .purchaser-order-page .purchaser-history-section .tool-advanced-filter .tool-filter-chips button.active {
-  border-color: var(--xb-accent-line) !important;
-  color: var(--xb-accent-pressed) !important;
-  background: var(--xb-accent-soft) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--xb-accent) 7%, transparent) !important;
+  border-color: #bcd0ff !important;
+  color: #174fc8 !important;
+  background: #e8f0ff !important;
+  box-shadow: none !important;
 }
 
 .purchaser-order-page .purchaser-history-section .tool-order-status-filter button.active > b {
-  color: var(--xb-accent-pressed) !important;
-  background: color-mix(in srgb, var(--xb-accent) 12%, var(--xb-surface)) !important;
+  color: #174fc8 !important;
+  background: rgba(40, 103, 238, .12) !important;
 }
 
 .purchaser-order-page .purchaser-history-section .tool-order-pills .pill {
@@ -12394,11 +12394,14 @@ html.theme-dark .purchaser-order-page :is(
 .purchaser-order-page .purchaser-history-section .tool-order-pills :is(
   .tool-order-status-success,
   .tool-order-status-info,
-  .tool-order-pay-paid
+  .tool-order-status-warning,
+  .tool-order-pay-paid,
+  .tool-order-pay-unpaid,
+  .tool-order-pay-confirming
 ) {
-  border-color: color-mix(in srgb, var(--xb-accent) 22%, var(--xb-line)) !important;
-  color: var(--purchaser-state-accent) !important;
-  background: color-mix(in srgb, var(--xb-accent) 7%, var(--xb-surface)) !important;
+  border-color: #bcd0ff !important;
+  color: #174fc8 !important;
+  background: #e8f0ff !important;
 }
 
 .purchaser-order-page .purchaser-history-section .tool-order-pills :is(
@@ -15358,7 +15361,7 @@ html.theme-dark :is(.sysm-toast, .opsc-toast) {
 
 .store-card-quick-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   border-top: 1px solid rgba(77, 101, 85, .09);
   border-bottom: 1px solid rgba(77, 101, 85, .09);
   background: rgba(249, 250, 248, .68);
@@ -16298,39 +16301,249 @@ html.theme-dark .utility-shell {
 .risk-ip-mobile-error p { margin: 6px 0 12px; color: var(--xb-text-secondary); font-size: 11px; line-height: 1.5; }
 .risk-ip-mobile-note { margin: 11px 2px 0; color: var(--xb-text-secondary); font-size: 9px; line-height: 1.5; }
 
-/* 在线支付订单（简付）：视觉结构与账单管理保持一致。 */
-.online-payments-secondary-actions { margin-bottom: 12px; }
-.online-payments-overview {
+/* 财务列表沿用订单列表的信息层级，避免多层小方格把卡片切碎。 */
+.finance-page {
+  width: min(100%, 1180px) !important;
+}
+
+.finance-page .search-toolbar {
+  min-height: 54px !important;
+  margin-bottom: 8px;
+  padding: 5px 7px 5px 14px !important;
+  border: 1px solid var(--xb-line) !important;
+  border-radius: 17px !important;
+  background: var(--xb-surface) !important;
+}
+
+.finance-page .search-toolbar .quick-search {
+  min-height: 42px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.finance-page .search-toolbar :is(.filter-chip, .toolbar-icon) {
+  height: 40px !important;
+  min-height: 40px !important;
+  border-left: 1px solid var(--xb-line) !important;
+  color: var(--theme-accent) !important;
+}
+
+.finance-page .secondary-actions {
+  gap: 7px;
+  margin-bottom: 10px;
+  padding-inline: 1px;
+}
+
+.finance-page .secondary-actions button {
+  min-height: 34px;
+  height: 34px;
+  padding-inline: 12px;
+  border-radius: 12px;
+}
+
+.finance-status-grid {
+  margin: 4px 0 17px;
+}
+
+.finance-status-grid > article {
+  min-height: 92px;
+  cursor: default;
+}
+
+.finance-status-grid > article:active {
+  transform: none;
+}
+
+.finance-status-grid > article b {
+  overflow: hidden;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-status-grid > article small {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--xb-text-tertiary);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-status-grid > article.is-positive b,
+.finance-strip > .is-positive b { color: var(--state-success); }
+.finance-status-grid > article.is-negative b,
+.finance-strip > .is-negative b { color: var(--state-danger); }
+
+.finance-page .mobile-card-list {
+  align-items: start;
+  gap: 11px;
+}
+
+.finance-card {
+  overflow: hidden;
+  border: 1px solid var(--xb-line) !important;
+  border-radius: 20px !important;
+  background: var(--xb-surface) !important;
+  box-shadow: none !important;
+}
+
+.finance-card .card-topline {
+  min-height: 48px;
+  border-color: var(--xb-line);
+}
+
+.finance-card .order-number {
+  color: var(--xb-text-secondary);
+}
+
+.finance-card .card-topline-badges {
+  flex: none;
+  justify-content: flex-end;
+}
+
+.finance-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--theme-accent-hover);
+  background: var(--theme-accent-soft);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.finance-card .card-main {
+  background: var(--xb-surface);
+}
+
+.finance-card .product-avatar {
+  color: var(--theme-accent);
+  background: var(--theme-accent-soft);
+}
+
+.finance-card .order-price b {
+  color: var(--xb-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-card .order-price b.is-refunded {
+  color: var(--state-danger);
+}
+
+.finance-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0 0 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 14px 11px;
+  padding: 10px 0;
+  border-block: 1px solid var(--xb-line);
 }
-.online-payments-overview article {
+
+.finance-strip > div {
   min-width: 0;
-  padding: 14px 15px;
-  border: 1px solid var(--xb-line, rgba(38,50,77,.12));
-  border-radius: 16px;
-  background: var(--xb-surface, #fff);
-  box-shadow: 0 8px 24px rgba(35, 50, 85, .045);
+  padding: 0 10px;
 }
-.online-payments-overview small,
-.online-payments-overview span { display: block; color: var(--xb-text-secondary); font-size: 9px; }
-.online-payments-overview strong { display: block; margin: 5px 0 3px; color: var(--xb-text); font-size: 20px; letter-spacing: -.035em; }
-.online-payments-overview article:first-child strong { color: var(--state-success, #1f7a45); }
-.online-payment-list { align-items: start; }
-.online-payment-pill { flex: none; padding: 4px 9px; border-radius: 999px; font-size: 9px; font-weight: 750; }
-.online-payment-pill.is-pending { background: #fdf3e0; color: #a1650b; }
-.online-payment-pill.is-success { background: #e4f5ea; color: #1f7a45; }
-.online-payment-pill.is-refunding { background: #e8ebfb; color: #3146ad; }
-.online-payment-pill.is-refunded { background: #f3e5f5; color: #8a3d9c; }
-.online-payment-pill.is-closed { background: #eef0f6; color: #6f788b; }
+
+.finance-strip > div + div {
+  border-left: 1px solid var(--xb-line);
+}
+
+.finance-strip span,
+.finance-strip b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-strip span {
+  color: var(--xb-text-tertiary);
+  font-size: 9px;
+}
+
+.finance-strip b {
+  margin-top: 4px;
+  color: var(--xb-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-card .recipient-block {
+  border: 1px solid var(--xb-line);
+  background: var(--xb-surface-muted);
+}
+
+.finance-card .shipping-line {
+  min-height: 38px;
+  margin: 0 14px 11px;
+  padding: 7px 10px;
+  border: 1px solid var(--xb-line);
+  border-radius: 11px;
+  color: var(--xb-text-secondary);
+  background: var(--xb-surface-muted);
+}
+
+.finance-card .shipping-line > span:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-card .shipping-line > span:last-child {
+  max-width: 44%;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-reference-line button {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: var(--theme-accent);
+  background: transparent;
+}
+
+.finance-card .expand-inner {
+  padding-inline: 14px;
+}
+
+.finance-card .data-metrics-expand {
+  margin: 0 0 6px !important;
+}
+
+.finance-card .data-more-toggle {
+  margin: 0;
+  border-top-style: solid;
+  border-color: var(--xb-line);
+}
+
+.finance-card .data-note {
+  margin: 10px 14px 0;
+}
+
+.finance-card .card-actions {
+  border-color: var(--xb-line);
+  background: color-mix(in srgb, var(--xb-surface-muted) 56%, var(--xb-surface));
+}
+
 .online-payment-copy-line { display: inline-flex; align-items: center; min-width: 0; gap: 5px; }
 .online-payment-copy-line b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .online-payment-copy-line button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 8px; color: var(--xb-text-secondary); background: transparent; cursor: pointer; }
 .online-payment-copy-line button:active { background: var(--xb-surface-muted, #f2f4f8); }
-.data-card-online-payment .data-card-summary { margin-top: 12px; }
-.data-card-online-payment .data-metrics .online-payment-copy-line { width: 100%; }
 .online-payment-filter-body { display: grid; gap: 12px; }
 .online-payment-date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .online-payment-date-grid label { min-width: 0; }
@@ -16349,12 +16562,18 @@ html.theme-dark .utility-shell {
 .online-payment-refund-sheet .filter-apply.is-danger { border-color: #b42318; background: #b42318; }
 
 @media (max-width: 560px) {
-  .online-payments-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .online-payments-overview article { padding: 12px; border-radius: 14px; }
-  .online-payments-overview strong { font-size: 17px; }
+  .finance-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .finance-status-grid > article { min-width: 0; min-height: 86px; }
   .online-payment-date-grid { grid-template-columns: minmax(0, 1fr); }
-  .data-card-online-payment .data-card-summary .summary-cell { padding-inline: 8px; }
-  .data-card-online-payment .data-card-summary .summary-cell b { font-size: 12px; }
+  .finance-card .card-topline { align-items: flex-start; }
+  .finance-card .card-topline-badges { max-width: 52%; }
+  .finance-card .order-price { max-width: 82px; }
+}
+
+@media (min-width: 980px) {
+  .finance-page .mobile-card-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 @media (max-width: 560px) {

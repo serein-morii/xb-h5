@@ -553,7 +553,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : visibleActive === "products" ? <ProductsPage notify={notify} />
     : visibleActive === "tracking" ? <TrackingPage />
     : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
-    : visibleActive === "onlinePayments" ? <OnlinePaymentsPage notify={notify} onBack={exitToParentOrHome} backLabel={exitLabel} />
+    : visibleActive === "onlinePayments" ? <OnlinePaymentsPage notify={notify} />
     : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
     : SYSTEM_CENTER_REDIRECT_KEYS.has(visibleActive) ? <SystemCenterRedirect />
     : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToParentOrHome} exitLabel={exitLabel} />

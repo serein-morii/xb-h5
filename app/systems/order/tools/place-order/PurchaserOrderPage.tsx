@@ -1987,6 +1987,18 @@ export default function PurchaserOrderPage() {
           <div className="full"><span>详细地址</span><b>{viewingOrder.address || "暂无地址"}</b></div>
         </div>
       </div>
+      {viewingOrder.paymentNo || viewingOrder.payMethod || viewingOrder.paidAmount || viewingOrder.paymentAmount ? <div className="purchaser-detail-section">
+        <h3>支付详情</h3>
+        <div className="purchaser-captcha-summary">
+          <div><span>付款状态</span><b>{Number(viewingOrder.payStatus) === 1 ? "已付款" : Number(viewingOrder.payStatus) === 2 ? "已退款" : Number(viewingOrder.payStatus) === 3 ? "待确认" : "未付款"}</b></div>
+          {viewingOrder.payMethod ? <div><span>支付渠道</span><b>{viewingOrder.payMethod === "wx" ? "微信" : viewingOrder.payMethod === "alipay" ? "支付宝" : viewingOrder.payMethod}</b></div> : null}
+          {viewingOrder.paidAmount || viewingOrder.paymentAmount ? <div><span>支付金额</span><b>¥{Number(viewingOrder.paidAmount || viewingOrder.paymentAmount).toFixed(2)}</b></div> : null}
+          {viewingOrder.paymentNo ? <div className="full"><span>支付单号</span><b>{viewingOrder.paymentNo}</b></div> : null}
+          {viewingOrder.tradeOrderId ? <div className="full"><span>平台单号</span><b>{viewingOrder.tradeOrderId}</b></div> : null}
+          {viewingOrder.paymentStatus ? <div><span>支付单状态</span><b>{viewingOrder.paymentStatus === "SUCCESS" ? "支付成功" : viewingOrder.paymentStatus === "PENDING" ? "待支付" : viewingOrder.paymentStatus === "REFUNDING" ? "退款中" : viewingOrder.paymentStatus === "REFUNDED" ? "已退款" : viewingOrder.paymentStatus === "CLOSED" ? "已关闭" : viewingOrder.paymentStatus}</b></div> : null}
+          {viewingOrder.paidTime ? <div><span>支付时间</span><b>{String(viewingOrder.paidTime).replace("T", " ").slice(0, 16)}</b></div> : null}
+        </div>
+      </div> : null}
       <div className="purchaser-detail-section">
         <h3>快递</h3>
         <div className="purchaser-captcha-summary">

@@ -1,9 +1,9 @@
 import { API_PATHS } from "../../../lib/pathConventions";
 /**
- * 工作台"今日重点卡" + "三联概览"配置
+ * 工作台"今日重点卡" + "四列概览"配置
  *
  * - "今日重点" 区（focus）：当前用 focusSource[0]，这里只取 zone=="focus" 的第一项
- * - "概览三联" 区（strip）：底部三块卡，渲染 zone=="strip" 的项
+ * - "概览四列" 区（strip）：底部四块卡，渲染 zone=="strip" 的项
  *
  * 字段 key 对应 DashboardData 的字段名（orderTotal / waiting / sent / completed / ...）
  */
@@ -46,10 +46,11 @@ export const DEFAULT_DASHBOARD_FOCUS: DashboardFocusConfig = {
   items: [
     // 今日重点（首页大卡）
     { key: "pending", label: "待处理", zone: "focus", filterStatus: "pending", onClickKey: "orders" },
-    // 概览三联
+    // 概览四列
     { key: "orderTotal", label: "全部订单", sub: "累计", icon: "shopping-bag", tone: "peach", onClickKey: "orders", zone: "strip" },
-    { key: "waiting", label: "待发货", sub: "需跟进", icon: "package", tone: "amber", onClickKey: "orders", zone: "strip" },
-    { key: "completed", label: "已完成", sub: "已归档", icon: "circle-check", tone: "green", onClickKey: "orders", zone: "strip" },
+    { key: "waiting", label: "待发货", sub: "需跟进", icon: "package", tone: "amber", onClickKey: "orders", filterStatus: "shipping", zone: "strip" },
+    { key: "sent", label: "已发货", sub: "运输中", icon: "truck", tone: "blue", onClickKey: "orders", filterStatus: "transit", zone: "strip" },
+    { key: "completed", label: "已完成", sub: "已归档", icon: "circle-check", tone: "green", onClickKey: "orders", filterStatus: "completed", zone: "strip" },
   ],
 };
 

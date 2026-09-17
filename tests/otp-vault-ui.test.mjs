@@ -141,7 +141,7 @@ test("keeps conceal, recent sort, duplicate guard and system share in the vault"
   assert.match(workspace, /canUseSystemShare/);
   assert.match(workspace, /系统分享/);
   assert.match(workspace, /max-width: 820px/);
-  assert.match(workspace, /CLIPBOARD_CLEAR_MS/);
+  assert.match(workspace, /copyAndScheduleClear/);
   assert.match(workspace, /issuerStyle\(item\.issuer, item.loginUrl\)/);
   assert.match(workspace, /className="vault-ghost vault-import-action"/);
   assert.match(workspace, /aria-label="添加或导入凭据"><Plus size=\{18\}/);

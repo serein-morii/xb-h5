@@ -306,8 +306,14 @@ export function DashboardPage({ username, userInfo, onNavigate, notify, bellSlot
           <button
             type="button"
             key={item.key}
-            onClick={() => item.onClickKey && onNavigate(item.onClickKey)}
-            disabled={!item.onClickKey}
+            onClick={() => {
+              if (item.filterStatus) {
+                openStatusOrders(item.filterStatus);
+                return;
+              }
+              if (item.onClickKey) onNavigate(item.onClickKey);
+            }}
+            disabled={!item.onClickKey && !item.filterStatus}
           >
             <small>{item.label}</small>
             <b>{value}</b>

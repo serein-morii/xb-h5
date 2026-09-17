@@ -1,24 +1,27 @@
 /** 支付订单（简付 JianPay）：查询、对账、状态同步、导出与全额退款。 */
 import {
+  BadgeDollarSign,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   Copy,
   CreditCard,
   Download,
   LoaderCircle,
+  MapPin,
+  Phone,
+  ReceiptText,
   RefreshCw,
   RotateCcw,
   Search,
   SlidersHorizontal,
-  Wallet,
+  User,
   X,
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, copyToClipboard, downloadFile } from "../../../lib/api";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useAccess } from "./access";
-import { ConfirmDialog, EmptyState, MobileBackButton, Sheet } from "./ui";
+import { ConfirmDialog, EmptyState, Sheet } from "./ui";
 
 type Notify = (message: string, type?: "success" | "error" | "info") => void;
 
@@ -186,24 +189,21 @@ function refundReview(row: OnlinePayment) {
 
 export function OnlinePaymentsPage({
   notify,
-  onBack,
-  backLabel = "工作台",
 }: {
   notify: Notify;
-  onBack?: () => void;
-  backLabel?: string;
 }) {
   const access = useAccess();
   const [rows, setRows] = useState<OnlinePayment[]>([]);
-  const [summary, setSummary] = useState<PaymentSummary>(EMPTY_SUMMARY);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [summary, setSummary] = useState<PaymentSummary>(EMPTY_SUMMARY);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [pageKeyword, setPageKeyword] = useState("");
   const [filters, setFilters] = useState<PaymentFilters>(EMPTY_FILTERS);
   const [activeFilters, setActiveFilters] = useState<PaymentFilters>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadAllState, setLoadAllState] = useState({ loading: false, current: 0, total: 0 });
   const [busyId, setBusyId] = useState<number | null>(null);
   const [bulkSyncing, setBulkSyncing] = useState(false);
   const [error, setError] = useState("");
@@ -217,21 +217,20 @@ export function OnlinePaymentsPage({
   } | null>(null);
   const canManage = access.has("bills.edit");
   const canExport = access.has("bills.export");
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const load = useCallback(async (nextPage: number, nextFilters: PaymentFilters) => {
+  const load = useCallback(async (nextFilters: PaymentFilters, nextPageSize = PAGE_SIZE) => {
     setLoading(true);
     setError("");
     try {
       const query = filterQuery(nextFilters);
       const [listResult, summaryResult] = await Promise.all([
-        apiRequest<PageResult>(API_PATHS.billing.payments, { query: { pageNum: nextPage, pageSize: PAGE_SIZE, ...query } }),
+        apiRequest<PageResult>(API_PATHS.billing.payments, { query: { pageNum: 1, pageSize: nextPageSize, ...query } }),
         apiRequest<SummaryResult>(`${API_PATHS.billing.payments}/summary`, { query }),
       ]);
       setRows(listResult.rows || []);
       setTotal(Number(listResult.total || 0));
       setSummary({ ...EMPTY_SUMMARY, ...(summaryResult.data || {}) });
-      setPage(nextPage);
+      setPageSize(nextPageSize);
       setExpanded(new Set());
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "支付订单加载失败");
@@ -240,7 +239,7 @@ export function OnlinePaymentsPage({
     }
   }, []);
 
-  useEffect(() => { void load(1, EMPTY_FILTERS); }, [load]);
+  useEffect(() => { void load(EMPTY_FILTERS); }, [load]);
 
   const visibleRows = useMemo(() => {
     const keyword = pageKeyword.trim().toLowerCase();
@@ -268,7 +267,7 @@ export function OnlinePaymentsPage({
     const next = Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value.trim()])) as PaymentFilters;
     setActiveFilters(next);
     setFilterOpen(false);
-    void load(1, next);
+    void load(next);
   };
 
   const copyValue = async (label: string, value?: string) => {
@@ -282,7 +281,7 @@ export function OnlinePaymentsPage({
     try {
       const result = await apiRequest<{ data?: OnlinePayment }>(`${API_PATHS.billing.payments}/${row.id}/sync`, { method: "POST" });
       notify(`状态已同步：${statusMeta(result.data?.status || row.status).label}`, "success");
-      await load(page, activeFilters);
+      await load(activeFilters, pageSize);
     } catch (syncError) {
       notify(syncError instanceof Error ? syncError.message : "状态同步失败", "error");
     } finally {
@@ -304,7 +303,46 @@ export function OnlinePaymentsPage({
     }
     setBulkSyncing(false);
     notify(`状态核对完成：成功 ${success} 条${failed ? `，失败 ${failed} 条` : ""}`, failed ? "info" : "success");
-    await load(page, activeFilters);
+    await load(activeFilters, pageSize);
+  };
+
+  const loadMore = () => {
+    if (loading || rows.length >= total) return;
+    void load(activeFilters, pageSize + PAGE_SIZE);
+  };
+
+  const loadAllRows = async () => {
+    if (loadAllState.loading) return;
+    setLoadAllState({ loading: true, current: 0, total: 0 });
+    const accumulated: OnlinePayment[] = [];
+    let serverTotal = 0;
+    let pageNum = 1;
+    try {
+      while (pageNum <= 200) {
+        const result = await apiRequest<PageResult>(API_PATHS.billing.payments, {
+          query: { pageNum, pageSize: PAGE_SIZE, ...filterQuery(activeFilters) },
+        });
+        const pageRows = result.rows || [];
+        serverTotal = Number(result.total || 0);
+        accumulated.push(...pageRows);
+        setLoadAllState({ loading: true, current: accumulated.length, total: serverTotal });
+        if (!pageRows.length || accumulated.length >= serverTotal) break;
+        pageNum += 1;
+      }
+      setRows(accumulated);
+      setTotal(serverTotal);
+      setPageSize(Math.max(PAGE_SIZE, accumulated.length));
+      notify(`已加载全部 ${accumulated.length} 条支付订单`, "success");
+    } catch (loadError) {
+      notify(loadError instanceof Error ? loadError.message : "加载所有支付订单失败", "error");
+      if (accumulated.length) {
+        setRows(accumulated);
+        setTotal(serverTotal);
+        setPageSize(Math.max(PAGE_SIZE, accumulated.length));
+      }
+    } finally {
+      setLoadAllState({ loading: false, current: 0, total: 0 });
+    }
   };
 
   const submitRefund = async (event: FormEvent) => {
@@ -318,7 +356,7 @@ export function OnlinePaymentsPage({
       });
       notify(`已发起退款：${refundTarget.paymentNo}`, "success");
       setRefundTarget(null);
-      await load(page, activeFilters);
+      await load(activeFilters, pageSize);
     } catch (refundError) {
       notify(refundError instanceof Error ? refundError.message : "退款发起失败", "error");
     } finally {
@@ -344,15 +382,28 @@ export function OnlinePaymentsPage({
   };
 
   return (
-    <div className="module-page crud-page crud-page-online-payments online-payments-page">
-      <div className="module-hero compact-hero">
+    <div className="module-page crud-page crud-page-online-payments finance-page">
+      <div className="module-hero">
         <div>
-          {onBack ? <MobileBackButton label={backLabel} onClick={onBack} /> : null}
           <span className="eyebrow">订单管理模块</span>
           <h1>支付订单</h1>
-          <p>简付交易查询、状态核对、导出与原路退款</p>
+          <p>交易状态、入账与退款进度集中核对</p>
         </div>
-        <span className="hero-tool-icon"><CreditCard size={25} /></span>
+        {canManage ? (
+          <button
+            className="round-add"
+            type="button"
+            disabled={!syncableRows.length || bulkSyncing}
+            onClick={() => setConfirm({
+              title: "核对本页待处理状态",
+              message: `将向简付逐条查询本页 ${syncableRows.length} 笔待支付或退款中的交易，并以平台结果更新本地状态。是否继续？`,
+              action: syncVisible,
+            })}
+          >
+            {bulkSyncing ? <LoaderCircle className="spin" size={22} /> : <RefreshCw size={22} />}
+            <span>{bulkSyncing ? "核对中" : "同步"}</span>
+          </button>
+        ) : null}
       </div>
 
       <div className="toolbar-card search-toolbar">
@@ -364,11 +415,15 @@ export function OnlinePaymentsPage({
         <button className={`filter-chip${activeFilterCount ? " active" : ""}`} type="button" onClick={() => { setFilters(activeFilters); setFilterOpen(true); }}>
           <SlidersHorizontal size={14} strokeWidth={2.2} />筛选{activeFilterCount ? ` ${activeFilterCount}` : ""}
         </button>
-        <button className="toolbar-icon" type="button" onClick={() => void load(page, activeFilters)} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button>
+        <button className="toolbar-icon" type="button" onClick={() => void load(activeFilters, pageSize)} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button>
       </div>
 
-      <div className="secondary-actions online-payments-secondary-actions">
+      <div className="secondary-actions">
         {canExport ? <button type="button" onClick={() => void exportRows()}><Download size={16} />导出</button> : null}
+        <button type="button" onClick={() => void loadAllRows()} disabled={loadAllState.loading || (total > 0 && rows.length >= total)} className={loadAllState.loading ? "is-loading" : ""}>
+          {loadAllState.loading ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />}
+          {loadAllState.loading ? (loadAllState.total ? `加载中 ${loadAllState.current}/${loadAllState.total}` : "加载中…") : "加载所有"}
+        </button>
         {canManage ? <button type="button" disabled={!syncableRows.length || bulkSyncing} className={bulkSyncing ? "is-loading" : ""} onClick={() => setConfirm({
           title: "核对本页待处理状态",
           message: `将向简付逐条查询本页 ${syncableRows.length} 笔待支付或退款中的交易，并以平台结果更新本地状态。是否继续？`,
@@ -376,18 +431,18 @@ export function OnlinePaymentsPage({
         })}>{bulkSyncing ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}{bulkSyncing ? "核对中" : `同步本页${syncableRows.length ? ` · ${syncableRows.length}` : ""}`}</button> : null}
       </div>
 
-      <section className="online-payments-overview" aria-label="筛选结果汇总">
-        <article><small>净入账</small><strong>{money(summary.netAmount)}</strong><span>支付减已退款</span></article>
-        <article><small>支付金额</small><strong>{money(summary.paidAmount)}</strong><span>{summary.paidCount} 笔支付成功</span></article>
-        <article><small>退款金额</small><strong>{money(summary.refundedAmount)}</strong><span>{summary.refundedCount} 笔已退款</span></article>
-        <article><small>待处理</small><strong>{summary.pendingCount + summary.refundingCount}</strong><span>{summary.pendingCount} 待支付 · {summary.refundingCount} 退款中</span></article>
+      <section className="metric-grid finance-status-grid" aria-label="支付汇总">
+        <article className="is-positive"><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>净入账</p><b>{money(summary.netAmount)}</b><small>支付减已退款</small></article>
+        <article><span className="metric-icon blue"><CreditCard size={15} /></span><p>支付金额</p><b>{money(summary.paidAmount)}</b><small>{summary.paidCount} 笔支付成功</small></article>
+        <article><span className="metric-icon amber"><RotateCcw size={15} /></span><p>退款金额</p><b>{money(summary.refundedAmount)}</b><small>{summary.refundedCount} 笔已退款</small></article>
+        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待处理</p><b>{summary.pendingCount + summary.refundingCount}</b><small>{summary.pendingCount} 待支付 · {summary.refundingCount} 退款中</small></article>
       </section>
 
       {error ? (
         <section className="risk-ip-mobile-error" role="alert">
           <b>无法读取支付订单</b>
           <p>{error}</p>
-          <button className="button button-ghost" type="button" onClick={() => void load(page, activeFilters)}>重新加载</button>
+          <button className="button button-ghost" type="button" onClick={() => void load(activeFilters, pageSize)}>重新加载</button>
         </section>
       ) : <>
         <div className="list-heading"><div><h2>支付订单列表</h2><span>共 {total} 条{pageKeyword.trim() ? ` · 本页匹配 ${visibleRows.length} 条` : ""}</span></div></div>
@@ -398,32 +453,25 @@ export function OnlinePaymentsPage({
             const isOpen = expanded.has(row.id);
             const refundable = row.status === "SUCCESS" && canManage;
             const syncable = (row.status === "PENDING" || row.status === "REFUNDING") && canManage;
-            return <article className="data-card data-card-online-payment" key={row.id}>
-              <div className="data-card-head">
-                <span className="data-icon"><Wallet size={19} /></span>
-                <div>
-                  <span className="online-payment-copy-line"><b>{row.paymentNo}</b><button type="button" onClick={() => void copyValue("支付单号", row.paymentNo)} aria-label="复制支付单号"><Copy size={13} /></button></span>
-                  <small>{row.storeName || "未关联店铺"}{row.purchaserName ? ` · ${row.purchaserName}` : ""}</small>
-                </div>
-                <span className={`online-payment-pill is-${meta.tone}`}>{meta.label}</span>
+            return <article className="order-card finance-card payment-card" key={row.id}>
+              <div className="card-topline">
+                <button className="order-number" type="button" onClick={() => void copyValue("支付单号", row.paymentNo)}>{row.paymentNo}<Copy size={13} /></button>
+                <div className="card-topline-badges"><span className="finance-channel-badge"><CreditCard size={11} />{payMethodLabel(row.payMethod)}</span><span className={`status ${meta.tone === "success" ? "status-success" : meta.tone === "pending" || meta.tone === "refunding" ? "status-warning" : meta.tone === "refunded" ? "status-danger" : "status-neutral"}`}><span />{meta.label}</span></div>
               </div>
 
-              <div className="data-card-summary data-card-summary-3">
-                <div className="summary-cell tone-default"><span>支付金额</span><b>{money(row.amount)}</b></div>
-                <div className="summary-cell tone-default"><span>支付渠道</span><b>{payMethodLabel(row.payMethod)}</b></div>
-                <div className={`summary-cell ${row.status === "REFUNDED" ? "tone-danger" : "tone-success"}`}><span>{row.status === "REFUNDED" ? "退款金额" : "交易状态"}</span><b>{row.status === "REFUNDED" ? money(row.refundAmount || row.amount) : meta.label}</b></div>
-              </div>
+              <button className="card-main" type="button" onClick={() => toggleExpanded(row.id)}>
+                <span className="product-avatar">{payMethodLabel(row.payMethod).slice(0, 1)}</span>
+                <span className="product-copy"><b>{orderGoods(row)}</b><small>{row.storeName || "未关联店铺"}{row.purchaserName ? ` · ${row.purchaserName}` : ""}</small></span>
+                <span className="order-price"><small>{row.status === "REFUNDED" ? "退款金额" : "支付金额"}</small><b className={row.status === "REFUNDED" ? "is-refunded" : ""}>{money(row.status === "REFUNDED" ? row.refundAmount || row.amount : row.amount)}</b></span>
+              </button>
 
-              <div className="data-metrics">
-                <div className="full-width"><span>业务订单号</span><span className="online-payment-copy-line"><b>{row.orderCode || "未关联订单"}</b>{row.orderCode ? <button type="button" onClick={() => void copyValue("订单号", row.orderCode)} aria-label="复制订单号"><Copy size={13} /></button> : null}</span></div>
-                <div><span>商品</span><b>{orderGoods(row)}</b></div>
-                <div><span>订单状态</span><b>{orderStatusLabel(row.orderStatus)} · {payStatusLabel(row.payStatus)}</b></div>
-                <div><span>收件人</span><b>{orderRecipient(row)}</b></div>
-                <div><span>支付时间</span><b>{row.paidTime || "—"}</b></div>
-              </div>
+              <div className="recipient-block"><div><User size={16} /><b>{row.customer || "--"}</b>{row.phone ? <a href={`tel:${row.phone}`}><Phone size={14} />{row.phone}</a> : null}</div><p><MapPin size={15} />{row.address || "暂无收货地址"}</p></div>
+              <div className="shipping-line payment-reference-line"><span><ReceiptText size={15} />{row.orderCode || "未关联业务订单"}{row.orderCode ? <button type="button" onClick={() => void copyValue("订单号", row.orderCode)} aria-label="复制订单号"><Copy size={12} /></button> : null}</span><span>{row.paidTime || row.createTime || "—"}</span></div>
 
               <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner">
                 <div className="data-metrics data-metrics-expand">
+                  <div><span>订单状态</span><b>{orderStatusLabel(row.orderStatus)}</b></div>
+                  <div><span>付款状态</span><b>{payStatusLabel(row.payStatus)}</b></div>
                   <div className="full-width"><span>平台支付单号</span><span className="online-payment-copy-line"><b>{row.tradeOrderId || "—"}</b>{row.tradeOrderId ? <button type="button" onClick={() => void copyValue("平台支付单号", row.tradeOrderId)} aria-label="复制平台支付单号"><Copy size={13} /></button> : null}</span></div>
                   <div><span>创建时间</span><b>{row.createTime || "—"}</b></div>
                   <div><span>更新时间</span><b>{row.updateTime || "—"}</b></div>
@@ -435,20 +483,16 @@ export function OnlinePaymentsPage({
                   </> : null}
                 </div>
               </div></div>
-              <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpanded(row.id)} aria-expanded={isOpen}><span>{isOpen ? "收起明细" : "查看更多"}</span><ChevronDown size={15} /></button>
+              <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpanded(row.id)} aria-expanded={isOpen}><span>{isOpen ? "收起交易明细" : "查看交易明细"}</span><ChevronDown size={15} /></button>
 
-              {syncable || refundable ? <div className="card-actions online-payment-card-actions">
+              {syncable || refundable ? <div className="card-actions">
                 {syncable ? <button type="button" className="primary-action" disabled={busyId === row.id || bulkSyncing} onClick={() => void syncRow(row)}>{busyId === row.id ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}同步状态</button> : null}
                 {refundable ? <button type="button" className="danger-text" disabled={busyId === row.id} onClick={() => { setRefundReason("后台退款"); setRefundTarget(row); }}><RotateCcw size={15} />全额退款</button> : null}
               </div> : null}
             </article>;
           })}
         </div>
-        <div className="sysm-pager">
-          <button className="button button-ghost" type="button" disabled={page <= 1 || loading} onClick={() => void load(page - 1, activeFilters)}><ChevronLeft size={17} />上一页</button>
-          <span>{page} / {pageCount}</span>
-          <button className="button button-ghost" type="button" disabled={page >= pageCount || loading} onClick={() => void load(page + 1, activeFilters)}>下一页<ChevronRight size={17} /></button>
-        </div>
+        {rows.length < total ? <button className="load-more" type="button" onClick={loadMore}><ChevronRight size={17} />加载更多</button> : null}
       </>}
 
       <Sheet open={filterOpen} title="筛选支付订单" onClose={() => setFilterOpen(false)}>
