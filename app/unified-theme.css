@@ -9864,6 +9864,21 @@ html.theme-dark :is(
   font-size: 11px;
 }
 
+.purchaser-help-icp {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(38, 50, 77, .08);
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 9px;
+}
+
+.purchaser-help-icp a {
+  color: inherit;
+  text-decoration: none;
+}
+
 /*
  * Button completion pass
  *

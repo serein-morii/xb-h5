@@ -1912,6 +1912,7 @@ export default function PurchaserOrderPage() {
           {linkContext.storeNotice ? <p>{linkContext.storeNotice}</p> : null}
         </div> : null}
       </div>
+      <footer className="purchaser-help-icp"><span>喜八订单</span><a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer>
     </section></div> : null}
     {missingFields.length > 0 ? <div className="purchaser-missing-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setMissingFields([])}><section className="purchaser-missing-modal purchaser-sheet" role="alertdialog" aria-modal="true">
       <div className="purchaser-missing-icon"><AlertCircle size={28} /></div>
