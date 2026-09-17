@@ -86,7 +86,7 @@ export function NotificationBellButton({ count, onClick, floating, label = "通�
  * 弹窗公告宿主：页面打开时拉取未读弹窗公告并逐条弹出。
  * 点「确认」→ 写入已读记录后不再弹；点「下次再说」或不操作 → 下次打开还会弹。
  */
-export function MessagePopupHost({ request }: { request: MessageRequest }) {
+export function MessagePopupHost({ request, category = "" }: { request: MessageRequest; category?: string }) {
   const [queue, setQueue] = useState<UserMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -94,7 +94,8 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
 
   useEffect(() => {
     let mounted = true;
-    request<ListResult>(`${API_PATHS.message.root}/popup`)
+    const query = category ? `?category=${encodeURIComponent(category)}` : "";
+    request<ListResult>(`${API_PATHS.message.root}/popup${query}`)
       .then((result) => {
         if (!mounted) return;
         const pending = Array.isArray(result.data) ? result.data : [];
@@ -103,7 +104,7 @@ export function MessagePopupHost({ request }: { request: MessageRequest }) {
       })
       .catch(() => setLoaded(true));
     return () => { mounted = false; };
-  }, [request]);
+  }, [request, category]);
 
   const current = queue[0];
   const confirm = useCallback(async () => {

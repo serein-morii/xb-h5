@@ -145,6 +145,7 @@ LEGACY_CAPABILITIES["system.dictTypes.delete"] = ["system:dict:remove"];
 Object.assign(LEGACY_CAPABILITIES, {
   "system.users.import": ["system:user:import"], "system.users.export": ["system:user:export"],
   "system.users.resetPassword": ["system:user:resetPwd"],
+  "bills.export": ["biz:bill:export"],
   "operations.online.view": ["monitor:online:list"], "operations.online.forceLogout": ["monitor:online:forceLogout"],
   "operations.jobs.view": ["monitor:job:list"], "operations.jobs.create": ["monitor:job:add"],
   "operations.jobs.edit": ["monitor:job:edit"], "operations.jobs.delete": ["monitor:job:remove"],

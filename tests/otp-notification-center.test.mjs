@@ -222,6 +222,21 @@ test("popup announcements: ack on confirm, re-pop when dismissed", async () => {
   assert.match(controller, /Boolean\.parseBoolean\(body\.get\("popup"\)\)/);
 });
 
+test("order notification center excludes OTP security messages", async () => {
+  const [shell, component, controller, service] = await Promise.all([
+    source("app/systems/order/admin/shell.tsx"),
+    source("app/components/NotificationCenter.tsx"),
+    source("../xb/src/main/java/com/xb/modules/message/api/UserMessageController.java"),
+    source("../xb/src/main/java/com/xb/modules/message/service/impl/DefaultMessageService.java"),
+  ]);
+  assert.match(shell, /useMessageUnread\(apiRequest as MessageRequest, "SYSTEM"\)/);
+  assert.match(shell, /MessagePopupHost request=\{apiRequest as MessageRequest\} category="SYSTEM"/);
+  assert.match(shell, /defaultCategory="SYSTEM"/);
+  assert.match(component, /\/popup\$\{query\}/);
+  assert.match(controller, /popups\(@RequestParam\(defaultValue = ""\) String category\)/);
+  assert.match(service, /unreadPopups\(String category\)/);
+});
+
 test("broadcast targets business systems (ORDER/OTP/ADMIN), records editable", async () => {
   const [form, service, controller, mapper, sql] = await Promise.all([
     source("app/systems/system/MessageBroadcast.tsx"),

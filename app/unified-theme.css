@@ -16298,42 +16298,63 @@ html.theme-dark .utility-shell {
 .risk-ip-mobile-error p { margin: 6px 0 12px; color: var(--xb-text-secondary); font-size: 11px; line-height: 1.5; }
 .risk-ip-mobile-note { margin: 11px 2px 0; color: var(--xb-text-secondary); font-size: 9px; line-height: 1.5; }
 
-/* 在线支付账单（简付） */
-.online-payments-stats { display: flex; align-items: center; gap: 18px; padding: 13px 16px; }
-.online-payments-stats > div { min-width: 0; }
-.online-payments-stats small { display: block; color: var(--xb-text-secondary); font-size: 9px; }
-.online-payments-stats strong { display: block; margin-top: 3px; font-size: 16px; letter-spacing: -0.02em; }
-.online-payments-income strong { color: #1f7a45; }
-.online-payments-stats > button { margin-left: auto; flex: none; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--xb-line, rgba(38,50,77,.14)); border-radius: 11px; background: var(--xb-paper, #fff); color: var(--xb-text-secondary); cursor: pointer; }
-.online-payments-stats > button:hover { color: #485cc7; border-color: rgba(72,92,199,.35); }
-.online-payments-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.online-payments-filter .button { grid-column: 1 / -1; }
+/* 在线支付订单（简付）：视觉结构与账单管理保持一致。 */
+.online-payments-secondary-actions { margin-bottom: 12px; }
+.online-payments-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.online-payments-overview article {
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid var(--xb-line, rgba(38,50,77,.12));
+  border-radius: 16px;
+  background: var(--xb-surface, #fff);
+  box-shadow: 0 8px 24px rgba(35, 50, 85, .045);
+}
+.online-payments-overview small,
+.online-payments-overview span { display: block; color: var(--xb-text-secondary); font-size: 9px; }
+.online-payments-overview strong { display: block; margin: 5px 0 3px; color: var(--xb-text); font-size: 20px; letter-spacing: -.035em; }
+.online-payments-overview article:first-child strong { color: var(--state-success, #1f7a45); }
+.online-payment-list { align-items: start; }
 .online-payment-pill { flex: none; padding: 4px 9px; border-radius: 999px; font-size: 9px; font-weight: 750; }
 .online-payment-pill.is-pending { background: #fdf3e0; color: #a1650b; }
 .online-payment-pill.is-success { background: #e4f5ea; color: #1f7a45; }
 .online-payment-pill.is-refunding { background: #e8ebfb; color: #3146ad; }
 .online-payment-pill.is-refunded { background: #f3e5f5; color: #8a3d9c; }
 .online-payment-pill.is-closed { background: #eef0f6; color: #6f788b; }
-.online-payment-amount { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
-.online-payment-order { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--xb-line, rgba(38,50,77,.12)); border-radius: 12px; background: color-mix(in srgb, var(--xb-surface-muted, #f5f6fa) 72%, transparent); }
-.online-payment-order header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.online-payment-order header span { color: var(--xb-text-secondary); font-size: 9px; font-weight: 750; letter-spacing: .04em; }
-.online-payment-order header b { font-size: 13px; }
-.online-payment-order-missing { margin: 0; color: #b3452f; font-size: 11px; line-height: 1.5; }
 .online-payment-copy-line { display: inline-flex; align-items: center; min-width: 0; gap: 5px; }
-.online-payment-copy-line b { min-width: 0; overflow-wrap: anywhere; }
-.online-payment-copy-line button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 8px; color: var(--xb-text-secondary); background: transparent; }
+.online-payment-copy-line b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.online-payment-copy-line button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 8px; color: var(--xb-text-secondary); background: transparent; cursor: pointer; }
 .online-payment-copy-line button:active { background: var(--xb-surface-muted, #f2f4f8); }
-.online-payment-amount b { font-size: 19px; letter-spacing: -0.02em; }
-.online-payment-amount small { color: #8a3d9c; font-size: 10px; font-weight: 700; }
-.online-payment-actions { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--xb-line, rgba(38,50,77,.12)); display: flex; justify-content: flex-end; }
-.online-payment-refund { color: #b3452f; border-color: rgba(179,69,47,.35); }
-.online-payment-refund:hover:not(:disabled) { background: rgba(179,69,47,.07); border-color: rgba(179,69,47,.55); }
+.data-card-online-payment .data-card-summary { margin-top: 12px; }
+.data-card-online-payment .data-metrics .online-payment-copy-line { width: 100%; }
+.online-payment-filter-body { display: grid; gap: 12px; }
+.online-payment-date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.online-payment-date-grid label { min-width: 0; }
+.online-payment-refund-review {
+  margin: 0 0 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--xb-line);
+  border-radius: 12px;
+  color: var(--xb-text);
+  background: var(--xb-surface-muted);
+  font-size: 11px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.online-payment-refund-warning { margin: 10px 0 0; color: var(--state-danger, #b3452f); font-size: 10px; }
+.online-payment-refund-sheet .filter-apply.is-danger { border-color: #b42318; background: #b42318; }
 
 @media (max-width: 560px) {
-  .online-payments-stats { gap: 12px; padding: 11px 13px; overflow-x: auto; }
-  .online-payments-stats strong { font-size: 14px; }
-  .online-payments-filter { grid-template-columns: minmax(0, 1fr); }
+  .online-payments-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .online-payments-overview article { padding: 12px; border-radius: 14px; }
+  .online-payments-overview strong { font-size: 17px; }
+  .online-payment-date-grid { grid-template-columns: minmax(0, 1fr); }
+  .data-card-online-payment .data-card-summary .summary-cell { padding-inline: 8px; }
+  .data-card-online-payment .data-card-summary .summary-cell b { font-size: 12px; }
 }
 
 @media (max-width: 560px) {

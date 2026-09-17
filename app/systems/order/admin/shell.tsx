@@ -347,9 +347,9 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
   // 登录后若邮箱为空，自动弹"绑定邮箱"页（不再用 Toast 提示）。
   // 用户可关闭；下次登录仍会再弹，直到真正去绑定邮箱。
   const [bindEmailOpen, setBindEmailOpen] = useState(false);
-  // 通知中心：铃铛 + 弹层，站内信分类展示（OTP 安全 / 系统通知）
+  // 订单工作台只展示系统通知；OTP 安全消息留在 OTP Vault。
   const [notifOpen, setNotifOpen] = useState(false);
-  const unread = useMessageUnread(apiRequest as MessageRequest);
+  const unread = useMessageUnread(apiRequest as MessageRequest, "SYSTEM");
   // 邮箱与系统引导互斥：首次登录且没绑邮箱时，先弹邮箱；引导等邮箱弹窗关闭后再触发。
   // 邮箱关掉/绑好 → 解除门控 → 引导才出来。
   const [tourGatedByEmail, setTourGatedByEmail] = useState(false);
@@ -563,8 +563,8 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
 
   return <AccessContext.Provider value={access}><DictionaryContext.Provider value={dictionaries}>
     <div className="product-shell">
-      <MessagePopupHost request={apiRequest as MessageRequest} />
-      <NotificationCenter request={apiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} />
+      <MessagePopupHost request={apiRequest as MessageRequest} category="SYSTEM" />
+      <NotificationCenter request={apiRequest as MessageRequest} open={notifOpen} onClose={() => setNotifOpen(false)} categories={[{ key: "SYSTEM", label: "系统" }]} defaultCategory="SYSTEM" />
       <main className="product-main" data-onboard={`page-${active}`}>
         {showShellDirectoryBack ? (
           <div className="product-main-back-row">
