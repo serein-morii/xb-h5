@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  CreditCard,
   Download,
   ExternalLink,
   FileSpreadsheet,
@@ -310,6 +311,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   const [mailStore, setMailStore] = useState<DataRow | null>(null);
   const [noticeStore, setNoticeStore] = useState<DataRow | null>(null);
   const [accessStore, setAccessStore] = useState<DataRow | null>(null);
+  const [payStore, setPayStore] = useState<DataRow | null>(null);
   const [storeSwitchBusy, setStoreSwitchBusy] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ title: string; message: string; danger?: boolean; action: () => Promise<void> } | null>(null);
   const [expanded, setExpanded] = useState<Set<string | number>>(new Set());
@@ -566,6 +568,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
               onNotice={() => setNoticeStore(row)}
               onMail={() => setMailStore(row)}
               onAccess={() => setAccessStore(row)}
+              onPay={() => setPayStore(row)}
               onCopy={copyText}
               onDelete={() => setConfirm({ title: "删除店铺", message: `删除「${String(row.name || row.code || "该店铺")}」后无法恢复，是否继续？`, danger: true, action: async () => { await apiRequest(`${config.api}/${row.id}`, { method: "DELETE" }); notify("删除成功", "success"); await refreshLoadedRange(-1); } })}
             />;
@@ -644,6 +647,9 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
       </Sheet>
       <Sheet open={accessStore !== null} title={`访问设置 · ${String(accessStore?.name || "店铺")}`} onClose={() => setAccessStore(null)}>
         {accessStore ? <StoreAccessEditor store={accessStore} notify={notify} onClose={() => setAccessStore(null)} onSaved={(updated) => patchStoreRow(accessStore.id, updated)} /> : null}
+      </Sheet>
+      <Sheet open={payStore !== null} title={`在线支付 · ${String(payStore?.name || "店铺")}`} onClose={() => setPayStore(null)} wide>
+        {payStore ? <StorePaySettingsEditor store={payStore} notify={notify} onClose={() => setPayStore(null)} onSaved={() => { void refreshLoadedRange(); }} /> : null}
       </Sheet>
       {config.batchAction ? (
         <Sheet
@@ -883,6 +889,7 @@ function StoreManagementCard({
   onNotice,
   onMail,
   onAccess,
+  onPay,
   onCopy,
   onDelete,
 }: {
@@ -898,6 +905,7 @@ function StoreManagementCard({
   onNotice: () => void;
   onMail: () => void;
   onAccess: () => void;
+  onPay: () => void;
   onCopy: (text: string, message: string) => void;
   onDelete: () => void;
 }) {
@@ -907,6 +915,7 @@ function StoreManagementCard({
   const orderAllowed = Number(row.blockOrder) !== 1;
   const queryAllowed = Number(row.blockQuery) !== 1;
   const mailEnabled = Number(row.mailEnabled) === 1;
+  const payEnabled = Number(row.payEnabled) === 1;
   const switchItem = (key: string, label: string, description: string, checked: boolean, onClick: () => void, tone = "normal") => (
     <button type="button" className={`store-control-switch tone-${tone}`} role="switch" aria-checked={checked} disabled={busy.has(`${id}:${key}`)} onClick={onClick}>
       <span className="store-control-copy"><b>{label}</b><small>{description}</small></span>
@@ -934,6 +943,7 @@ function StoreManagementCard({
         <button type="button" onClick={onEdit}><Pencil size={15} /><span>基本资料</span></button>
         <button type="button" onClick={onNotice}><Bell size={15} /><span>通知设置</span></button>
         <button type="button" className={mailEnabled ? "configured" : ""} onClick={onMail}><Mail size={15} /><span>邮件配置</span>{mailEnabled ? <i /> : null}</button>
+        <button type="button" className={payEnabled ? "configured" : ""} onClick={onPay}><CreditCard size={15} /><span>支付配置</span>{payEnabled ? <i /> : null}</button>
         <button type="button" onClick={onAccess}><LockKeyhole size={15} /><span>访问设置</span></button>
       </nav>
 
@@ -944,6 +954,7 @@ function StoreManagementCard({
             <div><dt>下单码</dt><dd>{Number(row.orderCodeRequirePwd) === 1 ? (row.orderCodePwd ? "已启用" : "待设置") : "免验证"}</dd></div>
             <div><dt>拦截样式</dt><dd>{row.blockDisplayType ? optionLabel(row.blockDisplayType, STORE_BLOCK_DISPLAY_OPTIONS) : "顶部提示"}</dd></div>
             <div><dt>邮件发送</dt><dd>{mailEnabled ? (Number(row.mailDefault) === 1 ? "已启用 · 系统默认" : "已启用") : "未配置"}</dd></div>
+            <div><dt>在线支付</dt><dd>{payEnabled ? "已启用" : "未配置"}</dd></div>
             <div><dt>创建人</dt><dd>{String(row.createBy || "--")}</dd></div>
             <div><dt>最近更新</dt><dd>{shortDate(row.updateTime || row.createTime, true)}</dd></div>
           </dl>
@@ -1006,6 +1017,90 @@ function StoreAccessEditor({ store, notify, onClose, onSaved }: { store: DataRow
     <label><span>拦截提示样式</span><select value={form.blockDisplayType} onChange={(event) => setForm((current) => ({ ...current, blockDisplayType: event.target.value }))}>{STORE_BLOCK_DISPLAY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
     <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存访问设置"}</button></div>
   </form>;
+}
+
+function StorePaySettingsEditor({
+  store,
+  notify,
+  onClose,
+  onSaved,
+}: {
+  store: DataRow;
+  notify: (message: string, type?: "success" | "error" | "info") => void;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<DataRow>({
+    enabled: 0,
+    provider: "jianpay",
+    gateway: "https://jpay.hzjianban.com",
+    clientNo: "",
+    payKey: "",
+    notifyUrl: "",
+    keyConfigured: false,
+    applyToAllStores: false,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    apiRequest<DataRow>(`${API_PATHS.stores.root}/${store.id}/pay-settings`)
+      .then((result) => {
+        if (!active) return;
+        const data = result.data && typeof result.data === "object" ? result.data as DataRow : {};
+        setForm((current) => ({ ...current, ...data, payKey: "", applyToAllStores: false }));
+      })
+      .catch((error) => { if (active) notify(error instanceof Error ? error.message : "支付配置加载失败", "error"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [notify, store.id]);
+
+  function update(key: string, value: unknown) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await apiRequest(`${API_PATHS.stores.root}/${store.id}/pay-settings`, {
+        method: "PUT",
+        body: { ...form, enabled: Number(form.enabled || 0) },
+      });
+      notify(form.applyToAllStores ? "支付配置已同步到全部店铺" : "店铺支付配置已保存", "success");
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "支付配置保存失败", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="mail-settings-loading"><LoaderCircle className="spin" size={21} />正在读取支付配置</div>;
+  const enabled = Number(form.enabled) === 1;
+  return (
+    <form className="mail-settings-editor" onSubmit={submit}>
+      <section className="mail-settings-intro">
+        <span><CreditCard size={18} /></span>
+        <div><b>在线支付（简付）</b><p>买家下单后可直接微信 / 支付宝付款，支付成功自动确认。商户 KEY 加密保存且不会回显。</p></div>
+      </section>
+      <label className="mail-settings-switch"><div><b>启用在线支付</b><small>买家侧仍受买家支付开关约束</small></div><input type="checkbox" checked={enabled} onChange={(event) => update("enabled", event.target.checked ? 1 : 0)} /><span /></label>
+      <div className={`mail-settings-fields${enabled ? "" : " disabled"}`}>
+        <label><span>支付提供方</span><select disabled={!enabled} value={String(form.provider || "jianpay")} onChange={(event) => update("provider", event.target.value)}><option value="jianpay">简付 JianPay</option></select></label>
+        <label><span>支付网关</span><input disabled={!enabled} value={String(form.gateway || "")} onChange={(event) => update("gateway", event.target.value)} placeholder="https://jpay.hzjianban.com" /></label>
+        <label><span>商户号 clientNo</span><input disabled={!enabled} value={String(form.clientNo || "")} onChange={(event) => update("clientNo", event.target.value)} placeholder="简付控制台「API 安全」页获取" autoComplete="off" /></label>
+        <label><span>商户 KEY</span><input disabled={!enabled} type="password" value={String(form.payKey || "")} onChange={(event) => update("payKey", event.target.value)} placeholder={form.keyConfigured ? "已安全保存，留空表示不修改" : "MD5 签名密钥"} autoComplete="new-password" /></label>
+        <label className="span-full"><span>回调地址 notifyUrl（可选）</span><input disabled={!enabled} value={String(form.notifyUrl || "")} onChange={(event) => update("notifyUrl", event.target.value)} placeholder="留空使用系统默认回调地址" /></label>
+      </div>
+      <section className="mail-settings-options">
+        <label><input type="checkbox" checked={Boolean(form.applyToAllStores)} onChange={(event) => update("applyToAllStores", event.target.checked)} /><span><b>同步到全部店铺</b><small>仅管理员可用，一次覆盖所有正常店铺，之后仍可单独修改</small></span></label>
+      </section>
+      <div className="mail-settings-actions"><button type="button" onClick={onClose}>取消</button><button className="primary-action" type="submit" disabled={saving}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? "保存中" : "保存支付配置"}</button></div>
+    </form>
+  );
 }
 
 function StoreMailSettingsEditor({
