@@ -1,0 +1,32 @@
+app/systems/order/tools/place-order/PurchaserOrderPage.tsx
+  s_ec331693b00d25::t_3760e8993ee0b6 196,1160,1172,1174,1445,1633,1757,1800,1853,1855,1863,1885
+app/systems/order/tools/order-link/format.ts
+  s_ec331693b00d25::t_3760e8993ee0b6 12
+app/systems/order/admin/products.tsx
+  s_ec331693b00d25::t_3760e8993ee0b6 269
+app/systems/order/tools/OrderStatsCards.tsx
+  s_ec331693b00d25::t_3760e8993ee0b6 3,5,9,20,22,30,44
+app/systems/order/tools/OrderList.tsx
+  s_ec331693b00d25::t_3760e8993ee0b6 82,95,161,172,202,214,220,222
+  s_ec331693b00d25::t_c4872444a59aa6 85
+app/systems/order/tools/purchasers/PurchaserManager.tsx
+  s_ec331693b00d25::t_3760e8993ee0b6 436,485
+app/unified-theme.css
+  s_ec331693b00d25::t_ae7b6b6e9c0f5e 11621-11640
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d2d67ffd0ce66982b311ec71d2bef526a41e3c54",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
