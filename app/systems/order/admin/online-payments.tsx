@@ -522,7 +522,7 @@ export function OnlinePaymentsPage({
           </button>
         ) : null}
       >
-        {refundTarget ? <form id="online-payment-refund-form" className="filter-sheet" onSubmit={submitRefund}>
+        {refundTarget ? <form id="online-payment-refund-form" className="filter-sheet online-payment-refund-sheet" onSubmit={submitRefund}>
           <div className="filter-sheet-body">
             <section className="filter-section">
               <header><h3>退款核对</h3></header>

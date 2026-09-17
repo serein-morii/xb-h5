@@ -17278,6 +17278,24 @@ html.theme-dark .utility-shell {
 .online-payment-date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .online-payment-date-grid label { min-width: 0; }
 
+.sheet:has(#online-payment-refund-form) {
+  height: auto;
+  max-height: calc(100dvh - 42px);
+}
+
+.online-payment-refund-sheet.filter-sheet,
+.sheet:has(#online-payment-refund-form) .filter-sheet {
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  flex: none;
+}
+
+.online-payment-refund-sheet .filter-sheet-body {
+  overflow: visible;
+  padding-bottom: 4px !important;
+}
+
 @media (max-width: 560px) {
   .online-payment-date-grid { grid-template-columns: minmax(0, 1fr); }
   .finance-card .card-topline-badges { max-width: 52%; }
