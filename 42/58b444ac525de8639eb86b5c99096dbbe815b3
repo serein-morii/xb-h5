@@ -1,0 +1,27 @@
+app/systems/order/admin/online-payments.tsx
+  s_ec331693b00d25::t_5d491dc74fcee0 162,167,271
+  s_ec331693b00d25::t_6c9e76c9d0844c 2,6,11,20,42,44-48,81-131,173,220-243,247,258-259,318,332,338-342,350-368,371,376,378-389,404
+  s_ec331693b00d25::t_ad76906ddef1f6 270
+app/unified-theme.css
+  s_ec331693b00d25::t_6c9e76c9d0844c 16318-16326
+app/systems/order/admin/core.ts
+  s_ec331693b00d25::t_6c9e76c9d0844c 239
+app/systems/order/admin/mobileMenu.config.ts
+  s_ec331693b00d25::t_6c9e76c9d0844c 132,277
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4258b444ac525de8639eb86b5c99096dbbe815b3",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
