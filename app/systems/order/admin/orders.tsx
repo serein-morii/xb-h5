@@ -873,12 +873,23 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
     }
   }
   // 标记付款 / 取消付款（批量条用，逐条串行 + 按钮进度）
-  async function markPay(kind: "paid" | "unpaid", row?: DataRow) {
+  function markPay(kind: "paid" | "unpaid", row?: DataRow) {
     if (markPayState.loading) return;
-    const path = kind === "paid" ? "mark-paid" : "mark-unpaid";
-    const label = kind === "paid" ? "已标记已付款" : "已取消付款标记";
     const idList = row ? [String(row.id)] : ids.split(",").filter(Boolean);
     if (!idList.length) return notify("请先选择订单", "info");
+    const title = kind === "paid" ? "标已付款" : "取消付款";
+    const subject = row ? `订单 ${row.orderCode || row.id}` : `${idList.length} 个订单`;
+    setConfirm({
+      title,
+      message: kind === "paid" ? `确认将${subject}标记为已付款吗？` : `确认取消${subject}的付款标记吗？`,
+      danger: kind === "unpaid",
+      action: async () => { await runMarkPay(kind, idList); },
+    });
+  }
+
+  async function runMarkPay(kind: "paid" | "unpaid", idList: string[]) {
+    const path = kind === "paid" ? "mark-paid" : "mark-unpaid";
+    const label = kind === "paid" ? "已标记已付款" : "已取消付款标记";
     const total = idList.length;
     let success = 0;
     let failed = 0;
@@ -902,14 +913,21 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   }
   
 // 单条刷新（卡片/批量条都用）
-  async function refreshLogistics(row?: DataRow) {
+  function refreshLogistics(row?: DataRow) {
     const targets = row ? [String(row.orderCode)] : selectedRows.map((item) => String(item.orderCode)).filter(Boolean);
     if (!targets.length) return notify("请先选择订单", "info");
-    try { await apiRequest(`${API_PATHS.logistics.shipments}/refresh`, { method: "PATCH", body: targets, timeoutMs: 55_000 }); notify("物流轨迹已更新", "success"); await refreshLoadedRange(); }
-    catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
+    const subject = row ? `订单 ${row.orderCode || row.id}` : `${targets.length} 个订单`;
+    setConfirm({
+      title: "刷新物流",
+      message: `确认刷新${subject}的物流轨迹吗？`,
+      action: async () => {
+        try { await apiRequest(`${API_PATHS.logistics.shipments}/refresh`, { method: "PATCH", body: targets, timeoutMs: 55_000 }); notify("物流轨迹已更新", "success"); await refreshLoadedRange(); }
+        catch (error) { notify(error instanceof Error ? error.message : "物流刷新失败", "error"); }
+      },
+    });
   }
   // 逐单提交并展示真实进度，单张订单最长等待 55 秒，避免一个长请求被网关断开后整批结果不明。
-  async function refreshLogisticsAll() {
+  function refreshLogisticsAll() {
     if (refreshState.loading) return;
     // 选中有 → 只刷选中的已发货；未选 → 刷当前可见的已发货（顶部过滤后剩余）
     const pool = selected.size ? selectedRows : visibleRows;
@@ -918,6 +936,14 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
       notify("没有可刷新的已发货订单", "info");
       return;
     }
+    setConfirm({
+      title: "刷新物流",
+      message: `确认刷新 ${targets.length} 个已发货订单的物流轨迹吗？将逐条查询并显示进度。`,
+      action: async () => { await runRefreshLogisticsAll(targets); },
+    });
+  }
+
+  async function runRefreshLogisticsAll(targets: DataRow[]) {
     const total = targets.length;
     setRefreshState({ loading: true, current: 0, total, success: 0, failed: 0 });
     let success = 0;
