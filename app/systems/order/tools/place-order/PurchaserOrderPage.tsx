@@ -191,7 +191,7 @@ export default function PurchaserOrderPage() {
   const [specDraft, setSpecDraft] = useState("");
   const [editSpecDraft, setEditSpecDraft] = useState("");
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
-  const [onlinePayTarget, setOnlinePayTarget] = useState<{ orderCode: string } | null>(null);
+  const [onlinePayTarget, setOnlinePayTarget] = useState<{ orderCode: string; amount?: number } | null>(null);
   const [onlinePayBusy, setOnlinePayBusy] = useState(false);
   const [onlinePayError, setOnlinePayError] = useState("");
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
@@ -1630,7 +1630,7 @@ export default function PurchaserOrderPage() {
         <div className="purchaser-cost-unlocked-main"><span className="purchaser-cost-unlocked-icon"><Wallet size={17} /></span><span><b>成本价已解锁</b><small>商品、包装、快递和总成本 · 本次有效 30 分钟</small></span></div>
         <button type="button" onClick={lockCostPrice}><Lock size={13} />立即锁定</button>
       </section> : null}
-      <OrderList orders={orders} initialStatusFilter={statusFilter} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} onPay={Number(linkContext.payEnabled) === 1 && Number(linkContext.paymentRequired) === 1 ? (order) => { setOnlinePayError(""); setOnlinePayTarget({ orderCode: String(order.orderCode || "") }); } : undefined} collapseExtras enableCostSelection={costPriceUnlocked} />
+      <OrderList orders={orders} initialStatusFilter={statusFilter} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} onPay={Number(linkContext.payEnabled) === 1 && Number(linkContext.paymentRequired) === 1 ? (order) => { setOnlinePayError(""); const unit = Number(order.salePrice); const count = Number(order.orderNum || 1); setOnlinePayTarget({ orderCode: String(order.orderCode || ""), amount: unit > 0 && count > 0 ? unit * count : undefined }); } : undefined} collapseExtras enableCostSelection={costPriceUnlocked} />
     </section>) : null}
 
     <nav className="purchaser-bottom-nav" aria-label="专属下单导航">
@@ -1875,13 +1875,26 @@ export default function PurchaserOrderPage() {
     ) : null}
     {onlinePayTarget ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setOnlinePayTarget(null)}><section className="purchaser-sheet purchaser-online-pay-sheet">
       <button className="purchaser-help-close" type="button" onClick={() => setOnlinePayTarget(null)} aria-label="关闭"><X size={19} /></button>
-      <small>在线支付</small>
+      <small>ONLINE PAY</small>
       <h2>选择支付方式</h2>
-      <p>订单 {onlinePayTarget.orderCode}，支付成功后自动确认付款状态。</p>
-      <div className="purchaser-online-pay-actions">
-        <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "wx")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}微信支付</button>
-        <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "alipay")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}支付宝</button>
+      <div className="purchaser-online-pay-order">
+        <span>订单</span>
+        <b>{onlinePayTarget.orderCode}</b>
+        {onlinePayTarget.amount ? <em>¥{onlinePayTarget.amount.toFixed(2)}</em> : null}
       </div>
+      <div className="purchaser-online-pay-channels" role="radiogroup" aria-label="支付方式">
+        <button type="button" className="pay-channel is-wx" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "wx")}>
+          <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <Wallet size={21} />}</span>
+          <span className="pay-channel-copy"><b>微信支付</b><small>微信内直接拉起 · 支付后自动确认</small></span>
+          <ChevronRight size={17} />
+        </button>
+        <button type="button" className="pay-channel is-alipay" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "alipay")}>
+          <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <ShieldCheck size={21} />}</span>
+          <span className="pay-channel-copy"><b>支付宝</b><small>跳转支付宝完成付款 · 支付后自动确认</small></span>
+          <ChevronRight size={17} />
+        </button>
+      </div>
+      <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />由简付提供收款服务，支付成功后订单自动确认，无需等待人工对账</p>
       {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
     </section></div> : null}
     {helpOpen ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setHelpOpen(false)}><section className="purchaser-help-modal purchaser-sheet">
