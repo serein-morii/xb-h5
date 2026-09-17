@@ -129,7 +129,7 @@ export const MOBILE_PAGE_REGISTRY: Record<MenuKey, MobilePageRegistryItem> = {
   orders: { key: "orders", label: "订单管理", description: "订单、发货与物流", icon: ShoppingBag },
   orderEntry: { key: "orderEntry", label: "订单录入", description: "选买家、识别地址建单", icon: FileSpreadsheet },
   batchOrder: { key: "batchOrder", label: "批量录单", description: "Excel 粘贴批量下单", icon: FileSpreadsheet },
-  onlinePayments: { key: "onlinePayments", label: "在线支付账单", description: "简付实付流水与退款", icon: CreditCard },
+  onlinePayments: { key: "onlinePayments", label: "支付订单", description: "简付交易状态与退款", icon: CreditCard },
   bills: { key: "bills", label: "账单管理", description: "成本与盈利核算", icon: ReceiptText },
   express: { key: "express", label: "快递管理", description: "物流节点维护", icon: Truck },
   prices: { key: "prices", label: "价格管理", description: "商品与快递计价", icon: BadgeDollarSign },
@@ -274,7 +274,7 @@ export const DEFAULT_MOBILE_MENU_CONFIG: MobileMenuConfig = {
       description: "账单、商品、价格、店铺、物流额度及短链",
       items: [
         { key: "bills" },
-        { key: "onlinePayments", label: "在线支付账单", description: "简付实付流水与退款" },
+        { key: "onlinePayments", label: "支付订单", description: "简付交易状态与退款" },
         { key: "products" },
         { key: "prices" },
         { key: "stores" },

@@ -16315,6 +16315,15 @@ html.theme-dark .utility-shell {
 .online-payment-pill.is-refunded { background: #f3e5f5; color: #8a3d9c; }
 .online-payment-pill.is-closed { background: #eef0f6; color: #6f788b; }
 .online-payment-amount { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+.online-payment-order { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--xb-line, rgba(38,50,77,.12)); border-radius: 12px; background: color-mix(in srgb, var(--xb-surface-muted, #f5f6fa) 72%, transparent); }
+.online-payment-order header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.online-payment-order header span { color: var(--xb-text-secondary); font-size: 9px; font-weight: 750; letter-spacing: .04em; }
+.online-payment-order header b { font-size: 13px; }
+.online-payment-order-missing { margin: 0; color: #b3452f; font-size: 11px; line-height: 1.5; }
+.online-payment-copy-line { display: inline-flex; align-items: center; min-width: 0; gap: 5px; }
+.online-payment-copy-line b { min-width: 0; overflow-wrap: anywhere; }
+.online-payment-copy-line button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 8px; color: var(--xb-text-secondary); background: transparent; }
+.online-payment-copy-line button:active { background: var(--xb-surface-muted, #f2f4f8); }
 .online-payment-amount b { font-size: 19px; letter-spacing: -0.02em; }
 .online-payment-amount small { color: #8a3d9c; font-size: 10px; font-weight: 700; }
 .online-payment-actions { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--xb-line, rgba(38,50,77,.12)); display: flex; justify-content: flex-end; }

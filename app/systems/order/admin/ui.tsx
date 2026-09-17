@@ -139,7 +139,7 @@ export function ConfirmDialog({
           {state.danger ? <Trash2 size={22} /> : <ShieldCheck size={22} />}
         </div>
         <h3>{state.title}</h3>
-        <p>{state.message}</p>
+        <p className={state.message.includes("\n") ? "is-multiline" : undefined}>{state.message}</p>
         <div className="confirm-actions">
           <button className="button button-ghost" type="button" onClick={onClose} disabled={busy}>取消</button>
           <button

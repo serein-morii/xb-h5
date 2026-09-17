@@ -1,13 +1,14 @@
 /**
- * 在线支付账单（简付 JianPay）
+ * 支付订单（简付 JianPay）
  *
  * 管理端查看实付流水：待支付 / 支付成功 / 退款中 / 已退款 / 已关闭。
  * 支付成功的单可发起全额退款；退款结果由平台回调推进，
- * 「同步退款状态」会对退款中的单主动查单补偿丢失的回调。
+ * 待支付与退款中的单支持主动向简付同步，补偿丢失的回调。
  */
 import {
   ChevronLeft,
   ChevronRight,
+  Copy,
   CreditCard,
   LoaderCircle,
   RefreshCw,
@@ -16,7 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { apiRequest } from "../../../lib/api";
+import { apiRequest, copyToClipboard } from "../../../lib/api";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useAccess } from "./access";
 import { ConfirmDialog, EmptyState, MobileBackButton } from "./ui";
@@ -38,7 +39,13 @@ type OnlinePayment = {
   storeName?: string;
   purchaserName?: string;
   orderNameDesc?: string;
+  orderTypeDesc?: string;
   orderNum?: number;
+  customer?: string;
+  phone?: string;
+  address?: string;
+  orderStatus?: string;
+  payStatus?: number;
   paidTime?: string;
   createTime?: string;
 };
@@ -71,6 +78,57 @@ function money(value: unknown) {
   return `¥${num.toFixed(2)}`;
 }
 
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  DSH: "待处理",
+  DFH: "待发货",
+  YFH: "已发货",
+  YWC: "已完成",
+  YQX: "已取消",
+  YC: "异常",
+};
+
+function orderStatusLabel(code?: string) {
+  return ORDER_STATUS_LABEL[String(code || "")] || code || "—";
+}
+
+function payStatusLabel(status: unknown) {
+  if (status === null || status === undefined || status === "") return "—";
+  const value = Number(status);
+  if (value === 1) return "已付款";
+  if (value === 2) return "已退款";
+  if (value === 3) return "待确认";
+  if (value === 0) return "未付款";
+  return "—";
+}
+
+function orderGoods(row: OnlinePayment) {
+  const parts = [
+    row.orderNameDesc,
+    row.orderTypeDesc,
+    row.orderNum ? `${row.orderNum}件` : "",
+  ].filter(Boolean);
+  return parts.join("/") || "—";
+}
+
+function orderRecipient(row: OnlinePayment) {
+  return [row.customer, row.phone].filter(Boolean).join(" · ") || "—";
+}
+
+function refundConfirmMessage(row: OnlinePayment) {
+  const lines = [
+    `支付单 ${row.paymentNo} · ${money(row.amount)} 将原路退回（${payMethodLabel(row.payMethod)}）。`,
+    "",
+    "请核对关联订单，避免退错：",
+    `订单号 ${row.orderCode || "未关联"}`,
+    `商品 ${orderGoods(row)}`,
+    `收件人 ${orderRecipient(row)}`,
+  ];
+  if (row.address) lines.push(`地址 ${row.address}`);
+  lines.push(`订单状态 ${orderStatusLabel(row.orderStatus)} · ${payStatusLabel(row.payStatus)}`);
+  lines.push("", "退款后订单付款状态会变为「已退款」，此操作不可撤销。");
+  return lines.join("\n");
+}
+
 export function OnlinePaymentsPage({
   notify,
   onBack,
@@ -90,7 +148,6 @@ export function OnlinePaymentsPage({
   const [payMethod, setPayMethod] = useState("");
   const [activeFilters, setActiveFilters] = useState<PaymentFilters>(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState<{
@@ -102,22 +159,20 @@ export function OnlinePaymentsPage({
   const canRefund = access.has("biz:bill.edit");
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const load = useCallback(async (nextPage: number, filters: PaymentFilters, sync = false) => {
-    if (sync) setSyncing(true);
+  const load = useCallback(async (nextPage: number, filters: PaymentFilters) => {
     setLoading(true);
     setError("");
     try {
       const result = await apiRequest<PageResult>(API_PATHS.billing.payments, {
-        query: { pageNum: nextPage, pageSize: PAGE_SIZE, ...filters, ...(sync ? { sync: true } : {}) },
+        query: { pageNum: nextPage, pageSize: PAGE_SIZE, ...filters },
       });
       setRows(result.rows || []);
       setTotal(result.total || 0);
       setPage(nextPage);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "在线支付账单加载失败");
+      setError(loadError instanceof Error ? loadError.message : "支付订单加载失败");
     } finally {
       setLoading(false);
-      setSyncing(false);
     }
   }, []);
 
@@ -162,10 +217,34 @@ export function OnlinePaymentsPage({
     }
   };
 
+  const syncRow = async (row: OnlinePayment) => {
+    setBusyId(row.id);
+    try {
+      const result = await apiRequest<{ data?: OnlinePayment }>(`${API_PATHS.billing.payments}/${row.id}/sync`, {
+        method: "POST",
+      });
+      if (result.data) {
+        setRows((current) => current.map((item) => item.id === row.id ? result.data! : item));
+      }
+      const nextStatus = result.data?.status || row.status;
+      notify(`状态已同步：${statusMeta(nextStatus).label}`, "success");
+    } catch (syncError) {
+      notify(syncError instanceof Error ? syncError.message : "状态同步失败", "error");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const copyValue = async (label: string, value?: string) => {
+    if (!value) return;
+    const copied = await copyToClipboard(value);
+    notify(copied ? `${label}已复制` : "复制失败，请手动复制", copied ? "success" : "error");
+  };
+
   const askRefund = (row: OnlinePayment) => {
     setConfirm({
       title: "确认全额退款",
-      message: `支付单 ${row.paymentNo} · ${money(row.amount)} 将原路退回买家（${payMethodLabel(row.payMethod)}），订单付款状态会同步变为「已退款」。此操作不可撤销。`,
+      message: refundConfirmMessage(row),
       danger: true,
       action: () => refund(row),
     });
@@ -176,8 +255,8 @@ export function OnlinePaymentsPage({
       <div className="module-hero compact-hero risk-ip-mobile-hero">
         <div>
           {onBack ? <MobileBackButton label={backLabel} onClick={onBack} /> : null}
-          <h1>在线支付账单</h1>
-          <p>简付实付流水 · 退款原路退回</p>
+          <h1>支付订单</h1>
+          <p>简付交易状态、关联订单与原路退款</p>
         </div>
         <span className="hero-tool-icon"><CreditCard size={25} /></span>
       </div>
@@ -188,8 +267,8 @@ export function OnlinePaymentsPage({
         <div><small>退款中</small><strong>{stats.refunding}</strong></div>
         <div><small>已退款</small><strong>{stats.refunded}</strong></div>
         <div className="online-payments-income"><small>本页净收入</small><strong>{money(stats.income)}</strong></div>
-        <button type="button" onClick={() => void load(page, activeFilters, true)} aria-label="同步退款状态" title="对退款中的单主动查单补偿回调">
-          {syncing ? <LoaderCircle className="spin" size={17} /> : <RefreshCw size={17} />}
+        <button type="button" disabled={loading} onClick={() => void load(page, activeFilters)} aria-label="刷新支付订单" title="刷新支付订单列表">
+          {loading ? <LoaderCircle className="spin" size={17} /> : <RefreshCw size={17} />}
         </button>
       </section>
 
@@ -236,7 +315,7 @@ export function OnlinePaymentsPage({
 
       {error ? (
         <section className="risk-ip-mobile-error" role="alert">
-          <b>无法读取在线支付账单</b>
+          <b>无法读取支付订单</b>
           <p>{error}</p>
           <button className="button button-ghost" type="button" onClick={() => void load(page, activeFilters)}>重新加载</button>
         </section>
@@ -250,13 +329,17 @@ export function OnlinePaymentsPage({
             {rows.map((row) => {
               const meta = statusMeta(row.status);
               const refundable = row.status === "SUCCESS" && canRefund;
+              const syncable = (row.status === "PENDING" || row.status === "REFUNDING") && canRefund;
               return (
                 <article className="data-card online-payment-card" key={row.id}>
                   <div className="data-card-head">
                     <span className="data-icon"><Wallet size={19} /></span>
                     <div>
-                      <b className="risk-ip-mono">{row.paymentNo}</b>
-                      <small>{row.orderCode || "—"} · {payMethodLabel(row.payMethod)}</small>
+                      <span className="online-payment-copy-line">
+                        <b className="risk-ip-mono">{row.paymentNo}</b>
+                        <button type="button" onClick={() => void copyValue("支付单号", row.paymentNo)} aria-label="复制支付单号"><Copy size={13} /></button>
+                      </span>
+                      <small>{payMethodLabel(row.payMethod)}{row.storeName ? ` · ${row.storeName}` : ""}{row.purchaserName ? ` · ${row.purchaserName}` : ""}</small>
                     </div>
                     <span className={`online-payment-pill is-${meta.tone}`}>{meta.label}</span>
                   </div>
@@ -264,26 +347,46 @@ export function OnlinePaymentsPage({
                     <b>{money(row.amount)}</b>
                     {row.status === "REFUNDED" && row.refundAmount ? <small>已退 {money(row.refundAmount)}</small> : null}
                   </div>
+                  <section className="online-payment-order" aria-label="关联订单">
+                    <header>
+                      <span>关联订单</span>
+                      <span className="online-payment-copy-line">
+                        <b className="risk-ip-mono">{row.orderCode || "未关联订单"}</b>
+                        {row.orderCode ? <button type="button" onClick={() => void copyValue("订单号", row.orderCode)} aria-label="复制订单号"><Copy size={13} /></button> : null}
+                      </span>
+                    </header>
+                    {row.orderCode ? (
+                      <div className="risk-ip-mobile-details">
+                        <div><span>商品</span><b>{orderGoods(row)}</b></div>
+                        <div><span>订单状态</span><b>{orderStatusLabel(row.orderStatus)} · {payStatusLabel(row.payStatus)}</b></div>
+                        <div><span>收件人</span><b>{orderRecipient(row)}</b></div>
+                        <div className="is-wide"><span>地址</span><b>{row.address || "—"}</b></div>
+                      </div>
+                    ) : (
+                      <p className="online-payment-order-missing">支付单未关联到业务订单，退款前请再核对支付单号。</p>
+                    )}
+                  </section>
                   <div className="risk-ip-mobile-details">
-                    <div><span>商品</span><b>{row.orderNameDesc || "—"}{row.orderNum ? ` × ${row.orderNum}` : ""}</b></div>
-                    <div><span>店铺 / 买家</span><b>{row.storeName || "—"} · {row.purchaserName || "—"}</b></div>
                     <div><span>支付时间</span><b>{row.paidTime || row.createTime || "—"}</b></div>
-                    <div className="is-wide"><span>平台单号</span><b>{row.tradeOrderId || "—"}</b></div>
+                    <div className="is-wide"><span>平台单号</span><span className="online-payment-copy-line"><b>{row.tradeOrderId || "—"}</b>{row.tradeOrderId ? <button type="button" onClick={() => void copyValue("平台单号", row.tradeOrderId)} aria-label="复制平台单号"><Copy size={13} /></button> : null}</span></div>
                     {row.status === "REFUNDED" || row.status === "REFUNDING" ? (
                       <div className="is-wide"><span>退款信息</span><b>{row.refundNo || "—"}{row.refundTime ? ` · ${row.refundTime}` : ""}{row.refundReason ? ` · ${row.refundReason}` : ""}</b></div>
                     ) : null}
                   </div>
-                  {refundable ? (
+                  {refundable || syncable ? (
                     <div className="online-payment-actions">
-                      <button
-                        type="button"
-                        className="button button-ghost online-payment-refund"
-                        disabled={loading || busyId === row.id}
-                        onClick={() => askRefund(row)}
-                      >
-                        {busyId === row.id ? <LoaderCircle className="spin" size={15} /> : <RotateCcw size={15} />}
-                        全额退款
-                      </button>
+                      {syncable ? (
+                        <button type="button" className="button button-ghost" disabled={loading || busyId === row.id} onClick={() => void syncRow(row)}>
+                          {busyId === row.id ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}
+                          同步状态
+                        </button>
+                      ) : null}
+                      {refundable ? (
+                        <button type="button" className="button button-ghost online-payment-refund" disabled={loading || busyId === row.id} onClick={() => askRefund(row)}>
+                          {busyId === row.id ? <LoaderCircle className="spin" size={15} /> : <RotateCcw size={15} />}
+                          全额退款
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </article>
@@ -298,7 +401,7 @@ export function OnlinePaymentsPage({
         </>
       )}
 
-      <p className="risk-ip-mobile-note">退款原路退回买家；「同步退款状态」会对退款中的单主动向简付查单补偿回调。</p>
+      <p className="risk-ip-mobile-note">退款原路退回买家；待支付或退款中的订单可主动向简付同步最新状态。</p>
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
