@@ -83,6 +83,7 @@ export const API_PATHS = {
   },
   billing: {
     bills: "/billing/bills",
+    payments: "/billing/payments",
   },
   logistics: {
     shipments: "/logistics/shipments",

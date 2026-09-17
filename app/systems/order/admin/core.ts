@@ -35,6 +35,7 @@ import {
   MessageSquareCode,
   ShieldBan,
   SlidersHorizontal,
+  CreditCard,
 } from "lucide-react";
 import { apiRequest } from "../../../lib/api";
 
@@ -47,6 +48,7 @@ export type MenuKey =
   | "orderEntry"
   | "batchOrder"
   | "bills"
+  | "onlinePayments"
   | "express"
   | "prices"
   | "products"
@@ -234,6 +236,7 @@ export const NAV_ITEMS: Array<{
   { key: "orders", label: "订单管理", description: "订单、发货与物流", icon: ShoppingBag },
   { key: "orderEntry", label: "订单录入", description: "选买家、识别地址建单", icon: FileSpreadsheet },
   { key: "bills", label: "账单管理", description: "成本与盈利核算", icon: ReceiptText },
+  { key: "onlinePayments", label: "在线支付账单", description: "简付实付流水与退款", icon: CreditCard },
   { key: "express", label: "快递管理", description: "物流节点维护", icon: Truck },
   { key: "prices", label: "价格管理", description: "商品与快递计价", icon: BadgeDollarSign },
   { key: "products", label: "商品管理", description: "客户商品与多规格售价", icon: PackageOpen },

@@ -49,6 +49,7 @@ export const MENU_CAPABILITIES: Record<MenuKey, string> = {
   orderEntry: "nav.orderEntry",
   batchOrder: "nav.batchOrder",
   bills: "nav.bills",
+  onlinePayments: "nav.bills",
   express: "nav.express",
   prices: "nav.prices",
   products: "nav.products",

@@ -79,6 +79,7 @@ const OrderLinkGenerator = lazy(() => import("../tools/order-link/OrderLinkGener
 const PurchaserManager = lazy(() => import("../tools/purchasers/PurchaserManager"));
 const ShortLinkManager = lazy(() => import("../tools/short-links/ShortLinkManager"));
 const LogisticsPage = lazy(() => import("./logistics").then((module) => ({ default: module.LogisticsPage })));
+const OnlinePaymentsPage = lazy(() => import("./online-payments").then((module) => ({ default: module.OnlinePaymentsPage })));
 const OrdersPage = lazy(() => import("./orders").then((module) => ({ default: module.OrdersPage })));
 const ProductsPage = lazy(() => import("./products"));
 const SystemHubPage = lazy(() => import("./system-pages").then((module) => ({ default: module.SystemHubPage })));
@@ -552,6 +553,7 @@ export function AdminShell({ username, onLogout }: { username: string; onLogout:
     : visibleActive === "products" ? <ProductsPage notify={notify} />
     : visibleActive === "tracking" ? <TrackingPage />
     : visibleActive === "logistics" ? <LogisticsPage notify={notify} />
+    : visibleActive === "onlinePayments" ? <OnlinePaymentsPage notify={notify} onBack={exitToParentOrHome} backLabel={exitLabel} />
     : visibleActive === "shortLinks" ? <ShortLinkManager embedded />
     : SYSTEM_CENTER_REDIRECT_KEYS.has(visibleActive) ? <SystemCenterRedirect />
     : SYSTEM_HUB_KEYS.has(visibleActive) ? <SystemHubPage active={visibleActive} notify={notify} onExit={exitToParentOrHome} exitLabel={exitLabel} />
