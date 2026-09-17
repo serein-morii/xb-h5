@@ -83,7 +83,7 @@ export type MenuKey =
   | "opsMessages";
 
 export const ALL_MENU_KEYS: MenuKey[] = [
-  "home", "orders", "orderEntry", "batchOrder", "bills", "express", "prices", "products",
+  "home", "orders", "orderEntry", "batchOrder", "bills", "onlinePayments", "express", "prices", "products",
   "stores", "orderLink", "purchasers", "tracking", "logistics", "shortLinks",
   "systemCenter", "operationsCenter", "mobileMenu",
   "sysUsers", "sysRoles", "sysDepts", "sysPosts", "sysMenus", "sysDictTypes", "sysConfigs", "sysRiskIps", "sysNotices",

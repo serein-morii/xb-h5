@@ -274,6 +274,7 @@ export const DEFAULT_MOBILE_MENU_CONFIG: MobileMenuConfig = {
       description: "账单、商品、价格、店铺、物流额度及短链",
       items: [
         { key: "bills" },
+        { key: "onlinePayments", label: "在线支付账单", description: "简付实付流水与退款" },
         { key: "products" },
         { key: "prices" },
         { key: "stores" },
