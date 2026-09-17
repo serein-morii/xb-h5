@@ -594,6 +594,12 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
   return (
     <div className={`module-page crud-page crud-page-${config.key}${config.key === "bills" ? " order-page finance-page" : ""}`}>
       <div className={`module-hero${config.key === "bills" ? "" : " compact-hero"}`}><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>{config.key === "bills" ? "成本、售价与利润一目了然" : `共 ${total} 条数据，支持手机端快速维护`}</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
+      {config.key === "bills" ? <section className="finance-status-grid" aria-label="账单汇总">
+        <article><span className="metric-icon blue"><CreditCard size={15} /></span><p>销售金额</p><b>{formatMoney(billSummary.saleAmount)}</b><small>{billSummary.paidCount} 笔已付款</small></article>
+        <article><span className="metric-icon amber"><ReceiptText size={15} /></span><p>总成本</p><b>{formatMoney(billSummary.costAmount)}</b><small>商品、包装与快递</small></article>
+        <article className={billSummary.gainAmount < 0 ? "is-negative" : "is-positive"}><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>总利润</p><b>{formatMoney(billSummary.gainAmount)}</b><small>销售金额减总成本</small></article>
+        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待处理</p><b>{billSummary.pendingCount}</b><small>共 {billSummary.totalCount} 条账单</small></article>
+      </section> : null}
       <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
         <button type="button" onClick={() => downloadFile(`${config.api.slice(1)}/export`, query, `${config.key}_${Date.now()}.xlsx`).catch((error) => notify(error.message, "error"))}><Download size={16} />导出</button>
@@ -611,12 +617,6 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
           <small>· 当前 {visibleRows.length} 条</small>
         </button> : null}
       </div>
-      {config.key === "bills" ? <section className="metric-grid finance-status-grid" aria-label="账单汇总">
-        <article><span className="metric-icon blue"><CreditCard size={15} /></span><p>销售金额</p><b>{formatMoney(billSummary.saleAmount)}</b><small>{billSummary.paidCount} 笔已付款</small></article>
-        <article><span className="metric-icon amber"><ReceiptText size={15} /></span><p>总成本</p><b>{formatMoney(billSummary.costAmount)}</b><small>商品、包装与快递</small></article>
-        <article className={billSummary.gainAmount < 0 ? "is-negative" : "is-positive"}><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>总利润</p><b>{formatMoney(billSummary.gainAmount)}</b><small>销售金额减总成本</small></article>
-        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待处理</p><b>{billSummary.pendingCount}</b><small>共 {billSummary.totalCount} 条账单</small></article>
-      </section> : null}
       <div className="list-heading"><div><h2>{config.itemName}列表</h2><span>共 {total} 条{pageKeyword.trim() ? ` · 本页匹配 ${visibleRows.length} 条` : ""}</span></div></div>
       <div className="mobile-card-list">
         {!visibleRows.length ? <EmptyState loading={loading} label={pageKeyword.trim() ? "本页匹配结果" : config.itemName} /> : visibleRows.map((row) => {

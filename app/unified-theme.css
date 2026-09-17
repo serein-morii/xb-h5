@@ -17070,6 +17070,11 @@ html.theme-dark .utility-shell {
   white-space: nowrap;
 }
 
+.crud-page-bills .finance-status-grid > article b {
+  font-size: 12px;
+  letter-spacing: -.03em;
+}
+
 .finance-status-grid > article .metric-icon {
   width: 28px;
   height: 28px;
