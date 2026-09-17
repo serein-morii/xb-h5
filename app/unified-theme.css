@@ -9880,6 +9880,22 @@ html.theme-dark :is(
 }
 
 /*
+ * 专属下单链接：纯浅色背景。
+ * iOS Safari 不支持 background-attachment: fixed，元素渐变会随内容高度重排，
+ * 切换筛选标签时列表变短会导致背景色跳变；这里直接去渐变，保持稳定浅色。
+ */
+.public-tools-shell.is-dedicated-order,
+html.theme-light .public-tools-shell.is-dedicated-order,
+html.theme-dark .public-tools-shell.is-dedicated-order,
+.public-tools-shell.is-dedicated-order .tool-page,
+html.theme-light .public-tools-shell.is-dedicated-order .tool-page,
+html.theme-dark .public-tools-shell.is-dedicated-order .tool-page {
+  background-image: none !important;
+  background-color: var(--xb-bg) !important;
+  background-attachment: scroll !important;
+}
+
+/*
  * Button completion pass
  *
  * A few feature-local controls were still painted by legacy green values.

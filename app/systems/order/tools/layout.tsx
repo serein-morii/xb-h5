@@ -7,7 +7,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
   const showBackToTools = window.location.pathname !== APP_ROUTES.tools;
   const isDedicatedOrderLink = new RegExp(`^${APP_ROUTES.toolOrderDetail}/[2-9a-hj-km-np-z]{6}/?$`).test(window.location.pathname);
 
-  return <div className="public-tools-shell">
+  return <div className={`public-tools-shell${isDedicatedOrderLink ? " is-dedicated-order" : ""}`}>
     <main className="public-tools-main">{children}</main>
     {!isDedicatedOrderLink ? <aside className={`tools-login-float${actionsOpen ? " is-open" : ""}`}>
       {actionsOpen ? <div className="tools-float-actions">
