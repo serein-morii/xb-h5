@@ -511,8 +511,18 @@ export function OnlinePaymentsPage({
         </form>
       </Sheet>
 
-      <Sheet open={refundTarget !== null} title="确认全额退款" onClose={() => setRefundTarget(null)}>
-        {refundTarget ? <form className="filter-sheet" onSubmit={submitRefund}>
+      <Sheet
+        open={refundTarget !== null}
+        title="确认全额退款"
+        onClose={() => setRefundTarget(null)}
+        headerAction={refundTarget ? (
+          <button className="sheet-header-save danger-action" type="submit" form="online-payment-refund-form" disabled={busyId === refundTarget.id || !refundReason.trim()}>
+            {busyId === refundTarget.id ? <LoaderCircle className="spin" size={15} /> : <RotateCcw size={15} />}
+            {busyId === refundTarget.id ? "退款处理中" : "确认退款"}
+          </button>
+        ) : null}
+      >
+        {refundTarget ? <form id="online-payment-refund-form" className="filter-sheet" onSubmit={submitRefund}>
           <div className="filter-sheet-body">
             <section className="filter-section">
               <header><h3>退款核对</h3></header>
@@ -530,10 +540,6 @@ export function OnlinePaymentsPage({
               <label><span>退款原因</span><textarea value={refundReason} maxLength={128} required onChange={(event) => setRefundReason(event.target.value)} placeholder="请输入退款原因" /></label>
               <p className="data-note">退款将原路退回买家，成功后不可撤销。</p>
             </section>
-          </div>
-          <div className="filter-sheet-footer">
-            <button type="button" className="filter-reset" onClick={() => setRefundTarget(null)}>取消</button>
-            <button className="filter-apply danger-action" type="submit" disabled={busyId === refundTarget.id || !refundReason.trim()}>{busyId === refundTarget.id ? "退款处理中" : "确认退款"}</button>
           </div>
         </form> : null}
       </Sheet>

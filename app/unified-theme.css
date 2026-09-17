@@ -11210,6 +11210,11 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   white-space: nowrap !important;
 }
 
+.sheet-header-save.danger-action {
+  background: var(--xb-danger) !important;
+  box-shadow: none !important;
+}
+
 .sheet-header-cancel {
   display: inline-flex !important;
   min-height: 36px !important;
