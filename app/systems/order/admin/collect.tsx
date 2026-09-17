@@ -41,7 +41,7 @@ type CollectResult = {
   paid?: boolean;
 };
 
-export type CollectPreset = { orderCode?: string; storeName?: string; storeCode?: string };
+export type CollectPreset = { orderCode?: string; storeName?: string; storeCode?: string; autoSelect?: boolean };
 
 const PAY_METHODS = [
   { value: "wx", label: "微信收款" },
@@ -144,6 +144,7 @@ export function CollectQrSheet({
   });
 
   // 关联订单搜索：防抖 300ms，按订单号 / 下单人 / 收件人 / 手机号 / 商品名模糊匹配。
+  // 带订单号进入（订单页收款入口）时自动选中精确匹配的一条，免二次点击。
   useEffect(() => {
     if (!open || selectedOrder) return;
     const keyword = orderKeyword.trim();
@@ -156,11 +157,20 @@ export function CollectQrSheet({
     const timer = window.setTimeout(() => {
       let active = true;
       apiRequest<{ data?: CollectOrder[] }>(`${API_PATHS.orders.root}/collect-search`, { query: { keyword } })
-        .then((response) => { if (active) setOrderResults(Array.isArray(response.data) ? response.data : []); })
+        .then((response) => {
+          if (!active) return;
+          const list = Array.isArray(response.data) ? response.data : [];
+          setOrderResults(list);
+          if (preset?.autoSelect && preset.orderCode) {
+            const exact = list.find((item) => String(item.orderCode || "") === String(preset.orderCode));
+            if (exact) pickOrder(exact);
+          }
+        })
         .catch(() => { if (active) setOrderResults([]); })
         .finally(() => { if (active) setOrderSearching(false); });
     }, 300);
     return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, orderKeyword, selectedOrder]);
 
   function pickOrder(order: CollectOrder) {
