@@ -12468,32 +12468,20 @@ html.theme-dark .purchaser-order-page :is(
   background: var(--purchaser-calm-surface) !important;
 }
 
+/* 全部状态标签统一成同一套蓝色：切筛选时页面观感不再跳变。 */
 .purchaser-order-page .purchaser-history-section .tool-order-pills :is(
   .tool-order-status-success,
   .tool-order-status-info,
   .tool-order-status-warning,
+  .tool-order-status-danger,
   .tool-order-pay-paid,
   .tool-order-pay-unpaid,
-  .tool-order-pay-confirming
+  .tool-order-pay-confirming,
+  .tool-order-pay-refunded
 ) {
   border-color: #bcd0ff !important;
   color: #174fc8 !important;
   background: #e8f0ff !important;
-}
-
-.purchaser-order-page .purchaser-history-section .tool-order-pills :is(
-  .tool-order-status-warning,
-  .tool-order-pay-refunded
-) {
-  border-color: color-mix(in srgb, var(--xb-warning) 20%, var(--xb-line)) !important;
-  color: var(--purchaser-state-warning) !important;
-  background: color-mix(in srgb, var(--xb-warning) 6%, var(--xb-surface)) !important;
-}
-
-.purchaser-order-page .purchaser-history-section .tool-order-pills .tool-order-status-danger {
-  border-color: color-mix(in srgb, var(--xb-danger) 20%, var(--xb-line)) !important;
-  color: var(--purchaser-state-danger) !important;
-  background: color-mix(in srgb, var(--xb-danger) 6%, var(--xb-surface)) !important;
 }
 
 .purchaser-order-page .purchaser-history-section :is(

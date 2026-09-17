@@ -117,7 +117,6 @@ function matchEntryStatus(order: PublicOrderRecord, filter?: EntryStatusFilter |
 }
 
 export default function OrderList({ orders, contact, onEdit, onDelete, onView, onPay, onRefresh, collapseExtras = false, enableCostSelection = false, initialStatusFilter = null }: { orders: PublicOrderRecord[]; contact?: string; onEdit?: (order: PublicOrderRecord) => void; onDelete?: (order: PublicOrderRecord) => void; onView?: (order: PublicOrderRecord) => void; onPay?: (order: PublicOrderRecord) => void; onRefresh?: () => Promise<unknown> | void; collapseExtras?: boolean; enableCostSelection?: boolean; initialStatusFilter?: EntryStatusFilter | null }) {
-  const [active, setActive] = useState("ALL");
   const [entryFilter, setEntryFilter] = useState<EntryStatusFilter | null>(initialStatusFilter && initialStatusFilter !== "all" ? initialStatusFilter : null);
   const [activePay, setActivePay] = useState("ALL");
   const [keyword, setKeyword] = useState("");
@@ -129,7 +128,6 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
 
   useEffect(() => {
     setEntryFilter(initialStatusFilter && initialStatusFilter !== "all" ? initialStatusFilter : null);
-    setActive("ALL");
   }, [initialStatusFilter]);
 
   const selectedCostRows = useMemo(() => orders.filter((order) => selectedCostOrders.has(order.id) && order.totalPrice !== undefined && order.totalPrice !== null), [orders, selectedCostOrders]);
@@ -155,14 +153,23 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
       : new Set(selectableCostRows.map((order) => order.id)));
   }
 
-  const statuses = useMemo(() => {
-    const map = new Map<string, { label: string; count: number }>();
-    orders.forEach((order) => {
-      const key = String(order.orderStatus || "UNKNOWN");
-      const old = map.get(key);
-      map.set(key, { label: orderStatusLabel(key, order.orderStatusDesc), count: (old?.count || 0) + 1 });
-    });
-    return Array.from(map.entries()).sort(([left], [right]) => (ORDER_STATUS_META[left]?.order ?? 99) - (ORDER_STATUS_META[right]?.order ?? 99));
+  // 固定的状态筛选项：无论加载到什么数据，按钮集合和顺序都不变。
+  const STATUS_CHIPS: Array<{ key: EntryStatusFilter; label: string }> = [
+    { key: "all", label: "全部" },
+    { key: "unpaid", label: "待支付" },
+    { key: "pending", label: "待发货" },
+    { key: "shipped", label: "运输中" },
+    { key: "done", label: "已完成" },
+  ];
+  const statusCounts = useMemo(() => {
+    const count = (filter: EntryStatusFilter) => orders.filter((order) => matchEntryStatus(order, filter)).length;
+    return {
+      all: orders.length,
+      unpaid: count("unpaid"),
+      pending: count("pending"),
+      shipped: count("shipped"),
+      done: count("done"),
+    } as Record<EntryStatusFilter, number>;
   }, [orders]);
   const payBuckets = useMemo(() => {
     let paid = 0, unpaid = 0, confirming = 0;
@@ -176,8 +183,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
   const normalizedKeyword = keyword.trim().toLowerCase();
   const entryFilterLabel = entryStatusLabel(entryFilter);
   const visible = orders.filter((order) => {
-    if (entryFilter && !matchEntryStatus(order, entryFilter)) return false;
-    if (active !== "ALL" && order.orderStatus !== active) return false;
+    if (entryFilter && entryFilter !== "all" && !matchEntryStatus(order, entryFilter)) return false;
     if (activePay === "PAID" && Number(order.payStatus) !== 1) return false;
     if (activePay === "CONFIRMING" && Number(order.payStatus) !== 3) return false;
     if (activePay === "UNPAID" && [1, 2, 3].includes(Number(order.payStatus))) return false;
@@ -202,7 +208,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
 
   return <>
     <section className="tool-result-head"><div><h2>订单列表</h2><p>共 {orders.length} 个订单{entryFilterLabel ? ` · 当前 ${entryFilterLabel} ${visible.length} 个` : ""}{contact ? ` · 联系 ${contact}` : ""}</p></div><div className="tool-result-head-right"><div className="tool-inline-search"><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="订单号、姓名或地址" /></div>{onRefresh ? <button type="button" className="tool-result-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="刷新订单列表"><RefreshCw className={refreshing ? "spin" : ""} size={16} /></button> : null}</div></section>
-    <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips tool-order-status-filter" role="listbox" aria-label="订单状态筛选"><button type="button" className={active === "ALL" && !entryFilter ? "active" : ""} aria-selected={active === "ALL" && !entryFilter} onClick={() => { setActive("ALL"); setEntryFilter(null); }}><span>全部</span><b>{orders.length}</b></button>{entryFilterLabel ? <button type="button" className="active" aria-selected="true" onClick={() => { setActive("ALL"); setEntryFilter(null); }}><span>{entryFilterLabel}</span><b>{visible.length}</b></button> : null}{statuses.map(([key, item]) => <button type="button" className={active === key && !entryFilter ? "active" : ""} aria-selected={active === key && !entryFilter} onClick={() => { setEntryFilter(null); setActive(key); }} key={key}><span>{item.label}</span><b>{item.count}</b></button>)}</div></div>
+    <div className="tool-filter-panel"><div className="tool-filter-row"><span className="tool-filter-label">订单状态</span><div className="tool-filter-chips tool-order-status-filter" role="listbox" aria-label="订单状态筛选">{STATUS_CHIPS.map((chip) => { const isActive = (entryFilter || "all") === chip.key; return <button type="button" className={isActive ? "active" : ""} aria-selected={isActive} onClick={() => setEntryFilter(chip.key === "all" ? null : chip.key)} key={chip.key}><span>{chip.label}</span><b>{statusCounts[chip.key]}</b></button>; })}</div></div>
     {collapseExtras ? <details className="tool-advanced-filter"><summary><span>更多筛选</span><small>{activePay === "PAID" ? "已付款" : activePay === "CONFIRMING" ? "待确认" : activePay === "UNPAID" ? "未付款" : "付款状态"}</small><ChevronDown size={15} /></summary><div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div></details> : <div className="tool-filter-row"><span className="tool-filter-label">付款状态</span><div className="tool-filter-chips" role="listbox" aria-label="付款状态筛选"><button type="button" className={activePay === "ALL" ? "active" : ""} onClick={() => setActivePay("ALL")}>全部</button><button type="button" className={activePay === "PAID" ? "active" : ""} onClick={() => setActivePay("PAID")}><CreditCard size={13} />已付款 {payBuckets.paid}</button><button type="button" className={activePay === "CONFIRMING" ? "active" : ""} onClick={() => setActivePay("CONFIRMING")}>待确认 {payBuckets.confirming}</button><button type="button" className={activePay === "UNPAID" ? "active" : ""} onClick={() => setActivePay("UNPAID")}>未付款 {payBuckets.unpaid}</button></div></div>}</div>
     <section className="tool-order-results soft-list">{visible.map((order) => {
       const isOpen = expanded.has(order.id);
