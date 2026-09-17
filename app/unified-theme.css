@@ -12211,6 +12211,34 @@ body textarea {
 }
 
 /* 订单信息条：订单号 + 预估金额 */
+/* 在线支付弹层头部：眉题芯片与关闭按钮同行，关闭不再是浮在顶部的独立方块 */
+.purchaser-online-pay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 11px;
+}
+
+.purchaser-online-pay-head > small {
+  display: inline-flex;
+  min-height: 25px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 9px;
+  color: var(--xb-accent) !important;
+  background: var(--xb-accent-soft);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.purchaser-online-pay-head > .purchaser-help-close {
+  position: static;
+  top: auto;
+  right: auto;
+}
+
 .purchaser-online-pay-order {
   display: flex;
   align-items: center;
@@ -12330,6 +12358,39 @@ body textarea {
   color: var(--xb-text-tertiary, #95a19a) !important;
   font-size: 10px !important;
   text-align: center;
+}
+
+/* 详情里的可复制行：值 + 小复制按钮 */
+.purchaser-detail-copy-line {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.purchaser-detail-copy-line b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchaser-detail-copy-line button {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--xb-line, rgba(38, 50, 77, .12));
+  border-radius: 8px;
+  color: var(--xb-accent, #2867ee);
+  background: var(--xb-surface, #fff);
+  cursor: pointer;
+}
+
+.purchaser-detail-copy-line button:active {
+  transform: scale(.94);
 }
 
 .purchaser-success-actions {

@@ -1,8 +1,8 @@
 import { API_PATHS, APP_ROUTES } from "../../../../lib/pathConventions";
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, Fingerprint, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X, Zap } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Copy, Edit3, Fingerprint, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X, Zap } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { ApiError, apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, customerHeaders, setCustomerToken } from "../../../../lib/api";
+import { ApiError, apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, copyToClipboard, customerHeaders, setCustomerToken } from "../../../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
 import { StatusFilter, computeOrderStats } from "../OrderStatsCards";
 import { SliderCaptcha } from "../../../../components/SliderCaptcha";
@@ -1874,8 +1874,10 @@ export default function PurchaserOrderPage() {
       </div>
     ) : null}
     {onlinePayTarget ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setOnlinePayTarget(null)}><section className="purchaser-sheet purchaser-online-pay-sheet">
-      <button className="purchaser-help-close" type="button" onClick={() => setOnlinePayTarget(null)} aria-label="关闭"><X size={19} /></button>
-      <small>ONLINE PAY</small>
+      <div className="purchaser-online-pay-head">
+        <small>ONLINE PAY</small>
+        <button className="purchaser-help-close" type="button" onClick={() => setOnlinePayTarget(null)} aria-label="关闭"><X size={19} /></button>
+      </div>
       <h2>选择支付方式</h2>
       <div className="purchaser-online-pay-order">
         <span>订单</span>
@@ -2007,8 +2009,8 @@ export default function PurchaserOrderPage() {
           <div><span>付款状态</span><b>{Number(viewingOrder.payStatus) === 1 ? "已付款" : Number(viewingOrder.payStatus) === 2 ? "已退款" : Number(viewingOrder.payStatus) === 3 ? "待确认" : "未付款"}</b></div>
           {viewingOrder.payMethod ? <div><span>支付渠道</span><b>{viewingOrder.payMethod === "wx" ? "微信" : viewingOrder.payMethod === "alipay" ? "支付宝" : viewingOrder.payMethod}</b></div> : null}
           {viewingOrder.paidAmount || viewingOrder.paymentAmount ? <div><span>支付金额</span><b>¥{Number(viewingOrder.paidAmount || viewingOrder.paymentAmount).toFixed(2)}</b></div> : null}
-          {viewingOrder.paymentNo ? <div className="full"><span>支付单号</span><b>{viewingOrder.paymentNo}</b></div> : null}
-          {viewingOrder.tradeOrderId ? <div className="full"><span>平台单号</span><b>{viewingOrder.tradeOrderId}</b></div> : null}
+          {viewingOrder.paymentNo ? <div className="full"><span>支付单号</span><span className="purchaser-detail-copy-line"><b>{viewingOrder.paymentNo}</b><button type="button" onClick={() => void copyToClipboard(String(viewingOrder.paymentNo)).then((ok) => { if (ok) showPromptToast("支付单号已复制"); })} aria-label="复制支付单号"><Copy size={13} /></button></span></div> : null}
+          {viewingOrder.tradeOrderId ? <div className="full"><span>平台单号</span><span className="purchaser-detail-copy-line"><b>{viewingOrder.tradeOrderId}</b><button type="button" onClick={() => void copyToClipboard(String(viewingOrder.tradeOrderId)).then((ok) => { if (ok) showPromptToast("平台单号已复制"); })} aria-label="复制平台单号"><Copy size={13} /></button></span></div> : null}
           {viewingOrder.paymentStatus ? <div><span>支付单状态</span><b>{viewingOrder.paymentStatus === "SUCCESS" ? "支付成功" : viewingOrder.paymentStatus === "PENDING" ? "待支付" : viewingOrder.paymentStatus === "REFUNDING" ? "退款中" : viewingOrder.paymentStatus === "REFUNDED" ? "已退款" : viewingOrder.paymentStatus === "CLOSED" ? "已关闭" : viewingOrder.paymentStatus}</b></div> : null}
           {viewingOrder.paidTime ? <div><span>支付时间</span><b>{String(viewingOrder.paidTime).replace("T", " ").slice(0, 16)}</b></div> : null}
         </div>
