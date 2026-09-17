@@ -99,13 +99,13 @@ test("all-features sheet restores brand title with notification, profile and clo
     source("app/unified-theme.css"),
   ]);
 
-  // 左侧品牌标识 + 右侧依次为 个人资料 → 铃铛 → 关闭（蓝色圆头像样式）
+  // 左侧品牌标识 + 右侧为 个人资料（蓝色圆头像）→ 关闭；铃铛不在此头部展示
   assert.match(sheet, /<span className="eyebrow">XB MOBILE<\/span><h2>\{title\}<\/h2>/);
   assert.match(sheet, /sheet-header-cancel/);
   assert.match(sheet, /headerActionFirst/);
   assert.match(shell, /headerAction=\{userButton\} headerActionFirst/);
-  assert.match(shell, /menu-header-actions"><button className="menu-user-button"/);
-  assert.match(shell, /<\/button><NotificationBellButton/);
+  assert.match(shell, /const userButton = <button className="menu-user-button"/);
+  assert.doesNotMatch(shell, /menu-header-actions/);
   assert.match(shell, /className="menu-user-avatar"/);
   assert.match(shell, /打开个人资料与账号设置/);
   assert.match(styles, /\.sheet-header \.menu-user-avatar \{[^}]*border-radius: 50%/s);
