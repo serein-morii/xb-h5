@@ -1,6 +1,6 @@
 import { API_PATHS, APP_ROUTES } from "../../../../lib/pathConventions";
 
-import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, Fingerprint, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Ban, BookUser, CheckCircle2, ChevronRight, CircleHelp, Edit3, Fingerprint, House, KeyRound, LoaderCircle, Lock, LockKeyhole, LogIn, LogOut, Mail, MapPin, Megaphone, Minus, PackageCheck, PackageSearch, Pencil, Plus, ScanText, ShieldCheck, ShoppingBag, Smartphone, Star, Trash2, Truck, User, Wallet, X, Zap } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, apiRequest, clearCustomerToken, COMMON_MAILBOX_HINT, customerHeaders, setCustomerToken } from "../../../../lib/api";
 import OrderList, { PublicOrderRecord } from "../OrderList";
@@ -1490,7 +1490,7 @@ export default function PurchaserOrderPage() {
 
         <section className="purchaser-mine-security-card">
           <header><ShieldCheck size={18} /><div><h3>账号安全</h3><p>控制原专属链接是否可以直接进入</p></div></header>
-          <div className="purchaser-mine-switch-row"><span><b>shortId 快捷登录</b><small>{Number(linkContext.accountRequired) !== 1 ? "当前管理端未要求客户登录，专属链接默认可进入；开启客户登录后此开关才生效" : customerProfile.quickLoginEnabled === 1 ? "已开启，从原链接可以直接进入" : "已关闭，需要密码或邮箱验证码登录"}</small></span><button type="button" className={`purchaser-mine-switch${customerProfile.quickLoginEnabled === 1 ? " on" : ""}`} aria-label="切换快捷登录" aria-pressed={customerProfile.quickLoginEnabled === 1} disabled={Number(linkContext.accountRequired) !== 1 || !customerProfile.registered || profileBusy} onClick={() => void toggleCustomerQuickLogin()}><span /></button></div>
+          <div className="purchaser-mine-switch-row"><span><Zap size={17} /><span><b>shortId 快捷登录</b><small>{Number(linkContext.accountRequired) !== 1 ? "当前管理端未要求客户登录，专属链接默认可进入；开启客户登录后此开关才生效" : customerProfile.quickLoginEnabled === 1 ? "已开启，从原链接可以直接进入" : "已关闭，需要密码或邮箱验证码登录"}</small></span></span><button type="button" className={`purchaser-mine-switch${customerProfile.quickLoginEnabled === 1 ? " on" : ""}`} aria-label="切换快捷登录" aria-pressed={customerProfile.quickLoginEnabled === 1} disabled={Number(linkContext.accountRequired) !== 1 || !customerProfile.registered || profileBusy} onClick={() => void toggleCustomerQuickLogin()}><span /></button></div>
           <button className="purchaser-mine-passkey-row" type="button" disabled={!customerProfile.registered} onClick={() => setPasskeyOpen(true)}><Fingerprint size={17} /><span><b>Passkey</b><small>使用面容、指纹或设备 PIN 快速登录</small></span><ChevronRight size={16} /></button>
         </section>
         <button className="purchaser-mine-logout" type="button" onClick={logoutCustomer}><LogOut size={16} />退出登录</button>

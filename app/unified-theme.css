@@ -14176,7 +14176,8 @@ html.theme-dark .purchaser-order-page .purchaser-account-gate a.primary {
   padding: 14px 16px;
 }
 
-.purchaser-mine-switch-row > span { display: grid; min-width: 0; gap: 5px; }
+.purchaser-mine-switch-row > span { display: flex; min-width: 0; align-items: center; gap: 11px; color: var(--xb-accent); }
+.purchaser-mine-switch-row > span > span { display: grid; min-width: 0; gap: 5px; }
 .purchaser-mine-switch-row b { font-size: 12px; }
 .purchaser-mine-switch-row small { color: var(--xb-text-secondary); font-size: 9px; line-height: 1.45; }
 .purchaser-mine-switch { position: relative; flex: 0 0 auto; width: 44px; height: 26px; padding: 0; border: 0; border-radius: 999px; background: var(--xb-line); transition: background .2s ease; }
