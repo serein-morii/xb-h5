@@ -392,7 +392,7 @@ export function OnlinePaymentsPage({
           <h1>支付订单</h1>
           <p>交易状态、入账与退款进度集中核对</p>
         </div>
-        {canManage ? <button className="module-hero-collect" type="button" onClick={() => setCollectOpen(true)}><QrCode size={20} /><span>收款</span></button> : null}
+        {canManage ? <button className="module-hero-collect" type="button" onClick={() => setCollectOpen(true)}><QrCode size={16} /><span>收款</span></button> : null}
       </div>
 
       <section className="finance-status-grid" aria-label="支付汇总">

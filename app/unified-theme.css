@@ -9423,19 +9423,19 @@ html.theme-dark :is(
  * 当面收款（简付）Sheet 与店铺支付连通性测试
  */
 .module-hero-collect {
-  min-height: 46px;
-  padding: 0 18px;
+  min-height: 38px;
+  padding: 0 13px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   border: 0;
   border-radius: 999px;
   background: var(--xb-accent, #2867ee);
   color: #fff;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgb(var(--theme-accent-rgb, 40 103 238) / .22);
+  box-shadow: 0 8px 18px rgb(var(--theme-accent-rgb, 40 103 238) / .18);
 }
 
 .module-hero-collect:active {
