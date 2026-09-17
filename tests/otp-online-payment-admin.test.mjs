@@ -27,6 +27,7 @@ test("bill and payment orders follow the order-list visual hierarchy and expose 
   assert.match(page, /className="secondary-actions"/);
   assert.match(page, /metric-grid finance-status-grid/);
   assert.match(page, /order-card finance-card payment-card/);
+  assert.match(page, /module-page order-page crud-page/);
   assert.match(page, /card-topline/);
   assert.match(page, /card-main/);
   assert.match(page, /recipient-block/);
@@ -42,11 +43,13 @@ test("bill and payment orders follow the order-list visual hierarchy and expose 
   assert.match(crud, /key: "bills", title: "账单管理"/);
   assert.match(crud, /BillOrderFilter/);
   assert.match(crud, /order-card finance-card bill-card/);
+  assert.match(crud, /order-page finance-page/);
   assert.match(crud, /aria-label="账单汇总"/);
   assert.match(crud, /\$\{config\.api\}\/summary/);
-  assert.match(styles, /\.finance-card \.card-topline/);
+  assert.match(styles, /\.order-page \.order-card \.card-actions/);
   assert.match(styles, /\.finance-strip/);
   assert.match(styles, /\.finance-page \.mobile-card-list/);
+  assert.doesNotMatch(styles, /\.finance-page \.secondary-actions button/);
   assert.doesNotMatch(shell, /BillsPage|admin\/bills/);
   assert.match(menu, /onlinePayments: \{ key: "onlinePayments"/);
   assert.match(controller, /@GetMapping\("\/summary"\)/);
@@ -54,6 +57,14 @@ test("bill and payment orders follow the order-list visual hierarchy and expose 
   assert.match(mapper, /selectOnlinePaymentSummary/);
   assert.match(mapper, /createStart/);
   assert.match(capability, /BILLS_EXPORT\("bills\.export"/);
+});
+
+test("saved mobile Dock and groups stay authoritative instead of restoring removed defaults", async () => {
+  const config = await source("app/systems/order/admin/mobileMenu.config.ts");
+  assert.match(config, /base\.dock = raw\.dock as MobileMenuConfig\["dock"\]/);
+  assert.match(config, /base\.groups = raw\.groups as MobileMenuGroupConfig\[\]/);
+  assert.doesNotMatch(config, /DEFAULT_MOBILE_MENU_CONFIG\.dock\.filter/);
+  assert.doesNotMatch(config, /baseGroup\.items\.filter/);
 });
 
 test("dashboard overview keeps four status columns", async () => {

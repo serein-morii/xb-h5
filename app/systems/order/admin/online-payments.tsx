@@ -382,7 +382,7 @@ export function OnlinePaymentsPage({
   };
 
   return (
-    <div className="module-page crud-page crud-page-online-payments finance-page">
+    <div className="module-page order-page crud-page crud-page-online-payments finance-page">
       <div className="module-hero">
         <div>
           <span className="eyebrow">订单管理模块</span>

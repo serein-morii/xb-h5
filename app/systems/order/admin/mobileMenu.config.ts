@@ -484,47 +484,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * 后端配置做宽松合并：缺字段时用本地默认兜底，避免后台半份 JSON 把 H5 打挂。
- *
- * 同时**追加**（不是替换）本地默认里新增的项 —— 后端历史回滚到旧版本时，
- * 那些在 DEFAULT 里但 raw 里没有的 item 会被自动补回来，不会让运营方丢掉新功能入口。
- */
+/** 后端配置缺字段时使用本地默认；显式提供的 Dock 和分组必须保持原样。 */
 export function mergeMobileMenuConfig(raw: unknown): MobileMenuConfig {
   const base = JSON.parse(JSON.stringify(DEFAULT_MOBILE_MENU_CONFIG)) as MobileMenuConfig;
   if (!isRecord(raw)) return base;
 
   if (Array.isArray(raw.dock) && raw.dock.length) {
-    // Dock 也追加新默认项（保证新加的菜单 key 也能进 Dock 默认位）
-    const rawDockKeys = new Set(raw.dock.map((item) => item.key));
-    base.dock = [
-      ...(raw.dock as MobileMenuConfig["dock"]),
-      ...DEFAULT_MOBILE_MENU_CONFIG.dock.filter((item) => !rawDockKeys.has(item.key)),
-    ];
+    base.dock = raw.dock as MobileMenuConfig["dock"];
   }
   if (Array.isArray(raw.groups)) {
-    const rawGroups = raw.groups as MobileMenuGroupConfig[];
-    // 对每个默认分组：取 raw 中同 key 的组，items 合并（raw.items 优先 + 追加 DEFAULT 里有但 raw 没有的）
-    base.groups = base.groups.map((baseGroup) => {
-      const rawGroup = rawGroups.find((g) => g.key === baseGroup.key);
-      if (!rawGroup) return baseGroup;
-      const rawItemKeys = new Set(rawGroup.items.map((i) => i.key));
-      const mergedItems: MobileMenuItemConfig[] = [
-        ...rawGroup.items,
-        ...baseGroup.items.filter((i) => !rawItemKeys.has(i.key)),
-      ];
-      return {
-        ...baseGroup,
-        ...rawGroup,
-        items: mergedItems,
-      };
-    });
-    // raw 里独有的分组也保留
-    for (const rawGroup of rawGroups) {
-      if (!base.groups.find((g) => g.key === rawGroup.key)) {
-        base.groups.push(rawGroup as MobileMenuGroupConfig);
-      }
-    }
+    base.groups = raw.groups as MobileMenuGroupConfig[];
   }
   if (isRecord(raw.extras)) {
     base.extras = {

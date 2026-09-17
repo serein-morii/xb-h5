@@ -591,7 +591,7 @@ export function CrudModule({ config, dictionaries, notify }: { config: CrudConfi
     return "success";
   }
   return (
-    <div className={`module-page crud-page crud-page-${config.key}${config.key === "bills" ? " finance-page" : ""}`}>
+    <div className={`module-page crud-page crud-page-${config.key}${config.key === "bills" ? " order-page finance-page" : ""}`}>
       <div className={`module-hero${config.key === "bills" ? "" : " compact-hero"}`}><div><span className="eyebrow">订单管理模块</span><h1>{config.title}</h1><p>{config.key === "bills" ? "成本、售价与利润一目了然" : `共 ${total} 条数据，支持手机端快速维护`}</p></div><button className="round-add" type="button" onClick={() => setEditor("new")}><Plus size={22} /><span>新增</span></button></div>
       <div className="toolbar-card search-toolbar"><label className="quick-search"><Search size={15} strokeWidth={2.2} /><input value={pageKeyword} onChange={(event) => setPageKeyword(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="检索本页关键信息" aria-label={`检索当前页面已加载的${config.itemName}内容`} enterKeyHint="search" />{pageKeyword ? <button className="search-clear" type="button" aria-label="清空本页检索" onClick={() => setPageKeyword("")}><X size={14} /></button> : null}</label><button className={`filter-chip${config.searchFields.some((field) => String(query[field.key] || "").trim()) ? " active" : ""}`} type="button" onClick={() => setFilterOpen(true)}><SlidersHorizontal size={14} strokeWidth={2.2} />筛选</button><button className="toolbar-icon" type="button" onClick={load} aria-label="刷新"><RefreshCw className={loading ? "spin" : ""} size={15} strokeWidth={2.2} /></button></div>
       <div className="secondary-actions">
