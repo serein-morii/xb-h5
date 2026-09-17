@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   MapPin,
   Phone,
+  QrCode,
   ReceiptText,
   RefreshCw,
   RotateCcw,
@@ -21,6 +22,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react
 import { apiRequest, copyToClipboard, downloadFile } from "../../../lib/api";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useAccess } from "./access";
+import { CollectQrSheet } from "./collect";
 import { ConfirmDialog, EmptyState, Sheet } from "./ui";
 
 type Notify = (message: string, type?: "success" | "error" | "info") => void;
@@ -209,6 +211,7 @@ export function OnlinePaymentsPage({
   const [error, setError] = useState("");
   const [refundTarget, setRefundTarget] = useState<OnlinePayment | null>(null);
   const [refundReason, setRefundReason] = useState("后台退款");
+  const [collectOpen, setCollectOpen] = useState(false);
   const [confirm, setConfirm] = useState<{
     title: string;
     message: string;
@@ -389,6 +392,7 @@ export function OnlinePaymentsPage({
           <h1>支付订单</h1>
           <p>交易状态、入账与退款进度集中核对</p>
         </div>
+        {canManage ? <button className="module-hero-collect" type="button" onClick={() => setCollectOpen(true)}><QrCode size={20} /><span>收款</span></button> : null}
       </div>
 
       <section className="finance-status-grid" aria-label="支付汇总">
@@ -523,6 +527,8 @@ export function OnlinePaymentsPage({
           <div className="filter-sheet-footer"><button type="button" className="filter-reset" onClick={() => setRefundTarget(null)}>取消</button><button className="filter-apply is-danger" type="submit" disabled={busyId === refundTarget.id || !refundReason.trim()}>{busyId === refundTarget.id ? "退款处理中" : "确认退款"}</button></div>
         </form> : null}
       </Sheet>
+
+      <CollectQrSheet open={collectOpen} notify={notify} onClose={() => setCollectOpen(false)} onPaid={() => void load(activeFilters, pageSize)} />
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>

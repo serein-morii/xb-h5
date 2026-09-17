@@ -9420,6 +9420,187 @@ html.theme-dark :is(
 }
 
 /*
+ * 当面收款（简付）Sheet 与店铺支付连通性测试
+ */
+.module-hero-collect {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--xb-accent, #2867ee);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgb(var(--theme-accent-rgb, 40 103 238) / .22);
+}
+
+.module-hero-collect:active {
+  transform: scale(.97);
+}
+
+.collect-qr-loading {
+  min-height: 160px;  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  color: var(--xb-text-secondary, #66736b);
+  font-size: 12px;
+}
+
+.collect-qr-form {
+  display: grid;
+  gap: 12px;
+}
+
+.collect-qr-form > label {
+  display: grid;
+  gap: 6px;
+}
+
+.collect-qr-form > label > span {
+  font-size: 12px;
+  color: var(--xb-text-secondary, #66736b);
+}
+
+.collect-qr-form input,
+.collect-qr-form select {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 11px;
+  background: var(--xb-surface, #fff);
+  color: var(--xb-text, #18231d);
+  font: inherit;
+}
+
+.collect-qr-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.collect-qr-methods button {
+  min-height: 44px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 12px;
+  background: var(--xb-surface, #fff);
+  color: var(--xb-text-secondary, #66736b);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.collect-qr-methods button.active {
+  border-color: var(--xb-accent, #2867ee);
+  color: var(--xb-accent, #2867ee);
+  background: var(--xb-accent-soft, #e8f0ff);
+}
+
+.collect-qr-submit {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+}
+
+.collect-qr-body {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+
+.collect-qr-amount {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.collect-qr-amount small {
+  color: var(--xb-text-secondary, #66736b);
+  font-size: 11px;
+}
+
+.collect-qr-amount b {
+  font-size: 30px;
+  letter-spacing: -.02em;
+  color: var(--xb-text, #18231d);
+}
+
+.collect-qr-amount span {
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 11px;
+}
+
+.collect-qr-image {
+  width: min(248px, 72vw);
+  height: auto;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 16px;
+  background: #fff;
+}
+
+.collect-qr-tip {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--xb-text-secondary, #66736b);
+  font-size: 12px;
+}
+
+.collect-qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.collect-qr-actions a,
+.collect-qr-actions button {
+  min-height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 11px;
+  background: var(--xb-surface, #fff);
+  color: var(--xb-accent, #2867ee);
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.store-pay-probe {
+  display: grid;
+  gap: 6px;
+}
+
+.store-pay-probe small {
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 11px;
+}
+
+.store-pay-probe-result {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--xb-accent-soft, #e8f0ff);
+  color: var(--xb-text-secondary, #66736b);
+  font-size: 11.5px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+/*
  * Button completion pass
  *
  * A few feature-local controls were still painted by legacy green values.

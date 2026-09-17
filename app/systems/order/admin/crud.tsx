@@ -20,6 +20,7 @@ import {
   ReceiptText,
   RefreshCw,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Store as StoreIcon,
@@ -1178,6 +1179,8 @@ function StorePaySettingsEditor({
 }) {
   const [form, setForm] = useState<DataRow>({
     enabled: 0,
+    wxEnabled: 1,
+    alipayEnabled: 1,
     provider: "jianpay",
     gateway: "https://jpay.hzjianban.com",
     clientNo: "",
@@ -1188,6 +1191,8 @@ function StorePaySettingsEditor({
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [probing, setProbing] = useState(false);
+  const [probeResult, setProbeResult] = useState<DataRow | null>(null);
   useEffect(() => { onSavingChange?.(saving); }, [onSavingChange, saving]);
   useEffect(() => () => onSavingChange?.(false), [onSavingChange]);
 
@@ -1207,6 +1212,20 @@ function StorePaySettingsEditor({
 
   function update(key: string, value: unknown) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function probe() {
+    setProbing(true);
+    setProbeResult(null);
+    try {
+      const result = await apiRequest<{ data?: DataRow }>(`${API_PATHS.stores.root}/${store.id}/pay-settings/merchant-info`, { method: "POST" });
+      setProbeResult(result.data && typeof result.data === "object" ? result.data as DataRow : {});
+      notify("简付连通性测试通过", "success");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "连通性测试失败", "error");
+    } finally {
+      setProbing(false);
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -1238,10 +1257,20 @@ function StorePaySettingsEditor({
       <label className="mail-settings-switch"><div><b>启用在线支付</b><small>买家侧仍受买家支付开关约束</small></div><input type="checkbox" checked={enabled} onChange={(event) => update("enabled", event.target.checked ? 1 : 0)} /><span /></label>
       <div className={`mail-settings-fields${enabled ? "" : " disabled"}`}>
         <label><span>支付提供方</span><select disabled={!enabled} value={String(form.provider || "jianpay")} onChange={(event) => update("provider", event.target.value)}><option value="jianpay">简付 JianPay</option></select></label>
-        <label><span>支付网关</span><input disabled={!enabled} value={String(form.gateway || "")} onChange={(event) => update("gateway", event.target.value)} placeholder="https://jpay.hzjianban.com" /></label>
+        <label className="span-full"><span>支付网关（可多个，换行分隔，依次容错）</span><textarea rows={2} disabled={!enabled} value={String(form.gateway || "")} onChange={(event) => update("gateway", event.target.value)} placeholder={"https://jpay.hzjianban.com\nhttps://api.jian-pay.com"} /></label>
         <label><span>商户号 clientNo</span><input disabled={!enabled} value={String(form.clientNo || "")} onChange={(event) => update("clientNo", event.target.value)} placeholder="简付控制台「API 安全」页获取" autoComplete="off" /></label>
         <label><span>商户 KEY</span><input disabled={!enabled} type="password" value={String(form.payKey || "")} onChange={(event) => update("payKey", event.target.value)} placeholder={form.keyConfigured ? "已安全保存，留空表示不修改" : "MD5 签名密钥"} autoComplete="new-password" /></label>
         <label className="span-full"><span>回调地址 notifyUrl（可选）</span><input disabled={!enabled} value={String(form.notifyUrl || "")} onChange={(event) => update("notifyUrl", event.target.value)} placeholder="留空使用系统默认回调地址" /></label>
+        <label><span>微信收款</span><select disabled={!enabled} value={String(form.wxEnabled ?? 1)} onChange={(event) => update("wxEnabled", Number(event.target.value))}><option value="1">开通</option><option value="0">关闭</option></select></label>
+        <label><span>支付宝收款</span><select disabled={!enabled} value={String(form.alipayEnabled ?? 1)} onChange={(event) => update("alipayEnabled", Number(event.target.value))}><option value="1">开通</option><option value="0">关闭</option></select></label>
+        <div className="span-full store-pay-probe">
+          <button type="button" className="filter-apply" disabled={probing || !form.keyConfigured && !String(form.payKey || "").trim()} onClick={() => void probe()}>
+            {probing ? <LoaderCircle className="spin" size={15} /> : <ShieldCheck size={15} />}
+            {probing ? "测试中" : "获取商户信息（测试连通性）"}
+          </button>
+          {!form.keyConfigured && !String(form.payKey || "").trim() ? <small>保存商户 KEY 后可测试</small> : null}
+          {probeResult ? <p className="store-pay-probe-result">{Object.entries(probeResult).filter(([, value]) => value !== null && value !== undefined && String(value) !== "").map(([key, value]) => `${key}: ${String(value)}`).join(" · ") || "连接成功"}</p> : null}
+        </div>
       </div>
       <section className="mail-settings-options">
         <label><input type="checkbox" checked={Boolean(form.applyToAllStores)} onChange={(event) => update("applyToAllStores", event.target.checked)} /><span><b>同步到全部店铺</b><small>仅管理员可用，一次覆盖所有正常店铺，之后仍可单独修改</small></span></label>
