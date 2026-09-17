@@ -266,7 +266,7 @@ export default function ProductsPage({ notify }: { notify: (message: string, typ
             <p>客户下单页会按商品、规格、地区逐步展示；每个 SKU 单独配置价格。</p>
 
             <section className="product-editor-section">
-              <header><span><PackageCheck size={17} /></span><div><b>基础信息</b><small>商品编码保存后用于下单和收款码匹配</small></div></header>
+              <header><span><PackageCheck size={17} /></span><div><b>基础信息</b><small>商品编码保存后用于下单和规格识别</small></div></header>
               <div className="product-editor-grid">
                 <label><em>商品编码</em><input value={editing.productCode} onChange={(event) => setField("productCode", event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="如 HT" /></label>
                 <label><em>商品名称</em><input value={editing.name} onChange={(event) => setField("name", event.target.value)} placeholder="如 炎陵黄桃" /></label>

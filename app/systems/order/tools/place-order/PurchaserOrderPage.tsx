@@ -39,22 +39,6 @@ const COURIER_OPTIONS: Option[] = [
   { value: "EMS", label: "邮政", icon: "https://cdn.kuaidi100.com/images/all/144/ems.png" },
 ];
 
-type PaymentCode = { image: string; label: string };
-const PAYMENT_CODES: Record<string, PaymentCode> = {
-  "HT:HN-5": { image: "/images/payments/wechat-ht-hn-5.jpg", label: "湖南省内 · 黄桃 5斤" },
-  "HT:HN-10": { image: "/images/payments/wechat-ht-hn-10.jpg", label: "湖南省内 · 黄桃 10斤" },
-  "HT:OUT-5": { image: "/images/payments/wechat-ht-out-5.jpg", label: "湖南省外 · 黄桃 5斤" },
-  "HT:OUT-10": { image: "/images/payments/wechat-ht-out-10.jpg", label: "湖南省外 · 黄桃 10斤" },
-  "HT:XJ-5": { image: "/images/payments/wechat-ht-xj-5.jpg", label: "新疆西藏 · 黄桃 5斤" },
-  "HT:XJ-10": { image: "/images/payments/wechat-ht-xj-10.jpg", label: "新疆西藏 · 黄桃 10斤" },
-  "NL:5": { image: "/images/payments/wechat-nl-5.jpg", label: "奈李 5斤" },
-  "NL:10": { image: "/images/payments/wechat-nl-10.jpg", label: "奈李 10斤" },
-};
-
-function paymentCodeFor(productCode: unknown, skuCode: unknown) {
-  return PAYMENT_CODES[`${String(productCode || "")}:${String(skuCode || "")}`];
-}
-
 function normalizeSpecText(value: unknown) {
   return String(value || "")
     .replace(/\s+/g, "")
@@ -207,9 +191,9 @@ export default function PurchaserOrderPage() {
   const [specDraft, setSpecDraft] = useState("");
   const [editSpecDraft, setEditSpecDraft] = useState("");
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
-  const [paymentConfirmBusy, setPaymentConfirmBusy] = useState(false);
   const [onlinePayTarget, setOnlinePayTarget] = useState<{ orderCode: string } | null>(null);
   const [onlinePayBusy, setOnlinePayBusy] = useState(false);
+  const [onlinePayError, setOnlinePayError] = useState("");
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileBusy, setProfileBusy] = useState(false);
@@ -697,7 +681,6 @@ export default function PurchaserOrderPage() {
     return undefined;
   }, [optionsForProduct]);
   const selectedSize = useMemo(() => sizes.find((item) => item.value === form.orderType), [sizes, form.orderType]);
-  const selectedPaymentCode = useMemo(() => paymentCodeFor(form.orderName, form.orderType), [form.orderName, form.orderType]);
   const selectedProductLabel = form.orderName === "other" ? form.orderNameDesc.trim() : selectedProduct?.label;
   const selectedSkuSpecLabel = form.orderType === "other" ? form.orderTypeDesc.trim() : skuSpecLabel(selectedSize);
   const selectedSkuRegionLabel = skuRegionLabel(selectedSize);
@@ -1171,22 +1154,10 @@ export default function PurchaserOrderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function confirmPayment() {
-    const paymentNo = String(success?.paymentNo || "");
-    if (!paymentNo) return;
-    setPaymentConfirmBusy(true); setError("");
-    try {
-      await customerApiRequest(`${API_PATHS.customers.root}/payment/${encodeURIComponent(paymentNo)}/confirm-paid`, { method: "POST" }, linkKey.purchaserId);
-      setSuccess((current) => current ? { ...current, paymentRequired: false, payStatus: 3 } : current);
-      await reloadOrders();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "付款确认提交失败"); }
-    finally { setPaymentConfirmBusy(false); }
-  }
-
   // 在线支付（简付收银台）：选择渠道后由后端创建收银台单并跳转，支付结果以回调/查单为准。
   async function startOnlinePay(orderCode: string, payMethod: "wx" | "alipay") {
     if (!orderCode || onlinePayBusy) return;
-    setOnlinePayBusy(true); setError("");
+    setOnlinePayBusy(true); setOnlinePayError("");
     try {
       const result = await customerApiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay`, { method: "POST", body: { id: linkKey.purchaserId, orderCode, payMethod } }, linkKey.purchaserId);
       if (result.data?.paid) {
@@ -1198,9 +1169,9 @@ export default function PurchaserOrderPage() {
       }
       const payUrl = result.data?.payUrl;
       if (!payUrl) throw new Error("未获取到收银台地址");
-      window.location.href = payUrl;
+      window.location.assign(payUrl);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "发起支付失败，请稍后重试");
+      setOnlinePayError(cause instanceof Error ? cause.message : "发起支付失败，请稍后重试");
     } finally { setOnlinePayBusy(false); }
   }
 
@@ -1342,9 +1313,6 @@ export default function PurchaserOrderPage() {
 
   const successPaymentConfirmed = Number(success?.payStatus) === 3;
   const successNeedsPayment = Boolean(success?.paymentRequired) && !successPaymentConfirmed;
-  const successPaymentCode = successNeedsPayment
-    ? (paymentCodeFor(success?.orderName, success?.orderType) || selectedPaymentCode)
-    : undefined;
   const successPaymentAmount = Number(success?.paymentAmount || 0);
 
   if (loading) return <div className="tool-page purchaser-order-page"><div className="purchaser-link-loading"><LoaderCircle className="spin" size={28} /><b>正在验证专属下单链接</b><small>同时加载店铺、商品和历史订单</small></div></div>;
@@ -1474,6 +1442,7 @@ export default function PurchaserOrderPage() {
         {!blockQueryOn ? <section className="purchaser-home-overview" aria-label="订单概况">
           <header><h2>订单概况</h2><button type="button" onClick={() => { setStatusFilter(null); setTab("orders"); }}>全部订单<ChevronRight size={15} /></button></header>
           <div>
+            <button type="button" onClick={() => applyFilter("unpaid")}><b>{stats.unpaid}</b><small>待支付</small></button>
             <button type="button" onClick={() => applyFilter("pending")}><b>{stats.pending}</b><small>待发货</small></button>
             <button type="button" onClick={() => applyFilter("shipped")}><b>{stats.shipped}</b><small>运输中</small></button>
             <button type="button" onClick={() => applyFilter("done")}><b>{stats.done}</b><small>已完成</small></button>
@@ -1661,7 +1630,7 @@ export default function PurchaserOrderPage() {
         <div className="purchaser-cost-unlocked-main"><span className="purchaser-cost-unlocked-icon"><Wallet size={17} /></span><span><b>成本价已解锁</b><small>商品、包装、快递和总成本 · 本次有效 30 分钟</small></span></div>
         <button type="button" onClick={lockCostPrice}><Lock size={13} />立即锁定</button>
       </section> : null}
-      <OrderList orders={orders} initialStatusFilter={statusFilter} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} onPay={Number(linkContext.payEnabled) === 1 ? (order) => setOnlinePayTarget({ orderCode: String(order.orderCode || "") }) : undefined} collapseExtras enableCostSelection={costPriceUnlocked} />
+      <OrderList orders={orders} initialStatusFilter={statusFilter} contact={linkContext.purchaserPhone} onEdit={openEdit} onDelete={requestDelete} onView={setViewingOrder} onRefresh={reloadOrders} onPay={Number(linkContext.payEnabled) === 1 && Number(linkContext.paymentRequired) === 1 ? (order) => { setOnlinePayError(""); setOnlinePayTarget({ orderCode: String(order.orderCode || "") }); } : undefined} collapseExtras enableCostSelection={costPriceUnlocked} />
     </section>) : null}
 
     <nav className="purchaser-bottom-nav" aria-label="专属下单导航">
@@ -1785,7 +1754,7 @@ export default function PurchaserOrderPage() {
           <button className="purchaser-captcha-close" type="button" onClick={() => setCaptchaOpen(false)} aria-label="关闭"><X size={19} /></button>
           <small>{Number(linkContext?.accountRequired) === 1 ? "订单确认" : Number(linkContext?.requirePwd) === 1 ? "下单验证" : "提交确认"}</small>
           <h2>{Number(linkContext?.accountRequired) === 1 ? "核对本次订单" : Number(linkContext?.requirePwd) === 1 ? "请输入下单码" : "核对本次订单"}</h2>
-          <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "先创建订单，不改变付款状态；付款后需手动点击“我已付款”。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，微信付款后向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
+          <p>{Number(linkContext?.accountRequired) === 1 ? (Number(linkContext?.paymentRequired) === 1 ? "订单创建后进入待支付状态，可选择微信或支付宝在线付款。" : "确认无误后直接提交到店铺。") : Number(linkContext?.requirePwd) === 1 ? "下单码由店铺提供，请向店家索取。" : "确认商品和收货信息后，完成验证即可提交。"}</p>
           <div className="purchaser-captcha-summary">
             <div><span>商品</span><b>{form.orderName === "other" ? form.orderNameDesc : selectedProduct?.label || "--"}</b></div>
             <div><span>规格</span><b>{selectedSkuSpecLabel || "--"}</b></div>
@@ -1828,7 +1797,7 @@ export default function PurchaserOrderPage() {
             </div>
             <h2 id="purchaser-success-title">{successNeedsPayment ? "订单已创建，待付款" : successPaymentConfirmed ? "付款确认已提交" : "下单成功"}</h2>
             <p>
-              {successNeedsPayment ? "请扫码付款，付款后再点击下方按钮通知店铺确认。" : successPaymentConfirmed ? "店铺会人工对账确认，您可以在订单列表查看进度。" : `已提交到「${linkContext.storeName || "店铺"}」`}
+              {successNeedsPayment ? "请选择支付方式，付款结果会由系统自动确认。" : successPaymentConfirmed ? "店铺会人工对账确认，您可以在订单列表查看进度。" : `已提交到「${linkContext.storeName || "店铺"}」`}
               {String(success.orderNameDesc || selectedProduct?.label || "")
                 ? ` · ${String(success.orderNameDesc || selectedProduct?.label || "")}`
                 : ""}
@@ -1881,18 +1850,9 @@ export default function PurchaserOrderPage() {
                     <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(String(success.orderCode || ""), "wx")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}微信支付</button>
                     <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(String(success.orderCode || ""), "alipay")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}支付宝</button>
                   </div>
+                  {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
                 </div>
-              ) : null}
-              {successPaymentCode ? (
-                <>
-                  <div className="purchaser-payment-code-wrap">
-                    <img className="purchaser-payment-code" src={successPaymentCode.image} alt={`${successPaymentCode.label} 收款码`} />
-                  </div>
-                  <p className="purchaser-payment-inline-tip">{successPaymentCode.label}。长按识别或保存二维码付款，点“我已付款”前不会更改付款状态。</p>
-                </>
-              ) : Number(linkContext.payEnabled) === 1 ? null : (
-                <p className="purchaser-payment-missing">当前规格暂未配置收款码，请联系店铺确认付款方式。</p>
-              )}
+              ) : <p className="purchaser-payment-missing">店铺暂未开通在线支付，请联系店铺处理该订单。</p>}
             </div>
           ) : successPaymentConfirmed ? (
             <div className="purchaser-payment-done" role="status">
@@ -1900,8 +1860,7 @@ export default function PurchaserOrderPage() {
               <span><b>已通知店铺确认付款</b><small>当前付款状态为待确认，最终结果以店铺对账为准。</small></span>
             </div>
           ) : null}
-          <div className={`purchaser-success-actions${successNeedsPayment && successPaymentCode ? " payment-mode" : ""}`}>
-            {successNeedsPayment && successPaymentCode ? <button type="button" className="purchaser-success-primary purchaser-payment-confirm" disabled={paymentConfirmBusy} onClick={confirmPayment}>{paymentConfirmBusy ? <LoaderCircle className="spin" size={16} /> : <CheckCircle2 size={16} />}{paymentConfirmBusy ? "正在通知店铺" : "我已付款，通知店铺确认"}</button> : null}
+          <div className="purchaser-success-actions">
             <button type="button" className="purchaser-success-secondary" onClick={continueOrdering}>
               <Plus size={16} />
               {successNeedsPayment ? "稍后支付" : "继续下单"}
@@ -1923,6 +1882,7 @@ export default function PurchaserOrderPage() {
         <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "wx")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}微信支付</button>
         <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "alipay")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}支付宝</button>
       </div>
+      {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
     </section></div> : null}
     {helpOpen ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setHelpOpen(false)}><section className="purchaser-help-modal purchaser-sheet">
       <button className="purchaser-help-close" type="button" onClick={() => setHelpOpen(false)} aria-label="关闭"><X size={19} /></button>

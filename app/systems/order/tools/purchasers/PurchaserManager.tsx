@@ -433,7 +433,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
         </div>
         <div className="purchaser-block-row">
           <Wallet size={15} />
-          <div className="purchaser-block-info"><small>客户下单支付</small><b>{item.paymentRequired === 1 ? "已开启，展示收款码并人工确认" : "默认关闭，下单后无需支付"}</b></div>
+          <div className="purchaser-block-info"><small>客户下单支付</small><b>{item.paymentRequired === 1 ? "已开启，下单后进入在线支付" : "默认关闭，下单后无需支付"}</b></div>
           <div className="purchaser-block-toggle"><button type="button" disabled={blockBusyId === item.id} className={`toggle ${item.paymentRequired === 1 ? "on" : "off"}`} aria-label="切换下单支付" onClick={() => updateCustomerSetting(item, "paymentRequired", item.paymentRequired === 1 ? 0 : 1)}><span /></button></div>
         </div>
       </div>
@@ -482,7 +482,7 @@ export default function PurchaserManager({ embedded = false }: { embedded?: bool
         <button type="button" className="purchaser-create-action danger" disabled={busyId === confirmingUnbind.id} onClick={() => unbind(confirmingUnbind)}>{busyId === confirmingUnbind.id ? <LoaderCircle className="spin" size={15} /> : <Unlink size={15} />}确认解绑</button>
       </div>
     </section></div> : null}
-    {codeTarget ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCodeTarget(null)}><section className="purchaser-create-modal purchaser-code-modal"><button type="button" onClick={() => setCodeTarget(null)}><X size={18} /></button><span><KeyRound size={22} /></span><small>ORDER CODE</small><h2>下单码配置 · {codeTarget.name}</h2><p>开启后买家下单需输入密码；适合"微信付款后录单"场景。</p>
+    {codeTarget ? <div className="purchaser-create-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCodeTarget(null)}><section className="purchaser-create-modal purchaser-code-modal"><button type="button" onClick={() => setCodeTarget(null)}><X size={18} /></button><span><KeyRound size={22} /></span><small>ORDER CODE</small><h2>下单码配置 · {codeTarget.name}</h2><p>开启后买家下单需输入密码，适合限制专属链接的下单权限。</p>
       <div className="purchaser-code-switch-group">
         <label className={codeForm.requirePwd === -1 ? "active" : ""}><input type="radio" name="pwdSwitch" checked={codeForm.requirePwd === -1} onChange={() => setCodeForm((c) => ({ ...c, requirePwd: -1 }))} />跟店铺设置</label>
         <label className={codeForm.requirePwd === 1 ? "active" : ""}><input type="radio" name="pwdSwitch" checked={codeForm.requirePwd === 1} onChange={() => setCodeForm((c) => ({ ...c, requirePwd: 1 }))} />需要密码</label>

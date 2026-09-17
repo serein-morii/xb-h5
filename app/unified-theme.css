@@ -11556,16 +11556,6 @@ body textarea {
   font-variant-numeric: tabular-nums !important;
 }
 
-.purchaser-payment-code {
-  width: min(100%, 260px) !important;
-  max-height: 360px !important;
-  justify-self: center !important;
-  object-fit: contain !important;
-  border-radius: 14px !important;
-  background: #07c160 !important;
-  box-shadow: 0 12px 30px rgba(12, 80, 44, .16) !important;
-}
-
 .purchaser-payment-panel p {
   margin: 0 !important;
   color: var(--xb-text-secondary) !important;
@@ -11628,6 +11618,26 @@ body textarea {
   cursor: not-allowed;
 }
 
+.purchaser-online-pay-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  margin: 0 !important;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #b42318 !important;
+  background: rgba(180, 35, 24, .08);
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+}
+
+.purchaser-online-pay-error svg {
+  flex: none;
+  margin-top: 1px;
+}
+
 .purchaser-online-pay-sheet {
   width: min(340px, calc(100% - 32px));
   display: grid;
@@ -11645,10 +11655,6 @@ body textarea {
   font-size: 11.5px;
   line-height: 1.6;
   word-break: break-all;
-}
-
-.purchaser-payment-confirm {
-  grid-column: span 2 !important;
 }
 
 .purchaser-success-actions {

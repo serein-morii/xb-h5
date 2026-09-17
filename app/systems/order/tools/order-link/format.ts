@@ -9,7 +9,7 @@ export function buildOrderLink(shortId: string | number | null | undefined): str
 export function formatOrderLinkCopy(purchaserName: string | null | undefined, link: string, pwd?: string | null): string {
   const name = purchaserName || "买家";
   let text = `${name}的专属下单链接：\n${link}`;
-  if (pwd) text += `\n\n下单码：${pwd}\n（4-6 位数字，微信付款后用此码录单）`;
+  if (pwd) text += `\n\n下单码：${pwd}\n（4-6 位数字，用于验证专属链接的下单权限）`;
   text += "\n\n点击链接即可下单，也可以查询订单进度。";
   return text;
 }

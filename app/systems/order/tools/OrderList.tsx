@@ -79,9 +79,10 @@ function payStatusMeta(status: unknown) {
   return { key: "unpaid", label: "未付款" };
 }
 
-type EntryStatusFilter = "all" | "pending" | "shipped" | "done" | "month";
+type EntryStatusFilter = "all" | "unpaid" | "pending" | "shipped" | "done" | "month";
 
 function entryStatusLabel(filter?: EntryStatusFilter | null) {
+  if (filter === "unpaid") return "待支付";
   if (filter === "pending") return "待发货";
   if (filter === "shipped") return "运输中";
   if (filter === "done") return "已完成";
@@ -91,6 +92,7 @@ function entryStatusLabel(filter?: EntryStatusFilter | null) {
 
 function matchEntryStatus(order: PublicOrderRecord, filter?: EntryStatusFilter | null) {
   if (!filter || filter === "all") return true;
+  if (filter === "unpaid") return ![1, 2, 3].includes(Number(order.payStatus));
   if (filter === "month") {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const time = order.orderTime ? new Date(String(order.orderTime).replace(/-/g, "/")) : null;
@@ -156,7 +158,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
     orders.forEach((o) => {
       if (Number(o.payStatus) === 1) paid += 1;
       else if (Number(o.payStatus) === 3) confirming += 1;
-      else unpaid += 1;
+      else if (Number(o.payStatus) !== 2) unpaid += 1;
     });
     return { paid, unpaid, confirming };
   }, [orders]);
@@ -167,7 +169,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
     if (active !== "ALL" && order.orderStatus !== active) return false;
     if (activePay === "PAID" && Number(order.payStatus) !== 1) return false;
     if (activePay === "CONFIRMING" && Number(order.payStatus) !== 3) return false;
-    if (activePay === "UNPAID" && [1, 3].includes(Number(order.payStatus))) return false;
+    if (activePay === "UNPAID" && [1, 2, 3].includes(Number(order.payStatus))) return false;
     if (!normalizedKeyword) return true;
     return [order.orderCode, order.customer, order.phone, order.address, order.expCode, order.store, order.storeName, order.purchaser, order.createBy].some((value) => String(value || "").toLowerCase().includes(normalizedKeyword));
   });
@@ -197,6 +199,7 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
       const tone = statusTone(order.orderStatus);
       const isPending = order.orderStatus === "DSH";
       const payMeta = payStatusMeta(order.payStatus);
+      const isPayable = ![1, 2, 3].includes(Number(order.payStatus));
       return <article key={order.id} className="soft-card">
         <header><div className="tool-order-header-left"><div><small>订单编号</small><span className="tool-order-num-line"><b>{order.orderCode || "--"}</b><button type="button" className="tool-copy-icon" onClick={() => copyOrder(order)} aria-label="复制订单"><Copy size={14} /></button></span></div></div><div className="tool-order-pills"><span className={`pill tool-order-status-${tone}`}>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</span><span className={`pill tool-order-pay-${payMeta.key}`}><CreditCard size={11} />{payMeta.label}</span></div></header>
         <div className="tool-order-product"><b>{order.orderNameDesc || "未命名商品"}</b><span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span><time>{String(order.orderTime || "").replace("T", " ").slice(0, 19) || "--"}</time></div>
@@ -208,11 +211,12 @@ export default function OrderList({ orders, contact, onEdit, onDelete, onView, o
         {order.orderDesc ? <p className="tool-order-note">备注：{order.orderDesc}</p> : null}
         <button type="button" className={`tool-tracking-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleTracking(order.id)}><Clock3 size={15} /><span><b>物流信息详情</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"} · 共 {tracking.length} 条</small></span><ChevronDown size={17} /></button>
         {isOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p>{item.expCode ? <em>快递单号：{item.expCode}</em> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
-        {(isPending && (onEdit || onDelete)) || onView || (onPay && ![1, 3].includes(Number(order.payStatus))) ? collapseExtras ? <details className="tool-order-more"><summary><span>更多订单操作</span><ChevronDown size={15} /></summary><div className="tool-order-actions">{onView ? <button type="button" className="tool-view" onClick={() => onView(order)}><Eye size={12} /><span>详情</span></button> : null}{onPay && ![1, 3].includes(Number(order.payStatus)) ? <button type="button" className="tool-edit tool-pay-entry" onClick={() => onPay(order)}><Wallet size={12} /><span>去支付</span></button> : null}{isPending && onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{isPending && onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div></details> : <div className="tool-order-actions">{onView ? <button type="button" className="tool-view" onClick={() => onView(order)}><Eye size={12} /><span>详情</span></button> : null}{onPay && ![1, 3].includes(Number(order.payStatus)) ? <button type="button" className="tool-edit tool-pay-entry" onClick={() => onPay(order)}><Wallet size={12} /><span>去支付</span></button> : null}{isPending && onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{isPending && onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div> : null}
+        {(isPending && (onEdit || onDelete)) || onView || (onPay && isPayable) ? collapseExtras ? <details className="tool-order-more"><summary><span>更多订单操作</span><ChevronDown size={15} /></summary><div className="tool-order-actions">{onView ? <button type="button" className="tool-view" onClick={() => onView(order)}><Eye size={12} /><span>详情</span></button> : null}{onPay && isPayable ? <button type="button" className="tool-edit tool-pay-entry" onClick={() => onPay(order)}><Wallet size={12} /><span>去支付</span></button> : null}{isPending && onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{isPending && onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div></details> : <div className="tool-order-actions">{onView ? <button type="button" className="tool-view" onClick={() => onView(order)}><Eye size={12} /><span>详情</span></button> : null}{onPay && isPayable ? <button type="button" className="tool-edit tool-pay-entry" onClick={() => onPay(order)}><Wallet size={12} /><span>去支付</span></button> : null}{isPending && onEdit ? <button type="button" className="tool-edit" onClick={() => onEdit(order)}><Edit3 size={12} /><span>编辑</span></button> : null}{isPending && onDelete ? <button type="button" className="tool-delete" onClick={() => onDelete(order)}><Trash2 size={12} /><span>删除</span></button> : null}</div> : null}
       </article>;
     })}</section>
     {!visible.length ? <div className="tool-list-empty"><Inbox size={32} /><h3>{orders.length ? "没有符合当前筛选条件的订单" : "还没有关联订单"}</h3><p>{orders.length ? "试着切换状态、清除搜索词，或者刷新一下数据。" : "使用当前专属链接下单后，订单会自动显示在这里。"}</p></div> : null}
     {enableCostSelection && selectedCostRows.length ? <aside className="tool-cost-summary-float"><div className="tool-cost-summary-head"><span><Wallet size={15} /><b>已选 {selectedCostRows.length} 笔订单</b></span><div className="tool-cost-summary-actions"><button type="button" onClick={toggleAllCostOrders}>{selectedCostOrders.size === selectableCostRows.length ? "取消全选" : "全选"}</button><button type="button" onClick={() => setSelectedCostOrders(new Set())}>清空</button></div></div><div className="tool-cost-summary-grid"><span>桃 <b>¥{formatCost(costSummary.goods)}</b></span><span>包装 <b>¥{formatCost(costSummary.package)}</b></span><span>快递 <b>¥{formatCost(costSummary.express)}</b></span><span>总成本 <b>¥{formatCost(costSummary.total)}</b></span></div></aside> : null}
     {copied ? <div className="public-copy-toast"><CheckCircle2 size={16} />订单信息已复制</div> : null}
-  </>;
+  </>
 }
+

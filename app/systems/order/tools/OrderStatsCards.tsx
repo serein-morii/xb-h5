@@ -1,11 +1,12 @@
 import { PublicOrderRecord } from "./OrderList";
 
-export type StatusFilter = "all" | "pending" | "shipped" | "done" | "month";
+export type StatusFilter = "all" | "unpaid" | "pending" | "shipped" | "done" | "month";
 
-export type OrderStats = { total: number; pending: number; shipped: number; done: number; monthCount: number };
+export type OrderStats = { total: number; unpaid: number; pending: number; shipped: number; done: number; monthCount: number };
 
 export const STATUS_CARDS: { key: StatusFilter; label: string; stat: keyof OrderStats }[] = [
   { key: "all", label: "全部订单", stat: "total" },
+  { key: "unpaid", label: "待支付", stat: "unpaid" },
   { key: "pending", label: "待发货", stat: "pending" },
   { key: "shipped", label: "运输中", stat: "shipped" },
   { key: "done", label: "已完成", stat: "done" },
@@ -16,8 +17,9 @@ export const STATUS_CARDS: { key: StatusFilter; label: string; stat: keyof Order
 export function computeOrderStats(orders: PublicOrderRecord[]): OrderStats {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  let pending = 0, shipped = 0, done = 0, monthCount = 0;
+  let unpaid = 0, pending = 0, shipped = 0, done = 0, monthCount = 0;
   for (const o of orders) {
+    if (![1, 2, 3].includes(Number(o.payStatus))) unpaid++;
     const s = String(o.orderStatus || "");
     if (s === "DSH" || s === "DFH") pending++;
     else if (s === "YFH" || s === "YSJ" || s === "YSZ" || s === "YSD") shipped++;
@@ -25,7 +27,7 @@ export function computeOrderStats(orders: PublicOrderRecord[]): OrderStats {
     const t = o.orderTime ? new Date(String(o.orderTime).replace(/-/g, "/")) : null;
     if (t && t >= monthStart) monthCount++;
   }
-  return { total: orders.length, pending, shipped, done, monthCount };
+  return { total: orders.length, unpaid, pending, shipped, done, monthCount };
 }
 
 // 按顶部看板筛选：纯客户端，零网络请求。`filter === null` 等同于不过滤（初始未选）
@@ -39,6 +41,7 @@ export function filterOrdersByStatus(orders: PublicOrderRecord[], filter: Status
     });
   }
   return orders.filter((o) => {
+    if (filter === "unpaid") return ![1, 2, 3].includes(Number(o.payStatus));
     const s = String(o.orderStatus || "");
     if (filter === "pending") return s === "DSH" || s === "DFH";
     if (filter === "shipped") return s === "YFH" || s === "YSJ" || s === "YSZ" || s === "YSD";
