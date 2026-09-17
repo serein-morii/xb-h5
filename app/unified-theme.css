@@ -11221,7 +11221,7 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   border-radius: 11px;
 }
 
-.sheet-header-balanced .menu-user-button {
+.sheet-header .menu-user-button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -11235,7 +11235,7 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   cursor: pointer;
 }
 
-.sheet-header-balanced .menu-user-avatar {
+.sheet-header .menu-user-avatar {
   position: relative;
   display: grid;
   place-items: center;
@@ -11251,7 +11251,7 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   font-weight: 850;
 }
 
-.sheet-header-balanced .menu-user-avatar i {
+.sheet-header .menu-user-avatar i {
   position: absolute;
   right: -4px;
   bottom: -3px;
@@ -11265,14 +11265,14 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   background: var(--xb-accent, #4c5cc5);
 }
 
-.sheet-header-balanced .menu-user-button small {
+.sheet-header .menu-user-button small {
   color: inherit;
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
 }
 
-.sheet-header-balanced .menu-user-button:is(:hover, :focus-visible) {
+.sheet-header .menu-user-button:is(:hover, :focus-visible) {
   border-color: var(--xb-accent, #4c5cc5) !important;
   color: var(--xb-accent, #4c5cc5);
 }

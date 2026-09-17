@@ -93,18 +93,20 @@ test("dashboard overview keeps four status columns", async () => {
 });
 
 test("all-features sheet restores brand title with notification, profile and close actions", async () => {
-  const [sheet, shell] = await Promise.all([
+  const [sheet, shell, styles] = await Promise.all([
     source("app/systems/order/admin/ui.tsx"),
     source("app/systems/order/admin/shell.tsx"),
+    source("app/unified-theme.css"),
   ]);
 
-  // 左侧恢复品牌标识头部（XB MOBILE 眉题 + 标题），右侧为关闭 + 铃铛 + 个人头像
+  // 左侧品牌标识 + 右侧依次为 个人资料 → 铃铛 → 关闭（蓝色圆头像样式）
   assert.match(sheet, /<span className="eyebrow">XB MOBILE<\/span><h2>\{title\}<\/h2>/);
   assert.match(sheet, /sheet-header-cancel/);
-  assert.match(shell, /headerAction=\{userButton\}/);
-  assert.match(shell, /menu-header-actions"><NotificationBellButton/);
-  assert.doesNotMatch(shell, /headerLeading=\{<NotificationBellButton/);
-  assert.doesNotMatch(shell, /headerCenter=\{userButton\}/);
+  assert.match(sheet, /headerActionFirst/);
+  assert.match(shell, /headerAction=\{userButton\} headerActionFirst/);
+  assert.match(shell, /menu-header-actions"><button className="menu-user-button"/);
+  assert.match(shell, /<\/button><NotificationBellButton/);
   assert.match(shell, /className="menu-user-avatar"/);
   assert.match(shell, /打开个人资料与账号设置/);
+  assert.match(styles, /\.sheet-header \.menu-user-avatar \{[^}]*border-radius: 50%/s);
 });

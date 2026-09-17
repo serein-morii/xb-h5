@@ -86,6 +86,7 @@ export function Sheet({
   headerAction,
   headerLeading,
   headerCenter,
+  headerActionFirst = false,
   wide = false,
 }: {
   open: boolean;
@@ -95,6 +96,8 @@ export function Sheet({
   headerAction?: ReactNode;
   headerLeading?: ReactNode;
   headerCenter?: ReactNode;
+  /** true 时自定义操作排在关闭按钮之前（如「全部功能」的个人资料/铃铛在左、关闭在右）。 */
+  headerActionFirst?: boolean;
   wide?: boolean;
 }) {
   useEffect(() => {
@@ -125,8 +128,7 @@ export function Sheet({
           <header className="sheet-header">
             <div><span className="eyebrow">XB MOBILE</span><h2>{title}</h2></div>
             <div className="sheet-header-actions">
-              <button className="sheet-header-cancel" type="button" onClick={onClose}>关闭</button>
-              {headerAction}
+              {headerActionFirst ? <>{headerAction}<button className="sheet-header-cancel" type="button" onClick={onClose}>关闭</button></> : <><button className="sheet-header-cancel" type="button" onClick={onClose}>关闭</button>{headerAction}</>}
             </div>
           </header>
         )}

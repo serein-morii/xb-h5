@@ -176,7 +176,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
   const dept = userInfo?.dept;
   const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
   const userEmail = String(userInfo?.email || "");
-  const userButton = <span className="menu-header-actions"><NotificationBellButton count={notifCount} onClick={onOpenNotif} label="通知中心" /><button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="打开个人资料与账号设置" title="打开个人资料与账号设置"><span className="menu-user-avatar">{avatarChar}<i aria-hidden="true"><Pencil size={9} /></i></span><small>个人资料</small></button></span>;
+  const userButton = <span className="menu-header-actions"><button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="打开个人资料与账号设置" title="打开个人资料与账号设置"><span className="menu-user-avatar">{avatarChar}<i aria-hidden="true"><Pencil size={9} /></i></span><small>个人资料</small></button><NotificationBellButton count={notifCount} onClick={onOpenNotif} label="通知中心" /></span>;
   // 点"修改密码"：未绑定邮箱先弹 BindEmailSheet，绑定成功后再弹改密弹窗
   function handleChangePwdClick() {
     if (!userEmail) {
@@ -267,7 +267,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
     </Sheet>
   </>;
   const extras = mobileMenu.extras;
-  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}>
+  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton} headerActionFirst>
     <div className="toolbar-card search-toolbar menu-search-toolbar">
       <label className="quick-search">
         <Search size={15} strokeWidth={2.2} />
