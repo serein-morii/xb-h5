@@ -1,5 +1,5 @@
 /** 当面收款（简付）：选店铺与渠道，生成收款二维码，可关联订单并轮询支付结果。 */
-import { LoaderCircle, QrCode, RefreshCw, CheckCircle2 } from "lucide-react";
+import { LoaderCircle, QrCode, RefreshCw, CheckCircle2, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "../../../lib/api";
 import { API_PATHS } from "../../../lib/pathConventions";
@@ -13,6 +13,20 @@ type PayReadyStore = {
   storeName?: string;
   wxEnabled?: number;
   alipayEnabled?: number;
+};
+
+type CollectOrder = {
+  id?: number;
+  orderCode?: string;
+  purchaser?: string;
+  customer?: string;
+  phone?: string;
+  orderNameDesc?: string;
+  orderTypeDesc?: string;
+  orderNum?: number;
+  salePrice?: number;
+  payStatus?: number;
+  store?: string;
 };
 
 type CollectResult = {
@@ -57,6 +71,11 @@ export function CollectQrSheet({
   const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<CollectResult | null>(null);
   const [payState, setPayState] = useState<"idle" | "pending" | "success">("idle");
+  const [orderKeyword, setOrderKeyword] = useState("");
+  const [orderResults, setOrderResults] = useState<CollectOrder[]>([]);
+  const [orderSearching, setOrderSearching] = useState(false);
+  const [orderFocus, setOrderFocus] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<CollectOrder | null>(null);
   const pollTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -65,7 +84,9 @@ export function CollectQrSheet({
     setLoadingStores(true);
     setResult(null);
     setPayState("idle");
-    setOrderCode(preset?.orderCode || "");
+    setOrderKeyword(preset?.orderCode || "");
+    setSelectedOrder(null);
+    setOrderResults([]);
     setAmount("");
     setGoodsName("");
     apiRequest<{ data?: PayReadyStore[] }>(`${API_PATHS.stores.root}/pay-ready`)
@@ -121,6 +142,42 @@ export function CollectQrSheet({
     if (!selectedStore) return true;
     return item.value === "wx" ? Number(selectedStore.wxEnabled) !== 0 : Number(selectedStore.alipayEnabled) !== 0;
   });
+
+  // 关联订单搜索：防抖 300ms，按订单号 / 下单人 / 收件人 / 手机号 / 商品名模糊匹配。
+  useEffect(() => {
+    if (!open || selectedOrder) return;
+    const keyword = orderKeyword.trim();
+    if (!keyword) {
+      setOrderResults([]);
+      setOrderSearching(false);
+      return;
+    }
+    setOrderSearching(true);
+    const timer = window.setTimeout(() => {
+      let active = true;
+      apiRequest<{ data?: CollectOrder[] }>(`${API_PATHS.orders.root}/collect-search`, { query: { keyword } })
+        .then((response) => { if (active) setOrderResults(Array.isArray(response.data) ? response.data : []); })
+        .catch(() => { if (active) setOrderResults([]); })
+        .finally(() => { if (active) setOrderSearching(false); });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [open, orderKeyword, selectedOrder]);
+
+  function pickOrder(order: CollectOrder) {
+    if ([1, 3].includes(Number(order.payStatus))) {
+      notify(`订单 ${order.orderCode} 已是付款状态，无需收款`, "info");
+      return;
+    }
+    setSelectedOrder(order);
+    setOrderCode(String(order.orderCode || ""));
+    setOrderResults([]);
+    const matched = order.store ? stores.find((item) => item.storeName === order.store) : null;
+    if (matched) {
+      setStoreId(matched.storeId);
+      if (Number(matched.wxEnabled) !== 1 && Number(matched.alipayEnabled) === 1) setPayMethod("alipay");
+      if (Number(matched.alipayEnabled) !== 1 && Number(matched.wxEnabled) === 1) setPayMethod("wx");
+    }
+  }
 
   async function create() {
     if (!storeId) return notify("请选择收款店铺", "info");
@@ -196,9 +253,56 @@ export function CollectQrSheet({
               <button type="button" key={item.value} className={payMethod === item.value ? "active" : ""} role="radio" aria-checked={payMethod === item.value} onClick={() => setPayMethod(item.value)}>{item.label}</button>
             ))}
           </div>
-          <label><span>关联订单号（可选）</span>
-            <input value={orderCode} onChange={(event) => setOrderCode(event.target.value)} placeholder="填订单号则按订单金额收款" />
-          </label>
+          <div className="collect-order-search">
+            <span className="collect-order-search-label">关联订单（可选，可搜订单号 / 下单人 / 收件人 / 手机号）</span>
+            {selectedOrder ? (
+              <div className="collect-order-chip">
+                <div>
+                  <b>{selectedOrder.orderCode}</b>
+                  <small>
+                    {[selectedOrder.purchaser, selectedOrder.customer, selectedOrder.phone, selectedOrder.store].filter(Boolean).join(" · ")}
+                  </small>
+                  <small>
+                    {selectedOrder.orderNameDesc || "订单"}
+                    {selectedOrder.orderNum ? ` × ${selectedOrder.orderNum}` : ""}
+                    {selectedOrder.salePrice ? ` · ¥${Number(selectedOrder.salePrice).toFixed(2)}` : ""}
+                  </small>
+                </div>
+                <button type="button" aria-label="取消关联" onClick={() => { setSelectedOrder(null); setOrderCode(""); }}><X size={14} /></button>
+              </div>
+            ) : (
+              <div className="collect-order-search-box">
+                <div className="collect-order-search-input">
+                  <Search size={15} />
+                  <input
+                    value={orderKeyword}
+                    onChange={(event) => setOrderKeyword(event.target.value)}
+                    onFocus={() => setOrderFocus(true)}
+                    onBlur={() => window.setTimeout(() => setOrderFocus(false), 150)}
+                    placeholder="输入关键词搜索订单"
+                    enterKeyHint="search"
+                  />
+                  {orderSearching ? <LoaderCircle className="spin" size={15} /> : null}
+                </div>
+                {orderFocus && orderKeyword.trim() ? (
+                  <div className="collect-order-results" role="listbox" aria-label="订单搜索结果">
+                    {!orderResults.length && !orderSearching ? <p className="collect-order-empty">没有匹配的订单</p> : null}
+                    {orderResults.map((order) => (
+                      <button type="button" role="option" key={String(order.id || order.orderCode)} className={[1, 3].includes(Number(order.payStatus)) ? "is-paid" : ""} onClick={() => pickOrder(order)}>
+                        <b>{order.orderCode}</b>
+                        <small>{[order.purchaser, order.customer, order.phone].filter(Boolean).join(" · ") || "无下单信息"}</small>
+                        <small>
+                          {order.orderNameDesc || "订单"}{order.orderNum ? ` × ${order.orderNum}` : ""}
+                          {order.salePrice ? ` · ¥${Number(order.salePrice).toFixed(2)}` : ""}
+                          {Number(order.payStatus) === 1 ? " · 已付款" : Number(order.payStatus) === 3 ? " · 待确认" : ""}
+                        </small>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
           {!orderCode.trim() ? (
             <>
               <label><span>收款金额（元）</span>

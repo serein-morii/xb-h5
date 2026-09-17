@@ -9600,6 +9600,140 @@ html.theme-dark :is(
   word-break: break-all;
 }
 
+.collect-order-search {
+  display: grid;
+  gap: 6px;
+}
+
+.collect-order-search-label {
+  font-size: 12px;
+  color: var(--xb-text-secondary, #66736b);
+}
+
+.collect-order-search-box {
+  position: relative;
+}
+
+.collect-order-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 11px;
+  background: var(--xb-surface, #fff);
+  color: var(--xb-text-tertiary, #95a19a);
+}
+
+.collect-order-search-input input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--xb-text, #18231d);
+  font: inherit;
+}
+
+.collect-order-results {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 264px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 13px;
+  background: var(--xb-surface, #fff);
+  box-shadow: 0 16px 40px rgba(20, 34, 28, .14);
+}
+
+.collect-order-results button {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.collect-order-results button:hover,
+.collect-order-results button:focus-visible {
+  background: var(--xb-accent-soft, #e8f0ff);
+}
+
+.collect-order-results button b {
+  font-size: 12.5px;
+  color: var(--xb-text, #18231d);
+}
+
+.collect-order-results button small {
+  font-size: 10.5px;
+  color: var(--xb-text-tertiary, #95a19a);
+}
+
+.collect-order-results button.is-paid {
+  opacity: .55;
+}
+
+.collect-order-empty {
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 11.5px;
+}
+
+.collect-order-chip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--xb-accent-line, #bcd0ff);
+  border-radius: 12px;
+  background: var(--xb-accent-soft, #e8f0ff);
+}
+
+.collect-order-chip b {
+  display: block;
+  font-size: 12.5px;
+  color: var(--xb-text, #18231d);
+}
+
+.collect-order-chip small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--xb-text-secondary, #66736b);
+}
+
+.collect-order-chip > button {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xb-text-tertiary, #95a19a);
+  cursor: pointer;
+}
+
+.collect-order-chip > button:hover {
+  background: rgba(0, 0, 0, .06);
+  color: var(--xb-text, #18231d);
+}
+
 /*
  * Button completion pass
  *
