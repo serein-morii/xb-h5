@@ -10128,11 +10128,17 @@ html.theme-dark .toolbar-card.search-toolbar .search-clear svg {
   color: var(--xb-danger) !important;
 }
 
-:is(.danger-action, .purchaser-create-action.danger) {
+:is(.danger-action, .purchaser-create-action.danger, .button-danger, .filter-apply.danger-action) {
   border-color: var(--xb-danger) !important;
   color: #fff !important;
   background: var(--xb-danger) !important;
-  box-shadow: 0 8px 18px rgb(198 66 66 / .18) !important;
+  box-shadow: none !important;
+}
+
+:is(.danger-action, .purchaser-create-action.danger, .button-danger, .filter-apply.danger-action):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--xb-danger) 82%, #000) !important;
+  background: color-mix(in srgb, var(--xb-danger) 82%, #000) !important;
+  box-shadow: none !important;
 }
 
 /*
@@ -17266,19 +17272,6 @@ html.theme-dark .utility-shell {
 .online-payment-filter-body { display: grid; gap: 12px; }
 .online-payment-date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .online-payment-date-grid label { min-width: 0; }
-.online-payment-refund-review {
-  margin: 0 0 14px;
-  padding: 13px 14px;
-  border: 1px solid var(--xb-line);
-  border-radius: 12px;
-  color: var(--xb-text);
-  background: var(--xb-surface-muted);
-  font-size: 11px;
-  line-height: 1.75;
-  white-space: pre-line;
-}
-.online-payment-refund-warning { margin: 10px 0 0; color: var(--state-danger, #b3452f); font-size: 10px; }
-.online-payment-refund-sheet .filter-apply.is-danger { border-color: #b42318; background: #b42318; }
 
 @media (max-width: 560px) {
   .online-payment-date-grid { grid-template-columns: minmax(0, 1fr); }

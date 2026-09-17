@@ -179,18 +179,6 @@ function filterQuery(filters: PaymentFilters) {
   };
 }
 
-function refundReview(row: OnlinePayment) {
-  const lines = [
-    `支付单 ${row.paymentNo} · ${money(row.amount)} 将原路退回（${payMethodLabel(row.payMethod)}）。`,
-    `关联订单 ${row.orderCode || "未关联"}`,
-    `商品 ${orderGoods(row)}`,
-    `收件人 ${orderRecipient(row)}`,
-  ];
-  if (row.address) lines.push(`地址 ${row.address}`);
-  lines.push(`订单状态 ${orderStatusLabel(row.orderStatus)} · ${payStatusLabel(row.payStatus)}`);
-  return lines.join("\n");
-}
-
 export function OnlinePaymentsPage({
   notify,
 }: {
@@ -524,11 +512,29 @@ export function OnlinePaymentsPage({
       </Sheet>
 
       <Sheet open={refundTarget !== null} title="确认全额退款" onClose={() => setRefundTarget(null)}>
-        {refundTarget ? <form className="filter-sheet online-payment-refund-sheet" onSubmit={submitRefund}>
+        {refundTarget ? <form className="filter-sheet" onSubmit={submitRefund}>
           <div className="filter-sheet-body">
-            <section className="filter-section"><header><h3>退款核对</h3></header><p className="online-payment-refund-review">{refundReview(refundTarget)}</p><label><span>退款原因</span><textarea value={refundReason} maxLength={128} required onChange={(event) => setRefundReason(event.target.value)} placeholder="请输入退款原因" /></label><p className="online-payment-refund-warning">退款将原路退回买家，成功后不可撤销。</p></section>
+            <section className="filter-section">
+              <header><h3>退款核对</h3></header>
+              <div className="data-metrics">
+                <div className="full-width"><span>支付单</span><b>{refundTarget.paymentNo}</b></div>
+                <div><span>退款金额</span><b className="money">{money(refundTarget.amount)}</b></div>
+                <div><span>支付渠道</span><b>{payMethodLabel(refundTarget.payMethod)}</b></div>
+                <div><span>关联订单</span><b>{refundTarget.orderCode || "未关联"}</b></div>
+                <div><span>商品</span><b>{orderGoods(refundTarget)}</b></div>
+                <div className="full-width"><span>收件人</span><b>{orderRecipient(refundTarget)}</b></div>
+                {refundTarget.address ? <div className="full-width"><span>地址</span><b>{refundTarget.address}</b></div> : null}
+                <div><span>订单状态</span><b>{orderStatusLabel(refundTarget.orderStatus)}</b></div>
+                <div><span>付款状态</span><b>{payStatusLabel(refundTarget.payStatus)}</b></div>
+              </div>
+              <label><span>退款原因</span><textarea value={refundReason} maxLength={128} required onChange={(event) => setRefundReason(event.target.value)} placeholder="请输入退款原因" /></label>
+              <p className="data-note">退款将原路退回买家，成功后不可撤销。</p>
+            </section>
           </div>
-          <div className="filter-sheet-footer"><button type="button" className="filter-reset" onClick={() => setRefundTarget(null)}>取消</button><button className="filter-apply is-danger" type="submit" disabled={busyId === refundTarget.id || !refundReason.trim()}>{busyId === refundTarget.id ? "退款处理中" : "确认退款"}</button></div>
+          <div className="filter-sheet-footer">
+            <button type="button" className="filter-reset" onClick={() => setRefundTarget(null)}>取消</button>
+            <button className="filter-apply danger-action" type="submit" disabled={busyId === refundTarget.id || !refundReason.trim()}>{busyId === refundTarget.id ? "退款处理中" : "确认退款"}</button>
+          </div>
         </form> : null}
       </Sheet>
 
