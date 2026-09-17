@@ -10586,54 +10586,18 @@ html .order-page .orders-status-grid > button.active:not(#xb-preserve-legacy-sha
   background: color-mix(in srgb, var(--xb-surface-muted) 56%, var(--xb-surface)) !important;
 }
 
-/* 订单卡次级操作：胶囊快捷项，自动换行；支付类蓝色、删除红色幽灵样式 */
 .order-page .order-card .card-more {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  min-height: 0;
-  padding: 10px 12px 12px;
-  border-top: 1px dashed var(--xb-line);
-  background: transparent;
+  min-height: 42px;
+  border-top: 1px solid var(--xb-line);
 }
 
 .order-page .order-card .card-more button {
-  flex: 0 1 auto;
   min-width: 0;
-  min-height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0 11px;
-  border: 1px solid var(--xb-line) !important;
-  border-radius: 999px;
-  color: var(--xb-text-secondary) !important;
-  background: var(--xb-surface) !important;
-  font-size: 10.5px;
+  min-height: 42px;
+  flex: 1 1 0;
+  padding: 0 3px;
+  font-size: 9.5px;
   white-space: nowrap;
-}
-
-.order-page .order-card .card-more button svg {
-  width: 12px;
-  height: 12px;
-}
-
-.order-page .order-card .card-more button:active {
-  transform: scale(.95);
-}
-
-.order-page .order-card .card-more button.pay-chip {
-  border-color: color-mix(in srgb, var(--xb-accent, #2867ee) 26%, transparent) !important;
-  color: var(--xb-accent, #2867ee) !important;
-  background: var(--xb-accent-soft, #e8f0ff) !important;
-}
-
-.order-page .order-card .card-more button.danger-text {
-  border-color: color-mix(in srgb, var(--xb-danger, #c93e3e) 24%, transparent) !important;
-  color: var(--xb-danger, #c93e3e) !important;
-  background: var(--xb-danger-soft, rgba(201, 62, 62, .07)) !important;
 }
 
 .order-page .empty-state {

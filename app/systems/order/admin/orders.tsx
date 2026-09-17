@@ -7,13 +7,11 @@ import {
   Download,
   Eye,
   FileSpreadsheet,
-  History,
   LoaderCircle,
   MapPin,
   Pencil,
   Phone,
   Plus,
-  PackageCheck,
   ReceiptText,
   RefreshCw,
   RotateCw,
@@ -1101,7 +1099,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
             <div className="shipping-line"><span><Truck size={15} />{row.expComDesc || (row.expCom ? optionLabel(row.expCom, dictionaries.expressCompanies) : "尚未选择快递")}</span><span>{row.expCode || row.orderTime?.slice(0, 10) || ""}</span></div>
             {row.expNewDesc ? <p className="latest-route"><span />{row.expNewDesc}</p> : null}
             <div className="card-actions"><button onClick={() => getDetail(row)}><Eye size={16} />详情</button><button onClick={() => getEditor(row)}><Pencil size={16} />修改</button><button onClick={() => setCopyTarget(row)}><Copy size={16} />复制</button><button className="primary-action" onClick={() => openShipping(row)}><Send size={16} />发货</button></div>
-            <div className="card-more"><button onClick={() => requestBatch("to-send", "设为待发", row)}><PackageCheck size={12} />设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}><CircleCheck size={12} />完成</button><button onClick={() => refreshLogistics(row)}><RefreshCw size={12} />刷新物流</button><button onClick={() => setLogsTarget(row)}><History size={12} />修改记录</button>{![1, 3].includes(Number(row.payStatus)) ? <button className="pay-chip" onClick={() => setCollectPreset({ orderCode: String(row.orderCode || ""), storeName: String(row.store || ""), autoSelect: true })}><CreditCard size={12} />收款</button> : null}{Number(row.payStatus) === 1 ? <button onClick={() => markPay("unpaid", row)}><CreditCard size={12} />取消付款</button> : <button className="pay-chip" onClick={() => markPay("paid", row)}><CreditCard size={12} />标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}><Trash2 size={12} />删除</button></div>
+            <div className="card-more"><button onClick={() => requestBatch("to-send", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button><button onClick={() => setLogsTarget(row)}>修改记录</button>{![1, 3].includes(Number(row.payStatus)) ? <button onClick={() => setCollectPreset({ orderCode: String(row.orderCode || ""), storeName: String(row.store || ""), autoSelect: true })}>收款</button> : null}{Number(row.payStatus) === 1 ? <button onClick={() => markPay("unpaid", row)}>取消付款</button> : <button onClick={() => markPay("paid", row)}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
           </article>
         );})}
       </div>
