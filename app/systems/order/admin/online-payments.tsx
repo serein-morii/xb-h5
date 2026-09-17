@@ -152,7 +152,7 @@ function payStatusLabel(status: unknown) {
   if (value === 1) return "已付款";
   if (value === 2) return "已退款";
   if (value === 3) return "待确认";
-  if (value === 0) return "未付款";
+  if (value === 0) return "待支付";
   return "—";
 }
 
@@ -389,22 +389,14 @@ export function OnlinePaymentsPage({
           <h1>支付订单</h1>
           <p>交易状态、入账与退款进度集中核对</p>
         </div>
-        {canManage ? (
-          <button
-            className="round-add"
-            type="button"
-            disabled={!syncableRows.length || bulkSyncing}
-            onClick={() => setConfirm({
-              title: "核对本页待处理状态",
-              message: `将向简付逐条查询本页 ${syncableRows.length} 笔待支付或退款中的交易，并以平台结果更新本地状态。是否继续？`,
-              action: syncVisible,
-            })}
-          >
-            {bulkSyncing ? <LoaderCircle className="spin" size={22} /> : <RefreshCw size={22} />}
-            <span>{bulkSyncing ? "核对中" : "同步"}</span>
-          </button>
-        ) : null}
       </div>
+
+      <section className="finance-status-grid" aria-label="支付汇总">
+        <article><span className="metric-icon blue"><ReceiptText size={15} /></span><p>全部</p><b>{summary.totalCount}</b><small>支付订单</small></article>
+        <article className="is-positive"><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>支付成功</p><b>{summary.paidCount}</b><small>{money(summary.paidAmount)}</small></article>
+        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待支付</p><b>{summary.pendingCount}</b><small>等待付款</small></article>
+        <article><span className="metric-icon amber"><RotateCcw size={15} /></span><p>退款</p><b>{summary.refundingCount + summary.refundedCount}</b><small>{summary.refundingCount} 处理中 · {summary.refundedCount} 完成</small></article>
+      </section>
 
       <div className="toolbar-card search-toolbar">
         <label className="quick-search">
@@ -430,13 +422,6 @@ export function OnlinePaymentsPage({
           action: syncVisible,
         })}>{bulkSyncing ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}{bulkSyncing ? "核对中" : `同步本页${syncableRows.length ? ` · ${syncableRows.length}` : ""}`}</button> : null}
       </div>
-
-      <section className="metric-grid finance-status-grid" aria-label="支付汇总">
-        <article className="is-positive"><span className="metric-icon green"><BadgeDollarSign size={15} /></span><p>净入账</p><b>{money(summary.netAmount)}</b><small>支付减已退款</small></article>
-        <article><span className="metric-icon blue"><CreditCard size={15} /></span><p>支付金额</p><b>{money(summary.paidAmount)}</b><small>{summary.paidCount} 笔支付成功</small></article>
-        <article><span className="metric-icon amber"><RotateCcw size={15} /></span><p>退款金额</p><b>{money(summary.refundedAmount)}</b><small>{summary.refundedCount} 笔已退款</small></article>
-        <article><span className="metric-icon peach"><RefreshCw size={15} /></span><p>待处理</p><b>{summary.pendingCount + summary.refundingCount}</b><small>{summary.pendingCount} 待支付 · {summary.refundingCount} 退款中</small></article>
-      </section>
 
       {error ? (
         <section className="risk-ip-mobile-error" role="alert">
@@ -471,11 +456,10 @@ export function OnlinePaymentsPage({
               <div className={`expand-wrapper ${isOpen ? "open" : ""}`}><div className="expand-inner">
                 <div className="data-metrics data-metrics-expand">
                   <div><span>订单状态</span><b>{orderStatusLabel(row.orderStatus)}</b></div>
-                  <div><span>付款状态</span><b>{payStatusLabel(row.payStatus)}</b></div>
+                  <div><span>订单付款状态</span><b>{payStatusLabel(row.payStatus)}</b></div>
                   <div className="full-width"><span>平台支付单号</span><span className="online-payment-copy-line"><b>{row.tradeOrderId || "—"}</b>{row.tradeOrderId ? <button type="button" onClick={() => void copyValue("平台支付单号", row.tradeOrderId)} aria-label="复制平台支付单号"><Copy size={13} /></button> : null}</span></div>
                   <div><span>创建时间</span><b>{row.createTime || "—"}</b></div>
                   <div><span>更新时间</span><b>{row.updateTime || "—"}</b></div>
-                  <div className="full-width"><span>收货地址</span><b>{row.address || "—"}</b></div>
                   {row.refundNo || row.refundId ? <>
                     <div className="full-width"><span>退款单号</span><span className="online-payment-copy-line"><b>{row.refundId || row.refundNo}</b><button type="button" onClick={() => void copyValue("退款单号", row.refundId || row.refundNo)} aria-label="复制退款单号"><Copy size={13} /></button></span></div>
                     <div><span>退款时间</span><b>{row.refundTime || "—"}</b></div>

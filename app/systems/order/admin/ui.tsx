@@ -84,6 +84,8 @@ export function Sheet({
   children,
   onClose,
   headerAction,
+  headerLeading,
+  headerCenter,
   wide = false,
 }: {
   open: boolean;
@@ -91,6 +93,8 @@ export function Sheet({
   children: ReactNode;
   onClose: () => void;
   headerAction?: ReactNode;
+  headerLeading?: ReactNode;
+  headerCenter?: ReactNode;
   wide?: boolean;
 }) {
   useEffect(() => {
@@ -108,15 +112,24 @@ export function Sheet({
     <div className="sheet-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className={`sheet ${wide ? "sheet-wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-grabber" />
-        <header className="sheet-header">
-          <div><span className="eyebrow">XB MOBILE</span><h2>{title}</h2></div>
-          <div className="sheet-header-actions">
-            <button className="sheet-header-cancel" type="button" onClick={onClose}>
-              关闭
-            </button>
-            {headerAction}
-          </div>
-        </header>
+        {headerLeading || headerCenter ? (
+          <header className="sheet-header sheet-header-balanced">
+            <div className="sheet-header-leading">{headerLeading}</div>
+            <div className="sheet-header-center">{headerCenter}</div>
+            <div className="sheet-header-actions">
+              <button className="sheet-header-cancel" type="button" onClick={onClose}>关闭</button>
+              {headerAction}
+            </div>
+          </header>
+        ) : (
+          <header className="sheet-header">
+            <div><span className="eyebrow">XB MOBILE</span><h2>{title}</h2></div>
+            <div className="sheet-header-actions">
+              <button className="sheet-header-cancel" type="button" onClick={onClose}>关闭</button>
+              {headerAction}
+            </div>
+          </header>
+        )}
         <div className="sheet-content">{children}</div>
       </section>
     </div>

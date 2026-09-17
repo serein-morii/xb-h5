@@ -172,11 +172,11 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
       .filter((group) => group.items.length > 0);
   }, [menuQuery, mobileMenu.groups]);
   const displayName = String(userInfo?.nickName || userInfo?.userName || username);
-  const avatarChar = String(userInfo?.avatar || displayName).slice(0, 1).toUpperCase();
+  const avatarChar = displayName.slice(0, 1).toUpperCase();
   const dept = userInfo?.dept;
   const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
   const userEmail = String(userInfo?.email || "");
-  const userButton = <span className="menu-header-actions"><NotificationBellButton count={notifCount} onClick={onOpenNotif} label="通知中心" /><button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="查看用户信息"><span>{avatarChar}</span><small>用户</small></button></span>;
+  const userButton = <button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="打开个人资料与账号设置" title="打开个人资料与账号设置"><span className="menu-user-avatar">{avatarChar}<i aria-hidden="true"><Pencil size={9} /></i></span><small>个人资料</small></button>;
   // 点"修改密码"：未绑定邮箱先弹 BindEmailSheet，绑定成功后再弹改密弹窗
   function handleChangePwdClick() {
     if (!userEmail) {
@@ -267,7 +267,13 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
     </Sheet>
   </>;
   const extras = mobileMenu.extras;
-  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton}>
+  return <Sheet
+    open={open}
+    title="全部功能"
+    onClose={onClose}
+    headerLeading={<NotificationBellButton count={notifCount} onClick={onOpenNotif} label="通知中心" />}
+    headerCenter={userButton}
+  >
     <div className="toolbar-card search-toolbar menu-search-toolbar">
       <label className="quick-search">
         <Search size={15} strokeWidth={2.2} />
