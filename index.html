@@ -11,7 +11,7 @@
     <title>喜八移动订单管理</title>
     <script type="application/json" id="app-startup-config">
       {
-        "order": { "eyebrow": "ORDER WORKSPACE", "title": "喜八工作台", "message": "正在启动订单系统", "status": "安全连接已就绪", "mark": "XB", "accent": "#18815b", "minimumMs": 700 },
+        "order": { "eyebrow": "ORDER WORKSPACE", "title": "喜八工作台", "message": "正在启动订单系统", "status": "安全连接已就绪", "mark": "XB", "accent": "#2867ee", "minimumMs": 700 },
         "otp": { "eyebrow": "PRIVATE VAULT", "title": "OTP Vault", "message": "正在打开身份保险库", "status": "安全通道已就绪", "mark": "KEY", "accent": "#6674cf", "minimumMs": 0 },
         "lab": { "eyebrow": "HANDY LAB", "title": "实验室", "message": "正在准备工具", "status": "运行环境已就绪", "mark": "LAB", "accent": "#c87545", "minimumMs": 300 }
       }
@@ -24,9 +24,12 @@
         var lab = host === "lab.gooop.top" || host.indexOf("lab.") === 0 || path === "/lab" || path.indexOf("/lab/") === 0 || path === "/bead-studio" || path === "/utilities" || path.indexOf("/handy/") === 0;
         var system = otp ? "otp" : lab ? "lab" : "order";
         var savedTheme;
+        var savedPalette;
         try { savedTheme = localStorage.getItem("xb-h5-theme"); } catch (_) { /* 使用系统主题。 */ }
+        try { savedPalette = localStorage.getItem("xb-h5-theme-palette"); } catch (_) { /* 使用默认海蓝。 */ }
         var dark = savedTheme === "dark" || (savedTheme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.startupSystem = system;
+        document.documentElement.dataset.palette = savedPalette === "emerald" || savedPalette === "amber" || savedPalette === "berry" ? savedPalette : "ocean";
         document.documentElement.classList.add(dark ? "theme-dark" : "theme-light");
         document.documentElement.style.colorScheme = dark ? "dark" : "light";
         if (otp) document.documentElement.dataset.otp = "1";
@@ -41,7 +44,7 @@
       html, body, #root { min-height: 100%; margin: 0; }
       .app-starting, .app-startup {
         min-height: 100dvh; box-sizing: border-box; padding: 24px; display: grid; place-items: center;
-        overflow: hidden; background: #f3f5fb; background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--startup-accent, #18815b) 18%, transparent), transparent 26%), linear-gradient(155deg, #f8f9fd, #eef0f8);
+        overflow: hidden; background: #f3f5fb; background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--startup-accent, #2867ee) 18%, transparent), transparent 26%), linear-gradient(155deg, #f8f9fd, #eef0f8);
         color: #172033; font-family: Inter, "PingFang SC", system-ui, sans-serif;
       }
       #app-startup { position: fixed; inset: 0; z-index: 40; }

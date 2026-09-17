@@ -115,6 +115,7 @@ test("order admin exposes notification center from menu sheet and branded login"
   assert.match(shell, /notifCount=\{unread\.count\}/);
   assert.match(shell, /onOpenNotif=\{\(\) => \{ setMenuOpen\(false\); setNotifOpen\(true\); \}\}/);
   assert.match(login, /login-order-page/);
+  assert.match(login, /<ThemeSettings \/>/);
   assert.match(login, /otp-login-methods/);
   assert.match(login, /requestEmailCode/);
   assert.match(login, /loginByEmail\(value, emailCode\.trim\(\)\)/);

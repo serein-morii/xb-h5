@@ -27,6 +27,7 @@ import type { DataRow } from "./core";
 import { Sheet } from "./ui";
 import { SliderCaptcha } from "../../../components/SliderCaptcha";
 import { getPasskey } from "../../../lib/passkey";
+import ThemeSettings from "../../../components/ThemeSettings";
 import VaultToastMessage from "../../otp/VaultToastMessage";
 import "../../otp/otp-vault.css";
 import "../../otp/otp-auth.css";
@@ -160,6 +161,7 @@ export function LoginScreen({ onLogin }: { onLogin: (token: string, username: st
 
   return (
     <main className="otp-auth-page login-order-page">
+      <ThemeSettings />
       <div className="otp-auth-app">
         <section className="otp-auth-hero">
           <span className="otp-auth-mark"><ShoppingBag size={25} /></span>
