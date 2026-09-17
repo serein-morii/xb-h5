@@ -531,6 +531,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
   const [shippingSaving, setShippingSaving] = useState(false);
   const [copyTarget, setCopyTarget] = useState<DataRow | null>(null);
   const [collectPreset, setCollectPreset] = useState<CollectPreset | null>(null);
+  const [logsTarget, setLogsTarget] = useState<DataRow | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<OrderStatusView | null>(initialStatusFilter);
   const [counts, setCounts] = useState({ pending: 0, shipping: 0, transit: 0, completed: 0 });
@@ -1098,7 +1099,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
             <div className="shipping-line"><span><Truck size={15} />{row.expComDesc || (row.expCom ? optionLabel(row.expCom, dictionaries.expressCompanies) : "尚未选择快递")}</span><span>{row.expCode || row.orderTime?.slice(0, 10) || ""}</span></div>
             {row.expNewDesc ? <p className="latest-route"><span />{row.expNewDesc}</p> : null}
             <div className="card-actions"><button onClick={() => getDetail(row)}><Eye size={16} />详情</button><button onClick={() => getEditor(row)}><Pencil size={16} />修改</button><button onClick={() => setCopyTarget(row)}><Copy size={16} />复制</button><button className="primary-action" onClick={() => openShipping(row)}><Send size={16} />发货</button></div>
-            <div className="card-more"><button onClick={() => requestBatch("to-send", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button>{![1, 3].includes(Number(row.payStatus)) ? <button onClick={() => setCollectPreset({ orderCode: String(row.orderCode || ""), storeName: String(row.store || "") })}>收款</button> : null}{Number(row.payStatus) === 1 ? <button onClick={() => markPay("unpaid", row)}>取消付款</button> : <button onClick={() => markPay("paid", row)}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
+            <div className="card-more"><button onClick={() => requestBatch("to-send", "设为待发", row)}>设为待发</button><button onClick={() => requestBatch("finish", "完成订单", row)}>完成</button><button onClick={() => refreshLogistics(row)}>刷新物流</button><button onClick={() => setLogsTarget(row)}>修改记录</button>{![1, 3].includes(Number(row.payStatus)) ? <button onClick={() => setCollectPreset({ orderCode: String(row.orderCode || ""), storeName: String(row.store || "") })}>收款</button> : null}{Number(row.payStatus) === 1 ? <button onClick={() => markPay("unpaid", row)}>取消付款</button> : <button onClick={() => markPay("paid", row)}>标已付款</button>}<button className="danger-text" onClick={() => requestDelete(row)}>删除</button></div>
           </article>
         );})}
       </div>
@@ -1303,6 +1304,9 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
       <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} config={copyMenuConfig} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
       <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} storeNameByCode={storeNameByCode} /> : null}</Sheet>
       <CollectQrSheet open={collectPreset !== null} preset={collectPreset} notify={notify} onClose={() => setCollectPreset(null)} onPaid={() => void load()} />
+      <Sheet open={logsTarget !== null} title={`修改记录 · ${String(logsTarget?.orderCode || "")}`} onClose={() => setLogsTarget(null)} wide>
+        {logsTarget ? <OrderModifyLogs orderCode={String(logsTarget.orderCode || "")} /> : null}
+      </Sheet>
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
@@ -1367,5 +1371,69 @@ export function OrderDetail({ row, onCopy, storeNameByCode }: { row: DataRow; on
       <header className="order-detail-section-head"><Sparkles size={15} /><h3>备注</h3></header>
       <p className="order-detail-note">{row.orderDesc}</p>
     </section> : null}
+  </div>;
+}
+
+/** 订单修改留痕：按时间倒序列出每次编辑/删除/付款标记/改价的前后差异。 */
+const MODIFY_LOG_FIELD_LABELS: Record<string, string> = {
+  orderCode: "订单号", purchaser: "下单人", customer: "收件人", phone: "手机号", address: "地址",
+  orderName: "商品", orderNameDesc: "商品名称", orderType: "规格代码", orderTypeDesc: "规格", orderNum: "数量",
+  salePrice: "销售价格", expCom: "快递公司", expCode: "快递单号", orderStatus: "订单状态", payStatus: "付款状态",
+  orderDesc: "备注", store: "店铺",
+};
+
+const MODIFY_LOG_ACTION_LABELS: Record<string, string> = {
+  UPDATE: "编辑订单", DELETE: "删除订单", PAY_STATUS: "付款标记", SALE_PRICE: "修改售价",
+};
+
+function modifyLogValue(key: string, value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (key === "payStatus") return String(value) === "1" ? "已付款" : String(value) === "3" ? "待确认" : String(value) === "2" ? "已退款" : "未付款";
+  if (key === "salePrice") return `¥${Number(value).toFixed(2)}`;
+  return String(value);
+}
+
+function OrderModifyLogs({ orderCode }: { orderCode: string }) {
+  const [rows, setRows] = useState<DataRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!orderCode) return;
+    let active = true;
+    setLoading(true);
+    setError("");
+    apiRequest<{ data?: DataRow[] }>(`${API_PATHS.orders.root}/modify-logs`, { query: { orderCode } })
+      .then((result) => { if (active) setRows(Array.isArray(result.data) ? result.data : []); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "修改记录加载失败"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [orderCode]);
+
+  if (loading) return <div className="order-logs-loading"><LoaderCircle className="spin" size={20} />正在读取修改记录…</div>;
+  if (error) return <p className="order-logs-empty">{error}</p>;
+  if (!rows.length) return <p className="order-logs-empty">该订单还没有修改记录。</p>;
+
+  return <div className="order-logs-list">
+    {rows.map((log) => {
+      let before: Record<string, unknown> = {};
+      let after: Record<string, unknown> = {};
+      try { before = log.beforeSnapshot ? JSON.parse(String(log.beforeSnapshot)) : {}; } catch { before = {}; }
+      try { after = log.afterSnapshot ? JSON.parse(String(log.afterSnapshot)) : {}; } catch { after = {}; }
+      const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].filter((key) => MODIFY_LOG_FIELD_LABELS[key]);
+      const changes = keys
+        .filter((key) => modifyLogValue(key, before[key]) !== modifyLogValue(key, after[key]))
+        .map((key) => ({ key, label: MODIFY_LOG_FIELD_LABELS[key], from: modifyLogValue(key, before[key]), to: modifyLogValue(key, after[key]) }));
+      const action = MODIFY_LOG_ACTION_LABELS[String(log.action)] || String(log.action);
+      return <article className="order-log-item" key={String(log.id)}>
+        <header>
+          <b>{action}</b>
+          <span>{String(log.operator || "--")} · {String(log.createTime || "").replace("T", " ").slice(0, 19)}</span>
+        </header>
+        {changes.length ? <ul>
+          {changes.map((change) => <li key={change.key}><span>{change.label}</span><em>{change.from}</em><i>→</i><b>{change.to}</b></li>)}
+        </ul> : <p className="order-log-nochange">无字段差异（内容未变化）</p>}
+      </article>;
+    })}
   </div>;
 }

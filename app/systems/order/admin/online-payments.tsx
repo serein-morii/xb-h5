@@ -6,6 +6,7 @@ import {
   Copy,
   CreditCard,
   Download,
+  FileClock,
   LoaderCircle,
   MapPin,
   Phone,
@@ -41,6 +42,7 @@ type OnlinePayment = {
   refundReason?: string;
   refundTime?: string;
   storeName?: string;
+  orderSnapshot?: string;
   purchaserName?: string;
   orderNameDesc?: string;
   orderTypeDesc?: string;
@@ -212,6 +214,7 @@ export function OnlinePaymentsPage({
   const [refundTarget, setRefundTarget] = useState<OnlinePayment | null>(null);
   const [refundReason, setRefundReason] = useState("后台退款");
   const [collectOpen, setCollectOpen] = useState(false);
+  const [snapshotTarget, setSnapshotTarget] = useState<OnlinePayment | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
     message: string;
@@ -473,10 +476,11 @@ export function OnlinePaymentsPage({
               </div></div>
               <button type="button" className={`data-more-toggle ${isOpen ? "open" : ""}`} onClick={() => toggleExpanded(row.id)} aria-expanded={isOpen}><span>{isOpen ? "收起交易明细" : "查看交易明细"}</span><ChevronDown size={15} /></button>
 
-              {syncable || refundable ? <div className="card-actions">
+              <div className="card-actions">
+                <button type="button" onClick={() => setSnapshotTarget(row)}><FileClock size={15} />订单快照</button>
                 {syncable ? <button type="button" className="primary-action" disabled={busyId === row.id || bulkSyncing} onClick={() => void syncRow(row)}>{busyId === row.id ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}同步状态</button> : null}
                 {refundable ? <button type="button" className="danger-text" disabled={busyId === row.id} onClick={() => { setRefundReason("后台退款"); setRefundTarget(row); }}><RotateCcw size={15} />全额退款</button> : null}
-              </div> : null}
+              </div>
             </article>;
           })}
         </div>
@@ -529,6 +533,27 @@ export function OnlinePaymentsPage({
       </Sheet>
 
       <CollectQrSheet open={collectOpen} notify={notify} onClose={() => setCollectOpen(false)} onPaid={() => void load(activeFilters, pageSize)} />
+
+      <Sheet open={snapshotTarget !== null} title={`订单快照 · ${String(snapshotTarget?.orderCode || snapshotTarget?.paymentNo || "")}`} onClose={() => setSnapshotTarget(null)} wide>
+        {snapshotTarget ? (() => {
+          let snapshot: Record<string, unknown> | null = null;
+          try {
+            snapshot = snapshotTarget.orderSnapshot ? JSON.parse(String(snapshotTarget.orderSnapshot)) as Record<string, unknown> : null;
+          } catch { snapshot = null; }
+          if (!snapshot) return <p className="payment-snapshot-empty">该支付单没有订单快照（早期生成的支付单），当前订单信息以列表展示为准。</p>;
+          const labels: Array<[string, string]> = [
+            ["capturedAt", "快照时间"], ["store", "店铺"], ["orderCode", "订单号"], ["purchaser", "下单人"],
+            ["customer", "收件人"], ["phone", "手机号"], ["address", "地址"],
+            ["orderNameDesc", "商品名称"], ["orderTypeDesc", "规格"], ["orderNum", "数量"], ["salePrice", "单价"], ["amount", "支付金额"],
+            ["orderStatus", "订单状态"], ["payStatus", "付款状态"], ["orderDesc", "备注"],
+          ];
+          return <div className="payment-snapshot-grid">
+            {labels.filter(([key]) => snapshot?.[key] !== undefined && snapshot?.[key] !== null && String(snapshot?.[key]) !== "").map(([key, label]) => (
+              <div key={key}><span>{label}</span><b>{String(snapshot![key])}</b></div>
+            ))}
+          </div>;
+        })() : null}
+      </Sheet>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>

@@ -9735,6 +9735,136 @@ html.theme-dark :is(
 }
 
 /*
+ * 支付订单快照 / 订单修改留痕
+ */
+.payment-snapshot-empty {
+  margin: 0;
+  padding: 18px 4px;
+  text-align: center;
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.payment-snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.payment-snapshot-grid > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 11px;
+  background: var(--xb-surface, #fff);
+}
+
+.payment-snapshot-grid > div > span {
+  font-size: 10.5px;
+  color: var(--xb-text-tertiary, #95a19a);
+}
+
+.payment-snapshot-grid > div > b {
+  font-size: 12px;
+  color: var(--xb-text, #18231d);
+  word-break: break-all;
+}
+
+.order-logs-loading {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  color: var(--xb-text-secondary, #66736b);
+  font-size: 12px;
+}
+
+.order-logs-empty {
+  margin: 0;
+  padding: 18px 4px;
+  text-align: center;
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 12px;
+}
+
+.order-logs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.order-log-item {
+  padding: 11px 13px;
+  border: 1px solid var(--xb-line, rgba(37, 51, 43, .14));
+  border-radius: 13px;
+  background: var(--xb-surface, #fff);
+}
+
+.order-log-item > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.order-log-item > header b {
+  font-size: 12.5px;
+  color: var(--xb-text, #18231d);
+}
+
+.order-log-item > header span {
+  font-size: 10.5px;
+  color: var(--xb-text-tertiary, #95a19a);
+}
+
+.order-log-item ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 5px;
+}
+
+.order-log-item li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.order-log-item li span {
+  flex: none;
+  min-width: 5.5em;
+  color: var(--xb-text-secondary, #66736b);
+}
+
+.order-log-item li em {
+  font-style: normal;
+  color: var(--xb-text-tertiary, #95a19a);
+  text-decoration: line-through;
+  word-break: break-all;
+}
+
+.order-log-item li i {
+  flex: none;
+  color: var(--xb-text-tertiary, #95a19a);
+}
+
+.order-log-item li b {
+  color: var(--xb-accent, #2867ee);
+  word-break: break-all;
+}
+
+.order-log-nochange {
+  margin: 8px 0 0;
+  color: var(--xb-text-tertiary, #95a19a);
+  font-size: 11px;
+}
+
+/*
  * Button completion pass
  *
  * A few feature-local controls were still painted by legacy green values.
