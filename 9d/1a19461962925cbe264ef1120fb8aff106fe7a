@@ -1,0 +1,26 @@
+app/systems/order/admin/crud.tsx
+  s_ec331693b00d25::t_ba3472d3312c6b 594
+tests/otp-online-payment-admin.test.mjs
+  s_ec331693b00d25::t_575d7687f6bdfe 30,46,49,52,62-67
+  s_ec331693b00d25::t_fd45cce3200ec4 68-69
+app/systems/order/admin/mobileMenu.config.ts
+  s_ec331693b00d25::t_ba3472d3312c6b 487,493,496
+app/systems/order/admin/online-payments.tsx
+  s_ec331693b00d25::t_ba3472d3312c6b 385
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9d1a19461962925cbe264ef1120fb8aff106fe7a",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
