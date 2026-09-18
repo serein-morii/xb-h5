@@ -15,9 +15,9 @@ function formatDuration(seconds: number) {
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  if (days) return `${days}天 ${hours}时 ${minutes}分`;
-  if (hours) return `${hours}时 ${minutes}分 ${secs}秒`;
-  return `${minutes}分 ${secs}秒`;
+  if (days) return `${days} 天 ${hours} 时 ${minutes} 分`;
+  if (hours) return `${hours} 时 ${minutes} 分 ${secs} 秒`;
+  return `${minutes} 分 ${secs} 秒`;
 }
 
 export default function VaultTextSharePage({ token }: { token: string }) {
@@ -103,18 +103,43 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "文本分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
 
   const gateVisible = !sessionToken || !content;
+  const formatLabel = format === "MARKDOWN" ? "Markdown" : "普通文本";
   return <main className={`text-share-page ${gateVisible ? "is-gate" : "is-open"}`}>
-    <header className="share-brand"><span className="share-vault-mark">OTP</span><div><b>OTP Vault</b><small>临时文本分享</small></div><button type="button" className="vault-ghost vault-theme-action" onClick={toggleTheme} aria-label="切换显示模式">{themeMode === "system" ? <SunMoon size={18} /> : themeMode === "dark" ? <Moon size={18} /> : <Sun size={18} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button></header>
-    {gateVisible ? <section className="share-access-card text-share-gate">
-      <div className="share-access-intro"><span className="share-lock"><LockKeyhole size={24} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时文本分享"}</h1><p>验证通过后才会传输正文，内容只在有效期内开放。</p></div></div>
-      <div className="share-access-summary"><span><small>内容格式</small><b>{status?.textFormat === "MARKDOWN" ? "Markdown" : "普通文本"}</b></span><span><small>剩余时间</small><b>{formatDuration(Math.max(0, Math.ceil((new Date(normalizeDateTime(status?.expireTime || "")).getTime() - Date.now()) / 1000)))}</b></span></div>
-      {status?.accessCodeRequired ? <form onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}><label><span>输入访问码</span><div className="share-code-input"><KeyRound size={17} /><input autoFocus value={accessCode} onChange={(event) => setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} minLength={4} maxLength={12} autoComplete="one-time-code" /></div></label><button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "查看文本"}</button></form> : <button className="share-open-button" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在打开" : "打开文本"}</button>}
-      {error ? <p className="share-error">{error}</p> : null}
-    </section> : <section className="text-share-content">
-      <header><div><span><FileText size={14} />临时文本</span><h1>{status?.name || "临时文本分享"}</h1><p>{format === "MARKDOWN" ? "Markdown" : "普通文本"} · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="text-share-expiry"><Clock3 size={17} /><span><small>剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
-      <article className={`text-share-document ${format === "MARKDOWN" ? "is-markdown" : "is-text"}`} dangerouslySetInnerHTML={{ __html: renderRichText(content, format === "MARKDOWN" ? "markdown" : "text") }} />
-      {allowCopy ? <button type="button" className="text-share-copy" onClick={() => void copyContent()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "已复制" : "复制全文"}</button> : null}
-      <footer><ShieldCheck size={14} />页面关闭或授权失效后，请重新验证访问</footer>
+    <div className="text-share-glow" aria-hidden="true" />
+    <header className="text-share-header">
+      <span className="text-share-brand"><i>OTP</i><div><b>OTP Vault</b><small>临时文本分享</small></div></span>
+      <button type="button" className="text-share-theme" onClick={toggleTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={16} /> : themeMode === "dark" ? <Moon size={16} /> : <Sun size={16} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button>
+    </header>
+
+    {gateVisible ? <section className="text-share-gate">
+      <span className="text-share-medallion"><LockKeyhole size={26} /></span>
+      <small>受保护的临时分享</small>
+      <h1>{status?.name || "临时文本分享"}</h1>
+      <p>验证通过后才会传输正文，内容只在有效期内开放。</p>
+      <div className="text-share-meta">
+        <span><FileText size={14} /><b>{status?.textFormat === "MARKDOWN" ? "Markdown" : "普通文本"}</b><small>内容格式</small></span>
+        <span><Clock3 size={14} /><b>{formatDuration(Math.max(0, Math.ceil((new Date(normalizeDateTime(status?.expireTime || "")).getTime() - Date.now()) / 1000)))}</b><small>剩余时间</small></span>
+      </div>
+      {status?.accessCodeRequired ? <form className="text-share-form" onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}>
+        <label>
+          <span>访问码</span>
+          <div className="text-share-code"><KeyRound size={17} /><input autoFocus value={accessCode} onChange={(event) => setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="4-12 位访问码" /></div>
+        </label>
+        <button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "查看文本"}</button>
+      </form> : <button className="text-share-open" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在打开" : "打开文本"}</button>}
+      {error ? <p className="text-share-error"><TriangleAlert size={14} />{error}</p> : null}
+    </section> : <section className="text-share-paper-wrap">
+      <div className="text-share-titlebar">
+        <div className="text-share-title">
+          <em className="is-format">{formatLabel}</em>
+          <h1>{status?.name || "临时文本分享"}</h1>
+          <p>{allowCopy ? "允许复制" : "仅允许查看"} · 内容仅在线阅读</p>
+        </div>
+        <span className="text-share-countdown" role="timer"><Clock3 size={15} /><b>{formatDuration(expiresIn)}</b><small>后失效</small></span>
+      </div>
+      <article className="text-share-paper" dangerouslySetInnerHTML={{ __html: renderRichText(content, format === "MARKDOWN" ? "markdown" : "text") }} />
+      {allowCopy ? <button type="button" className={`text-share-copy${copied ? " is-done" : ""}`} onClick={() => void copyContent()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "已复制，30 秒后自动清剪贴板" : "复制全文"}</button> : null}
+      <footer className="text-share-foot"><ShieldCheck size={14} />加密存储 · 限时开放 · 页面关闭后需重新验证</footer>
     </section>}
   </main>;
 }
