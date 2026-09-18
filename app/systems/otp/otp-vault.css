@@ -1506,7 +1506,7 @@ html.theme-dark { @media (max-width: 560px) {
   .vault-passkey-list article { padding: 8px; gap: 7px; }
   .vault-passkey-list article > svg { width: 30px; height: 30px; padding: 7px; }
   .vault-passkey-list article > button { width: 28px; height: 28px; }
-  .vault-mobile-nav { grid-template-columns: repeat(3,1fr); }
+  .vault-mobile-nav { grid-template-columns: repeat(4,1fr); }
   .vault-security-hero { grid-template-columns: auto minmax(0,1fr); gap: 8px; padding: 12px; }
   .vault-security-hero > span:first-child { width: 36px; height: 36px; border-radius: 11px; }
   .vault-security-running { grid-column: 1 / -1; justify-content: center; }
