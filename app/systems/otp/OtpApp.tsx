@@ -4,6 +4,7 @@ import { APP_ROUTES } from "../../lib/pathConventions";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
 import OtpInstallHint from "./OtpInstallHint";
 import VaultSharePage from "./VaultSharePage";
+import VaultTextSharePage from "./VaultTextSharePage";
 import "./otp-vault.css";
 import "./otp-auth.css";
 
@@ -19,17 +20,18 @@ function Fallback() {
 export default function OtpApp() {
   const pathname = resolveSubsystemPath(window.location.pathname, window.location.hostname, ["otp"]);
   const share = pathname.match(/^\/s\/([A-Za-z0-9]{5}|[A-Za-z0-9_-]{10})$/);
+  const textShare = pathname.match(/^\/t\/([A-Za-z0-9]{5}|[A-Za-z0-9_-]{10})$/);
   const guide = pathname === APP_ROUTES.otpGuide;
   const changelog = pathname === APP_ROUTES.otpChangelog;
 
   useEffect(() => {
-    document.title = changelog ? "更新日志｜OTP Vault" : guide ? "使用指南｜OTP Vault" : share ? "临时凭据授权｜OTP Vault" : "OTP Vault｜私人身份保险库";
+    document.title = changelog ? "更新日志｜OTP Vault" : guide ? "使用指南｜OTP Vault" : textShare ? "临时文本分享｜OTP Vault" : share ? "临时凭据授权｜OTP Vault" : "OTP Vault｜私人身份保险库";
     const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (meta) meta.content = changelog ? "查看 OTP Vault 最近功能更新。" : guide ? "了解 OTP Vault 的添加、使用、分享、安全保护与备份恢复。" : share ? "通过访问码查看限时授权凭据。" : "独立管理 OTP 凭据并创建限时访问授权。";
-  }, [changelog, guide, share]);
+    if (meta) meta.content = changelog ? "查看 OTP Vault 最近功能更新。" : guide ? "了解 OTP Vault 的添加、使用、分享、安全保护与备份恢复。" : textShare ? "安全查看限时分享的普通文本或 Markdown。" : share ? "通过访问码查看限时授权凭据。" : "独立管理 OTP 凭据并创建限时访问授权。";
+  }, [changelog, guide, share, textShare]);
   useEffect(() => {
-    if (share || guide || changelog) hideAppStartup();
-  }, [changelog, guide, share]);
+    if (share || textShare || guide || changelog) hideAppStartup();
+  }, [changelog, guide, share, textShare]);
   useEffect(() => {
     let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!manifest) { manifest = document.createElement("link"); manifest.rel = "manifest"; document.head.appendChild(manifest); }
@@ -44,7 +46,7 @@ export default function OtpApp() {
 
   return (
     <Suspense fallback={<Fallback />}>
-      {share ? <VaultSharePage token={share[1]} /> : <>
+      {textShare ? <VaultTextSharePage token={textShare[1]} /> : share ? <VaultSharePage token={share[1]} /> : <>
         <OtpInstallHint />
         {guide ? <OtpVaultGuidePage /> : changelog ? <OtpVaultChangelogPage /> : <OtpVaultPage />}
       </>}

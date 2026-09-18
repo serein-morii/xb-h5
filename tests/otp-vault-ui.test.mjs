@@ -270,10 +270,10 @@ test("keeps the HTML startup card still and only animates copy between stages", 
   assert.match(startup, /if \(overlay\(\)\) return null/);
 });
 
-test("hides the persistent startup overlay on share and docs pages", async () => {
+test("hides the persistent startup overlay on share, text share and docs pages", async () => {
   const app = await source("app/systems/otp/OtpApp.tsx");
   assert.match(app, /hideAppStartup/);
-  assert.match(app, /if \(share \|\| guide \|\| changelog\) hideAppStartup\(\)/);
+  assert.match(app, /if \(share \|\| textShare \|\| guide \|\| changelog\) hideAppStartup\(\)/);
 });
 
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
