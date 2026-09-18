@@ -1872,7 +1872,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </section> : null}
 
     {view === "text" ? <section className="vault-panel vault-view-enter" key="text">
-      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>文本分享</h2></span><p>把一段文字变成限时链接，对方打开即读 · {textShares.length} 项</p></div><div className="vault-panel-tools"><button type="button" className="vault-primary" onClick={openTextShare}><Plus size={15} />新建分享</button></div></header>
+      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>文本分享</h2></span><p>把一段文字变成限时链接，对方打开即读 · {textShares.length} 项</p></div></header>
       {textShares.length ? <div className="vault-share-list vault-text-share-list">{textShares.map((share) => <article className="is-text" key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
         <span className="vault-text-card-icon"><FileText size={17} /></span>
         <div className="vault-text-card-main">
