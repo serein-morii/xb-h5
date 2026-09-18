@@ -370,6 +370,12 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
+  const [textQuery, setTextQuery] = useState("");
+  const filteredTextShares = useMemo(() => {
+    const value = textQuery.trim().toLowerCase();
+    if (!value) return textShares;
+    return textShares.filter((share) => `${share.name || ""} ${share.textContent || ""} ${share.textFormat === "MARKDOWN" ? "markdown" : "普通文本"} ${share.accessCodeEnabled ? "访问码" : "免密码"}`.toLowerCase().includes(value));
+  }, [textQuery, textShares]);
   const [view, setView] = useState<VaultView>("all");
   const [settingsSection, setSettingsSection] = useState<SettingsSection>(null);
   const [issuer, setIssuer] = useState("");
@@ -1878,8 +1884,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     </section> : null}
 
     {view === "text" ? <section className="vault-panel vault-view-enter" key="text">
-      <header className="vault-panel-head"><div><span className="vault-panel-title-row"><h2>文本分享</h2></span><p>把一段文字变成限时链接，对方打开即读 · {textShares.length} 项</p></div></header>
-      {textShares.length ? <div className="vault-share-list vault-text-share-list">{textShares.map((share) => <article className="is-text" key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
+      <header className="vault-panel-head">
+        <div><span className="vault-panel-title-row"><h2>文本分享</h2></span><p>把一段文字变成限时链接，对方打开即读 · {textQuery.trim() ? `${filteredTextShares.length}/${textShares.length}` : textShares.length} 项</p></div>
+        {textShares.length ? <div className="vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={textQuery} onChange={(event) => setTextQuery(event.target.value)} placeholder="搜索名称或正文" aria-label="搜索文本分享" />{textQuery ? <button type="button" onClick={() => setTextQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div></div> : null}
+      </header>
+      {textShares.length ? filteredTextShares.length ? <div className="vault-share-list vault-text-share-list">{filteredTextShares.map((share) => <article className="is-text" key={share.id} role="button" tabIndex={0} onClick={() => void openShareDetail(share)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void openShareDetail(share); } }}>
         <span className="vault-text-card-icon"><FileText size={17} /></span>
         <div className="vault-text-card-main">
           <b>{share.name?.trim() || "临时文本分享"}</b>
@@ -1887,7 +1896,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           {share.textContent ? <p>{share.textContent.slice(0, 120).replace(/\s+/g, " ")}{share.textContent.length > 120 ? "…" : ""}</p> : null}
         </div>
         <div className="vault-share-actions"><button type="button" onClick={(event) => { event.stopPropagation(); void openShareDetail(share); }}><Eye size={14} />详情</button>{share.status === "ACTIVE" ? <button type="button" onClick={(event) => { event.stopPropagation(); void openShareEdit(share); }}><Pencil size={14} />编辑</button> : null}{share.status === "ACTIVE" && share.sharePath ? <button type="button" onClick={(event) => { event.stopPropagation(); void copyShareInfo(share); }}><Copy size={14} />复制</button> : null}{share.status !== "REVOKED" ? <button type="button" onClick={(event) => { event.stopPropagation(); setPendingRevoke({ share, from: "list" }); setModal("revokeConfirm"); }}><X size={14} />撤销</button> : <button type="button" onClick={(event) => { event.stopPropagation(); setPendingShareDelete(share); setModal("shareDeleteConfirm"); }}><Trash2 size={14} />删除</button>}</div>
-      </article>)}</div> : <div className="vault-empty compact"><FileText size={20} /><b>还没有文本分享</b><p>粘贴一段文字，生成限时链接发给对方，随时可撤销。</p><button type="button" className="vault-primary" onClick={openTextShare}><FileText size={15} />新建文本分享</button></div>}
+      </article>)}</div> : <div className="vault-empty compact"><Search size={20} /><b>没有匹配的文本分享</b><p>试试换个关键词，或清空搜索。</p><button type="button" className="vault-ghost" onClick={() => setTextQuery("")}>清空搜索</button></div> : <div className="vault-empty compact"><FileText size={20} /><b>还没有文本分享</b><p>粘贴一段文字，生成限时链接发给对方，随时可撤销。</p><button type="button" className="vault-primary" onClick={openTextShare}><FileText size={15} />新建文本分享</button></div>}
     </section> : null}
 
     {view === "shares" ? <section className="vault-panel vault-view-enter" key="shares">

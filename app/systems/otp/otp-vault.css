@@ -2903,6 +2903,16 @@ html.theme-dark .text-share-page {
 .vault-text-preview { margin-bottom: 10px; padding: 12px 14px; border: 1px solid var(--vault-line, rgba(30, 43, 78, .12)); border-radius: 13px; background: var(--vault-card, #fff); }
 .vault-text-preview pre { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--vault-text, #17213f); font-family: inherit; font-size: 12px; line-height: 1.65; }
 
+.vault-panel .vault-panel-tools:has(> .vault-search:only-child) {
+  display: flex;
+  width: min(420px, 100%);
+}
+
+.vault-panel .vault-panel-tools:has(> .vault-search:only-child) .vault-search {
+  width: 100%;
+  flex: 1;
+}
+
 .vault-text-share-list { gap: 9px; }
 .vault-text-share-list article.is-text { align-items: flex-start; }
 .vault-text-card-icon {

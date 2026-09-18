@@ -276,6 +276,14 @@ test("hides the persistent startup overlay on share, text share and docs pages",
   assert.match(app, /if \(share \|\| textShare \|\| guide \|\| changelog\) hideAppStartup\(\)/);
 });
 
+test("text tab searches share names and body copy", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  assert.match(workspace, /const \[textQuery, setTextQuery\] = useState\(""\)/);
+  assert.match(workspace, /filteredTextShares/);
+  assert.match(workspace, /placeholder="搜索名称或正文"/);
+  assert.match(workspace, /没有匹配的文本分享/);
+});
+
 test("keeps vault nav as credentials, shares, text, then me", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
