@@ -1,0 +1,31 @@
+app/systems/otp/vaultApi.ts
+  s_ec331693b00d25::t_02dfbaafeeb025 97,138,219,230
+app/systems/otp/OtpApp.tsx
+  s_ec331693b00d25::t_759e33fb306bad 7,23,28,30-31,33-34,49
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_ec331693b00d25::t_d531ee6d985b48 1873,1880,1882
+  s_ec331693b00d25::t_aa7f9cbfb10708 1617-1623,1631-1658
+  s_ec331693b00d25::t_497be28bc60034 1,36,431-432,437
+  s_ec331693b00d25::t_0a13b077690d38 2178-2187
+app/systems/otp/VaultTextSharePage.tsx
+  s_ec331693b00d25::t_759e33fb306bad 1-120
+app/systems/otp/otp-vault.css
+  s_ec331693b00d25::t_1d5db7bddae09a 2548-2631
+  s_ec331693b00d25::t_d6f4561de32022 2632-2634
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "918458e689cfa30b2e8bfa3a3e5b850c0e79d6ed",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
