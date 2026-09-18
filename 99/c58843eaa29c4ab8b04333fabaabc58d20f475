@@ -1,0 +1,49 @@
+tests/otp-online-payment-admin.test.mjs
+  s_ec331693b00d25::t_1b99d5d66588f9 95,102-105,107-108
+app/systems/volunteer/VolunteerAdmin.tsx
+  s_ec331693b00d25::t_0477d02be54134 5,13,94
+app/globals.css
+  s_ec331693b00d25::t_011a23a4df5499 2291,2295-2296
+app/systems/order/api.ts
+  s_ec331693b00d25::t_505b3f9d63c3a8 3,104
+app/systems/order/admin/shell.tsx
+  s_ec331693b00d25::t_feb63d653e418e 29,180,221
+  s_ec331693b00d25::t_33100ca87966f0 273-279
+app/systems/order/admin/collect.tsx
+  s_ec331693b00d25::t_33100ca87966f0 150,161,169-170,172-175
+app/unified-theme.css
+  s_ec331693b00d25::t_be6e8092a06828 16911-16912,16923-16928
+  s_ec331693b00d25::t_b9579798b3335a 16929-16931
+app/lib/ipInfo.ts
+  s_ec331693b00d25::t_d39cba91fa3191 33-38
+  s_ec331693b00d25::t_0f25657584b247 1-32,39
+app/systems/otp/OtpVaultWorkspace.tsx
+  s_ec331693b00d25::t_ec2f3b9a249465 26,2135
+app/systems/order/admin/operations-center.tsx
+  s_ec331693b00d25::t_e0b4d7fac5ed66 582
+app/systems/otp/vaultApi.ts
+  s_ec331693b00d25::t_0f25657584b247 3,109,128-129
+app/systems/otp/VaultSecurityCenter.tsx
+  s_ec331693b00d25::t_ec2f3b9a249465 22,215,217
+app/systems/order/admin/risk-ip-access.tsx
+  s_ec331693b00d25::t_be6e8092a06828 26,52,73,78,143,206-207
+  s_ec331693b00d25::t_d39cba91fa3191 11,208-209
+app/systems/order/tools/short-links/ShortLinkManager.tsx
+  s_ec331693b00d25::t_011a23a4df5499 19,475
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "99c58843eaa29c4ab8b04333fabaabc58d20f475",
+  "prompts": {},
+  "sessions": {
+    "s_ec331693b00d25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a055cd-f841-7ab2-863b-8ef492d9085f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "pengchenghui <pengchenghui@jtexpress.com>"
+    }
+  }
+}
