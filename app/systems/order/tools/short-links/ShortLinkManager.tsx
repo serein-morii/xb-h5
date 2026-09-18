@@ -16,6 +16,7 @@ import {
 import { copyToClipboard } from "../../../../lib/api";
 import { APP_ROUTES } from "../../../../lib/pathConventions";
 import { useAccess } from "../../admin/access";
+import { ipDetailLabel } from "../../../../lib/ipInfo";
 
 type EditForm = { path: string; targetType: ShortLinkType; target: string; remark: string; expireTime: string };
 const EMPTY_FORM: EditForm = { path: "", targetType: "internal", target: "", remark: "", expireTime: "" };
@@ -471,7 +472,7 @@ function VisitsModal({ link, onClose }: { link: ShortLinkRow; onClose: () => voi
             {visits.map((v) => (
               <li key={v.id}>
                 <span className="short-link-visits-time">{v.visitTime ? String(v.visitTime).slice(0, 19).replace("T", " ") : "—"}</span>
-                <span className="short-link-visits-ip">{v.visitIp || "—"}</span>
+                <span className="short-link-visits-source"><b className="short-link-visits-ip">{v.visitIp || "—"}</b><small>{ipDetailLabel(v.ipInfo)}</small></span>
               </li>
             ))}
           </ul>

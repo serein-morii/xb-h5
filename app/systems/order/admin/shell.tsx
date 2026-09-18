@@ -26,6 +26,7 @@ import { AppStartup } from "../../../components/AppStartup";
 import { PasskeyManager, type PasskeyRequest } from "../../../components/PasskeyManager";
 import NotificationCenter, { MessagePopupHost, NotificationBellButton, useMessageUnread, type MessageRequest } from "../../../components/NotificationCenter";
 import { getStartupConfig } from "../../../lib/startup";
+import { ipDetailLabel, type IpInfo } from "../../../lib/ipInfo";
 import {
   OnboardingOverlay,
   OnboardingProvider,
@@ -176,6 +177,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
   const dept = userInfo?.dept;
   const roles = Array.isArray(userInfo?.roles) ? userInfo.roles : [];
   const userEmail = String(userInfo?.email || "");
+  const loginIpDetail = ipDetailLabel(userInfo?.loginIpInfo as IpInfo | undefined);
   const userButton = <button className="menu-user-button" type="button" data-onboard="menu-user-button" onClick={() => setView("profile")} aria-label="打开个人资料与账号设置" title="打开个人资料与账号设置"><span className="menu-user-avatar">{avatarChar}<i aria-hidden="true"><Pencil size={9} /></i></span><small>个人资料</small></button>;
   // 点"修改密码"：未绑定邮箱先弹 BindEmailSheet，绑定成功后再弹改密弹窗
   function handleChangePwdClick() {
@@ -216,6 +218,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
         <div><span>邮箱</span><b className={userEmail ? "" : "profile-info-warn"}>{userEmail ? maskEmail(userEmail) : "未绑定（点下方按钮完善）"}</b></div>
         <div><span>性别</span><b>{sexLabel(userInfo?.sex)}</b></div>
         <div><span>最近登录 IP</span><b>{userInfo?.loginIp || "--"}</b></div>
+        <div><span>IP 归属 / 网络</span><b title={loginIpDetail}>{loginIpDetail}</b></div>
         <div><span>最近登录时间</span><b>{userInfo?.loginDate ? shortDate(userInfo.loginDate, true) : "--"}</b></div>
         <div><span>账号状态</span><b className="profile-status">正常</b></div>
       </section>
@@ -267,7 +270,13 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
     </Sheet>
   </>;
   const extras = mobileMenu.extras;
-  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton} headerActionFirst>
+  return <Sheet
+    open={open}
+    title="全部功能"
+    onClose={onClose}
+    headerLeading={<NotificationBellButton count={notifCount} onClick={onOpenNotif} label="订单通知中心" />}
+    headerCenter={userButton}
+  >
     <div className="toolbar-card search-toolbar menu-search-toolbar">
       <label className="quick-search">
         <Search size={15} strokeWidth={2.2} />

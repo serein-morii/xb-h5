@@ -16908,7 +16908,8 @@ html.theme-dark .utility-shell {
 }
 .risk-ip-current-panel > div { min-width: 0; }
 .risk-ip-current-panel small,
-.risk-ip-current-panel strong { display: block; }
+.risk-ip-current-panel strong,
+.risk-ip-current-panel em { display: block; }
 .risk-ip-current-panel small { color: var(--xb-text-secondary); font-size: 9px; }
 .risk-ip-current-panel strong {
   margin-top: 3px;
@@ -16916,6 +16917,15 @@ html.theme-dark .utility-shell {
   color: var(--xb-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.risk-ip-current-panel em {
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--xb-text-secondary);
+  font-size: 9px;
+  font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

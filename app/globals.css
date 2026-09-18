@@ -2288,10 +2288,12 @@ html.theme-dark .purchaser-detail-section.purchaser-detail-cost .purchaser-captc
 .short-link-visits-modal { max-width: 480px; padding-bottom: 18px; }
 .short-link-visits-modal .purchaser-manager-loading { min-height: 140px; margin: 12px 18px; }
 .short-link-visits-list { list-style: none; margin: 0; padding: 0 18px 4px; max-height: 60vh; overflow-y: auto; }
-.short-link-visits-list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #f3f8f5; font-size: 11px; color: #2b3a33; }
+.short-link-visits-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #f3f8f5; font-size: 11px; color: #2b3a33; }
 .short-link-visits-list li + li { margin-top: 6px; }
 .short-link-visits-time { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .short-link-visits-ip { color: #14794e; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.short-link-visits-source { min-width: 0; display: grid; justify-items: end; gap: 2px; text-align: right; }
+.short-link-visits-source small { max-width: 260px; overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .purchaser-current-store { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 14px 10px; padding: 10px 13px; border: 0; border-radius: 13px; color: #2b7da4; background: #ebf3fa; }
 .purchaser-current-store > .purchaser-current-store-info { min-width: 0; flex: 1 1 120px; display: grid; gap: 2px; }
 .purchaser-current-store small { color: #6e90ad; font-size: 8.5px; font-weight: 700; }

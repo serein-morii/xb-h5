@@ -579,6 +579,7 @@ function OperLogsPage({ notify, onBack, backLabel }: { notify: Notify; onBack: (
         { key: "requestMethod", label: "请求方式" },
         { key: "operName", label: "操作人" },
         { key: "operIp", label: "IP" },
+        { key: "operLocation", label: "位置 / 网络" },
         { key: "status", label: "状态", render: (row) => <span className={`opsc-status opsc-status-${String(row.status) === "0" ? "success" : "danger"}`}>{String(row.status) === "0" ? "正常" : "异常"}</span> },
         { key: "operTime", label: "操作时间" },
       ]}

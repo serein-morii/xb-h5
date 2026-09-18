@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../../../lib/api";
+import { ipCoordinateLabel, ipLocationLabel, ipNetworkLabel, type IpInfo } from "../../../lib/ipInfo";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useAccess } from "./access";
 import { ConfirmDialog, EmptyState, MobileBackButton } from "./ui";
@@ -22,6 +23,7 @@ type RiskIpAccess = {
   lastSeenTime: string;
   requestCount: number;
   lastPath?: string;
+  ipInfo?: IpInfo;
 };
 
 type RiskIpFilters = { ipAddress: string; allowed: string };
@@ -47,6 +49,7 @@ export function RiskIpAccessPage({
   const [allowed, setAllowed] = useState("");
   const [activeFilters, setActiveFilters] = useState<RiskIpFilters>(EMPTY_FILTERS);
   const [currentIp, setCurrentIp] = useState("");
+  const [currentIpInfo, setCurrentIpInfo] = useState<IpInfo>();
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -67,11 +70,12 @@ export function RiskIpAccessPage({
         apiRequest<PageResult>(API_PATHS.administration.riskIps, {
           query: { pageNum: nextPage, pageSize: PAGE_SIZE, ...filters },
         }),
-        apiRequest<{ data: { ipAddress: string } }>(`${API_PATHS.administration.riskIps}/current`),
+        apiRequest<{ data: { ipAddress: string; ipInfo?: IpInfo } }>(`${API_PATHS.administration.riskIps}/current`),
       ]);
       setRows(result.rows || []);
       setTotal(result.total || 0);
       setCurrentIp(current.data.ipAddress);
+      setCurrentIpInfo(current.data.ipInfo);
       setPage(nextPage);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "风险 IP 记录加载失败");
@@ -136,7 +140,7 @@ export function RiskIpAccessPage({
 
       <section className="risk-ip-current-panel" aria-label="当前访问来源">
         <span><Network size={18} /></span>
-        <div><small>当前来源 IP</small><strong>{currentIp || "读取中"}</strong></div>
+        <div><small>当前来源 IP · {ipLocationLabel(currentIpInfo)}</small><strong>{currentIp || "读取中"}</strong><em>{ipNetworkLabel(currentIpInfo)}</em></div>
         <button type="button" onClick={() => void load(page, activeFilters)} aria-label="刷新风险 IP 列表">
           <RefreshCw className={loading ? "spin" : ""} size={17} />
         </button>
@@ -199,6 +203,10 @@ export function RiskIpAccessPage({
                   </button>
                 </div>
                 <div className="risk-ip-mobile-details">
+                  <div className="is-wide"><span>归属位置</span><b title={ipLocationLabel(row.ipInfo)}>{ipLocationLabel(row.ipInfo)}</b></div>
+                  <div className="is-wide"><span>网络信息</span><b title={ipNetworkLabel(row.ipInfo)}>{ipNetworkLabel(row.ipInfo)}</b></div>
+                  <div><span>时区</span><b>{row.ipInfo?.timezone || "未知"}</b></div>
+                  <div><span>坐标</span><b>{ipCoordinateLabel(row.ipInfo)}</b></div>
                   <div><span>最近访问</span><b>{row.lastSeenTime || "未知"}</b></div>
                   <div><span>采样请求</span><b>{row.requestCount || 0}</b></div>
                   <div className="is-wide"><span>最近路径</span><b title={row.lastPath || ""}>{row.lastPath || "未记录"}</b></div>

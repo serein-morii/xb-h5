@@ -92,18 +92,20 @@ test("dashboard overview keeps four status columns", async () => {
   assert.match(styles, /\.home-stat-strip \{\s*overflow: hidden;\s*display: grid;\s*grid-template-columns: repeat\(4, 1fr\);/);
 });
 
-test("all-features sheet restores brand title with notification, profile and close actions", async () => {
+test("all-features sheet keeps notification, profile and close actions in three columns", async () => {
   const [sheet, shell, styles] = await Promise.all([
     source("app/systems/order/admin/ui.tsx"),
     source("app/systems/order/admin/shell.tsx"),
     source("app/unified-theme.css"),
   ]);
 
-  // 左侧品牌标识 + 右侧为 个人资料（蓝色圆头像）→ 关闭；铃铛不在此头部展示
-  assert.match(sheet, /<span className="eyebrow">XB MOBILE<\/span><h2>\{title\}<\/h2>/);
+  // 全部功能弹层保持左通知、中间个人资料、右关闭，窄屏下也不互相挤占。
+  assert.match(sheet, /sheet-header-balanced/);
+  assert.match(sheet, /sheet-header-leading/);
+  assert.match(sheet, /sheet-header-center/);
   assert.match(sheet, /sheet-header-cancel/);
-  assert.match(sheet, /headerActionFirst/);
-  assert.match(shell, /headerAction=\{userButton\} headerActionFirst/);
+  assert.match(shell, /headerLeading=\{<NotificationBellButton count=\{notifCount\} onClick=\{onOpenNotif\}/);
+  assert.match(shell, /headerCenter=\{userButton\}/);
   assert.match(shell, /const userButton = <button className="menu-user-button"/);
   assert.doesNotMatch(shell, /menu-header-actions/);
   assert.match(shell, /className="menu-user-avatar"/);

@@ -147,6 +147,7 @@ export function CollectQrSheet({
   // 带订单号进入（订单页收款入口）时自动选中精确匹配的一条，免二次点击。
   useEffect(() => {
     if (!open || selectedOrder) return;
+    let cancelled = false;
     const keyword = orderKeyword.trim();
     if (!keyword) {
       setOrderResults([]);
@@ -155,10 +156,9 @@ export function CollectQrSheet({
     }
     setOrderSearching(true);
     const timer = window.setTimeout(() => {
-      let active = true;
       apiRequest<{ data?: CollectOrder[] }>(`${API_PATHS.orders.root}/collect-search`, { query: { keyword } })
         .then((response) => {
-          if (!active) return;
+          if (cancelled) return;
           const list = Array.isArray(response.data) ? response.data : [];
           setOrderResults(list);
           if (preset?.autoSelect && preset.orderCode) {
@@ -166,11 +166,13 @@ export function CollectQrSheet({
             if (exact) pickOrder(exact);
           }
         })
-        .catch(() => { if (active) setOrderResults([]); })
-        .finally(() => { if (active) setOrderSearching(false); });
+        .catch(() => { if (!cancelled) setOrderResults([]); })
+        .finally(() => { if (!cancelled) setOrderSearching(false); });
     }, 300);
-    return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [open, orderKeyword, selectedOrder]);
 
   function pickOrder(order: CollectOrder) {

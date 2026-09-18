@@ -2,6 +2,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight, HandHeart, LoaderCircle, L
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest, clearStoredToken, getStoredToken, loginByEmail, sendEmailCode, setStoredToken } from "../../lib/api";
 import { API_PATHS, APP_ROUTES } from "../../lib/pathConventions";
+import { ipDetailLabel, type IpInfo } from "../../lib/ipInfo";
 import "./volunteer.css";
 
 type Application = {
@@ -9,6 +10,7 @@ type Application = {
   phone: string; wechat?: string; qq?: string; idCardMasked: string; address: string; workUnit: string; joinedDate: string;
   specialty: string; availability: string[]; suggestion?: string; status: "PENDING" | "APPROVED" | "REJECTED";
   reviewNote?: string; reviewedBy?: string; reviewedAt?: string; consentVersion: string; consentAt: string; createTime: string;
+  sourceIp?: string; ipInfo?: IpInfo;
 };
 type Member = { id: number; applicationId: number; memberNo: string; status: string; name: string; photoUrl?: string; gender: string; phone: string; specialty: string; joinedDate: string; activityCount: number; serviceMinutes: number; createTime: string };
 type PageResult<T> = { rows: T[]; total: number };
@@ -89,7 +91,7 @@ function ApplicationList({ rows, onReview }: { rows: Application[]; onReview: (i
   if (!rows.length) return <div className="yv-admin-empty"><UserCheck size={27} />没有符合条件的登记申请</div>;
   return <div className="yv-admin-list">{rows.map((item) => <article className="yv-application-card" key={item.id}>
     <div className="yv-member-head">{item.photoUrl ? <img src={item.photoUrl} alt="" /> : <span>{item.name.slice(0, 1)}</span>}<div><h2>{item.name}</h2><p>{item.gender} · {item.ethnicity} · {item.politicalStatus}</p></div><em className={`status-${item.status.toLowerCase()}`}>{statusLabel[item.status]}</em></div>
-    <dl><div><dt>联系方式</dt><dd>{item.phone}</dd></div><div><dt>身份证</dt><dd>{item.idCardMasked}</dd></div><div><dt>工作单位</dt><dd>{item.workUnit}</dd></div><div><dt>联系地址</dt><dd>{item.address}</dd></div><div><dt>加入时间</dt><dd>{item.joinedDate}</dd></div><div><dt>可服务时间</dt><dd>{item.availability.join("、")}</dd></div><div className="wide"><dt>特长</dt><dd>{item.specialty}</dd></div>{item.suggestion ? <div className="wide"><dt>意见建议</dt><dd>{item.suggestion}</dd></div> : null}</dl>
+    <dl><div><dt>联系方式</dt><dd>{item.phone}</dd></div><div><dt>身份证</dt><dd>{item.idCardMasked}</dd></div><div><dt>工作单位</dt><dd>{item.workUnit}</dd></div><div><dt>联系地址</dt><dd>{item.address}</dd></div><div><dt>加入时间</dt><dd>{item.joinedDate}</dd></div><div><dt>可服务时间</dt><dd>{item.availability.join("、")}</dd></div><div className="wide"><dt>特长</dt><dd>{item.specialty}</dd></div><div className="wide"><dt>提交来源</dt><dd>{item.sourceIp || "未知 IP"} · {ipDetailLabel(item.ipInfo)}</dd></div>{item.suggestion ? <div className="wide"><dt>意见建议</dt><dd>{item.suggestion}</dd></div> : null}</dl>
     <footer><small>提交于 {formatTime(item.createTime)} · 承诺书 {item.consentVersion}</small>{item.status === "PENDING" ? <div><button className="reject" onClick={() => onReview(item, "REJECTED")}><X size={14} />拒绝</button><button className="approve" onClick={() => onReview(item, "APPROVED")}><Check size={14} />通过</button></div> : <span>{item.reviewedBy ? `${item.reviewedBy} · ${formatTime(item.reviewedAt)}` : "已完成审核"}</span>}</footer>
   </article>)}</div>;
 }

@@ -1,5 +1,6 @@
 import { apiRequest } from "../../lib/api";
 import { API_PATHS } from "../../lib/pathConventions";
+import type { IpInfo } from "../../lib/ipInfo";
 
 const OTP_TOKEN_KEY = "otp-vault-token";
 const OTP_STEP_UP_KEY = "otp-vault-step-up";
@@ -105,7 +106,7 @@ export type VaultShareSaveRecord = {
 };
 
 export type VaultAccessRecord = {
-  action: string; success: boolean; ipAddress?: string; userAgent?: string; detail?: string; createTime: string;
+  action: string; success: boolean; ipAddress?: string; ipInfo?: IpInfo; userAgent?: string; detail?: string; createTime: string;
 };
 
 export type VaultRecipient = {
@@ -124,8 +125,8 @@ export type VaultPrefs = {
   autoScreenLockMinutes?: number;
 };
 
-export type VaultSession = { id: string; deviceKey: string; displayName: string; current: boolean; trusted: boolean; sessionCount: number; longSession: boolean; ipAddress?: string; location?: string; browser?: string; os?: string; lastActiveTime: number; expireTime: number };
-export type VaultActivity = { id: number; action: string; targetType?: string; targetId?: number; ipAddress?: string; userAgent?: string; detail?: string; createTime: string };
+export type VaultSession = { id: string; deviceKey: string; displayName: string; current: boolean; trusted: boolean; sessionCount: number; longSession: boolean; ipAddress?: string; ipInfo?: IpInfo; location?: string; browser?: string; os?: string; lastActiveTime: number; expireTime: number };
+export type VaultActivity = { id: number; action: string; targetType?: string; targetId?: number; ipAddress?: string; ipInfo?: IpInfo; userAgent?: string; detail?: string; createTime: string };
 export type VaultSecurityStatus = { encryption: string; keyId: string; keyRotationNeeded: number; unlocked: boolean; stepUpExpiresIn: number; deviceCount: number; failedVerifications24h: number; lastBackupTime?: string; lastRecoveryCheckTime?: string; securityAlerts: boolean; zeroKnowledgeEnabled: boolean; credentialCount: number };
 export type VaultPasskey = { id: number; displayName: string; backupEligible: boolean; backedUp: boolean; lastUsedTime?: string; createTime: string };
 export type VaultTransferItem = { issuer: string; accountName: string; password?: string; otpSecret?: string; clientPasswordCiphertext?: string; clientOtpSecretCiphertext?: string; otpType?: "TOTP" | "HOTP" | "STEAM"; hotpCounter?: number; algorithm?: string; digits?: number; periodSeconds?: number; loginUrl?: string; note?: string; tags?: string; favorite?: boolean; sensitivityLevel?: string };

@@ -1,5 +1,6 @@
 import { apiRequest, publicApiRequest } from "../../lib/api";
 import { API_PATHS, LOCAL_ROUTES as LOCAL_APP_ROUTES } from "../../lib/pathConventions";
+import type { IpInfo } from "../../lib/ipInfo";
 
 export type LogisticsSwitchType = "manual" | "scheduled" | "query";
 
@@ -100,6 +101,7 @@ export type ShortLinkVisitRow = {
   id: number;
   linkId: number;
   visitIp?: string;
+  ipInfo?: IpInfo;
   visitTime?: string;
 };
 
