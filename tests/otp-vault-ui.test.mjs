@@ -276,6 +276,28 @@ test("hides the persistent startup overlay on share, text share and docs pages",
   assert.match(app, /if \(share \|\| textShare \|\| guide \|\| changelog\) hideAppStartup\(\)/);
 });
 
+test("keeps vault nav as credentials, shares, text, then me", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
+  assert.match(workspace, /const VAULT_NAV = \[\s*\["all", KeyRound, "凭据"\],\s*\["shares", Link2, "授权"\],\s*\["text", FileText, "文本"\],\s*\["settings", Settings2, "我的"\],/);
+  assert.match(workspace, /shares\.filter\(\(share\) => share\.shareType === "TEXT"\)/);
+  assert.match(workspace, /shares\.filter\(\(share\) => share\.shareType !== "TEXT"\)/);
+  assert.match(styles, /\.vault-mobile-nav\{position:fixed;[\s\S]{0,280}grid-template-columns:repeat\(4,1fr\)/);
+  assert.match(styles, /\.vault-mobile-nav \{ grid-template-columns: repeat\(4,1fr\); \}/);
+});
+
+test("text share can skip the access code and waits before showing the gate", async () => {
+  const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const page = await source("app/systems/otp/VaultTextSharePage.tsx");
+  assert.match(workspace, /获得安全链接即可直接阅读/);
+  assert.match(workspace, /share\.accessCodeEnabled \? "访问码保护" : "免密码"/);
+  assert.match(workspace, /created\.accessCode \? "复制链接和访问码" : "复制分享链接"/);
+  assert.match(workspace, /shareType === "TEXT" \? "临时文本分享" : "临时凭据授权"/);
+  assert.match(page, /if \(loading\) return <main className="text-share-page">/);
+  assert.match(page, /if \(!result\.data\.accessCodeRequired \|\| initialCode\) await open\(initialCode\)/);
+  assert.match(page, /status\?\.accessCodeRequired \? <form className="text-share-form"/);
+});
+
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
   const sharePage = await source("app/systems/otp/VaultSharePage.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");

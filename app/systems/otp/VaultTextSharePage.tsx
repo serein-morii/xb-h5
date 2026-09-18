@@ -99,7 +99,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     window.setTimeout(() => setCopied(false), 1600);
   };
 
-  if (loading && !status && !error) return <main className="text-share-page"><section className="share-loading"><LoaderCircle className="spin" size={20} /><p>正在检查临时文本…</p></section></main>;
+  if (loading) return <main className="text-share-page"><section className="share-loading"><LoaderCircle className="spin" size={20} /><p>正在检查临时文本…</p></section></main>;
   if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "文本分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
 
   const gateVisible = !sessionToken || !content;
