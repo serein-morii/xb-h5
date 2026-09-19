@@ -340,6 +340,22 @@ body:has(.notif-mask) { overflow: hidden; }
 .vault-section-title h3 { margin: 0; font-size: 13px; }
 .vault-section-title > .vault-status { width: auto; height: auto; padding: 5px 8px; display: inline-flex; border-radius: 999px; }
 .vault-section-title > .vault-shared-badge { width: auto; height: auto; padding: 4px 7px; display: inline-flex; border-radius: 8px; }
+.vault-section-title > .vault-count-pill {
+  width: auto;
+  height: auto;
+  min-height: 28px;
+  min-width: 8.2em;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--utility-muted);
+  background: var(--utility-bg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
 .vault-section-title > button { padding: 5px 7px; border: 0; background: transparent; color: var(--vault-accent); font: inherit; font-size: 9px; cursor: pointer; }
 .vault-section-help { margin: -5px 0 11px; color: var(--utility-muted); font-size: 9px; }
 .vault-select-list label { position: relative; }
@@ -1463,7 +1479,8 @@ html.theme-dark { @media (max-width: 560px) {
   .vault-modal header p { margin-top: 3px; font-size: 9px; }
   .vault-share-form .vault-share-section { margin-top: 8px; padding: 11px; border-radius: 14px; }
   .vault-share-section h3 { font-size: 11px; }
-  .vault-count-pill { min-width: 8.4em; padding: 5px 12px; font-size: 10px; }
+  .vault-section-title > .vault-count-pill,
+  .vault-count-pill { min-width: 8.6em; min-height: 26px; padding: 0 12px; font-size: 10px; }
   .vault-detail .vault-share-scroll { padding: 8px 12px 12px; }
   .vault-detail-overview { margin-top: 0; padding: 11px; gap: 9px; border-radius: 14px; }
   .vault-detail-overview .vault-service-mark { width: 38px; height: 38px; }
@@ -2995,15 +3012,17 @@ html.theme-dark .text-share-aside-icon { background:#273154; color:#c8ceff; }
 /* ── 临时文本分享 · 工作台弹窗与文本 Tab ──────────────────── */
 .vault-count-pill {
   flex: none;
-  min-width: 7.6em;
-  padding: 5px 11px;
+  box-sizing: border-box;
+  min-width: 8.2em;
+  padding: 0 12px;
   border-radius: 999px;
   color: var(--utility-muted);
   background: var(--utility-bg);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: .02em;
+  line-height: 1;
   text-align: center;
   white-space: nowrap;
 }
@@ -3135,6 +3154,7 @@ html.theme-dark .vault-md-body.is-html,
 html.theme-dark .vault-md-body.is-markdown { color: #e8edf8; }
 html.theme-dark .vault-md-body code { color: #aeb7ff; }
 html.theme-dark .vault-md-body blockquote { border-left-color: #5b6ee0; }
+html.theme-dark .vault-section-title > .vault-count-pill,
 html.theme-dark .vault-count-pill { background: #1a2130; color: #c4cbe0; }
 html.theme-dark .vault-text-preview {
   border-color: rgba(225, 231, 248, .12);
