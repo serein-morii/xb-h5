@@ -87,6 +87,7 @@ test("never intercepts API or shared-authorization requests", () => {
   assert.equal(dispatchFetch(worker, "https://otp.gooop.top/prod-api/otp/vault"), undefined);
   assert.equal(dispatchFetch(worker, "https://otp.gooop.top/api/otp/vault"), undefined);
   assert.equal(dispatchFetch(worker, "https://otp.gooop.top/s/abcde", "navigate"), undefined);
+  assert.equal(dispatchFetch(worker, "https://otp.gooop.top/t/abcde", "navigate"), undefined);
   assert.equal(dispatchFetch(worker, "https://otp.gooop.top/assets/runtime.js"), undefined);
   assert.equal(worker.fetchCount, 0);
 });

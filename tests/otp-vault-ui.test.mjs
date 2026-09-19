@@ -276,6 +276,12 @@ test("hides the persistent startup overlay on share, text share and docs pages",
   assert.match(app, /if \(share \|\| textShare \|\| guide \|\| changelog\) hideAppStartup\(\)/);
 });
 
+test("routes credential and text share links through the OTP shell on every host", async () => {
+  const host = await source("app/lib/subsystemHost.ts");
+  assert.match(host, /GLOBAL_PATHS = new Set\(\["s", "t"\]\)/);
+  assert.match(host, /\^\\\/\(\?:s\|t\)\\\/\(\?:\[A-Za-z0-9\]\{5\}\|\[A-Za-z0-9_-\]\{10\}\)\$/);
+});
+
 test("keeps public share pages out of the OTP offline shell and refreshes upgrades", async () => {
   const [app, worker] = await Promise.all([
     source("app/systems/otp/OtpApp.tsx"),

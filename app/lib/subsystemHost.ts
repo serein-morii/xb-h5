@@ -11,8 +11,8 @@ const RESERVED_HOSTS = new Set([
   "mail", "img", "cdn", "static", "localhost",
 ]);
 
-/** 跨子系统仍按原路径打开的全局前缀（OTP 分享链等） */
-const GLOBAL_PATHS = new Set(["s"]);
+/** 跨子系统仍按原路径打开的全局前缀（OTP 凭据 / 文本分享链） */
+const GLOBAL_PATHS = new Set(["s", "t"]);
 const HOST_ROUTE_ALIASES: Record<string, string> = {
   order: "order-system",
 };
@@ -35,13 +35,13 @@ function hostLabel(hostname: string) {
   return (hostname.split(".")[0] || "").toLowerCase();
 }
 
-/** OTP 独立入口：otp 子域、/otp、分享链 /s/，启动时不加载主站 App */
+/** OTP 独立入口：otp 子域、/otp，以及凭据 /s/、文本 /t/ 分享链 */
 export function isOtpSurface(hostname = window.location.hostname, pathname = window.location.pathname) {
   const host = hostname.toLowerCase();
   const path = normalizePath(pathname);
   if (host === "otp.gooop.top" || host.startsWith("otp.")) return true;
   if (path === APP_ROUTES.otp || path.startsWith(`${APP_ROUTES.otp}/`)) return true;
-  if (/^\/s\/[A-Za-z0-9_-]{5,}$/.test(path)) return true;
+  if (/^\/(?:s|t)\/(?:[A-Za-z0-9]{5}|[A-Za-z0-9_-]{10})$/.test(path)) return true;
   return false;
 }
 
