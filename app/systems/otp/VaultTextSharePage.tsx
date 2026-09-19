@@ -37,6 +37,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   const [copied, setCopied] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemePreference>(() => readThemePreference());
   const serverOffset = useRef(0);
+  const expiryTotal = useRef(0);
 
   const loadContent = useCallback(async (session: string) => {
     try {
@@ -45,6 +46,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       const receivedAt = Date.now();
       serverOffset.current = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2) - receivedAt;
       if (result.data.shareType !== "TEXT") throw new Error("该链接不是文本分享");
+      expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - (receivedAt + serverOffset.current)) / 1000));
       setContent(result.data.textContent || "");
       setFormat(result.data.textFormat === "MARKDOWN" ? "MARKDOWN" : "TEXT");
       setAllowCopy(Boolean(result.data.allowCopy));
@@ -89,6 +91,9 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   useEffect(() => { if (status?.name) document.title = `${status.name}｜OTP Vault`; }, [status?.name]);
 
   const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - (now + serverOffset.current)) / 1000)) : 0;
+  const expiryProgress = expiryTotal.current ? Math.max(0, Math.min(100, expiresIn / expiryTotal.current * 100)) : 100;
+  const secondsProgress = expiresIn ? ((expiresIn - 1) % 60 + 1) / 60 * 100 : 0;
+  const accessExpiresIn = status?.expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(status.expireTime)).getTime() - now) / 1000)) : 0;
   const toggleTheme = () => {
     const next = themeMode === "system" ? "dark" : themeMode === "dark" ? "light" : "system";
     setThemePreference(next); setThemeMode(next);
@@ -105,40 +110,44 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   const gateVisible = !sessionToken || !content;
   const formatLabel = format === "MARKDOWN" ? "Markdown" : "普通文本";
   return <main className={`text-share-page ${gateVisible ? "is-gate" : "is-open"}`}>
-    <div className="text-share-glow" aria-hidden="true" />
     <header className="text-share-header">
       <span className="text-share-brand"><i>OTP</i><div><b>OTP Vault</b><small>临时文本分享</small></div></span>
       <button type="button" className="text-share-theme" onClick={toggleTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={16} /> : themeMode === "dark" ? <Moon size={16} /> : <Sun size={16} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button>
     </header>
 
     {gateVisible ? <section className="text-share-gate">
-      <span className="text-share-medallion"><LockKeyhole size={26} /></span>
-      <small>受保护的临时分享</small>
-      <h1>{status?.name || "临时文本分享"}</h1>
-      <p>验证通过后才会传输正文，内容只在有效期内开放。</p>
+      <div className="text-share-gate-intro"><span className="text-share-medallion"><LockKeyhole size={23} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时文本分享"}</h1><p>验证前不会传输正文，内容只在授权有效期内开放。</p></div></div>
       <div className="text-share-meta">
-        <span><FileText size={14} /><b>{status?.textFormat === "MARKDOWN" ? "Markdown" : "普通文本"}</b><small>内容格式</small></span>
-        <span><Clock3 size={14} /><b>{formatDuration(Math.max(0, Math.ceil((new Date(normalizeDateTime(status?.expireTime || "")).getTime() - Date.now()) / 1000)))}</b><small>剩余时间</small></span>
+        <span><small>内容格式</small><b><FileText size={13} />{status?.textFormat === "MARKDOWN" ? "Markdown" : "普通文本"}</b></span>
+        <span><small>剩余时间</small><b><Clock3 size={13} />{formatDuration(accessExpiresIn)}</b></span>
       </div>
       {status?.accessCodeRequired ? <form className="text-share-form" onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}>
         <label>
-          <span>访问码</span>
-          <div className="text-share-code"><KeyRound size={17} /><input autoFocus value={accessCode} onChange={(event) => setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="4-12 位访问码" /></div>
+          <span>输入访问码</span>
+          <div className="text-share-code"><KeyRound size={17} /><input autoFocus inputMode="text" enterKeyHint="go" spellCheck={false} aria-label="访问码" value={accessCode} onChange={(event) => { setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")); if (error) setError(""); }} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="粘贴或输入访问码" /></div>
         </label>
+        <p className="text-share-access-help">支持直接粘贴，输入完成后按回车</p>
         <button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "查看文本"}</button>
       </form> : <button className="text-share-open" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在打开" : "打开文本"}</button>}
       {error ? <p className="text-share-error"><TriangleAlert size={14} />{error}</p> : null}
+      <footer><ShieldCheck size={13} />访问会话不会超过原分享有效期</footer>
     </section> : <section className="text-share-paper-wrap">
-      <div className="text-share-titlebar">
+      <header className="text-share-titlebar">
         <div className="text-share-title">
-          <em className="is-format">{formatLabel}</em>
+          <em>临时文本已验证</em>
           <h1>{status?.name || "临时文本分享"}</h1>
-          <p>{allowCopy ? "允许复制" : "仅允许查看"} · 内容仅在线阅读</p>
+          <p>{formatLabel} · {allowCopy ? "允许复制" : "仅允许查看"}</p>
         </div>
-        <span className="text-share-countdown" role="timer"><Clock3 size={15} /><b>{formatDuration(expiresIn)}</b><small>后失效</small></span>
+        <div className="text-share-countdown" role="timer"><span className="text-share-expiry-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle className="text-share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="text-share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="text-share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="text-share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 size={14} /></span><span><small>分享剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div>
+      </header>
+      <div className="text-share-reading-layout">
+        <article className="text-share-paper" dangerouslySetInnerHTML={{ __html: renderRichText(content, format === "MARKDOWN" ? "markdown" : "text") }} />
+        <aside className="text-share-aside">
+          <section><span className="text-share-aside-icon"><FileText size={16} /></span><div><small>阅读格式</small><b>{formatLabel}</b><p>{format === "MARKDOWN" ? "已按标题、列表、引用与代码格式排版" : "保留原始换行与段落结构"}</p></div></section>
+          <section><span className="text-share-aside-icon"><ShieldCheck size={16} /></span><div><small>访问权限</small><b>{allowCopy ? "允许复制全文" : "仅限在线查看"}</b><p>分享失效或被撤销后，当前阅读会话也会立即结束。</p></div></section>
+          {allowCopy ? <button type="button" className={`text-share-copy${copied ? " is-done" : ""}`} onClick={() => void copyContent()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "已复制，稍后清理剪贴板" : "复制全文"}</button> : null}
+        </aside>
       </div>
-      <article className="text-share-paper" dangerouslySetInnerHTML={{ __html: renderRichText(content, format === "MARKDOWN" ? "markdown" : "text") }} />
-      {allowCopy ? <button type="button" className={`text-share-copy${copied ? " is-done" : ""}`} onClick={() => void copyContent()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "已复制，30 秒后自动清剪贴板" : "复制全文"}</button> : null}
       <footer className="text-share-foot"><ShieldCheck size={14} />加密存储 · 限时开放 · 页面关闭后需重新验证</footer>
     </section>}
   </main>;

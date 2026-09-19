@@ -297,6 +297,7 @@ test("keeps vault nav as credentials, shares, text, then me", async () => {
 test("text share can skip the access code and waits before showing the gate", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const page = await source("app/systems/otp/VaultTextSharePage.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(workspace, /获得安全链接即可直接阅读/);
   assert.match(workspace, /share\.accessCodeEnabled \? "访问码保护" : "免密码"/);
   assert.match(workspace, /created\.accessCode \? "复制链接和访问码" : "复制分享链接"/);
@@ -304,6 +305,12 @@ test("text share can skip the access code and waits before showing the gate", as
   assert.match(page, /if \(loading\) return <main className="text-share-page">/);
   assert.match(page, /if \(!result\.data\.accessCodeRequired \|\| initialCode\) await open\(initialCode\)/);
   assert.match(page, /status\?\.accessCodeRequired \? <form className="text-share-form"/);
+  assert.match(page, /className="text-share-expiry-ring"/);
+  assert.match(page, /className="text-share-reading-layout"/);
+  assert.match(page, /className="text-share-aside"/);
+  assert.match(styles, /\.text-share-reading-layout \{[^}]*grid-template-columns:minmax\(0,1fr\) 244px/);
+  assert.match(styles, /@media \(max-width:700px\)[\s\S]*\.text-share-reading-layout \{ grid-template-columns:1fr/);
+  assert.match(styles, /\.text-share-page\.is-gate \{[^}]*linear-gradient\(155deg/);
 });
 
 test("shows a dedicated secure handoff while opening an auto-filled share", async () => {
