@@ -4,6 +4,57 @@ export const SHARE_NAME_MAX = 40;
 export const DEFAULT_SHARE_DAYS = 30;
 export const DEFAULT_SHARE_SECONDS = DEFAULT_SHARE_DAYS * 86400;
 
+export type TextShareFormat = "TEXT" | "MARKDOWN" | "CODE" | "HTML";
+
+export function normalizeTextShareFormat(value: string | null | undefined): TextShareFormat {
+  const format = String(value || "").trim().toUpperCase();
+  return format === "MARKDOWN" || format === "CODE" || format === "HTML" ? format : "TEXT";
+}
+
+export function textShareFormatLabel(value: string | null | undefined) {
+  switch (normalizeTextShareFormat(value)) {
+    case "MARKDOWN": return "Markdown";
+    case "CODE": return "代码";
+    case "HTML": return "HTML";
+    default: return "普通文本";
+  }
+}
+
+export function textShareFormatHint(value: string | null | undefined) {
+  switch (normalizeTextShareFormat(value)) {
+    case "MARKDOWN": return "支持标题、列表与代码";
+    case "CODE": return "等宽字体，保留缩进";
+    case "HTML": return "按安全白名单渲染页面";
+    default: return "按原始换行显示";
+  }
+}
+
+export function textSharePlaceholder(value: string | null | undefined) {
+  switch (normalizeTextShareFormat(value)) {
+    case "MARKDOWN": return "# 标题\n\n输入 Markdown 内容…";
+    case "CODE": return "function hello() {\n  return \"world\";\n}";
+    case "HTML": return "<h1>标题</h1>\n<p>输入 HTML 内容…</p>";
+    default: return "输入要临时分享的文本…";
+  }
+}
+
+export function textShareRenderType(value: string | null | undefined) {
+  const format = normalizeTextShareFormat(value);
+  if (format === "MARKDOWN") return "markdown";
+  if (format === "HTML") return "html";
+  if (format === "CODE") return "code";
+  return "text";
+}
+
+export function textShareSearchLabel(value: string | null | undefined) {
+  switch (normalizeTextShareFormat(value)) {
+    case "MARKDOWN": return "markdown";
+    case "CODE": return "代码 code";
+    case "HTML": return "html";
+    default: return "普通文本";
+  }
+}
+
 /** 未手动命名时：单平台「昵称的平台临时凭据授权」，多平台「昵称的临时凭据授权」。 */
 export function defaultShareName(nick: string, issuers: string[], max = SHARE_NAME_MAX) {
   const who = nick.trim() || "我";

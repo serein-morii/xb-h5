@@ -307,6 +307,10 @@ test("text tab searches share names and body copy", async () => {
   assert.match(workspace, /累计查看/);
   assert.match(workspace, /vault-text-card-preview/);
   assert.match(workspace, /复制链接/);
+  assert.match(workspace, /is-text-formats/);
+  assert.match(workspace, /\["CODE", Code2\]/);
+  assert.match(workspace, /\["HTML", FileCode2\]/);
+  assert.match(workspace, /className="vault-text-overview-create" onClick=\{openTextShare\}>新建文本分享<\/button>/);
   assert.match(styles, /\.vault-text-share-list \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.vault-text-share-list \{ grid-template-columns: 1fr; \}/);
   assert.match(styles, /html\.theme-dark \.vault-text-card/);

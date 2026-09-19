@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { renderRichText } from "../../lib/richText";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { copyAndScheduleClear } from "./otpDailyUse";
+import { normalizeTextShareFormat, textShareFormatHint, textShareFormatLabel, textShareRenderType, type TextShareFormat } from "./otpVaultShare";
 import { getSharedContent, getShareStatus, openVaultShare, type ShareStatus } from "./vaultApi";
 
 function normalizeDateTime(value: string) {
@@ -27,7 +28,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   const [status, setStatus] = useState<ShareStatus | null>(null);
   const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(sessionKey) || "");
   const [content, setContent] = useState("");
-  const [format, setFormat] = useState<"TEXT" | "MARKDOWN">("TEXT");
+  const [format, setFormat] = useState<TextShareFormat>("TEXT");
   const [allowCopy, setAllowCopy] = useState(false);
   const [expireTime, setExpireTime] = useState("");
   const [now, setNow] = useState(Date.now());
@@ -48,7 +49,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       if (result.data.shareType !== "TEXT") throw new Error("该链接不是文本分享");
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - (receivedAt + serverOffset.current)) / 1000));
       setContent(result.data.textContent || "");
-      setFormat(result.data.textFormat === "MARKDOWN" ? "MARKDOWN" : "TEXT");
+      setFormat(normalizeTextShareFormat(result.data.textFormat));
       setAllowCopy(Boolean(result.data.allowCopy));
       setExpireTime(result.data.expireTime);
       setError("");
@@ -108,7 +109,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "文本分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
 
   const gateVisible = !sessionToken || !content;
-  const formatLabel = format === "MARKDOWN" ? "Markdown" : "普通文本";
+  const formatLabel = textShareFormatLabel(format);
   return <main className={`text-share-page ${gateVisible ? "is-gate" : "is-open"}`}>
     <header className="text-share-header">
       <span className="text-share-brand"><i>OTP</i><div><b>OTP Vault</b><small>临时文本分享</small></div></span>
@@ -118,7 +119,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     {gateVisible ? <section className="text-share-gate">
       <div className="text-share-gate-intro"><span className="text-share-medallion"><LockKeyhole size={23} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时文本分享"}</h1><p>验证前不会传输正文，内容只在授权有效期内开放。</p></div></div>
       <div className="text-share-meta">
-        <span><small>内容格式</small><b><FileText size={13} />{status?.textFormat === "MARKDOWN" ? "Markdown" : "普通文本"}</b></span>
+        <span><small>内容格式</small><b><FileText size={13} />{textShareFormatLabel(status?.textFormat)}</b></span>
         <span><small>剩余时间</small><b><Clock3 size={13} />{formatDuration(accessExpiresIn)}</b></span>
       </div>
       {status?.accessCodeRequired ? <form className="text-share-form" onSubmit={(event: FormEvent) => { event.preventDefault(); void open(accessCode); }}>
@@ -141,9 +142,9 @@ export default function VaultTextSharePage({ token }: { token: string }) {
         <div className="text-share-countdown" role="timer"><span className="text-share-expiry-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle className="text-share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="text-share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="text-share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="text-share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 size={14} /></span><span><small>分享剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div>
       </header>
       <div className="text-share-reading-layout">
-        <article className="text-share-paper" dangerouslySetInnerHTML={{ __html: renderRichText(content, format === "MARKDOWN" ? "markdown" : "text") }} />
+        <article className={`text-share-paper${format === "CODE" ? " is-code" : ""}`} dangerouslySetInnerHTML={{ __html: renderRichText(content, textShareRenderType(format)) }} />
         <aside className="text-share-aside">
-          <section><span className="text-share-aside-icon"><FileText size={16} /></span><div><small>阅读格式</small><b>{formatLabel}</b><p>{format === "MARKDOWN" ? "已按标题、列表、引用与代码格式排版" : "保留原始换行与段落结构"}</p></div></section>
+          <section><span className="text-share-aside-icon"><FileText size={16} /></span><div><small>阅读格式</small><b>{formatLabel}</b><p>{textShareFormatHint(format)}</p></div></section>
           <section><span className="text-share-aside-icon"><ShieldCheck size={16} /></span><div><small>访问权限</small><b>{allowCopy ? "允许复制全文" : "仅限在线查看"}</b><p>分享失效或被撤销后，当前阅读会话也会立即结束。</p></div></section>
           {allowCopy ? <button type="button" className={`text-share-copy${copied ? " is-done" : ""}`} onClick={() => void copyContent()}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "已复制，稍后清理剪贴板" : "复制全文"}</button> : null}
         </aside>

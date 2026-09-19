@@ -6,7 +6,7 @@
  *  - html：走白名单 sanitizer，标签外的属性、事件、javascript: 链接全部剔除。
  */
 
-export type RichContentType = "text" | "markdown" | "html";
+export type RichContentType = "text" | "markdown" | "html" | "code";
 
 const escapeHtml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -291,6 +291,8 @@ export function renderRichText(content: string | null | undefined, contentType: 
       return markdownToSafeHtml(value);
     case "html":
       return sanitizeRichHtml(value);
+    case "code":
+      return `<pre><code>${escapeHtml(value)}</code></pre>`;
     default:
       return `<p>${escapeHtml(value).replace(/\n/g, "<br />")}</p>`;
   }
