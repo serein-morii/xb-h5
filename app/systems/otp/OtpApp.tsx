@@ -40,7 +40,16 @@ export default function OtpApp() {
     if (!appleIcon) { appleIcon = document.createElement("link"); appleIcon.rel = "apple-touch-icon"; document.head.appendChild(appleIcon); }
     appleIcon.href = "/otp-icon-180.png";
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      void navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" });
+      const upgrading = Boolean(navigator.serviceWorker.controller);
+      let reloading = false;
+      const reloadOnUpgrade = () => {
+        if (!upgrading || reloading) return;
+        reloading = true;
+        window.location.reload();
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", reloadOnUpgrade);
+      void navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" }).then((registration) => registration.update());
+      return () => navigator.serviceWorker.removeEventListener("controllerchange", reloadOnUpgrade);
     }
   }, []);
 

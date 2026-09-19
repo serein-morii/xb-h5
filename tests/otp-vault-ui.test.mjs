@@ -276,6 +276,19 @@ test("hides the persistent startup overlay on share, text share and docs pages",
   assert.match(app, /if \(share \|\| textShare \|\| guide \|\| changelog\) hideAppStartup\(\)/);
 });
 
+test("keeps public share pages out of the OTP offline shell and refreshes upgrades", async () => {
+  const [app, worker] = await Promise.all([
+    source("app/systems/otp/OtpApp.tsx"),
+    source("public/otp-sw.js"),
+  ]);
+  assert.match(worker, /shell-v4/);
+  assert.match(worker, /pathname\.startsWith\("\/t\/"\)/);
+  assert.match(worker, /fetch\(request, \{ cache: "no-store" \}\)/);
+  assert.match(app, /registration\.update\(\)/);
+  assert.match(app, /controllerchange/);
+  assert.match(app, /window\.location\.reload\(\)/);
+});
+
 test("text tab searches share names and body copy", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   assert.match(workspace, /const \[textQuery, setTextQuery\] = useState\(""\)/);

@@ -1,7 +1,7 @@
 /* global self, caches, fetch, URL */
 const CACHE_PREFIX = "otp-vault-";
-const SHELL_CACHE = `${CACHE_PREFIX}shell-v3`;
-const ASSET_CACHE = `${CACHE_PREFIX}assets-v3`;
+const SHELL_CACHE = `${CACHE_PREFIX}shell-v4`;
+const ASSET_CACHE = `${CACHE_PREFIX}assets-v4`;
 const CURRENT_CACHES = new Set([SHELL_CACHE, ASSET_CACHE]);
 const OTP_HOST = self.location.hostname === "otp.gooop.top" || self.location.hostname.startsWith("otp.");
 const APP_SHELL = OTP_HOST ? "/" : "/otp";
@@ -13,7 +13,7 @@ function isApiPath(pathname) {
 }
 
 function isSharePath(pathname) {
-  return pathname === "/s" || pathname.startsWith("/s/");
+  return pathname === "/s" || pathname.startsWith("/s/") || pathname === "/t" || pathname.startsWith("/t/");
 }
 
 function isOtpNavigation(request, url) {
@@ -47,7 +47,7 @@ async function refreshStaticAsset(request, event) {
 
 async function networkFirstNavigation(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-store" });
     if (response.ok) {
       const cache = await caches.open(SHELL_CACHE);
       await cache.put(APP_SHELL, response.clone());
