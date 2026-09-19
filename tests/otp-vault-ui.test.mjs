@@ -291,10 +291,19 @@ test("keeps public share pages out of the OTP offline shell and refreshes upgrad
 
 test("text tab searches share names and body copy", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
+  const styles = await source("app/systems/otp/otp-vault.css");
   assert.match(workspace, /const \[textQuery, setTextQuery\] = useState\(""\)/);
   assert.match(workspace, /filteredTextShares/);
   assert.match(workspace, /placeholder="搜索名称或正文"/);
   assert.match(workspace, /没有匹配的文本分享/);
+  assert.match(workspace, /vault-text-overview/);
+  assert.match(workspace, /有效分享/);
+  assert.match(workspace, /累计查看/);
+  assert.match(workspace, /vault-text-card-preview/);
+  assert.match(workspace, /复制链接/);
+  assert.match(styles, /\.vault-text-share-list \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.vault-text-share-list \{ grid-template-columns: 1fr; \}/);
+  assert.match(styles, /html\.theme-dark \.vault-text-card/);
 });
 
 test("keeps vault nav as credentials, shares, text, then me", async () => {
