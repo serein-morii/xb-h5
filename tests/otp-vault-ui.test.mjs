@@ -301,7 +301,7 @@ test("text tab searches share names and body copy", async () => {
   assert.match(workspace, /const \[textQuery, setTextQuery\] = useState\(""\)/);
   assert.match(workspace, /filteredTextShares/);
   assert.match(workspace, /placeholder="搜索名称或正文"/);
-  assert.match(workspace, /没有匹配的文本分享/);
+  assert.match(workspace, /没有匹配的笔记/);
   assert.match(workspace, /vault-text-overview/);
   assert.match(workspace, /有效分享/);
   assert.match(workspace, /累计查看/);
@@ -310,7 +310,7 @@ test("text tab searches share names and body copy", async () => {
   assert.match(workspace, /is-text-formats/);
   assert.match(workspace, /\["CODE", Code2\]/);
   assert.match(workspace, /\["HTML", FileCode2\]/);
-  assert.match(workspace, /className="vault-text-overview-create" onClick=\{openTextShare\}>新建文本分享<\/button>/);
+  assert.match(workspace, /className="vault-text-overview-create" onClick=\{openTextShare\}>新建笔记<\/button>/);
   assert.match(styles, /\.vault-text-share-list \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.vault-text-share-list \{ grid-template-columns: 1fr; \}/);
   assert.match(styles, /html\.theme-dark \.vault-text-card/);
@@ -319,7 +319,7 @@ test("text tab searches share names and body copy", async () => {
 test("keeps vault nav as credentials, shares, text, then me", async () => {
   const workspace = await source("app/systems/otp/OtpVaultWorkspace.tsx");
   const styles = await source("app/systems/otp/otp-vault.css");
-  assert.match(workspace, /const VAULT_NAV = \[\s*\["all", KeyRound, "凭据"\],\s*\["shares", Link2, "授权"\],\s*\["text", FileText, "文本"\],\s*\["settings", Settings2, "我的"\],/);
+  assert.match(workspace, /const VAULT_NAV = \[\s*\["all", KeyRound, "凭据"\],\s*\["shares", Link2, "授权"\],\s*\["text", FileText, "笔记"\],\s*\["settings", Settings2, "我的"\],/);
   assert.match(workspace, /shares\.filter\(\(share\) => share\.shareType === "TEXT"\)/);
   assert.match(workspace, /shares\.filter\(\(share\) => share\.shareType !== "TEXT"\)/);
   assert.match(styles, /\.vault-mobile-nav\{position:fixed;[\s\S]{0,280}grid-template-columns:repeat\(4,1fr\)/);
@@ -333,7 +333,7 @@ test("text share can skip the access code and waits before showing the gate", as
   assert.match(workspace, /获得安全链接即可直接阅读/);
   assert.match(workspace, /share\.accessCodeEnabled \? "访问码保护" : "免密码"/);
   assert.match(workspace, /created\.accessCode \? "复制链接和访问码" : "复制分享链接"/);
-  assert.match(workspace, /shareType === "TEXT" \? "临时文本分享" : "临时凭据授权"/);
+  assert.match(workspace, /shareType === "TEXT" \? "临时笔记" : "临时凭据授权"/);
   assert.match(page, /if \(loading\) return <main className="text-share-page">/);
   assert.match(page, /if \(!result\.data\.accessCodeRequired \|\| initialCode\) await open\(initialCode\)/);
   assert.match(page, /status\?\.accessCodeRequired \? <form className="text-share-form"/);

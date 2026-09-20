@@ -46,7 +46,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       const result = await getSharedContent(token, session);
       const receivedAt = Date.now();
       serverOffset.current = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2) - receivedAt;
-      if (result.data.shareType !== "TEXT") throw new Error("该链接不是文本分享");
+      if (result.data.shareType !== "TEXT") throw new Error("该链接不是笔记分享");
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - (receivedAt + serverOffset.current)) / 1000));
       setContent(result.data.textContent || "");
       setFormat(normalizeTextShareFormat(result.data.textFormat));
@@ -79,7 +79,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     let cancelled = false;
     getShareStatus(token).then(async (result) => {
       if (cancelled) return;
-      if (result.data.shareType !== "TEXT") throw new Error("该链接不是文本分享");
+      if (result.data.shareType !== "TEXT") throw new Error("该链接不是笔记分享");
       setStatus(result.data);
       if (result.data.status !== "ACTIVE") return;
       if (sessionToken && await loadContent(sessionToken)) return;
@@ -105,19 +105,19 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     window.setTimeout(() => setCopied(false), 1600);
   };
 
-  if (loading) return <main className="text-share-page"><section className="share-loading"><LoaderCircle className="spin" size={20} /><p>正在检查临时文本…</p></section></main>;
-  if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "文本分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
+  if (loading) return <main className="text-share-page"><section className="share-loading"><LoaderCircle className="spin" size={20} /><p>正在打开笔记…</p></section></main>;
+  if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "笔记分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
 
   const gateVisible = !sessionToken || !content;
   const formatLabel = textShareFormatLabel(format);
   return <main className={`text-share-page ${gateVisible ? "is-gate" : "is-open"}`}>
     <header className="text-share-header">
-      <span className="text-share-brand"><i>OTP</i><div><b>OTP Vault</b><small>临时文本分享</small></div></span>
+      <span className="text-share-brand"><i>OTP</i><div><b>OTP Vault</b><small>临时笔记</small></div></span>
       <button type="button" className="text-share-theme" onClick={toggleTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={16} /> : themeMode === "dark" ? <Moon size={16} /> : <Sun size={16} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button>
     </header>
 
     {gateVisible ? <section className="text-share-gate">
-      <div className="text-share-gate-intro"><span className="text-share-medallion"><LockKeyhole size={23} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时文本分享"}</h1><p>验证前不会传输正文，内容只在授权有效期内开放。</p></div></div>
+      <div className="text-share-gate-intro"><span className="text-share-medallion"><LockKeyhole size={23} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时笔记"}</h1><p>验证前不会传输正文，内容只在授权有效期内开放。</p></div></div>
       <div className="text-share-meta">
         <span><small>内容格式</small><b><FileText size={13} />{textShareFormatLabel(status?.textFormat)}</b></span>
         <span><small>剩余时间</small><b><Clock3 size={13} />{formatDuration(accessExpiresIn)}</b></span>
@@ -128,15 +128,15 @@ export default function VaultTextSharePage({ token }: { token: string }) {
           <div className="text-share-code"><KeyRound size={17} /><input autoFocus inputMode="text" enterKeyHint="go" spellCheck={false} aria-label="访问码" value={accessCode} onChange={(event) => { setAccessCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")); if (error) setError(""); }} minLength={4} maxLength={12} autoComplete="one-time-code" placeholder="粘贴或输入访问码" /></div>
         </label>
         <p className="text-share-access-help">支持直接粘贴，输入完成后按回车</p>
-        <button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "查看文本"}</button>
-      </form> : <button className="text-share-open" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在打开" : "打开文本"}</button>}
+        <button disabled={busy || accessCode.length < 4}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在验证" : "查看笔记"}</button>
+      </form> : <button className="text-share-open" disabled={busy} onClick={() => void open("")}>{busy ? <LoaderCircle className="spin" size={17} /> : <ShieldCheck size={17} />}{busy ? "正在打开" : "打开笔记"}</button>}
       {error ? <p className="text-share-error"><TriangleAlert size={14} />{error}</p> : null}
       <footer><ShieldCheck size={13} />访问会话不会超过原分享有效期</footer>
     </section> : <section className="text-share-paper-wrap">
       <header className="text-share-titlebar">
         <div className="text-share-title">
-          <em>临时文本已验证</em>
-          <h1>{status?.name || "临时文本分享"}</h1>
+          <em>笔记已验证</em>
+          <h1>{status?.name || "临时笔记"}</h1>
           <p>{formatLabel} · {allowCopy ? "允许复制" : "仅允许查看"}</p>
         </div>
         <div className="text-share-countdown" role="timer"><span className="text-share-expiry-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle className="text-share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="text-share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="text-share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="text-share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 size={14} /></span><span><small>分享剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div>
