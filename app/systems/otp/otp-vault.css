@@ -3089,6 +3089,45 @@ html.theme-dark .text-share-aside-icon { background:#273154; color:#c8ceff; }
 .vault-text-overview-stats b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .vault-text-overview-stats small { margin-top: 1px; color: var(--utility-muted); font-size: 8px; white-space: nowrap; }
 .vault-text-overview-create { position: relative; z-index: 1; min-height: 38px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #fff; background: #485cc7; box-shadow: 0 8px 19px rgba(72,92,199,.22); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
+.vault-text-folders { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-bottom: 12px; }
+.vault-text-folders > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--utility-line);
+  border-radius: 999px;
+  color: var(--utility-muted);
+  background: color-mix(in srgb, var(--utility-paper) 72%, var(--utility-bg));
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.vault-text-folders > button b {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--utility-muted);
+  background: var(--utility-bg);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.vault-text-folders > button.is-active { border-color: #8592dc; color: #485cc7; background: #eef0fb; }
+.vault-text-folders > button.is-active b { color: #485cc7; background: rgba(72, 92, 199, .12); }
+.vault-text-folders > button.vault-text-folder-add { border-style: dashed; color: #5867c5; }
+.vault-text-folders > button.vault-text-folder-manage { min-height: 28px; padding: 0 9px; font-size: 9px; color: var(--utility-muted); }
+.vault-text-folders > button.vault-text-folder-manage.is-danger { color: #c0554a; }
+html.theme-dark .vault-text-folders > button { background: #171e2c; }
+html.theme-dark .vault-text-folders > button.is-active { border-color: #5b6ee0; color: #aeb7ff; background: #222b4a; }
+html.theme-dark .vault-text-folders > button.is-active b { color: #aeb7ff; background: rgba(174, 183, 255, .14); }
+.vault-text-folder-field { display: grid; gap: 6px; margin-top: 10px; }
+.vault-text-folder-field > span { color: var(--utility-muted); font-size: 11px; }
 .vault-text-share-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .vault-text-card { min-width: 0; padding: 13px; display: grid; gap: 10px; border: 1px solid rgba(38,50,77,.1); border-radius: 17px; background: var(--utility-paper); box-shadow: 0 7px 22px rgba(34,44,76,.055); transition: transform .16s, border-color .16s, box-shadow .16s; }
 .vault-text-card:hover { transform: translateY(-2px); border-color: rgba(83,99,215,.25); box-shadow: 0 13px 30px rgba(34,44,76,.1); }

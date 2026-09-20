@@ -95,6 +95,7 @@ export type VaultDynamicCode = {
 export type VaultShare = {
   id: number; name?: string; status: string; accessCodeEnabled: boolean; itemCount: number; accessCount: number;
   shareType?: "CREDENTIAL" | "TEXT"; textFormat?: "TEXT" | "MARKDOWN" | "CODE" | "HTML"; textContent?: string;
+  textFolderId?: number | null;
   maxAccessCount?: number; oneTime: boolean; allowCopy: boolean; forbidSave?: boolean;
   accessCode?: string; showAccount: boolean; showPassword: boolean; showOtp: boolean; showLoginUrl: boolean; showNote: boolean;
   credentialIds?: number[]; shareMode: "LINK" | "DIRECT"; recipientUsername?: string; sharePath?: string; expireTime: string; createTime: string; accessRecords?: VaultAccessRecord[];
@@ -213,6 +214,11 @@ export const renameVaultPasskey = (id: number, displayName: string) => otpApiReq
 export const deleteVaultPasskey = (id: number) => otpApiRequest(`${vaultAccount}/passkeys/${id}`, { method: "DELETE" });
 export const getPasskeyLoginOptions = (identifier: string, longSession: boolean) => apiRequest<{ data: { requestId: string; publicKey: Record<string, unknown> } }>(`${API_PATHS.auth.passkeyLogin}/options`, { auth: false, method: "POST", body: { identifier, longSession } });
 export const finishPasskeyLogin = (requestId: string, credential: Record<string, unknown>) => apiRequest<{ data: { token: string; username: string } }>(`${API_PATHS.auth.passkeyLogin}/finish`, { auth: false, method: "POST", body: { requestId, credential } });
+export type VaultTextFolder = { id: number; name: string };
+export const listVaultTextFolders = () => otpApiRequest<{ data: VaultTextFolder[] }>(`${vault}/text-folders`);
+export const createVaultTextFolder = (name: string) => otpApiRequest<{ data: VaultTextFolder }>(`${vault}/text-folders`, { method: "POST", body: { name } });
+export const renameVaultTextFolder = (id: number, name: string) => otpApiRequest(`${vault}/text-folders/${id}`, { method: "PUT", body: { name } });
+export const deleteVaultTextFolder = (id: number) => otpApiRequest(`${vault}/text-folders/${id}`, { method: "DELETE" });
 export const listVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares`);
 export const listReceivedVaultShares = () => otpApiRequest<{ data: VaultShare[] }>(`${vault}/shares/received`);
 export const getVaultShare = (id: number) => otpApiRequest<{ data: VaultShare }>(`${vault}/shares/${id}`);
