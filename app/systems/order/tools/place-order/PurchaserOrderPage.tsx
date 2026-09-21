@@ -46,6 +46,14 @@ function normalizeSpecText(value: unknown) {
     .toLowerCase();
 }
 
+// 微信外（普通手机浏览器）无法直接唤起微信支付：简付收银台此时只剩二维码，
+// 改为复制收银台链接、引导用户到微信里打开（微信内走 JSAPI 直接付款）。
+function needWxCopyGuide(payMethod: "wx" | "alipay") {
+  if (payMethod !== "wx") return false;
+  const ua = navigator.userAgent;
+  return !/MicroMessenger/i.test(ua) && /Mobile/i.test(ua);
+}
+
 function parseSpecValues(value: unknown) {
   if (!value) return {} as Record<string, string>;
   if (typeof value === "object") return value as Record<string, string>;
@@ -193,6 +201,7 @@ export default function PurchaserOrderPage() {
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
   const [onlinePayTarget, setOnlinePayTarget] = useState<{ orderCode: string; amount?: number } | null>(null);
   const [onlinePayBusy, setOnlinePayBusy] = useState(false);
+  const [wxGuideUrl, setWxGuideUrl] = useState("");
   // 正在发起支付的渠道：点了哪个哪个转圈，另一个只置灰
   const [payBusyMethod, setPayBusyMethod] = useState<"wx" | "alipay" | null>(null);
   const [onlinePayError, setOnlinePayError] = useState("");
@@ -1171,6 +1180,11 @@ export default function PurchaserOrderPage() {
       }
       const payUrl = result.data?.payUrl;
       if (!payUrl) throw new Error("未获取到收银台地址");
+      if (needWxCopyGuide(payMethod)) {
+        setOnlinePayTarget(null);
+        setWxGuideUrl(payUrl);
+        return;
+      }
       window.location.assign(payUrl);
     } catch (cause) {
       setOnlinePayError(cause instanceof Error ? cause.message : "发起支付失败，请稍后重试");
@@ -1900,6 +1914,26 @@ export default function PurchaserOrderPage() {
       </div>
       <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />由简付提供收款服务，支付成功后订单自动确认，无需等待人工对账</p>
       {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
+    </section></div> : null}
+    {wxGuideUrl ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setWxGuideUrl("")}><section className="purchaser-sheet purchaser-online-pay-sheet wx-guide-sheet">
+      <div className="purchaser-online-pay-head">
+        <small>微信支付</small>
+        <button className="purchaser-help-close" type="button" onClick={() => setWxGuideUrl("")} aria-label="关闭"><X size={19} /></button>
+      </div>
+      <h2>在微信中完成支付</h2>
+      <p>当前浏览器无法直接拉起微信，把支付链接复制到微信里打开即可付款：</p>
+      <ol className="wx-guide-steps">
+        <li>点击下方按钮复制支付链接</li>
+        <li>打开微信，把链接发给任意聊天（推荐「文件传输助手」）</li>
+        <li>在微信中点开链接，即可拉起微信支付</li>
+      </ol>
+      <button type="button" className="wx-guide-copy-btn" onClick={async () => {
+        const ok = await copyToClipboard(wxGuideUrl);
+        setPromptToast({ message: ok ? "已复制，请打开微信粘贴" : "复制失败，请长按下方链接手动复制" });
+      }}><Copy size={16} />复制支付链接</button>
+      <p className="wx-guide-url">{wxGuideUrl}</p>
+      <button type="button" className="wx-guide-alt" onClick={() => { const url = wxGuideUrl; setWxGuideUrl(""); window.location.assign(url); }}>仍在当前浏览器打开（电脑端可扫码）</button>
+      <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />链接约 15 分钟内有效，重新发起支付会生成新链接。</p>
     </section></div> : null}
     {helpOpen ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setHelpOpen(false)}><section className="purchaser-help-modal purchaser-sheet">
       <button className="purchaser-help-close" type="button" onClick={() => setHelpOpen(false)} aria-label="关闭"><X size={19} /></button>

@@ -12369,6 +12369,79 @@ body textarea {
   text-align: center;
 }
 
+/* 微信外引导弹层：复制支付链接到微信里打开（简付不支持微信外 H5，收银台只剩二维码） */
+.wx-guide-sheet {
+  gap: 10px;
+}
+
+.wx-guide-sheet > p {
+  word-break: break-all;
+}
+
+.wx-guide-steps {
+  margin: 0;
+  padding: 10px 12px 10px 28px;
+  border: 1px solid var(--xb-line, rgba(38, 50, 77, .1));
+  border-radius: 12px;
+  background: var(--xb-surface-muted, #f1f4f9);
+  color: var(--xb-text, #18231d);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.wx-guide-steps li + li {
+  margin-top: 3px;
+}
+
+.wx-guide-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #12b76a, #079455 68%, #067640);
+  box-shadow: 0 10px 22px rgba(7, 148, 85, .26);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+
+.wx-guide-copy-btn:active {
+  transform: scale(.97);
+}
+
+.wx-guide-copy-btn:disabled {
+  opacity: .62;
+}
+
+.wx-guide-url {
+  overflow: hidden;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--xb-text-tertiary, #95a19a) !important;
+  background: var(--xb-surface-muted, #f1f4f9);
+  font-size: 10px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wx-guide-alt {
+  min-height: 32px;
+  border: 0;
+  background: none;
+  color: var(--xb-text-tertiary, #95a19a);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* 详情里的可复制行：值 + 小复制按钮 */
 .purchaser-detail-copy-line {
   min-width: 0;

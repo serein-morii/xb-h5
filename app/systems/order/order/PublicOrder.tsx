@@ -1,7 +1,7 @@
-import { AlertCircle, Box, ChevronDown, ChevronRight, Clock3, LoaderCircle, PackageCheck, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
+import { AlertCircle, Box, ChevronDown, ChevronRight, Clock3, Copy, LoaderCircle, PackageCheck, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useCallback, useEffect, useState } from "react";
-import { apiRequest, publicApiRequest } from "../../../lib/api";
+import { apiRequest, copyToClipboard, publicApiRequest } from "../../../lib/api";
 import OrderList, { type PublicOrderRecord, type TrackingItem } from "../tools/OrderList";
 import PeachTip from "../../../components/PeachTip";
 
@@ -32,6 +32,14 @@ function flagOn(value: unknown) {
   return value === true || value === 1 || value === "1";
 }
 
+// 微信外（普通手机浏览器）无法直接唤起微信支付：简付收银台此时只剩二维码，
+// 改为复制收银台链接、引导用户到微信里打开（微信内走 JSAPI 直接付款）。
+function needWxCopyGuide(payMethod: "wx" | "alipay") {
+  if (payMethod !== "wx") return false;
+  const ua = navigator.userAgent;
+  return !/MicroMessenger/i.test(ua) && /Mobile/i.test(ua);
+}
+
 function orderStatusLabel(code?: string, fallback?: string) {
   if (code === "DSH") return "待处理";
   if (code === "DFH") return "待发货";
@@ -55,6 +63,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
   const [trackingOpen, setTrackingOpen] = useState(false);
   const [lastPayMethod, setLastPayMethod] = useState<"wx" | "alipay" | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [wxGuideUrl, setWxGuideUrl] = useState("");
 
   const load = useCallback(async () => {
     const id = readLinkId();
@@ -134,6 +143,11 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       }
       const payUrl = result.data?.payUrl;
       if (!payUrl) throw new Error("未获取到收银台地址");
+      if (needWxCopyGuide(payMethod)) {
+        setPayOpen(false);
+        setWxGuideUrl(payUrl);
+        return;
+      }
       window.location.assign(payUrl);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "发起支付失败，请稍后重试";
@@ -235,6 +249,29 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
         <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />无需登录，支付成功后订单自动确认。</p>
         {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
         {onlinePayError && lastPayMethod ? <button type="button" className="pay-sheet-retry" disabled={payBusyMethod !== null} onClick={() => void startOnlinePay(lastPayMethod, true)}><RefreshCw size={13} />重新发起支付</button> : null}
+      </section>
+    </div> : null}
+    {wxGuideUrl ? <div className="purchaser-help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setWxGuideUrl(""); }}>
+      <section className="purchaser-sheet purchaser-online-pay-sheet wx-guide-sheet">
+        <div className="purchaser-online-pay-head">
+          <small>微信支付</small>
+          <button className="purchaser-help-close" type="button" onClick={() => setWxGuideUrl("")} aria-label="关闭"><X size={19} /></button>
+        </div>
+        <h2>在微信中完成支付</h2>
+        <p>当前浏览器无法直接拉起微信，把支付链接复制到微信里打开即可付款：</p>
+        <ol className="wx-guide-steps">
+          <li>点击下方按钮复制支付链接</li>
+          <li>打开微信，把链接发给任意聊天（推荐「文件传输助手」）</li>
+          <li>在微信中点开链接，即可拉起微信支付</li>
+        </ol>
+        <button type="button" className="wx-guide-copy-btn" onClick={async () => {
+          const ok = await copyToClipboard(wxGuideUrl);
+          setPayToast(ok ? "已复制，请打开微信粘贴" : "复制失败，请长按下方链接手动复制");
+          window.setTimeout(() => setPayToast(""), 2200);
+        }}><Copy size={16} />复制支付链接</button>
+        <p className="wx-guide-url">{wxGuideUrl}</p>
+        <button type="button" className="wx-guide-alt" onClick={() => { const url = wxGuideUrl; setWxGuideUrl(""); window.location.assign(url); }}>仍在当前浏览器打开（电脑端可扫码）</button>
+        <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />链接约 15 分钟内有效，重新发起支付会生成新链接。</p>
       </section>
     </div> : null}
     {payToast ? <div className="public-copy-toast">{payToast}</div> : null}
