@@ -193,6 +193,8 @@ export default function PurchaserOrderPage() {
   const [promptToast, setPromptToast] = useState<{ message: string } | null>(null);
   const [onlinePayTarget, setOnlinePayTarget] = useState<{ orderCode: string; amount?: number } | null>(null);
   const [onlinePayBusy, setOnlinePayBusy] = useState(false);
+  // 正在发起支付的渠道：点了哪个哪个转圈，另一个只置灰
+  const [payBusyMethod, setPayBusyMethod] = useState<"wx" | "alipay" | null>(null);
   const [onlinePayError, setOnlinePayError] = useState("");
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -1156,8 +1158,8 @@ export default function PurchaserOrderPage() {
 
   // 在线支付（简付收银台）：选择渠道后由后端创建收银台单并跳转，支付结果以回调/查单为准。
   async function startOnlinePay(orderCode: string, payMethod: "wx" | "alipay") {
-    if (!orderCode || onlinePayBusy) return;
-    setOnlinePayBusy(true); setOnlinePayError("");
+    if (!orderCode || payBusyMethod) return;
+    setOnlinePayBusy(true); setPayBusyMethod(payMethod); setOnlinePayError("");
     try {
       const result = await customerApiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay`, { method: "POST", body: { id: linkKey.purchaserId, orderCode, payMethod, returnUrl: window.location.href } }, linkKey.purchaserId);
       if (result.data?.paid) {
@@ -1172,7 +1174,7 @@ export default function PurchaserOrderPage() {
       window.location.assign(payUrl);
     } catch (cause) {
       setOnlinePayError(cause instanceof Error ? cause.message : "发起支付失败，请稍后重试");
-    } finally { setOnlinePayBusy(false); }
+    } finally { setOnlinePayBusy(false); setPayBusyMethod(null); }
   }
 
   // 打开编辑：优先按 SKU 快照回显，历史订单再按商品/地区/重量兜底匹配。
@@ -1847,8 +1849,8 @@ export default function PurchaserOrderPage() {
                 <div className="purchaser-online-pay">
                   <p className="purchaser-online-pay-tip">在线支付，支付成功后自动确认，无需等待人工对账。</p>
                   <div className="purchaser-online-pay-actions">
-                    <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(String(success.orderCode || ""), "wx")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}微信支付</button>
-                    <button type="button" disabled={onlinePayBusy} onClick={() => void startOnlinePay(String(success.orderCode || ""), "alipay")}>{onlinePayBusy ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}支付宝</button>
+                    <button type="button" disabled={payBusyMethod !== null} onClick={() => void startOnlinePay(String(success.orderCode || ""), "wx")}>{payBusyMethod === "wx" ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}微信支付</button>
+                    <button type="button" disabled={payBusyMethod !== null} onClick={() => void startOnlinePay(String(success.orderCode || ""), "alipay")}>{payBusyMethod === "alipay" ? <LoaderCircle className="spin" size={15} /> : <Wallet size={15} />}支付宝</button>
                   </div>
                   {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
                 </div>
@@ -1885,13 +1887,13 @@ export default function PurchaserOrderPage() {
         {onlinePayTarget.amount ? <em>¥{onlinePayTarget.amount.toFixed(2)}</em> : null}
       </div>
       <div className="purchaser-online-pay-channels" role="radiogroup" aria-label="支付方式">
-        <button type="button" className="pay-channel is-wx" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "wx")}>
-          <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <Wallet size={21} />}</span>
+        <button type="button" className="pay-channel is-wx" disabled={payBusyMethod !== null} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "wx")}>
+          <span className="pay-channel-icon">{payBusyMethod === "wx" ? <LoaderCircle className="spin" size={20} /> : <Wallet size={21} />}</span>
           <span className="pay-channel-copy"><b>微信支付</b><small>微信内直接拉起 · 支付后自动确认</small></span>
           <ChevronRight size={17} />
         </button>
-        <button type="button" className="pay-channel is-alipay" disabled={onlinePayBusy} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "alipay")}>
-          <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <ShieldCheck size={21} />}</span>
+        <button type="button" className="pay-channel is-alipay" disabled={payBusyMethod !== null} onClick={() => void startOnlinePay(onlinePayTarget.orderCode, "alipay")}>
+          <span className="pay-channel-icon">{payBusyMethod === "alipay" ? <LoaderCircle className="spin" size={20} /> : <ShieldCheck size={21} />}</span>
           <span className="pay-channel-copy"><b>支付宝</b><small>跳转支付宝完成付款 · 支付后自动确认</small></span>
           <ChevronRight size={17} />
         </button>
