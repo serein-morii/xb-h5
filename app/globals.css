@@ -1312,20 +1312,20 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .signed-order-state { min-height: 45dvh; }
 .signed-order-tool { padding-bottom: 18px; }
 .pay-order-page { display: grid; gap: 14px; }
-.pay-order-hero { position: relative; overflow: hidden; display: grid; justify-items: center; gap: 9px; padding: 27px 20px 23px; border-radius: 26px; color: #fff; background: linear-gradient(150deg, #136f49, #1d9962 58%, #29b375); box-shadow: 0 16px 36px rgba(19, 106, 71, .24); }
+.pay-order-hero { position: relative; overflow: hidden; display: grid; justify-items: center; gap: 9px; padding: 27px 20px 23px; border-radius: 26px; color: #fff; background: linear-gradient(150deg, #1c51d6, #2867ee 58%, #4a86f7); box-shadow: 0 16px 36px rgba(23, 63, 178, .24); }
 .pay-order-hero::before, .pay-order-hero::after { content: ""; position: absolute; border-radius: 50%; }
 .pay-order-hero::before { left: -54px; top: -78px; width: 168px; height: 168px; border: 18px solid rgba(255, 255, 255, .05); }
 .pay-order-hero::after { right: -74px; bottom: -118px; width: 232px; height: 232px; border: 26px solid rgba(255, 255, 255, .07); }
 .pay-order-hero > small { position: relative; z-index: 1; opacity: .82; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
-.pay-order-amount { position: relative; z-index: 1; display: flex; align-items: baseline; gap: 3px; font-variant-numeric: tabular-nums; text-shadow: 0 2px 10px rgba(9, 55, 36, .28); }
+.pay-order-amount { position: relative; z-index: 1; display: flex; align-items: baseline; gap: 3px; font-variant-numeric: tabular-nums; text-shadow: 0 2px 10px rgba(10, 31, 92, .3); }
 .pay-order-amount i { font-size: 21px; font-style: normal; font-weight: 800; }
 .pay-order-amount b { font-size: 46px; font-weight: 850; letter-spacing: -.035em; line-height: 1; }
 .pay-order-status { position: relative; z-index: 1; display: flex; gap: 6px; }
 .pay-pill { min-height: 25px; padding: 0 11px; display: inline-flex; align-items: center; border: 1px solid rgba(255, 255, 255, .24); border-radius: 999px; background: rgba(255, 255, 255, .14); font-size: 11px; font-weight: 750; }
-.pay-pill.is-pay-paid { border-color: transparent; background: #fff; color: #14794e; }
+.pay-pill.is-pay-paid { border-color: transparent; background: #fff; color: #2867ee; }
 .pay-order-hero > p { position: relative; z-index: 1; margin: 1px 0 0; color: rgba(255, 255, 255, .78); font-size: 12px; }
-.pay-order-card { display: grid; padding: 2px 18px; border: 1px solid rgba(20, 121, 78, .09); border-radius: 26px; background: var(--surface, #fff); box-shadow: 0 16px 40px rgba(35, 82, 56, .07); }
-.pay-order-product { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 0 13px; border-bottom: 1px dashed rgba(20, 121, 78, .18); }
+.pay-order-card { display: grid; padding: 2px 18px; border: 1px solid rgba(40, 103, 238, .13); border-radius: 26px; background: var(--surface, #fff); box-shadow: 0 16px 40px rgba(30, 66, 160, .07); }
+.pay-order-product { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 0 13px; border-bottom: 1px dashed rgba(40, 103, 238, .24); }
 .pay-order-product b { font-size: 16.5px; letter-spacing: -.01em; }
 .pay-order-product span { flex: none; color: #65776d; font-size: 12.5px; }
 .pay-order-rows { display: grid; margin: 0; padding: 4px 0 8px; }
@@ -1337,13 +1337,29 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .pay-order-track span { min-width: 0; flex: 1; display: grid; gap: 2px; }
 .pay-order-track b { font-size: 13px; }
 .pay-order-track small { overflow: hidden; color: #839189; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
-.pay-order-track > svg:first-child { flex: none; color: #1d9962; }
+.pay-order-track > svg:first-child { flex: none; color: #2867ee; }
 .pay-order-track > svg:last-child { flex: none; color: #8ba097; transition: transform .2s ease; }
 .pay-order-track.is-open > svg:last-child { transform: rotate(180deg); }
 .pay-order-dock { position: sticky; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 5; display: grid; gap: 6px; padding: 14px 2px 4px; background: linear-gradient(180deg, rgba(243, 248, 245, 0), rgba(243, 248, 245, .92) 36%); }
-.pay-order-cta { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 14px 30px rgba(20, 121, 78, .3), inset 0 1px 0 rgba(255, 255, 255, .18); font-size: 17px; font-weight: 800; cursor: pointer; }
-.pay-order-hint { margin: 0; padding: 15px; border-radius: 16px; background: rgba(20, 121, 78, .08); color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
+.pay-order-cta { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; color: #fff; background: linear-gradient(135deg, #2059e0, #4a86f7); box-shadow: 0 14px 30px rgba(32, 89, 224, .3), inset 0 1px 0 rgba(255, 255, 255, .18); font-size: 17px; font-weight: 800; cursor: pointer; }
+.pay-order-hint { margin: 0; padding: 15px; border-radius: 16px; background: rgba(40, 103, 238, .09); color: #2867ee; text-align: center; font-size: 13px; font-weight: 700; }
 .pay-order-refresh { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto; padding: 0 10px; border: 0; color: #6b7d73; background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pay-order-timeline { display: grid; margin: 0 0 12px; padding: 14px 16px 6px; border-radius: 16px; background: rgba(40, 103, 238, .06); animation: pay-timeline-in .22s ease; }
+@keyframes pay-timeline-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.pay-order-timeline > div { position: relative; display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding-bottom: 13px; }
+.pay-order-timeline > div::after { content: ""; position: absolute; left: 6px; top: 15px; bottom: 2px; width: 2px; border-radius: 2px; background: rgba(40, 103, 238, .16); }
+.pay-order-timeline > div:last-child { padding-bottom: 4px; }
+.pay-order-timeline > div:last-child::after { display: none; }
+.pay-order-timeline i { position: relative; z-index: 1; width: 9px; height: 9px; margin-top: 5px; margin-left: 2px; border: 2px solid #b9cdf7; border-radius: 50%; background: var(--surface, #fff); }
+.pay-order-timeline > div.latest i { border-color: #2867ee; background: #2867ee; box-shadow: 0 0 0 4px rgba(40, 103, 238, .14); }
+.pay-order-timeline span { display: grid; gap: 3px; }
+.pay-order-timeline b { color: #65776d; font-size: 12.5px; font-weight: 650; }
+.pay-order-timeline > div.latest b { color: #24362c; font-weight: 780; }
+.pay-order-timeline p { margin: 0; color: #65776d; font-size: 12px; line-height: 1.55; }
+.pay-order-timeline small { color: #93a099; font-size: 11px; }
+.pay-order-timeline-empty { margin: 0; padding: 4px 0 10px; color: #8a9690; font-size: 12px; text-align: center; }
+html.theme-dark .pay-order-timeline { background: rgba(120, 160, 255, .08); }
+html.theme-dark .pay-order-timeline > div.latest b { color: #e6ece8; }
 html.theme-dark .pay-order-card { border-color: rgba(255, 255, 255, .06); }
 html.theme-dark .pay-order-product { border-bottom-color: rgba(255, 255, 255, .1); }
 html.theme-dark .pay-order-rows > div + div, html.theme-dark .pay-order-track { border-top-color: rgba(255, 255, 255, .06); }

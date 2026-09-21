@@ -157,7 +157,11 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
           <span><b>物流信息</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"}</small></span>
           <ChevronDown size={16} />
         </button>
-        {trackingOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p><small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
+        {trackingOpen ? <div className="pay-order-timeline">{tracking.length ? tracking.map((item, index) => {
+          const label = item.expStatusDesc || item.expDesc || "物流更新";
+          const detail = [item.expDesc, item.desc].find((text) => text && text !== label);
+          return <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{label}</b>{detail ? <p>{detail}</p> : null}<small>{item.expTime || item.createTime || ""}</small></span></div>;
+        }) : <p className="pay-order-timeline-empty">暂无物流轨迹</p>}</div> : null}
       </section>
       <div className="pay-order-dock">
         {canPay ? <button type="button" className="pay-order-cta" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={17} />去支付</button> : <p className="pay-order-hint">{payHint}</p>}
