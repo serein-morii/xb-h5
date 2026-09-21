@@ -81,7 +81,7 @@
           } else if (ogSurface === "order") {
             if (/^\/tools\/order\/[2-9a-hj-km-np-z]{6}/.test(path) || path.indexOf("/tools/place-order") === 0) { card.title = "专属下单｜喜八"; card.description = "通过专属短链接下单并查询历史订单。"; }
             else if (path.indexOf("/tools/store-query") === 0) { card.title = "专属查询｜喜八"; card.description = "选择店铺后只查询该店铺的订单，避免串单。"; }
-            else if (path.indexOf("/tools/order") === 0 && path.indexOf("/tools/order-") !== 0) { card.title = "确认订单｜喜八"; card.description = "核对订单后即可免登录在线支付。"; }
+            else if (path.indexOf("/tools/order") === 0 && path.indexOf("/tools/order-") !== 0) { card.title = "支付订单｜喜八"; card.description = "核对订单后选择微信或支付宝付款。"; }
             else if (path === "/order" || path.indexOf("/order/") === 0) { card.title = "订单查询｜喜八"; card.description = "查询喜八订单状态与物流进度。"; }
             else if (path.indexOf("/tools/order-search") === 0) { card.title = "订单查询｜喜八"; card.description = "通过手机号和验证码查询订单。"; }
           }

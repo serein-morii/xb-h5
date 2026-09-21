@@ -1,4 +1,4 @@
-import { AlertCircle, Box, ChevronRight, Clock3, LoaderCircle, MapPin, PackageCheck, RefreshCw, ShieldCheck, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, Box, ChevronDown, ChevronRight, Clock3, LoaderCircle, MapPin, PackageCheck, RefreshCw, ShieldCheck, Truck, User, Wallet, X } from "lucide-react";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest, publicApiRequest } from "../../../lib/api";
@@ -25,7 +25,7 @@ function payStatusLabel(status: unknown) {
   if (value === 1) return "已付款";
   if (value === 2) return "已退款";
   if (value === 3) return "待确认";
-  return "未付款";
+  return "待支付";
 }
 
 function flagOn(value: unknown) {
@@ -57,7 +57,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
   const load = useCallback(async () => {
     const id = readLinkId();
     if (!id || !/^[a-zA-Z0-9_@\-\s]{4,80}$/.test(id)) {
-      setOrder(null); setOrders([]); setListMode(false); setError("订单链接无效，请使用订单管理系统生成的确认支付链接"); setLoading(false); return;
+      setOrder(null); setOrders([]); setListMode(false); setError("订单链接无效，请使用订单管理系统生成的支付链接"); setLoading(false); return;
     }
     setLoading(true); setError("");
     try {
@@ -75,7 +75,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       setOrders([]);
       const matched = data.find((item) => String(item.signId || "") === id) || (data.length === 1 ? data[0] : null);
       setOrder(matched);
-      if (!matched) setError("没有查询到这一单，请检查链接是否正确");
+      if (!matched) setError("没有查询到订单，请检查链接是否正确");
     } catch (cause) { setOrder(null); setOrders([]); setListMode(false); setError(cause instanceof Error ? cause.message : "订单查询失败，请稍后重试"); }
     finally { setLoading(false); }
   }, []);
@@ -116,41 +116,61 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
   const wxEnabled = order?.payWxEnabled !== false && order?.payWxEnabled !== 0 && order?.payWxEnabled !== "0";
   const alipayEnabled = order?.payAlipayEnabled !== false && order?.payAlipayEnabled !== 0 && order?.payAlipayEnabled !== "0";
   const canPay = payEnabled && unpaid && (wxEnabled || alipayEnabled);
-  const payHint = Number(order?.payStatus) === 1 ? "这一单已支付"
-    : Number(order?.payStatus) === 3 ? "这一单已提交，等待确认"
-    : Number(order?.payStatus) === 2 ? "这一单已退款"
+  const payHint = Number(order?.payStatus) === 1 ? "订单已支付"
+    : Number(order?.payStatus) === 3 ? "已提交，等待确认"
+    : Number(order?.payStatus) === 2 ? "订单已退款"
     : payEnabled ? "当前店铺未开通微信或支付宝收款"
     : "当前店铺暂未开通在线支付";
   const tracking: TrackingItem[] = order?.expInfoList || [];
 
   return <div className="tool-page signed-order-tool">
-    <section className="tool-hero"><span><PackageCheck size={25} /></span><div><small>SECURE ORDER LINK</small><h1>确认订单</h1><p>{canPay ? "核对这一单后即可选择微信或支付宝付款" : "查看这一单与最新物流信息"}</p></div></section>
-    <PeachTip />
-    {loading ? <section className="public-state signed-order-state"><LoaderCircle className="spin" size={32} /><h1>正在查询订单</h1><p>请稍候，正在同步这一单的最新信息</p></section> : error ? <section className="public-state public-state-error signed-order-state"><Box size={34} /><h1>暂时无法查看</h1><p>{error}</p><button type="button" onClick={load}><RefreshCw size={17} />重新查询</button></section> : listMode ? <OrderList orders={orders} contact={orders[0]?.linkNameAndPhone?.trim()} onRefresh={load} /> : order ? <article className="confirm-order-card">
-      <header className="confirm-order-head">
-        <div><small>订单编号</small><b>{order.orderCode || "--"}</b></div>
-        <div className="confirm-order-pills"><span>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</span><span>{payStatusLabel(order.payStatus)}</span></div>
+    {loading ? <section className="public-state signed-order-state"><LoaderCircle className="spin" size={32} /><h1>正在打开订单</h1><p>请稍候，正在同步最新信息</p></section> : error ? <section className="public-state public-state-error signed-order-state"><Box size={34} /><h1>暂时无法查看</h1><p>{error}</p><button type="button" onClick={load}><RefreshCw size={17} />重新查询</button></section> : listMode ? <>
+      <section className="tool-hero"><span><PackageCheck size={25} /></span><div><small>ORDER LINK</small><h1>订单查询</h1><p>查看关联订单与物流信息</p></div></section>
+      <PeachTip />
+      <OrderList orders={orders} contact={orders[0]?.linkNameAndPhone?.trim()} onRefresh={load} />
+    </> : order ? <article className="pay-order-page">
+      <header className="pay-order-hero">
+        <div className="pay-order-hero-copy">
+          <small>{order.storeName || "在线支付"}</small>
+          <h1>支付订单</h1>
+          <p>{canPay ? "核对商品与收件信息后，选择微信或支付宝付款。" : "查看订单详情与最新物流。"}</p>
+        </div>
+        <div className="pay-order-amount">
+          {amount ? <><em>¥{amount.toFixed(2)}</em><span>{payStatusLabel(order.payStatus)}</span></> : <span>{payStatusLabel(order.payStatus)}</span>}
+        </div>
       </header>
-      <section className="confirm-order-product">
-        <b>{order.orderNameDesc || "未命名商品"}</b>
-        <span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span>
-        {amount ? <em>应付 ¥{amount.toFixed(2)}</em> : null}
+      <section className="pay-order-card">
+        <div className="pay-order-product">
+          <b>{order.orderNameDesc || "未命名商品"}</b>
+          <span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span>
+        </div>
+        <dl className="pay-order-meta">
+          <div><dt>订单号</dt><dd>{order.orderCode || "--"}</dd></div>
+          <div><dt>状态</dt><dd>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</dd></div>
+        </dl>
+        <div className="pay-order-row"><User size={16} /><div><small>收件人</small><b>{order.customer || "--"} · {order.phone || "--"}</b></div></div>
+        <div className="pay-order-row"><MapPin size={16} /><div><small>地址</small><b>{order.address || "暂无地址"}</b></div></div>
+        <div className="pay-order-row"><Truck size={16} /><div><small>快递</small><b>{order.expComDesc || "暂无快递"}{order.expCode && order.expCode !== "无" ? ` · ${order.expCode}` : ""}</b></div></div>
+        {order.orderDesc ? <p className="pay-order-note">备注：{order.orderDesc}</p> : null}
+        <button type="button" className={`pay-order-track ${trackingOpen ? "is-open" : ""}`} onClick={() => setTrackingOpen((open) => !open)}>
+          <Clock3 size={15} />
+          <span><b>物流信息</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"}</small></span>
+          <ChevronDown size={16} />
+        </button>
+        {trackingOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p><small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
       </section>
-      <section className="confirm-order-block"><p><User size={15} />{order.customer || "--"} · {order.phone || "--"}</p><p><MapPin size={15} />{order.address || "暂无地址"}</p></section>
-      <section className="confirm-order-block"><p><Truck size={15} />{order.expComDesc || "暂无快递"}{order.expCode && order.expCode !== "无" ? ` · ${order.expCode}` : ""}</p></section>
-      {order.orderDesc ? <p className="confirm-order-note">备注：{order.orderDesc}</p> : null}
-      <button type="button" className={`tool-tracking-toggle ${trackingOpen ? "open" : ""}`} onClick={() => setTrackingOpen((open) => !open)}><Clock3 size={15} /><span><b>物流信息</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"}</small></span></button>
-      {trackingOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p><small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
-      {canPay ? <button type="button" className="confirm-order-pay" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={16} />去支付这一单</button> : <p className="confirm-order-paid">{payHint}</p>}
-      <button type="button" className="confirm-order-refresh" onClick={load}><RefreshCw size={14} />刷新这一单</button>
+      <div className="pay-order-dock">
+        {canPay ? <button type="button" className="pay-order-cta" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={17} />去支付</button> : <p className="pay-order-hint">{payHint}</p>}
+        <button type="button" className="pay-order-refresh" onClick={load}><RefreshCw size={14} />刷新</button>
+      </div>
     </article> : null}
     {payOpen && order ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setPayOpen(false)}>
       <section className="purchaser-sheet purchaser-online-pay-sheet">
         <div className="purchaser-online-pay-head">
-          <small>ONLINE PAY</small>
+          <small>选择支付方式</small>
           <button className="purchaser-help-close" type="button" onClick={() => setPayOpen(false)} aria-label="关闭"><X size={19} /></button>
         </div>
-        <h2>确认并支付</h2>
+        <h2>去支付</h2>
         <div className="purchaser-online-pay-order">
           <span>订单</span>
           <b>{order.orderCode}</b>
@@ -159,20 +179,20 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
         <div className="purchaser-online-pay-channels" role="radiogroup" aria-label="支付方式">
           {wxEnabled ? <button type="button" className="pay-channel is-wx" disabled={onlinePayBusy} onClick={() => void startOnlinePay("wx")}>
             <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <Wallet size={21} />}</span>
-            <span className="pay-channel-copy"><b>微信支付</b><small>确认这一单后拉起微信付款</small></span>
+            <span className="pay-channel-copy"><b>微信支付</b><small>打开微信完成付款</small></span>
             <ChevronRight size={17} />
           </button> : null}
           {alipayEnabled ? <button type="button" className="pay-channel is-alipay" disabled={onlinePayBusy} onClick={() => void startOnlinePay("alipay")}>
             <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <ShieldCheck size={21} />}</span>
-            <span className="pay-channel-copy"><b>支付宝</b><small>确认这一单后跳转支付宝付款</small></span>
+            <span className="pay-channel-copy"><b>支付宝</b><small>跳转支付宝完成付款</small></span>
             <ChevronRight size={17} />
           </button> : null}
         </div>
-        <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />无需登录。只支付这一单，支付成功后订单自动确认。</p>
+        <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />无需登录，支付成功后订单自动确认。</p>
         {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
       </section>
     </div> : null}
     {payToast ? <div className="public-copy-toast">{payToast}</div> : null}
-    {!embedded ? <footer className="signed-order-footer"><span>喜八订单确认 · 信息以系统最新记录为准</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer> : null}
+    {!embedded && !order ? <footer className="signed-order-footer"><span>喜八订单 · 信息以系统最新记录为准</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer> : null}
   </div>;
 }

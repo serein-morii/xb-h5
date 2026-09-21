@@ -1310,22 +1310,39 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .tool-list-empty h3 { margin: 4px 0 0; color: #53675c; font-size: 15px; font-weight: 700; }
 .tool-list-empty p { margin: 0; font-size: 11.5px; line-height: 1.55; max-width: 280px; }
 .signed-order-state { min-height: 45dvh; }
-.confirm-order-card { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line, #dfeae4); border-radius: 22px; background: var(--surface, #fff); box-shadow: 0 10px 28px rgba(35, 82, 56, .06); }
-.confirm-order-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.confirm-order-head small { display: block; color: #839189; font-size: 10px; }
-.confirm-order-head b { font-size: 18px; letter-spacing: -.03em; }
-.confirm-order-pills { display: flex; gap: 6px; }
-.confirm-order-pills span { min-height: 24px; padding: 0 8px; display: inline-flex; align-items: center; border-radius: 999px; background: #ecf2ee; color: #3f584b; font-size: 10px; font-weight: 800; }
-.confirm-order-product { display: grid; gap: 4px; }
-.confirm-order-product b { font-size: 16px; }
-.confirm-order-product span { color: #65776d; font-size: 12px; }
-.confirm-order-product em { color: #d9483b; font-size: 20px; font-style: normal; font-weight: 800; }
-.confirm-order-block p { margin: 0; display: flex; gap: 7px; color: #3f584b; font-size: 13px; line-height: 1.55; }
-.confirm-order-block svg { flex: none; margin-top: 2px; color: #6e8798; }
-.confirm-order-note { margin: 0; color: #65776d; font-size: 12px; }
-.confirm-order-pay { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 8px 20px rgba(20,121,78,.24); font-size: 15px; font-weight: 800; cursor: pointer; }
-.confirm-order-paid { margin: 0; padding: 12px; border-radius: 12px; background: #f0f7f3; color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
-.confirm-order-refresh { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #3f584b; background: #ecf2ee; font-size: 12px; font-weight: 750; cursor: pointer; }
+.signed-order-tool { padding-bottom: 18px; }
+.pay-order-page { display: grid; gap: 14px; }
+.pay-order-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 8px 4px 2px; }
+.pay-order-hero-copy { min-width: 0; }
+.pay-order-hero-copy small { display: block; color: #1d9962; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.pay-order-hero-copy h1 { margin: 6px 0 4px; color: #14241b; font-size: 28px; letter-spacing: -.04em; }
+.pay-order-hero-copy p { margin: 0; color: #6b7d73; font-size: 13px; line-height: 1.55; }
+.pay-order-amount { flex: none; text-align: right; }
+.pay-order-amount em { display: block; color: #d9483b; font-size: 28px; font-style: normal; font-weight: 820; letter-spacing: -.04em; }
+.pay-order-amount span { display: inline-flex; min-height: 22px; margin-top: 4px; padding: 0 8px; align-items: center; border-radius: 999px; background: #ecf2ee; color: #3f584b; font-size: 11px; font-weight: 750; }
+.pay-order-card { display: grid; gap: 13px; padding: 18px; border: 1px solid rgba(20, 121, 78, .1); border-radius: 24px; background: linear-gradient(180deg, #fff, #f7fbf8); box-shadow: 0 16px 40px rgba(35, 82, 56, .08); }
+.pay-order-product { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid #edf2ef; }
+.pay-order-product b { font-size: 17px; letter-spacing: -.02em; }
+.pay-order-product span { color: #65776d; font-size: 13px; }
+.pay-order-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+.pay-order-meta div { display: grid; gap: 3px; }
+.pay-order-meta dt { color: #8a9690; font-size: 11px; }
+.pay-order-meta dd { margin: 0; color: #24362c; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.pay-order-row { display: flex; gap: 10px; align-items: flex-start; }
+.pay-order-row svg { flex: none; margin-top: 2px; color: #1d9962; }
+.pay-order-row small { display: block; color: #8a9690; font-size: 11px; }
+.pay-order-row b { color: #24362c; font-size: 13px; font-weight: 650; line-height: 1.5; }
+.pay-order-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: #f3f8f5; color: #65776d; font-size: 12px; line-height: 1.55; }
+.pay-order-track { width: 100%; min-height: 48px; padding: 0 4px; display: flex; align-items: center; gap: 8px; border: 0; border-top: 1px solid #edf2ef; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.pay-order-track span { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.pay-order-track b { font-size: 13px; }
+.pay-order-track small { overflow: hidden; color: #839189; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.pay-order-track > svg:last-child { flex: none; color: #8ba097; transition: transform .2s ease; }
+.pay-order-track.is-open > svg:last-child { transform: rotate(180deg); }
+.pay-order-dock { display: grid; gap: 8px; padding-top: 2px; }
+.pay-order-cta { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 12px 24px rgba(20,121,78,.24); font-size: 16px; font-weight: 800; cursor: pointer; }
+.pay-order-hint { margin: 0; padding: 14px; border-radius: 14px; background: #f0f7f3; color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
+.pay-order-refresh { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #3f584b; background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
 .purchaser-copy-pay-link { min-height: 40px; margin: 4px 0 10px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 12px; color: #14794e; background: #ecf2ee; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
 .signed-order-footer { display: grid; justify-items: center; gap: 5px; padding: 24px 0 5px; color: #95a29b; font-size: 8px; }
 .signed-order-footer a { color: inherit; text-decoration: none; }
