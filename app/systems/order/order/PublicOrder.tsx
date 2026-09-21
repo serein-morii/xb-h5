@@ -54,6 +54,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
   const [payToast, setPayToast] = useState("");
   const [trackingOpen, setTrackingOpen] = useState(false);
   const [lastPayMethod, setLastPayMethod] = useState<"wx" | "alipay" | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const load = useCallback(async () => {
     const id = readLinkId();
@@ -83,6 +84,35 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
 
   useEffect(() => { load(); window.addEventListener("hashchange", load); return () => window.removeEventListener("hashchange", load); }, [load]);
 
+  // 支付完成从收银台 returnUrl 跳回来：轮询简付状态确认结果，确认已付后刷新这一单
+  useEffect(() => {
+    const fromCashier = /jpay\.hzjianban\.com|jian-pay\.com/i.test(document.referrer || "");
+    const signId = readLinkId();
+    if (!fromCashier || !signId) return;
+    let tries = 0;
+    let timer = 0;
+    let cancelled = false;
+    setVerifying(true);
+    const check = async () => {
+      if (cancelled) return;
+      tries += 1;
+      try {
+        const result = await publicApiRequest<{ data?: { paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay/public-status`, { query: { signId } });
+        if (result.data?.paid) {
+          setVerifying(false);
+          setPayToast("支付成功");
+          window.setTimeout(() => setPayToast(""), 2200);
+          await load();
+          return;
+        }
+      } catch { /* 回调或查单还没到，继续轮询 */ }
+      if (tries >= 10 || cancelled) { setVerifying(false); return; }
+      timer = window.setTimeout(() => void check(), 2500);
+    };
+    void check();
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [load]);
+
   async function startOnlinePay(payMethod: "wx" | "alipay", refresh = false) {
     const signId = readLinkId();
     const orderCode = String(order?.orderCode || "");
@@ -93,7 +123,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       const result = await apiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay/public`, {
         auth: false,
         method: "POST",
-        body: { signId, orderCode, payMethod, refresh },
+        body: { signId, orderCode, payMethod, refresh, returnUrl: window.location.href },
       });
       if (result.data?.paid) {
         setPayOpen(false);
@@ -173,6 +203,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
         }) : <p className="pay-order-timeline-empty">暂无物流轨迹</p>}</div> : null}
       </section>
       <div className="pay-order-dock">
+        {verifying ? <p className="pay-order-verifying"><LoaderCircle className="spin" size={14} />正在确认支付结果…</p> : null}
         {canPay ? <button type="button" className="pay-order-cta" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={17} />去支付</button> : <p className="pay-order-hint">{payHint}</p>}
         <button type="button" className="pay-order-refresh" onClick={load}><RefreshCw size={14} />刷新</button>
       </div>

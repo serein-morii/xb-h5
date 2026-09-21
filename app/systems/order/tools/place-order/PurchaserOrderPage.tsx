@@ -1159,7 +1159,7 @@ export default function PurchaserOrderPage() {
     if (!orderCode || onlinePayBusy) return;
     setOnlinePayBusy(true); setOnlinePayError("");
     try {
-      const result = await customerApiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay`, { method: "POST", body: { id: linkKey.purchaserId, orderCode, payMethod } }, linkKey.purchaserId);
+      const result = await customerApiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay`, { method: "POST", body: { id: linkKey.purchaserId, orderCode, payMethod, returnUrl: window.location.href } }, linkKey.purchaserId);
       if (result.data?.paid) {
         setOnlinePayTarget(null);
         setSuccess((current) => current ? { ...current, paymentRequired: false, payStatus: 1 } : current);
