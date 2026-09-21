@@ -1310,6 +1310,23 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .tool-list-empty h3 { margin: 4px 0 0; color: #53675c; font-size: 15px; font-weight: 700; }
 .tool-list-empty p { margin: 0; font-size: 11.5px; line-height: 1.55; max-width: 280px; }
 .signed-order-state { min-height: 45dvh; }
+.confirm-order-card { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line, #dfeae4); border-radius: 22px; background: var(--surface, #fff); box-shadow: 0 10px 28px rgba(35, 82, 56, .06); }
+.confirm-order-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.confirm-order-head small { display: block; color: #839189; font-size: 10px; }
+.confirm-order-head b { font-size: 18px; letter-spacing: -.03em; }
+.confirm-order-pills { display: flex; gap: 6px; }
+.confirm-order-pills span { min-height: 24px; padding: 0 8px; display: inline-flex; align-items: center; border-radius: 999px; background: #ecf2ee; color: #3f584b; font-size: 10px; font-weight: 800; }
+.confirm-order-product { display: grid; gap: 4px; }
+.confirm-order-product b { font-size: 16px; }
+.confirm-order-product span { color: #65776d; font-size: 12px; }
+.confirm-order-product em { color: #d9483b; font-size: 20px; font-style: normal; font-weight: 800; }
+.confirm-order-block p { margin: 0; display: flex; gap: 7px; color: #3f584b; font-size: 13px; line-height: 1.55; }
+.confirm-order-block svg { flex: none; margin-top: 2px; color: #6e8798; }
+.confirm-order-note { margin: 0; color: #65776d; font-size: 12px; }
+.confirm-order-pay { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 8px 20px rgba(20,121,78,.24); font-size: 15px; font-weight: 800; cursor: pointer; }
+.confirm-order-paid { margin: 0; padding: 12px; border-radius: 12px; background: #f0f7f3; color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
+.confirm-order-refresh { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #3f584b; background: #ecf2ee; font-size: 12px; font-weight: 750; cursor: pointer; }
+.purchaser-copy-pay-link { min-height: 40px; margin: 4px 0 10px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 12px; color: #14794e; background: #ecf2ee; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
 .signed-order-footer { display: grid; justify-items: center; gap: 5px; padding: 24px 0 5px; color: #95a29b; font-size: 8px; }
 .signed-order-footer a { color: inherit; text-decoration: none; }
 .tool-copy { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 7px; border: 0; border-radius: 13px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 6px 16px rgba(20,121,78,.22); font-size: 10.5px; font-weight: 800; cursor: pointer; transition: box-shadow .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

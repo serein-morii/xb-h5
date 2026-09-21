@@ -30,7 +30,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { API_PATHS } from "../../../lib/pathConventions";
+import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
 import {
   type FormEvent,
   useCallback,
@@ -1328,7 +1328,7 @@ export function OrdersPage({ notify, onNavigate }: { notify: (message: string, t
         </form>
       </Sheet>
       <Sheet open={copyTarget !== null} title="复制订单信息" onClose={() => setCopyTarget(null)}>{copyTarget ? <OrderCopyMenu row={copyTarget} config={copyMenuConfig} onCopy={(text, message) => { copy(text, message); setCopyTarget(null); }} /> : null}</Sheet>
-      <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} storeNameByCode={storeNameByCode} /> : null}</Sheet>
+      <Sheet open={detail !== null} title="订单详情" onClose={() => setDetail(null)} wide>{detail ? <OrderDetail row={detail} onCopy={() => { setCopyTarget(detail); setDetail(null); }} onCopyPayLink={() => { const signId = String(detail.signId || ""); if (!signId) return notify("这一单还没有确认支付链接", "error"); void copy(`${window.location.origin}${APP_ROUTES.toolOrderDetail}#${encodeURIComponent(signId)}`, "这一单的付款链接已复制"); }} storeNameByCode={storeNameByCode} /> : null}</Sheet>
       <CollectQrSheet open={collectPreset !== null} preset={collectPreset} notify={notify} onClose={() => setCollectPreset(null)} onPaid={() => void load()} />
       <Sheet open={logsTarget !== null} title={`修改记录 · ${String(logsTarget?.orderCode || "")}`} onClose={() => setLogsTarget(null)} wide>
         {logsTarget ? <OrderModifyLogs orderCode={String(logsTarget.orderCode || "")} /> : null}
@@ -1345,7 +1345,7 @@ export function statusTone(code?: string): "default" | "success" | "info" | "war
   return "warning";
 }
 
-export function OrderDetail({ row, onCopy, storeNameByCode }: { row: DataRow; onCopy: () => void; storeNameByCode: Record<string, string> }) {
+export function OrderDetail({ row, onCopy, storeNameByCode, onCopyPayLink }: { row: DataRow; onCopy: () => void; storeNameByCode: Record<string, string>; onCopyPayLink?: () => void }) {
   const tone = statusTone(row.orderStatus);
   const tracking = Array.isArray(row.expInfoList) ? row.expInfoList : [];
   const product = `${row.orderNameDesc || row.orderName || ""} ${row.orderTypeDesc || row.orderType || ""} × ${row.orderNum || 1}`.trim();
@@ -1361,6 +1361,7 @@ export function OrderDetail({ row, onCopy, storeNameByCode }: { row: DataRow; on
       </div>
       <button className="icon-button" type="button" onClick={onCopy} aria-label="复制订单"><Copy size={18} /></button>
     </div>
+    {row.signId && onCopyPayLink ? <button type="button" className="purchaser-copy-pay-link" onClick={onCopyPayLink}>复制这一单付款链接</button> : null}
 
     <section className="order-detail-section">
       <header className="order-detail-section-head"><ShoppingBag size={15} /><h3>订单信息</h3></header>

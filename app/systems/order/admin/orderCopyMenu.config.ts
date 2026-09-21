@@ -61,12 +61,12 @@ export const DEFAULT_ORDER_COPY_MENU: OrderCopyMenuConfig = {
     },
     {
       key: "customerLink",
-      label: "收件人链接",
-      descTemplate: "{customer}的确认支付链接",
+      label: "收件人付款链接",
+      descTemplate: "只打开 {customer} 这一单，可微信或支付宝付款",
       icon: "external-link",
       tone: "amber",
-      message: "收件人确认支付链接已复制",
-      textTemplate: "【{customer}】请确认订单后支付：\n{orderLink}",
+      message: "这一单的确认支付链接已复制",
+      textTemplate: "【{customer}】请确认并支付这一单：\n{orderLink}",
     },
     {
       key: "expressInfo",
