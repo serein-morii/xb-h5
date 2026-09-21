@@ -28,6 +28,10 @@ function payStatusLabel(status: unknown) {
   return "未付款";
 }
 
+function flagOn(value: unknown) {
+  return value === true || value === 1 || value === "1";
+}
+
 function orderStatusLabel(code?: string, fallback?: string) {
   if (code === "DSH") return "待处理";
   if (code === "DFH") return "待发货";
@@ -108,9 +112,15 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
 
   const amount = order ? payableAmount(order) : undefined;
   const unpaid = order ? ![1, 2, 3].includes(Number(order.payStatus)) : false;
-  const wxEnabled = order?.payWxEnabled !== false;
-  const alipayEnabled = order?.payAlipayEnabled !== false;
-  const canPay = Boolean(order?.payEnabled) && unpaid && (wxEnabled || alipayEnabled);
+  const payEnabled = flagOn(order?.payEnabled);
+  const wxEnabled = order?.payWxEnabled !== false && order?.payWxEnabled !== 0 && order?.payWxEnabled !== "0";
+  const alipayEnabled = order?.payAlipayEnabled !== false && order?.payAlipayEnabled !== 0 && order?.payAlipayEnabled !== "0";
+  const canPay = payEnabled && unpaid && (wxEnabled || alipayEnabled);
+  const payHint = Number(order?.payStatus) === 1 ? "这一单已支付"
+    : Number(order?.payStatus) === 3 ? "这一单已提交，等待确认"
+    : Number(order?.payStatus) === 2 ? "这一单已退款"
+    : payEnabled ? "当前店铺未开通微信或支付宝收款"
+    : "当前店铺暂未开通在线支付";
   const tracking: TrackingItem[] = order?.expInfoList || [];
 
   return <div className="tool-page signed-order-tool">
@@ -131,7 +141,7 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       {order.orderDesc ? <p className="confirm-order-note">备注：{order.orderDesc}</p> : null}
       <button type="button" className={`tool-tracking-toggle ${trackingOpen ? "open" : ""}`} onClick={() => setTrackingOpen((open) => !open)}><Clock3 size={15} /><span><b>物流信息</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"}</small></span></button>
       {trackingOpen ? <div className="tool-mini-timeline tool-full-timeline">{tracking.length ? tracking.map((item, index) => <div className={index === 0 ? "latest" : ""} key={String(item.id || `${item.expTime}-${index}`)}><i /><span><b>{item.expStatusDesc || item.expDesc || "物流更新"}</b><p>{item.expDesc || item.desc || "状态已更新"}</p><small>{item.expTime || item.createTime || ""}</small></span></div>) : <p className="tool-no-tracking">暂无物流轨迹</p>}</div> : null}
-      {canPay ? <button type="button" className="confirm-order-pay" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={16} />去支付这一单</button> : <p className="confirm-order-paid">{Number(order.payStatus) === 1 ? "这一单已支付" : Number(order.payStatus) === 3 ? "这一单已提交，等待确认" : Number(order.payStatus) === 2 ? "这一单已退款" : "当前店铺暂未开通在线支付"}</p>}
+      {canPay ? <button type="button" className="confirm-order-pay" onClick={() => { setOnlinePayError(""); setPayOpen(true); }}><Wallet size={16} />去支付这一单</button> : <p className="confirm-order-paid">{payHint}</p>}
       <button type="button" className="confirm-order-refresh" onClick={load}><RefreshCw size={14} />刷新这一单</button>
     </article> : null}
     {payOpen && order ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setPayOpen(false)}>

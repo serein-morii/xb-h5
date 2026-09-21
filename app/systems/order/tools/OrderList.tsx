@@ -42,9 +42,9 @@ export type PublicOrderRecord = Record<string, unknown> & {
   createBy?: string;
   signId?: string;
   salePrice?: number;
-  payEnabled?: boolean;
-  payWxEnabled?: boolean;
-  payAlipayEnabled?: boolean;
+  payEnabled?: boolean | number | string;
+  payWxEnabled?: boolean | number | string;
+  payAlipayEnabled?: boolean | number | string;
   expInfoList?: TrackingItem[];
   linkNameAndPhone?: string;
   expNewDesc?: string;
