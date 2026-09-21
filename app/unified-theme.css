@@ -4449,8 +4449,6 @@ html.theme-dark .purchaser-order-page .peach-tip .peach-tip-state {
 }
 
 .purchaser-history-section .tool-order-actions {
-  justify-content: flex-end;
-  gap: 6px;
   padding-top: 10px;
 }
 
@@ -5148,7 +5146,7 @@ html.theme-dark .purchaser-order-page .peach-tip .peach-tip-state {
 }
 
 .tool-order-more .tool-order-actions {
-  padding-top: 0;
+  padding-top: 7px;
 }
 
 .tool-order-more .tool-order-actions button {
