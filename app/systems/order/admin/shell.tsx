@@ -270,13 +270,7 @@ export function MenuSheet({ open, active, activeDirectory, username, userInfo, o
     </Sheet>
   </>;
   const extras = mobileMenu.extras;
-  return <Sheet
-    open={open}
-    title="全部功能"
-    onClose={onClose}
-    headerLeading={<NotificationBellButton count={notifCount} onClick={onOpenNotif} label="订单通知中心" />}
-    headerCenter={userButton}
-  >
+  return <Sheet open={open} title="全部功能" onClose={onClose} headerAction={userButton} headerActionFirst>
     <div className="toolbar-card search-toolbar menu-search-toolbar">
       <label className="quick-search">
         <Search size={15} strokeWidth={2.2} />
