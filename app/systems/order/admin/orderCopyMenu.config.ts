@@ -11,7 +11,7 @@ import { API_PATHS, APP_ROUTES } from "../../../lib/pathConventions";
  *   {phone} {address} {expComDesc} {expCode} {purchaser} {signId}
  *   {orderTime}            —— 后端 raw 字符串
  *   {orderDate}            —— shortDate 格式化（YYYY-MM-DD）
- *   {orderLink}            —— 查单页链接（/tools/order#<signId>）
+ *   {orderLink}            —— 确认支付页链接（/tools/order#<signId>）
  *   {purchaserLink}        —— 下单人订单列表（/tools/order#v-<signId>）
  */
 import { ReceiptText, type LucideIcon } from "lucide-react";
@@ -44,11 +44,11 @@ export const DEFAULT_ORDER_COPY_MENU: OrderCopyMenuConfig = {
     {
       key: "orderDetail",
       label: "订单详情",
-      desc: "完整订单、快递及查询链接",
+      desc: "完整订单、快递及确认支付链接",
       icon: "receipt",
       tone: "green",
       message: "订单详情已复制",
-      textTemplate: "【订单详情】\n订单号: {orderCode}\n下单时间: {orderDate}\n商品: {orderNameDesc} {orderTypeDesc} × {orderNum}\n收件人: {customer}\n手机号: {phone}\n地址: {address}\n快递: {expComDesc} {expCode}\n查看更多: {orderLink}",
+      textTemplate: "【订单详情】\n订单号: {orderCode}\n下单时间: {orderDate}\n商品: {orderNameDesc} {orderTypeDesc} × {orderNum}\n收件人: {customer}\n手机号: {phone}\n地址: {address}\n快递: {expComDesc} {expCode}\n确认并支付: {orderLink}",
     },
     {
       key: "purchaserLink",
@@ -62,11 +62,11 @@ export const DEFAULT_ORDER_COPY_MENU: OrderCopyMenuConfig = {
     {
       key: "customerLink",
       label: "收件人链接",
-      descTemplate: "{customer}的订单查询",
+      descTemplate: "{customer}的确认支付链接",
       icon: "external-link",
       tone: "amber",
-      message: "收件人查询链接已复制",
-      textTemplate: "【{customer}】的订单：\n{orderLink}",
+      message: "收件人确认支付链接已复制",
+      textTemplate: "【{customer}】请确认订单后支付：\n{orderLink}",
     },
     {
       key: "expressInfo",

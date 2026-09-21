@@ -41,6 +41,8 @@ export type PublicOrderRecord = Record<string, unknown> & {
   purchaser?: string;
   createBy?: string;
   signId?: string;
+  salePrice?: number;
+  payEnabled?: boolean;
   expInfoList?: TrackingItem[];
   linkNameAndPhone?: string;
   expNewDesc?: string;

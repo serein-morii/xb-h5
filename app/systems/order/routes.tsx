@@ -60,8 +60,8 @@ export const orderRoutes: Record<string, RouteConfig> = {
     content: <OrderSearch />,
   },
   [APP_ROUTES.toolOrderDetail]: {
-    title: "订单详情｜喜八Tools",
-    description: "通过加密订单链接查看订单状态与物流进度。",
+    title: "确认订单｜喜八Tools",
+    description: "通过加密订单链接确认订单并完成在线支付。",
     shell: "order-tools",
     content: <PublicOrder embedded />,
   },
