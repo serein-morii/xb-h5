@@ -1988,7 +1988,6 @@ export default function PurchaserOrderPage() {
       <small>订单详情</small>
       <h2>订单详情</h2>
       <p>订单号 <b>{viewingOrder.orderCode || "--"}</b> · {viewingOrder.orderStatusDesc || viewingOrder.orderStatus || "未知"} · {String(viewingOrder.orderTime || "").replace("T", " ").slice(0, 16) || "暂无时间"}</p>
-      {viewingOrder.signId ? <button type="button" className="purchaser-copy-pay-link" onClick={() => void copyToClipboard(`${window.location.origin}${APP_ROUTES.toolOrderDetail}#${encodeURIComponent(String(viewingOrder.signId))}`).then((ok) => { if (ok) showPromptToast("这一单的付款链接已复制"); })}><Copy size={14} />复制这一单付款链接</button> : null}
       <div className="purchaser-detail-section">
         <h3>商品</h3>
         <div className="purchaser-captcha-summary">

@@ -1391,8 +1391,8 @@ html.theme-dark .pay-order-dock { background: linear-gradient(180deg, rgba(14, 2
 .tool-view { min-height: 30px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; border: .5px solid rgba(20,121,78,.28); border-radius: 10px; color: #14794e; background: rgba(20,121,78,.08); font-size: 9.5px; font-weight: 800; cursor: pointer; transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .tool-view:hover { background: rgba(20,121,78,.14); }
 .tool-view:active { transform: scale(0.97); }
-.tool-order-actions { display: flex; gap: 4px; margin-top: 7px; }
-.tool-order-actions > :is(button, a) { flex: 1; min-width: 0; justify-content: center; gap: 3px; padding: 0 2px; white-space: nowrap; font-size: 9px; }
+.tool-order-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 7px; }
+.tool-order-actions > :is(button, a) { flex: none; justify-content: center; gap: 3px; padding: 0 8px; white-space: nowrap; font-size: 9px; }
 
 /* Freight result */
 .freight-result-card > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px dashed #e7efeb; }
