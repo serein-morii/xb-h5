@@ -12,6 +12,9 @@ function readLinkId() {
   return (hashId || queryId || "").trim();
 }
 
+/** 简付不支持微信外浏览器拉起微信 App：微信内跳收银台自动唤起，微信外改为展示收款码。 */
+const isWeChatBrowser = typeof navigator !== "undefined" && /micromessenger/i.test(navigator.userAgent);
+
 function payableAmount(order: PublicOrderRecord) {
   const unit = Number(order.salePrice);
   const count = Number(order.orderNum || 1);
@@ -53,6 +56,8 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
   const [onlinePayError, setOnlinePayError] = useState("");
   const [payToast, setPayToast] = useState("");
   const [trackingOpen, setTrackingOpen] = useState(false);
+  const [payQr, setPayQr] = useState<{ url: string; payUrl: string } | null>(null);
+  const [lastPayMethod, setLastPayMethod] = useState<"wx" | "alipay" | null>(null);
 
   const load = useCallback(async () => {
     const id = readLinkId();
@@ -82,16 +87,17 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
 
   useEffect(() => { load(); window.addEventListener("hashchange", load); return () => window.removeEventListener("hashchange", load); }, [load]);
 
-  async function startOnlinePay(payMethod: "wx" | "alipay") {
+  async function startOnlinePay(payMethod: "wx" | "alipay", refresh = false) {
     const signId = readLinkId();
     const orderCode = String(order?.orderCode || "");
     if (!orderCode || !signId || onlinePayBusy) return;
-    setOnlinePayBusy(true); setOnlinePayError("");
+    setLastPayMethod(payMethod);
+    setOnlinePayBusy(true); setOnlinePayError(""); setPayQr(null);
     try {
-      const result = await apiRequest<{ data?: { payUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay/public`, {
+      const result = await apiRequest<{ data?: { payUrl?: string; payQrcodeUrl?: string; paid?: boolean } }>(`${API_PATHS.content.search}/purchaser/pay/public`, {
         auth: false,
         method: "POST",
-        body: { signId, orderCode, payMethod },
+        body: { signId, orderCode, payMethod, refresh },
       });
       if (result.data?.paid) {
         setPayOpen(false);
@@ -100,11 +106,24 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
         await load();
         return;
       }
-      const payUrl = result.data?.payUrl;
+      const payUrl = result.data?.payUrl || "";
+      const qrcodeUrl = result.data?.payQrcodeUrl || "";
+      if (payMethod === "wx" && !isWeChatBrowser) {
+        if (qrcodeUrl) { setPayQr({ url: qrcodeUrl, payUrl }); return; }
+        if (payUrl) { window.location.assign(payUrl); return; }
+        throw new Error("未获取到收款码");
+      }
       if (!payUrl) throw new Error("未获取到收银台地址");
       window.location.assign(payUrl);
     } catch (cause) {
-      setOnlinePayError(cause instanceof Error ? cause.message : "发起支付失败，请稍后重试");
+      const message = cause instanceof Error ? cause.message : "发起支付失败，请稍后重试";
+      if (!refresh && /过期|已关闭|已失效/.test(message)) {
+        // 网关把旧收银台关了：自动重新生成一次再试
+        setOnlinePayBusy(false);
+        await startOnlinePay(payMethod, true);
+        return;
+      }
+      setOnlinePayError(message);
     } finally {
       setOnlinePayBusy(false);
     }
@@ -168,11 +187,11 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
         <button type="button" className="pay-order-refresh" onClick={load}><RefreshCw size={14} />刷新</button>
       </div>
     </article> : null}
-    {payOpen && order ? <div className="purchaser-help-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setPayOpen(false)}>
+    {payOpen && order ? <div className="purchaser-help-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) { setPayOpen(false); setPayQr(null); } }}>
       <section className="purchaser-sheet purchaser-online-pay-sheet">
         <div className="purchaser-online-pay-head">
           <small>选择支付方式</small>
-          <button className="purchaser-help-close" type="button" onClick={() => setPayOpen(false)} aria-label="关闭"><X size={19} /></button>
+          <button className="purchaser-help-close" type="button" onClick={() => { setPayOpen(false); setPayQr(null); }} aria-label="关闭"><X size={19} /></button>
         </div>
         <h2>去支付</h2>
         <div className="purchaser-online-pay-order">
@@ -180,10 +199,15 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
           <b>{order.orderCode}</b>
           {amount ? <em>¥{amount.toFixed(2)}</em> : null}
         </div>
-        <div className="purchaser-online-pay-channels" role="radiogroup" aria-label="支付方式">
+        {payQr ? <div className="pay-order-qr">
+          <img src={payQr.url} alt="微信收款码" />
+          <p>当前浏览器无法直接拉起微信。<br />请截图保存二维码，在微信「扫一扫」右下角选择相册识别；<br />或直接用微信扫描屏幕上的码。</p>
+          {payQr.payUrl ? <a className="pay-order-qr-link" href={payQr.payUrl} target="_blank" rel="noreferrer">打开收银台页面</a> : null}
+          <button type="button" className="pay-order-qr-retry" disabled={onlinePayBusy} onClick={() => void startOnlinePay("wx", true)}><RefreshCw size={13} />重新生成收款码</button>
+        </div> : <div className="purchaser-online-pay-channels" role="radiogroup" aria-label="支付方式">
           {wxEnabled ? <button type="button" className="pay-channel is-wx" disabled={onlinePayBusy} onClick={() => void startOnlinePay("wx")}>
             <span className="pay-channel-icon">{onlinePayBusy ? <LoaderCircle className="spin" size={20} /> : <Wallet size={21} />}</span>
-            <span className="pay-channel-copy"><b>微信支付</b><small>打开微信完成付款</small></span>
+            <span className="pay-channel-copy"><b>微信支付</b><small>{isWeChatBrowser ? "打开微信完成付款" : "生成收款码后扫码付款"}</small></span>
             <ChevronRight size={17} />
           </button> : null}
           {alipayEnabled ? <button type="button" className="pay-channel is-alipay" disabled={onlinePayBusy} onClick={() => void startOnlinePay("alipay")}>
@@ -191,9 +215,10 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
             <span className="pay-channel-copy"><b>支付宝</b><small>跳转支付宝完成付款</small></span>
             <ChevronRight size={17} />
           </button> : null}
-        </div>
+        </div>}
         <p className="purchaser-online-pay-tip"><ShieldCheck size={13} />无需登录，支付成功后订单自动确认。</p>
         {onlinePayError ? <p className="purchaser-online-pay-error"><AlertCircle size={14} />{onlinePayError}</p> : null}
+        {onlinePayError && lastPayMethod ? <button type="button" className="pay-order-qr-retry" disabled={onlinePayBusy} onClick={() => void startOnlinePay(lastPayMethod, true)}><RefreshCw size={13} />重新发起支付</button> : null}
       </section>
     </div> : null}
     {payToast ? <div className="public-copy-toast">{payToast}</div> : null}
