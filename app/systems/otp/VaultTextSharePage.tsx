@@ -1,5 +1,6 @@
 import { Check, Clock3, Copy, FileText, KeyRound, LoaderCircle, LockKeyhole, Moon, ShieldCheck, Sun, SunMoon, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { applyOpenGraph } from "../../lib/openGraph";
 import { renderRichText } from "../../lib/richText";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { copyAndScheduleClear } from "./otpDailyUse";
@@ -89,7 +90,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     return () => { cancelled = true; };
   }, []);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
-  useEffect(() => { if (status?.name) document.title = `${status.name}｜OTP Vault`; }, [status?.name]);
+  useEffect(() => { if (status?.name) applyOpenGraph(`${status.name}｜OTP Vault`, "安全查看限时分享的普通文本、Markdown、代码或 HTML。", "otp"); }, [status?.name]);
 
   const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - (now + serverOffset.current)) / 1000)) : 0;
   const expiryProgress = expiryTotal.current ? Math.max(0, Math.min(100, expiresIn / expiryTotal.current * 100)) : 100;

@@ -1,5 +1,6 @@
 import { Check, ChevronDown, CircleHelp, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { applyOpenGraph } from "../../lib/openGraph";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, listSharedDynamicCodes, openVaultShare, saveInboundShare, type DynamicCodeSource, type SharedItem, type ShareStatus, type VaultDynamicCode } from "./vaultApi";
 import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareHandoffAfterRestore, shareLoginNext, shouldShowShareHandoff } from "./otpVaultShare";
@@ -162,7 +163,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   }, [items.length, saveToInbox, sessionToken, token]);
   useEffect(() => {
     if (!status?.name) return;
-    document.title = `${status.name}｜OTP Vault`;
+    applyOpenGraph(`${status.name}｜OTP Vault`, "通过访问码查看限时授权凭据。", "otp");
   }, [status?.name]);
   useEffect(() => {
     setDetailCodeHistory([]); setDetailCodeHistoryTotal(0); setDetailCodeHistoryPage(0);

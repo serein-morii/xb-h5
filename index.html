@@ -7,6 +7,15 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="description" content="专为手机端设计的喜八订单管理工作台。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="喜八工作台" />
+    <meta property="og:description" content="专为手机端设计的喜八订单管理工作台。" />
+    <meta property="og:image" content="https://m.gooop.top/og-order.png" />
+    <meta property="og:image:width" content="478" />
+    <meta property="og:image:height" content="478" />
+    <meta property="og:url" content="https://m.gooop.top/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="https://m.gooop.top/og-order.png" />
     <link rel="icon" href="/favicon.svg" />
     <title>喜八移动订单管理</title>
     <script type="application/json" id="app-startup-config">
@@ -20,9 +29,17 @@
       (function () {
         var host = location.hostname.toLowerCase();
         var path = location.pathname.replace(/\/+$/, "") || "/";
-        var otp = host === "otp.gooop.top" || host.indexOf("otp.") === 0 || path === "/otp" || path.indexOf("/otp/") === 0 || path.indexOf("/s/") === 0;
-        var lab = host === "lab.gooop.top" || host.indexOf("lab.") === 0 || path === "/lab" || path.indexOf("/lab/") === 0 || path === "/bead-studio" || path === "/utilities" || path.indexOf("/handy/") === 0;
+        function hostIs(name) { return host === name + ".gooop.top" || host.indexOf(name + ".") === 0; }
+        var otp = hostIs("otp") || path === "/otp" || path.indexOf("/otp/") === 0 || path.indexOf("/s/") === 0 || path.indexOf("/t/") === 0;
+        var lab = hostIs("lab") || path === "/lab" || path.indexOf("/lab/") === 0 || path === "/bead-studio" || path === "/utilities" || path.indexOf("/handy/") === 0;
+        var volunteer = hostIs("volunteer") || path === "/volunteer" || path.indexOf("/volunteer/") === 0;
+        var peach = hostIs("peach") || path === "/peach" || path.indexOf("/customer/") === 0;
         var system = otp ? "otp" : lab ? "lab" : "order";
+        var ogSurface = otp ? "otp" : lab ? "lab" : volunteer ? "volunteer" : peach ? "peach" : "order";
+        if (hostIs("otp") && path.indexOf("/s/") !== 0 && path.indexOf("/t/") !== 0 && path !== "/otp" && path.indexOf("/otp/") !== 0) path = path === "/" ? "/otp" : "/otp" + path;
+        else if (hostIs("lab") && path !== "/lab" && path.indexOf("/lab/") !== 0 && path !== "/bead-studio" && path !== "/utilities" && path.indexOf("/handy/") !== 0) path = path === "/" ? "/lab" : "/lab" + path;
+        else if (hostIs("volunteer") && path !== "/volunteer" && path.indexOf("/volunteer/") !== 0) path = path === "/" ? "/volunteer" : "/volunteer" + path;
+        else if (hostIs("peach") && path !== "/peach" && path.indexOf("/peach/") !== 0 && path.indexOf("/customer/") !== 0) path = path === "/" ? "/peach" : "/peach" + path;
         var savedTheme;
         var savedPalette;
         try { savedTheme = localStorage.getItem("xb-h5-theme"); } catch (_) { /* 使用系统主题。 */ }
@@ -37,6 +54,58 @@
           var config = JSON.parse(document.getElementById("app-startup-config").textContent)[system];
           document.title = config.title;
           document.documentElement.style.setProperty("--startup-accent", config.accent);
+          var origin = location.origin;
+          var cards = {
+            order: { title: "喜八工作台", description: "订单查询、确认支付与移动管理工作台。", image: origin + "/og-order.png" },
+            otp: { title: "OTP Vault", description: "私人身份保险库，限时分享凭据与文本。", image: origin + "/og-otp.png" },
+            lab: { title: "Handy Lab", description: "视频提取、拼豆图纸等实用工具。", image: origin + "/og-lab.png" },
+            volunteer: { title: "鱼片志愿", description: "会员登记、志愿活动与服务记录。", image: origin + "/og-volunteer.png" },
+            peach: { title: "炎陵黄桃", description: "高山鲜果，当季采摘，登录后即可下单查物流。", image: origin + "/og-peach.png" }
+          };
+          var card = cards[ogSurface] || cards.order;
+          if (ogSurface === "otp") {
+            if (path.indexOf("/t/") === 0) { card.title = "临时文本分享｜OTP Vault"; card.description = "安全查看限时分享的普通文本、Markdown、代码或 HTML。"; }
+            else if (path.indexOf("/s/") === 0) { card.title = "临时凭据授权｜OTP Vault"; card.description = "通过访问码查看限时授权凭据。"; }
+            else if (path.indexOf("/otp/guide") === 0) { card.title = "使用指南｜OTP Vault"; card.description = "了解 OTP Vault 的添加、使用、分享、安全保护与备份恢复。"; }
+            else if (path.indexOf("/otp/changelog") === 0) { card.title = "更新日志｜OTP Vault"; card.description = "查看 OTP Vault 最近功能更新。"; }
+          } else if (ogSurface === "lab") {
+            if (path.indexOf("/lab/video-extract") === 0) { card.title = "短视频提取｜Handy Lab"; card.description = "解析抖音、小红书、哔哩哔哩分享链接，预览并下载媒体。"; }
+            else if (path === "/bead-studio" || path.indexOf("/lab/bead") === 0 || path.indexOf("/handy/bead") === 0) { card.title = "拼豆工作台｜Handy Lab"; card.description = "把图片转成可编辑的拼豆图纸。"; }
+          } else if (ogSurface === "volunteer") {
+            if (path.indexOf("/volunteer/join") === 0) { card.title = "加入鱼片志愿"; card.description = "填写会员信息并提交鱼片志愿登记申请。"; }
+            else if (path.indexOf("/volunteer/manage") === 0) { card.title = "鱼片志愿管理后台"; card.description = "鱼片志愿登记审核与会员档案管理。"; }
+          } else if (ogSurface === "peach") {
+            if (path.indexOf("/customer/login") === 0) { card.title = "客户登录｜炎陵黄桃"; card.description = "登录炎陵黄桃客户中心。"; }
+            else if (path.indexOf("/customer/register") === 0) { card.title = "客户注册｜炎陵黄桃"; card.description = "注册炎陵黄桃客户账号。"; }
+            else if (path.indexOf("/customer/reset") === 0) { card.title = "找回密码｜炎陵黄桃"; card.description = "通过邮箱验证码找回客户账号密码。"; }
+          } else if (ogSurface === "order") {
+            if (/^\/tools\/order\/[2-9a-hj-km-np-z]{6}/.test(path) || path.indexOf("/tools/place-order") === 0) { card.title = "专属下单｜喜八"; card.description = "通过专属短链接下单并查询历史订单。"; }
+            else if (path.indexOf("/tools/store-query") === 0) { card.title = "专属查询｜喜八"; card.description = "选择店铺后只查询该店铺的订单，避免串单。"; }
+            else if (path.indexOf("/tools/order") === 0 && path.indexOf("/tools/order-") !== 0) { card.title = "确认订单｜喜八"; card.description = "核对订单后即可免登录在线支付。"; }
+            else if (path === "/order" || path.indexOf("/order/") === 0) { card.title = "订单查询｜喜八"; card.description = "查询喜八订单状态与物流进度。"; }
+            else if (path.indexOf("/tools/order-search") === 0) { card.title = "订单查询｜喜八"; card.description = "通过手机号和验证码查询订单。"; }
+          }
+          function setMeta(selector, attr, value) {
+            var node = document.querySelector(selector);
+            if (!node) {
+              node = document.createElement("meta");
+              if (selector.indexOf("property=") >= 0) node.setAttribute("property", selector.replace(/.*property="([^"]+)".*/, "$1"));
+              else node.setAttribute("name", selector.replace(/.*name="([^"]+)".*/, "$1"));
+              document.head.appendChild(node);
+            }
+            node.setAttribute(attr, value);
+          }
+          document.title = card.title;
+          setMeta('meta[name="description"]', "content", card.description);
+          setMeta('meta[property="og:title"]', "content", card.title);
+          setMeta('meta[property="og:description"]', "content", card.description);
+          setMeta('meta[property="og:image"]', "content", card.image);
+          setMeta('meta[property="og:image:width"]', "content", "478");
+          setMeta('meta[property="og:image:height"]', "content", "478");
+          setMeta('meta[property="og:url"]', "content", origin + location.pathname + location.search);
+          setMeta('meta[property="og:type"]', "content", "website");
+          setMeta('meta[name="twitter:card"]', "content", "summary");
+          setMeta('meta[name="twitter:image"]', "content", card.image);
         } catch (_) { /* 页面仍可使用下方默认样式。 */ }
       })();
     </script>

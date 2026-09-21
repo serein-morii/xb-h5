@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./systems/order/api";
 import { AppStartup } from "./components/AppStartup";
 import { APP_ROUTES } from "./lib/pathConventions";
+import { applyOpenGraph, resolveShareSurface } from "./lib/openGraph";
 import { collectSubsystemPrefixes, resolveSubsystemPath } from "./lib/subsystemHost";
 import { isStoreQueryRoute, resolveDynamicRoute, routes, wrapRouteContent } from "./systems/routes";
 
@@ -95,10 +96,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    document.title = title;
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (meta) meta.content = description;
-  }, [title, description]);
+    applyOpenGraph(title, description, resolveShareSurface(pathname));
+  }, [title, description, pathname]);
 
   const routeContent = <div className="page-transition" key={pathname}>{content}</div>;
   const body = wrapRouteContent(matchedRoute, routeContent);
