@@ -1,4 +1,4 @@
-import { AlertCircle, Box, ChevronDown, ChevronRight, Clock3, LoaderCircle, MapPin, PackageCheck, RefreshCw, ShieldCheck, Truck, User, Wallet, X } from "lucide-react";
+import { AlertCircle, Box, ChevronDown, ChevronRight, Clock3, LoaderCircle, PackageCheck, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
 import { API_PATHS } from "../../../lib/pathConventions";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest, publicApiRequest } from "../../../lib/api";
@@ -129,29 +129,29 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       <PeachTip />
       <OrderList orders={orders} contact={orders[0]?.linkNameAndPhone?.trim()} onRefresh={load} />
     </> : order ? <article className="pay-order-page">
-      <header className="pay-order-hero">
-        <div className="pay-order-hero-copy">
-          <small>{order.storeName || "在线支付"}</small>
-          <h1>支付订单</h1>
-          <p>{canPay ? "核对商品与收件信息后，选择微信或支付宝付款。" : "查看订单详情与最新物流。"}</p>
-        </div>
+      <section className="pay-order-hero">
+        <small>{order.storeName || "在线支付"}</small>
         <div className="pay-order-amount">
-          {amount ? <><em>¥{amount.toFixed(2)}</em><span>{payStatusLabel(order.payStatus)}</span></> : <span>{payStatusLabel(order.payStatus)}</span>}
+          <i>¥</i><b>{amount !== undefined ? amount.toFixed(2) : "--"}</b>
         </div>
-      </header>
+        <div className="pay-order-status">
+          <span className={`pay-pill is-pay-${Number(order.payStatus) === 1 ? "paid" : Number(order.payStatus) === 3 ? "confirming" : Number(order.payStatus) === 2 ? "refunded" : "unpaid"}`}>{payStatusLabel(order.payStatus)}</span>
+          <span className="pay-pill">{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</span>
+        </div>
+        <p>{canPay ? "核对商品与收件信息后，选择微信或支付宝付款" : "查看订单详情与最新物流"}</p>
+      </section>
       <section className="pay-order-card">
         <div className="pay-order-product">
           <b>{order.orderNameDesc || "未命名商品"}</b>
           <span>{order.orderTypeDesc || "--"} × {order.orderNum || 1}</span>
         </div>
-        <dl className="pay-order-meta">
+        <dl className="pay-order-rows">
           <div><dt>订单号</dt><dd>{order.orderCode || "--"}</dd></div>
-          <div><dt>状态</dt><dd>{orderStatusLabel(order.orderStatus, order.orderStatusDesc)}</dd></div>
+          <div><dt>收件人</dt><dd>{order.customer || "--"}{order.phone ? ` · ${order.phone}` : ""}</dd></div>
+          <div><dt>快递</dt><dd>{order.expComDesc || "暂无快递"}{order.expCode && order.expCode !== "无" ? ` · ${order.expCode}` : ""}</dd></div>
+          <div><dt>地址</dt><dd>{order.address || "暂无地址"}</dd></div>
+          {order.orderDesc ? <div><dt>备注</dt><dd>{order.orderDesc}</dd></div> : null}
         </dl>
-        <div className="pay-order-row"><User size={16} /><div><small>收件人</small><b>{order.customer || "--"} · {order.phone || "--"}</b></div></div>
-        <div className="pay-order-row"><MapPin size={16} /><div><small>地址</small><b>{order.address || "暂无地址"}</b></div></div>
-        <div className="pay-order-row"><Truck size={16} /><div><small>快递</small><b>{order.expComDesc || "暂无快递"}{order.expCode && order.expCode !== "无" ? ` · ${order.expCode}` : ""}</b></div></div>
-        {order.orderDesc ? <p className="pay-order-note">备注：{order.orderDesc}</p> : null}
         <button type="button" className={`pay-order-track ${trackingOpen ? "is-open" : ""}`} onClick={() => setTrackingOpen((open) => !open)}>
           <Clock3 size={15} />
           <span><b>物流信息</b><small>{order.expNewDesc || tracking[0]?.expDesc || "暂无物流更新"}</small></span>
@@ -193,6 +193,6 @@ export default function PublicOrder({ embedded = false }: { embedded?: boolean }
       </section>
     </div> : null}
     {payToast ? <div className="public-copy-toast">{payToast}</div> : null}
-    {!embedded && !order ? <footer className="signed-order-footer"><span>喜八订单 · 信息以系统最新记录为准</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer> : null}
+    {!embedded ? <footer className="signed-order-footer"><span>喜八订单 · 信息以系统最新记录为准</span><a href="http://beian.miit.gov.cn/" target="_blank" rel="noreferrer">沪ICP备2024070228号</a></footer> : null}
   </div>;
 }

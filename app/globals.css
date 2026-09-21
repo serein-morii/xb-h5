@@ -1312,37 +1312,43 @@ html.theme-dark .tool-order-results article > header > span.tool-order-pay-unpai
 .signed-order-state { min-height: 45dvh; }
 .signed-order-tool { padding-bottom: 18px; }
 .pay-order-page { display: grid; gap: 14px; }
-.pay-order-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 8px 4px 2px; }
-.pay-order-hero-copy { min-width: 0; }
-.pay-order-hero-copy small { display: block; color: #1d9962; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
-.pay-order-hero-copy h1 { margin: 6px 0 4px; color: #14241b; font-size: 28px; letter-spacing: -.04em; }
-.pay-order-hero-copy p { margin: 0; color: #6b7d73; font-size: 13px; line-height: 1.55; }
-.pay-order-amount { flex: none; text-align: right; }
-.pay-order-amount em { display: block; color: #d9483b; font-size: 28px; font-style: normal; font-weight: 820; letter-spacing: -.04em; }
-.pay-order-amount span { display: inline-flex; min-height: 22px; margin-top: 4px; padding: 0 8px; align-items: center; border-radius: 999px; background: #ecf2ee; color: #3f584b; font-size: 11px; font-weight: 750; }
-.pay-order-card { display: grid; gap: 13px; padding: 18px; border: 1px solid rgba(20, 121, 78, .1); border-radius: 24px; background: linear-gradient(180deg, #fff, #f7fbf8); box-shadow: 0 16px 40px rgba(35, 82, 56, .08); }
-.pay-order-product { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid #edf2ef; }
-.pay-order-product b { font-size: 17px; letter-spacing: -.02em; }
-.pay-order-product span { color: #65776d; font-size: 13px; }
-.pay-order-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
-.pay-order-meta div { display: grid; gap: 3px; }
-.pay-order-meta dt { color: #8a9690; font-size: 11px; }
-.pay-order-meta dd { margin: 0; color: #24362c; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
-.pay-order-row { display: flex; gap: 10px; align-items: flex-start; }
-.pay-order-row svg { flex: none; margin-top: 2px; color: #1d9962; }
-.pay-order-row small { display: block; color: #8a9690; font-size: 11px; }
-.pay-order-row b { color: #24362c; font-size: 13px; font-weight: 650; line-height: 1.5; }
-.pay-order-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: #f3f8f5; color: #65776d; font-size: 12px; line-height: 1.55; }
-.pay-order-track { width: 100%; min-height: 48px; padding: 0 4px; display: flex; align-items: center; gap: 8px; border: 0; border-top: 1px solid #edf2ef; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.pay-order-hero { position: relative; overflow: hidden; display: grid; justify-items: center; gap: 9px; padding: 27px 20px 23px; border-radius: 26px; color: #fff; background: linear-gradient(150deg, #136f49, #1d9962 58%, #29b375); box-shadow: 0 16px 36px rgba(19, 106, 71, .24); }
+.pay-order-hero::before, .pay-order-hero::after { content: ""; position: absolute; border-radius: 50%; }
+.pay-order-hero::before { left: -54px; top: -78px; width: 168px; height: 168px; border: 18px solid rgba(255, 255, 255, .05); }
+.pay-order-hero::after { right: -74px; bottom: -118px; width: 232px; height: 232px; border: 26px solid rgba(255, 255, 255, .07); }
+.pay-order-hero > small { position: relative; z-index: 1; opacity: .82; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+.pay-order-amount { position: relative; z-index: 1; display: flex; align-items: baseline; gap: 3px; font-variant-numeric: tabular-nums; text-shadow: 0 2px 10px rgba(9, 55, 36, .28); }
+.pay-order-amount i { font-size: 21px; font-style: normal; font-weight: 800; }
+.pay-order-amount b { font-size: 46px; font-weight: 850; letter-spacing: -.035em; line-height: 1; }
+.pay-order-status { position: relative; z-index: 1; display: flex; gap: 6px; }
+.pay-pill { min-height: 25px; padding: 0 11px; display: inline-flex; align-items: center; border: 1px solid rgba(255, 255, 255, .24); border-radius: 999px; background: rgba(255, 255, 255, .14); font-size: 11px; font-weight: 750; }
+.pay-pill.is-pay-paid { border-color: transparent; background: #fff; color: #14794e; }
+.pay-order-hero > p { position: relative; z-index: 1; margin: 1px 0 0; color: rgba(255, 255, 255, .78); font-size: 12px; }
+.pay-order-card { display: grid; padding: 2px 18px; border: 1px solid rgba(20, 121, 78, .09); border-radius: 26px; background: var(--surface, #fff); box-shadow: 0 16px 40px rgba(35, 82, 56, .07); }
+.pay-order-product { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 15px 0 13px; border-bottom: 1px dashed rgba(20, 121, 78, .18); }
+.pay-order-product b { font-size: 16.5px; letter-spacing: -.01em; }
+.pay-order-product span { flex: none; color: #65776d; font-size: 12.5px; }
+.pay-order-rows { display: grid; margin: 0; padding: 4px 0 8px; }
+.pay-order-rows > div { display: flex; gap: 14px; padding: 9px 0; }
+.pay-order-rows > div + div { border-top: 1px solid rgba(223, 234, 228, .55); }
+.pay-order-rows dt { flex: none; width: 50px; color: #8a9690; font-size: 12.5px; }
+.pay-order-rows dd { margin: 0; min-width: 0; color: #24362c; font-size: 13px; font-weight: 600; line-height: 1.65; overflow-wrap: anywhere; }
+.pay-order-track { width: 100%; min-height: 50px; padding: 0 2px; display: flex; align-items: center; gap: 8px; border: 0; border-top: 1px solid rgba(223, 234, 228, .55); background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .pay-order-track span { min-width: 0; flex: 1; display: grid; gap: 2px; }
 .pay-order-track b { font-size: 13px; }
 .pay-order-track small { overflow: hidden; color: #839189; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.pay-order-track > svg:first-child { flex: none; color: #1d9962; }
 .pay-order-track > svg:last-child { flex: none; color: #8ba097; transition: transform .2s ease; }
 .pay-order-track.is-open > svg:last-child { transform: rotate(180deg); }
-.pay-order-dock { display: grid; gap: 8px; padding-top: 2px; }
-.pay-order-cta { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 12px 24px rgba(20,121,78,.24); font-size: 16px; font-weight: 800; cursor: pointer; }
-.pay-order-hint { margin: 0; padding: 14px; border-radius: 14px; background: #f0f7f3; color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
-.pay-order-refresh { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; color: #3f584b; background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pay-order-dock { position: sticky; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 5; display: grid; gap: 6px; padding: 14px 2px 4px; background: linear-gradient(180deg, rgba(243, 248, 245, 0), rgba(243, 248, 245, .92) 36%); }
+.pay-order-cta { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; color: #fff; background: linear-gradient(135deg, #14794e, #2cab71); box-shadow: 0 14px 30px rgba(20, 121, 78, .3), inset 0 1px 0 rgba(255, 255, 255, .18); font-size: 17px; font-weight: 800; cursor: pointer; }
+.pay-order-hint { margin: 0; padding: 15px; border-radius: 16px; background: rgba(20, 121, 78, .08); color: #14794e; text-align: center; font-size: 13px; font-weight: 700; }
+.pay-order-refresh { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto; padding: 0 10px; border: 0; color: #6b7d73; background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
+html.theme-dark .pay-order-card { border-color: rgba(255, 255, 255, .06); }
+html.theme-dark .pay-order-product { border-bottom-color: rgba(255, 255, 255, .1); }
+html.theme-dark .pay-order-rows > div + div, html.theme-dark .pay-order-track { border-top-color: rgba(255, 255, 255, .06); }
+html.theme-dark .pay-order-rows dd { color: #e6ece8; }
+html.theme-dark .pay-order-dock { background: linear-gradient(180deg, rgba(14, 20, 32, 0), rgba(14, 20, 32, .92) 36%); }
 .purchaser-copy-pay-link { min-height: 40px; margin: 4px 0 10px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 12px; color: #14794e; background: #ecf2ee; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
 .signed-order-footer { display: grid; justify-items: center; gap: 5px; padding: 24px 0 5px; color: #95a29b; font-size: 8px; }
 .signed-order-footer a { color: inherit; text-decoration: none; }
