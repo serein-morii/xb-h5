@@ -12,6 +12,8 @@ const changelog = [
     items: [
       "验证码 Webhook 同时接受 GET 和 POST：GET 把 code、content 等字段放在查询参数里",
       "Token 模式除了请求头 X-Otp-Webhook-Token，也可以用查询参数 token，方便浏览器或只支持 GET 的自动化",
+      "通用 Webhook 未标明来源时，也能匹配短信 / 邮箱来源组，验证码会贴到对应凭据",
+      "通道详情新增接收记录：鉴权通过的每次请求都会留下，未识别到验证码也能看到原文",
     ],
   },
   {

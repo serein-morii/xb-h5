@@ -91,6 +91,14 @@ export type VaultDynamicCode = {
   id: number; credentialId?: number; channelId: number; channelName: string; sourceType: DynamicCodeSource;
   sender?: string; accountHint?: string; code: string; used: boolean; receivedTime: string; expireTime: string;
 };
+export type VaultInboundReceiptStatus = "MATCHED" | "UNMATCHED" | "UNRECOGNIZED";
+export type VaultInboundReceipt = {
+  id: number; channelId: number; httpMethod?: string; sourceType?: DynamicCodeSource;
+  sender?: string; accountHint?: string; content?: string; code?: string;
+  status: VaultInboundReceiptStatus; errorMessage?: string;
+  credentialId?: number; credentialLabel?: string; receivedTime: string;
+};
+export type VaultInboundReceiptPage = { rows: VaultInboundReceipt[]; total: number; page: number; pageSize: number };
 
 export type VaultShare = {
   id: number; name?: string; status: string; accessCodeEnabled: boolean; itemCount: number; accessCount: number;
@@ -257,6 +265,8 @@ export const saveVaultCodeBinding = (credentialId: number, id: number | null, bo
 export const disableVaultCodeBinding = (credentialId: number, id: number) =>
   otpApiRequest(`${vault}/credentials/${credentialId}/code-bindings/${id}`, { method: "DELETE" });
 export const listVaultDynamicCodes = () => otpApiRequest<{ data: VaultDynamicCode[] }>(`${vault}/dynamic-codes`);
+export const listVaultChannelReceipts = (id: number, page = 1) =>
+  otpApiRequest<{ data: VaultInboundReceiptPage }>(`${vault}/inbound-channels/${id}/receipts?page=${page}&pageSize=10`);
 export const markVaultDynamicCodeUsed = (id: number) => otpApiRequest(`${vault}/dynamic-codes/${id}/used`, { method: "POST" });
 
 // ─── 注册与账号自助 ───────────────────────────────────────────

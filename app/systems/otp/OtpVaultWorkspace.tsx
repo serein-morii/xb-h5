@@ -1,8 +1,8 @@
 import { ArrowLeft, ArrowUpDown, Ban, Bell, BellRing, BookOpen, Camera, Check, ChevronDown, ChevronRight, Clock3, Code2, Copy, Eye, EyeOff, ExternalLink, FileCode2, FileText, FileUp, FolderDown, Inbox, KeyRound, Layers3, LayoutGrid, Link2, LoaderCircle, LockKeyhole, LogOut, Mail, MessageSquareText, Moon, Pencil, Plus, Radio, RotateCcw, ScanLine, Search, Settings2, Share2, ShieldAlert, ShieldCheck, Star, Sun, SunMoon, Trash2, TriangleAlert, User, UserMinus, UserX, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-			banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultInboundChannel, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultCodeBindings, listVaultCodeBindingTemplates, listVaultCredentialDynamicCodes, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares, listVaultTextFolders, createVaultTextFolder, renameVaultTextFolder, deleteVaultTextFolder, type VaultTextFolder,
-				listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundAuthMode, type VaultInboundChannel, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
+					banVaultShareSave, commitVaultImport, createVaultInboundChannel, createVaultShare, deleteVaultCredential, deleteVaultInboundChannel, deleteVaultShare, disableVaultCodeBinding, exportVaultLocalSync, favoriteSharedCredential, getInboundShareStatus, getShareStatus, getVaultCredential, getVaultShare, kickVaultShareSave, restoreVaultShareSave, listVaultChannelReceipts, listVaultCodeBindings, listVaultCodeBindingTemplates, listVaultCredentialDynamicCodes, listVaultCredentials, listVaultDynamicCodes, listVaultInboundChannels, listVaultShares, listReceivedVaultShares, listVaultTextFolders, createVaultTextFolder, renameVaultTextFolder, deleteVaultTextFolder, type VaultTextFolder,
+					listVaultRecipients, getVaultPreferences, getVaultPushPublicKey, getVaultScreenLockState, markVaultDynamicCodeUsed, openVaultShare, otpApiRequest, releaseReceivedVaultShare, revokeVaultShare, rotateVaultInboundChannelToken, saveInboundShare, saveVaultCodeBinding, saveVaultCredential, saveVaultPreferences, saveVaultPushSubscription, deleteVaultPushSubscription, sendVaultTestNotice, setVaultScreenLockState, syncVaultCredentialShares, updateVaultInboundChannel, type DynamicCodeSource, type VaultCodeBinding, type VaultCredential, type VaultDynamicCode, type VaultInboundAuthMode, type VaultInboundChannel, type VaultInboundReceipt, type VaultPrefs, type VaultRecipient, type VaultShare, type VaultTransferItem,
 	nextVaultHotp, clearOtpStepUpToken, clearOtpToken, deleteVaultAccount, previewVaultImport, updateVaultShare,
 } from "./vaultApi";
 import VaultAccountSetup from "./VaultAccountSetup";import VaultSecurityCenter from "./VaultSecurityCenter";
@@ -33,7 +33,7 @@ async function loadJsQR() {
   return jsQR;
 }
 
-type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "inboundChannels" | "inboundTutorial" | "codeBindings" | "share" | "textShare" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
+type Modal = "credential" | "scanner" | "detail" | "importChoice" | "import" | "inboundChannels" | "inboundTutorial" | "inboundReceipts" | "codeBindings" | "share" | "textShare" | "shareDetail" | "shareEdit" | "shareCreateConfirm" | "deleteConfirm" | "revokeConfirm" | "shareDeleteConfirm" | "saveActionConfirm" | "releaseConfirm" | "logoutConfirm" | "deleteAccountConfirm" | "duplicateConfirm" | "created" | "username" | "nickname" | "email" | "password" | "syncShares" | "notifyEmail" | "notifyBark" | null;
 const NOTIFY_GROUPS = [
 	  { title: "账号安全", events: [
 	    { key: "unlock-failed", label: "连续身份验证失败", detail: "短时间多次解锁或二次验证失败" },
@@ -123,6 +123,16 @@ type DynamicStateFilter = "all" | "fresh" | "configured" | "unconfigured";
 const sourceLabel = (source?: string) => source === "SMS" ? "短信" : source === "EMAIL" ? "邮箱" : source === "WEBHOOK" ? "Webhook" : "验证器";
 const channelTypeLabel = (type: string) => type === "IPHONE" ? "iPhone 快捷指令" : type === "EMAIL" ? "邮件自动化转发" : "通用 Webhook";
 const webhookUrlOf = (channel: VaultInboundChannel) => new URL(`${API_BASE}${channel.webhookPath}`, window.location.origin).toString();
+const formatReceiptTime = (value?: string) => {
+  if (!value) return "";
+  const time = new Date(value.includes("T") ? value : value.replace(" ", "T"));
+  if (Number.isNaN(time.getTime())) return value;
+  const now = new Date();
+  const sameDay = time.getFullYear() === now.getFullYear() && time.getMonth() === now.getMonth() && time.getDate() === now.getDate();
+  return new Intl.DateTimeFormat("zh-CN", sameDay
+    ? { hour: "2-digit", minute: "2-digit", second: "2-digit" }
+    : { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(time);
+};
 const dynamicCodeAge = (receivedTime: string | undefined, now: number) => {
   const received = receivedTime ? new Date(normalizeDateTime(receivedTime)).getTime() : 0;
   if (!received) return "刚刚收到";
@@ -428,6 +438,11 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [recentDynamicCodes, setRecentDynamicCodes] = useState<VaultDynamicCode[]>([]);
   const [channelForm, setChannelForm] = useState({ ...emptyChannelForm });
   const [tutorialChannel, setTutorialChannel] = useState<VaultInboundChannel | null>(null);
+  const [receiptChannel, setReceiptChannel] = useState<VaultInboundChannel | null>(null);
+  const [channelReceipts, setChannelReceipts] = useState<VaultInboundReceipt[]>([]);
+  const [channelReceiptTotal, setChannelReceiptTotal] = useState(0);
+  const [channelReceiptPage, setChannelReceiptPage] = useState(0);
+  const [channelReceiptLoading, setChannelReceiptLoading] = useState(false);
   const [channelTab, setChannelTab] = useState<"channels" | "unmatched">("channels");
   const [channelFormOpen, setChannelFormOpen] = useState(false);
   const [expandedChannelId, setExpandedChannelId] = useState<number | null>(null);
@@ -1283,6 +1298,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
           <button type="button" onClick={() => void switchChannelAuthMode(channel)}>{channel.authMode === "OPEN" ? "改用 Token" : "免请求头"}</button>
           <button type="button" onClick={() => void rotateInboundChannel(channel)}>换密钥</button>
           <button type="button" onClick={() => { setTutorialChannel(channel); setModal("inboundTutorial"); }}><BookOpen size={13} />教程</button>
+          <button type="button" onClick={() => void openChannelReceipts(channel)}><Inbox size={13} />接收记录</button>
           <button type="button" className="is-danger" onClick={() => setPendingChannelDelete(channel)}><Trash2 size={13} />删除</button>
         </div>
       </div> : null}
@@ -1440,6 +1456,24 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       setDetailCodeHistoryPage(result.data.page);
     } catch (error) { notify(error instanceof Error ? error.message : "历史验证码加载失败", true); }
     finally { setDetailCodeHistoryLoading(false); }
+  };
+  const loadChannelReceipts = async (channelId: number, page: number, replace = false) => {
+    setChannelReceiptLoading(true);
+    try {
+      const result = await listVaultChannelReceipts(channelId, page);
+      setChannelReceipts((current) => replace ? result.data.rows : [...current, ...result.data.rows]);
+      setChannelReceiptTotal(result.data.total);
+      setChannelReceiptPage(result.data.page);
+    } catch (error) { notify(error instanceof Error ? error.message : "接收记录加载失败", true); }
+    finally { setChannelReceiptLoading(false); }
+  };
+  const openChannelReceipts = async (channel: VaultInboundChannel) => {
+    setReceiptChannel(channel);
+    setChannelReceipts([]);
+    setChannelReceiptTotal(0);
+    setChannelReceiptPage(0);
+    setModal("inboundReceipts");
+    await loadChannelReceipts(channel.id, 1, true);
   };
   async function saveCredential(allowDuplicate = false) {
     const duplicate = findSameAccountCredential(ownCredentials, form.issuer, form.accountName, editingId);
@@ -2125,6 +2159,30 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
         </section>}
       </div>
       <footer><span>验证码会自动从正文提取</span><div><button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
+    </section></div> : null}
+
+    {modal === "inboundReceipts" && receiptChannel ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-inbound-modal">
+      <header><div><small>CHANNEL LOG</small><h2>接收记录 · {receiptChannel.name}</h2><p>每次鉴权通过的请求都会留下，未识别到验证码也能看到原文</p></div><button type="button" onClick={closeModal} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll">
+        <section className="vault-share-section">
+          {channelReceipts.length ? <div className="vault-receipt-list">{channelReceipts.map((item) => {
+            const tone = item.status === "MATCHED" ? "is-matched" : item.status === "UNRECOGNIZED" ? "is-unrecognized" : "is-unmatched";
+            const statusLabel = item.status === "MATCHED" ? "已归类" : item.status === "UNRECOGNIZED" ? "未识别" : "待归类";
+            return <article key={item.id} className={tone}>
+              <span className="vault-receipt-status">{statusLabel}</span>
+              <div>
+                <b>{item.code ? item.code.replace(/(.{3})(?=.)/, "$1 ") : "未识别到验证码"}</b>
+                <small>{item.httpMethod || "GET"} · {item.sender || item.sourceType || "Webhook"}{item.credentialLabel ? ` · ${item.credentialLabel}` : ""} · {formatReceiptTime(item.receivedTime)}</small>
+                {item.content ? <p>{item.content}</p> : null}
+                {item.errorMessage ? <em>{item.errorMessage}</em> : null}
+              </div>
+              {item.code ? <button type="button" onClick={() => void copy(item.code!, "验证码已复制")} aria-label="复制验证码"><Copy size={13} /></button> : null}
+            </article>;
+          })}</div> : !channelReceiptLoading ? <div className="vault-inline-empty"><Inbox size={18} />还没有接收记录</div> : null}
+          {channelReceiptLoading ? <div className="vault-code-history-loading"><LoaderCircle className="spin" size={15} />正在读取接收记录</div> : channelReceipts.length < channelReceiptTotal ? <button type="button" className="vault-history-more" onClick={() => void loadChannelReceipts(receiptChannel.id, channelReceiptPage + 1)}>加载更多 <small>{channelReceipts.length} / {channelReceiptTotal}</small></button> : channelReceipts.length ? <p className="vault-history-end">已显示全部 {channelReceiptTotal} 条</p> : null}
+        </section>
+      </div>
+      <footer><span>记录加密保存 30 天</span><div><button type="button" className="vault-ghost" onClick={() => setModal("inboundChannels")}>返回通道</button><button type="button" className="vault-primary" onClick={closeModal}>完成</button></div></footer>
     </section></div> : null}
 
     {modal === "inboundTutorial" && tutorialChannel ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><section className="vault-modal share vault-share-form vault-inbound-modal">
