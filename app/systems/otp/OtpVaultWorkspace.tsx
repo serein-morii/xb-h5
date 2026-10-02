@@ -451,6 +451,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
   const [bindingTab, setBindingTab] = useState<"list" | "channels">("list");
   const [bindingFormOpen, setBindingFormOpen] = useState(false);
   const [pendingChannelDelete, setPendingChannelDelete] = useState<VaultInboundChannel | null>(null);
+  const [pendingBindingDelete, setPendingBindingDelete] = useState<VaultCodeBinding | null>(null);
   const [codeBindings, setCodeBindings] = useState<VaultCodeBinding[]>([]);
   const [bindingTemplates, setBindingTemplates] = useState<VaultCodeBinding[]>([]);
   const [selectedBindingTemplate, setSelectedBindingTemplate] = useState("");
@@ -1254,16 +1255,30 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     if (!bindingTarget) return;
     setBusy(true);
     try {
-      if (enabled) {
-        await saveVaultCodeBinding(bindingTarget.id, binding.id, { channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", keywordMode: binding.keywordMode || "ANY", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled: true });
-      } else {
-        await disableVaultCodeBinding(bindingTarget.id, binding.id);
-      }
+      await saveVaultCodeBinding(bindingTarget.id, binding.id, { channelId: binding.channelId, sourceType: binding.sourceType, senderPattern: binding.senderPattern || "", keywordPattern: binding.keywordPattern || "", keywordMode: binding.keywordMode || "ANY", recipientHint: binding.recipientHint || "", expireSeconds: binding.expireSeconds, priority: binding.priority, enabled });
       const bindings = await listVaultCodeBindings(bindingTarget.id);
       setCodeBindings(bindings.data);
       notify(enabled ? "来源组已启用" : "来源组已停用");
       await load(true);
     } catch (error) { notify(error instanceof Error ? error.message : "验证码来源更新失败", true); }
+    finally { setBusy(false); }
+  };
+  const removeCodeBinding = async (binding: VaultCodeBinding) => {
+    if (!bindingTarget) return;
+    setBusy(true);
+    try {
+      await disableVaultCodeBinding(bindingTarget.id, binding.id);
+      const [bindings, templates] = await Promise.all([listVaultCodeBindings(bindingTarget.id), listVaultCodeBindingTemplates()]);
+      setCodeBindings(bindings.data);
+      setBindingTemplates(templates.data);
+      if (editingBindingId === binding.id) {
+        setEditingBindingId(null);
+        setBindingFormOpen(false);
+      }
+      setPendingBindingDelete(null);
+      notify("来源组已删除");
+      await load(true);
+    } catch (error) { notify(error instanceof Error ? error.message : "来源组删除失败", true); }
     finally { setBusy(false); }
   };
   const applyBindingTemplate = (templateId: string) => {
@@ -2250,7 +2265,10 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
               <span className="vault-binding-copy"><span><b>{sourceLabel(binding.sourceType)} · {binding.channelName}</b><em className={`vault-notify-status ${binding.enabled ? "is-active" : ""}`}>{binding.enabled ? "启用" : "停用"}</em></span><small>{[binding.senderPattern && `发送方任一：${binding.senderPattern}`, binding.keywordPattern && `${binding.keywordMode === "ALL" ? "关键词全部" : "关键词任一"}：${binding.keywordPattern}`, binding.recipientHint && `账号提示：${binding.recipientHint}`].filter(Boolean).join(" · ") || "不限制发送方与正文"}</small></span>
               <ChevronRight size={15} />
             </button>
-            <label className="vault-notify-switch"><input type="checkbox" aria-label={binding.enabled ? "停用来源组" : "启用来源组"} checked={binding.enabled} disabled={busy} onChange={(event) => void toggleCodeBinding(binding, event.target.checked)} /><i /></label>
+            <div className="vault-binding-tools">
+              <label className="vault-notify-switch"><input type="checkbox" aria-label={binding.enabled ? "停用来源组" : "启用来源组"} checked={binding.enabled} disabled={busy} onChange={(event) => void toggleCodeBinding(binding, event.target.checked)} /><i /></label>
+              <button type="button" className="vault-binding-delete" disabled={busy} onClick={() => setPendingBindingDelete(binding)} aria-label="删除来源组"><Trash2 size={14} /></button>
+            </div>
           </article>) : !bindingFormOpen ? <div className="vault-inline-empty"><Layers3 size={18} /><b>还没有来源组</b><small>{inboundChannels.length ? "新建一组，选择通道并设置验证码的匹配条件。" : "请先在第 1 步创建接收通道。"}</small></div> : null}</div>
         </section> : <section className="vault-share-section">
           <div className="vault-source-section-head"><div><b>保险库的接收通道</b><small>所有账号共用，只负责接收验证码，不决定验证码显示在哪张卡片。</small></div>{inboundChannels.length && !channelFormOpen ? <button type="button" className="vault-channel-add" onClick={() => setChannelFormOpen(true)}><Plus size={13} />新建通道</button> : null}</div>
@@ -2328,6 +2346,7 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
     {modal === "duplicateConfirm" && pendingDuplicate ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) cancelDuplicate(); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DUPLICATE ACCOUNT</small><h2>重复添加</h2><p>{pendingDuplicate.kind === "batch" ? `其中 ${pendingDuplicate.count} 条已有相同系统和账号，仍要全部导入吗？` : "已存在相同系统和账号，仍要再添加一条吗？"}</p></div><button type="button" onClick={cancelDuplicate} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>{pendingDuplicate.kind === "batch" ? "将要导入" : "将要添加"}</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Copy size={21} /></span><div>{pendingDuplicate.kind === "batch" ? <><b>{pendingDuplicate.items.length} 条验证器数据</b><small>{pendingDuplicate.count} 条与现有系统和账号相同</small></> : <><b>{pendingDuplicate.issuer}</b><small>{pendingDuplicate.accountName}</small></>}</div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>可以重复</h3></div></div><p className="vault-section-help">同一系统、同一账号可以保存多条密钥，例如两台设备各自的验证码。</p></section></div><footer><span>确认后继续保存</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={cancelDuplicate}>取消</button><button type="button" className="vault-primary" disabled={busy} onClick={confirmDuplicate}>{busy ? "保存中" : pendingDuplicate.kind === "batch" ? "仍要导入" : "仍要添加"}</button></div></footer></section></div> : null}
 
     {pendingChannelDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setPendingChannelDelete(null); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE CHANNEL</small><h2>删除接收通道</h2><p>删除后对应快捷指令将无法再推送验证码</p></div><button type="button" onClick={() => setPendingChannelDelete(null)} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingChannelDelete.name}</b><small>{channelTypeLabel(pendingChannelDelete.channelType)} · {pendingChannelDelete.authMode === "OPEN" ? "URL 即凭证" : "Token 校验"}</small></div></div></section><section className="vault-share-section"><p className="vault-section-help">已绑定这条通道的匹配规则会停止收到新验证码，历史验证码不会立刻清除。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => setPendingChannelDelete(null)}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeInboundChannel(pendingChannelDelete)}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
+    {pendingBindingDelete && bindingTarget ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setPendingBindingDelete(null); }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE SOURCE</small><h2>删除来源组</h2><p>删除后这条规则不再给「{bindingTarget.issuer} · {bindingTarget.accountName}」归类验证码</p></div><button type="button" onClick={() => setPendingBindingDelete(null)} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{sourceLabel(pendingBindingDelete.sourceType)} · {pendingBindingDelete.channelName}</b><small>{[pendingBindingDelete.senderPattern && `发送方：${pendingBindingDelete.senderPattern}`, pendingBindingDelete.keywordPattern && `关键词：${pendingBindingDelete.keywordPattern}`].filter(Boolean).join(" · ") || "不限制发送方与正文"}</small></div></div></section><section className="vault-share-section"><p className="vault-section-help">接收通道不会被删除，其他账号的来源组也不受影响。已收到的验证码会继续保留。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => setPendingBindingDelete(null)}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeCodeBinding(pendingBindingDelete)}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
 
     {modal === "deleteConfirm" && pendingDelete ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) { setPendingDelete(null); closeModal(); } }}><section className="vault-modal share vault-share-form vault-delete-modal"><header><div><small>DELETE CREDENTIAL</small><h2>删除凭据</h2><p>这项操作会同步撤回相关临时授权</p></div><button type="button" onClick={() => { setPendingDelete(null); closeModal(); }} aria-label="关闭"><X size={18} /></button></header><div className="vault-share-scroll"><section className="vault-share-section"><div className="vault-section-title"><div><span>01</span><h3>将要删除</h3></div></div><div className="vault-delete-summary"><span className="vault-delete-icon"><Trash2 size={21} /></span><div><b>{pendingDelete.issuer}</b><small>{pendingDelete.accountName}</small></div></div></section><section className="vault-share-section"><div className="vault-section-title"><div><span>02</span><h3>影响范围</h3></div></div><p className="vault-section-help">删除后会从你的保险库中移除，包含它的临时授权也会一起失效。</p></section></div><footer><span>确认后立即生效</span><div><button type="button" className="vault-ghost" disabled={busy} onClick={() => { setPendingDelete(null); closeModal(); }}>取消</button><button type="button" className="vault-danger" disabled={busy} onClick={() => void removeCredential()}>{busy ? "删除中" : "确认删除"}</button></div></footer></section></div> : null}
 

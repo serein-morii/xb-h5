@@ -175,6 +175,8 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(workspace, /查询参数 <code>token<\/code>/);
   assert.match(workspace, /接收记录/);
   assert.match(workspace, /inboundReceipts/);
+  assert.match(workspace, /删除来源组/);
+  assert.match(workspace, /pendingBindingDelete/);
   assert.match(api, /listVaultChannelReceipts/);
   assert.match(api, /listVaultInboundChannels/);
   assert.match(api, /listVaultCodeBindings/);

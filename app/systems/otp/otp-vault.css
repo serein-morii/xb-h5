@@ -1982,6 +1982,9 @@ html.theme-dark .vault-card-source.is-active { border-color: rgba(105,190,143,.3
 .vault-receipt-list article em { color: #a1453c; font-size: 10px; font-style: normal; }
 .vault-receipt-list article > button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-paper); color: var(--utility-text); cursor: pointer; }
 .vault-binding-list > article { min-width: 0; min-height: 62px; padding: 10px 11px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; border: 1px solid rgba(64,78,111,.1); border-radius: 15px; background: color-mix(in srgb,var(--utility-bg) 62%,#fff); transition: border-color .16s,background .16s; }
+.vault-binding-tools { display: flex; align-items: center; gap: 6px; }
+.vault-binding-delete { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--utility-line); border-radius: 10px; background: var(--utility-paper); color: #a5483f; cursor: pointer; }
+.vault-binding-delete:disabled { opacity: .5; cursor: not-allowed; }
 .vault-binding-list > article:hover { border-color: rgba(102,116,207,.22); }
 .vault-binding-list > article.is-disabled { opacity: .62; }
 .vault-binding-open { min-width: 0; padding: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
