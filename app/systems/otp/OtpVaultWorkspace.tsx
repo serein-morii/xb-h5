@@ -2279,8 +2279,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
             </div> : null}
             <div className="vault-channel-actions">
               <button type="button" onClick={() => { setRenamingChannelId(channelEditor.id); setChannelNameDraft(channelEditor.name); }}><Pencil size={13} />重命名</button>
-              <button type="button" onClick={() => void switchChannelAuthMode(channelEditor)}>{channelEditor.authMode === "OPEN" ? "改用 Token" : "免请求头"}</button>
-              <button type="button" onClick={() => void rotateInboundChannel(channelEditor)}>换密钥</button>
+              <button type="button" onClick={() => void switchChannelAuthMode(channelEditor)}>{channelEditor.authMode === "OPEN" ? <><KeyRound size={13} />改用 Token</> : <><Link2 size={13} />免请求头</>}</button>
+              <button type="button" onClick={() => void rotateInboundChannel(channelEditor)}><RotateCcw size={13} />换密钥</button>
               <button type="button" onClick={() => { setTutorialChannel(channelEditor); closeChannelEditor(); setModal("inboundTutorial"); }}><BookOpen size={13} />教程</button>
               <button type="button" onClick={() => { const current = channelEditor; closeChannelEditor(); void openChannelReceipts(current); }}><Inbox size={13} />接收记录</button>
               <button type="button" className="is-danger" onClick={() => setPendingChannelDelete(channelEditor)}><Trash2 size={13} />删除</button>
