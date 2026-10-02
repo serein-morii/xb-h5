@@ -1315,14 +1315,13 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
       </div>
     </article>;
   };
-  const renderChannelForm = (afterCreate?: (channel: VaultInboundChannel) => void) => <div className="vault-channel-create">
+  const renderChannelForm = () => <div className="vault-channel-create">
     <div className="vault-source-form-head"><span className="vault-setting-icon is-green"><Webhook size={17} /></span><div><b>新建接收通道</b><small>负责把手机、邮件或服务发送的验证码送进保险库；创建一次即可供多个账号共用。</small></div></div>
     <div className="vault-form-grid">
       <label><span>通道名称</span><input required maxLength={40} value={channelForm.name} onChange={(event) => setChannelForm({ ...channelForm, name: event.target.value })} placeholder="例如：我的 iPhone" /></label>
       <label><span>通道类型</span><select value={channelForm.channelType} onChange={(event) => setChannelForm({ ...channelForm, channelType: event.target.value })}><option value="IPHONE">iPhone 快捷指令</option><option value="EMAIL">邮件自动化转发</option><option value="GENERIC">通用 Webhook</option></select></label>
       <label className="wide"><span>鉴权方式</span><select value={channelForm.authMode} onChange={(event) => setChannelForm({ ...channelForm, authMode: event.target.value as VaultInboundAuthMode })}><option value="TOKEN">请求头 Token 校验</option><option value="OPEN">URL 即凭证（飞书风格）</option></select></label>
     </div>
-    <div className="vault-channel-form-actions"><button type="button" className="vault-ghost" onClick={() => inboundChannels.length && setChannelFormOpen(false)}>取消</button><button type="button" className="vault-primary" disabled={busy} onClick={() => void submitInboundChannel().then((created) => { if (created) afterCreate?.(created); })}><Plus size={14} />创建通道</button></div>
   </div>;
   const updatePasswordOption = (key: keyof Omit<PasswordGeneratorOptions, "length">, checked: boolean) => {
     setPasswordOptions((current) => {
@@ -2262,11 +2261,8 @@ export default function OtpVaultWorkspace({ onLogout, accountName, accountNick, 
 
     {channelFormOpen ? <div className="vault-modal-mask is-nested" onMouseDown={(event) => { if (event.target === event.currentTarget && inboundChannels.length) setChannelFormOpen(false); }}><section className="vault-modal share vault-share-form vault-editor-modal">
       <header><div><small>NEW CHANNEL</small><h2>新建接收通道</h2><p>创建一次即可给多个账号共用</p></div><button type="button" onClick={() => inboundChannels.length && setChannelFormOpen(false)} aria-label="关闭"><X size={18} /></button></header>
-      <div className="vault-share-scroll">{renderChannelForm((channel) => {
-        setSelectedBindingTemplate("");
-        setBindingForm({ ...emptyBindingForm, channelId: channel.id });
-        if (bindingTarget) { setBindingFormOpen(true); setBindingTab("list"); }
-      })}</div>
+      <div className="vault-share-scroll">{renderChannelForm()}</div>
+      <footer><span>通道建好后可以被多个来源组复用</span><div>{inboundChannels.length ? <button type="button" className="vault-ghost" onClick={() => setChannelFormOpen(false)}>取消</button> : null}<button type="button" className="vault-primary" disabled={busy} onClick={() => void submitInboundChannel().then((created) => { if (created && bindingTarget) { setSelectedBindingTemplate(""); setBindingForm({ ...emptyBindingForm, channelId: created.id }); setBindingFormOpen(true); setBindingTab("list"); } })}><Plus size={14} />创建通道</button></div></footer>
     </section></div> : null}
 
     {channelEditor ? <div className="vault-modal-mask is-nested" onMouseDown={(event) => { if (event.target === event.currentTarget) closeChannelEditor(); }}><section className="vault-modal share vault-share-form vault-editor-modal">
