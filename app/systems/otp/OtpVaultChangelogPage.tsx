@@ -7,6 +7,14 @@ import "./otp-guide.css";
 
 const changelog = [
   {
+    date: "2026-10-02",
+    title: "Webhook 支持 GET",
+    items: [
+      "验证码 Webhook 同时接受 GET 和 POST：GET 把 code、content 等字段放在查询参数里",
+      "Token 模式除了请求头 X-Otp-Webhook-Token，也可以用查询参数 token，方便浏览器或只支持 GET 的自动化",
+    ],
+  },
+  {
     date: "2026-09-16",
     title: "短信 / 邮箱验证码自动接收",
     items: [

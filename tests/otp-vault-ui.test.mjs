@@ -171,6 +171,8 @@ test("keeps received codes with credentials and exposes source filters", async (
   assert.match(workspace, /setBindingTab\(channels\.data\.length \? "list" : "channels"\)/);
   assert.match(workspace, /setBindingFormOpen\(true\); setBindingTab\("list"\)/);
   assert.match(workspace, /X-Otp-Webhook-Token/);
+  assert.match(workspace, /向 Webhook 地址发起 <b>GET<\/b> 或 <b>POST<\/b>/);
+  assert.match(workspace, /查询参数 <code>token<\/code>/);
   assert.match(api, /listVaultInboundChannels/);
   assert.match(api, /listVaultCodeBindings/);
   assert.match(api, /listVaultCodeBindingTemplates/);
