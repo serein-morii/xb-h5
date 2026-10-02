@@ -1942,6 +1942,8 @@ html.theme-dark .vault-card-source.is-active { border-color: rgba(105,190,143,.3
 .vault-channel-list article.is-open .vault-channel-chevron { transform: rotate(180deg); }
 .vault-channel-list article.is-open .vault-channel-summary { border-bottom: 1px solid var(--utility-line); border-radius: 15px 15px 0 0; }
 .vault-channel-body { display: grid; gap: 10px; padding: 12px; background: color-mix(in srgb,var(--utility-paper) 68%,var(--utility-bg)); }
+.vault-channel-body.is-dialog { padding: 0; background: transparent; }
+.vault-modal-mask.is-nested { z-index: 170; }
 .vault-channel-body > label { display: grid; gap: 6px; }
 .vault-channel-body > label > span { color: var(--utility-muted); font-size: 11px; }
 .vault-channel-body > label > div { display: flex; min-width: 0; gap: 6px; }
