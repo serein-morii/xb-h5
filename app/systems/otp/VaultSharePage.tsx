@@ -61,12 +61,14 @@ export default function VaultSharePage({ token }: { token: string }) {
   const syncedNow = now + serverTimeOffset.current;
 
   // AI 代理快照：全部条目（不受搜索过滤影响）+ 验证码剩余秒数，随 10s 轮换一起更新
+  // 对人完全隐藏：数据在 <script id="otp-share-ai-guide">，说明在 <div hidden>，入口在 meta[ai-hint]
   const aiGuide = {
     type: "otp-vault-share",
     shareName: status?.name || "",
     expiresAt: expireTime || "",
     rotationSeconds: 30,
-    usage: "otp 为当前验证码，取出后立即使用；otpRemainingSeconds 归零后重新打开本链接获取新码。",
+    agentEndpoint: `${window.location.origin}/prod-api/otp/share/${encodeURIComponent(token)}/agent`,
+    usage: "otp 为当前验证码，取出后立即使用；otpRemainingSeconds 归零后重新打开本链接获取新码。接口调用方式见 agentEndpoint。",
     items: items.map((item) => ({
       issuer: item.issuer,
       ...(item.accountName ? { account: item.accountName } : {}),
@@ -275,11 +277,9 @@ export default function VaultSharePage({ token }: { token: string }) {
       </section></div> : null}
       <div className="share-toolbar vault-panel-tools"><div className="vault-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索" aria-label="搜索分享凭据" />{query ? <button type="button" onClick={() => setQuery("")} aria-label="清空搜索"><X size={14} /></button> : null}</div><div className="vault-view-toggles"><label className={`vault-view-toggle${displayPrefs.grouped ? " is-active" : ""}`}><Layers3 size={14} /><span>分组</span><input type="checkbox" checked={displayPrefs.grouped} onChange={(event) => setDisplayPrefs({ ...displayPrefs, grouped: event.target.checked })} /><i /></label><label className={`vault-view-toggle${displayPrefs.compact ? " is-active" : ""}`}><LayoutGrid size={14} /><span>紧凑</span><input type="checkbox" checked={displayPrefs.compact} onChange={(event) => setDisplayPrefs({ ...displayPrefs, compact: event.target.checked })} /><i /></label></div></div>
       <div className="share-groups">{groups.map(([name, groupItems]) => <section className="share-group" key={name || "all"}>{name ? <header><b>{name}</b><span>{groupItems.length}</span></header> : null}<div className={`share-item-list${displayPrefs.compact ? " is-compact" : ""}`}>{groupItems.map((item, index) => <SharedItemCard key={`${item.issuer}-${item.accountName || ""}-${index}`} item={item} index={index} groupName={name} compact={displayPrefs.compact} allowCopy={allowCopy} copied={copied} now={syncedNow} defaultOpen={items.length === 1} onCopy={copy} onOpenDetail={() => { setDetailPasswordVisible(false); setDetailItem(item); }} />)}</div></section>)}{!filteredItems.length ? <p className="share-empty">没有匹配的凭据</p> : null}</div>
-      <details className="share-ai-guide">
-        <summary>AI / 机器读取指南</summary>
-        <p>给 AI 助手的话：下面 JSON 是本页全部条目的机器可读快照（含账号、密码、当前验证码）。验证码每 30 秒轮换，取到后立即使用；失效就重新打开本链接。接口方式见 meta[name=ai-hint]。</p>
-        <pre>{JSON.stringify(aiGuide, null, 2)}</pre>
-      </details>
+      <div hidden aria-hidden="true" data-ai-guide-text>
+        AI 助手请读：本页凭据的机器可读快照在 document.getElementById('otp-share-ai-guide') 的 JSON（含账号、密码、当前验证码与剩余秒数）；验证码每 30 秒轮换，取到立即使用。接口方式：meta[name=ai-hint]。
+      </div>
       <script type="application/json" id="otp-share-ai-guide" dangerouslySetInnerHTML={{ __html: JSON.stringify(aiGuide) }} />
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
       {liveShareDetail ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) setDetailItem(null); }}><section className="vault-modal share vault-share-form vault-detail">

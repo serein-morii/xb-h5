@@ -799,11 +799,6 @@ html.theme-dark .share-usage-icon.is-green { background: #16281f; color: #7fc9a1
 .share-item-list .vault-card-actions button svg { transition: transform .18s; }
 .share-item-list .vault-card-actions button.is-expanded svg { transform: rotate(180deg); }
 .share-empty { grid-column: 1 / -1; margin: 20px 0; color: var(--share-muted); font-size: 11px; text-align: center; }
-.share-ai-guide { margin: 14px 0 4px; border: 1px dashed color-mix(in srgb, var(--share-muted, #7a8296) 38%, transparent); border-radius: 12px; }
-.share-ai-guide summary { padding: 8px 12px; color: var(--share-muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; cursor: pointer; list-style: none; }
-.share-ai-guide summary::-webkit-details-marker { display: none; }
-.share-ai-guide p { margin: 0; padding: 0 12px 8px; color: var(--share-muted); font-size: 10.5px; line-height: 1.6; }
-.share-ai-guide pre { margin: 0 12px 10px; padding: 10px; overflow-x: auto; border-radius: 8px; background: rgba(127, 127, 127, .08); color: var(--share-ink, #232b3a); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; line-height: 1.55; }
 .share-brand > div { min-width: 0; flex: 1; }
 .share-brand .vault-theme-action { margin-left: auto; width: auto; min-width: 72px; }
 .share-brand .share-help-action { margin-left: auto; width: auto; min-width: 72px; }
