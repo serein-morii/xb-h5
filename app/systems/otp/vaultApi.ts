@@ -102,7 +102,7 @@ export type VaultInboundReceiptPage = { rows: VaultInboundReceipt[]; total: numb
 
 export type VaultShare = {
   id: number; name?: string; status: string; accessCodeEnabled: boolean; itemCount: number; accessCount: number;
-  shareType?: "CREDENTIAL" | "TEXT"; textFormat?: "TEXT" | "MARKDOWN" | "CODE" | "HTML"; textContent?: string;
+  shareType?: "CREDENTIAL" | "TEXT"; textFormat?: "TEXT" | "MARKDOWN" | "CODE" | "HTML"; textContent?: string; tips?: string;
   textFolderId?: number | null;
   maxAccessCount?: number; oneTime: boolean; allowCopy: boolean; forbidSave?: boolean;
   accessCode?: string; showAccount: boolean; showPassword: boolean; showOtp: boolean; showLoginUrl: boolean; showNote: boolean;
