@@ -1,10 +1,11 @@
-import { Check, ChevronDown, CircleHelp, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
+import { Check, ChevronDown, CircleHelp, Clock3, Copy, ExternalLink, Eye, EyeOff, FolderDown, KeyRound, Layers3, LayoutGrid, LoaderCircle, LockKeyhole, Mail, Megaphone, MessageSquareText, Moon, Search, ShieldCheck, Sun, SunMoon, TriangleAlert, Webhook, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { applyOpenGraph } from "../../lib/openGraph";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { getInboundShareStatus, getOtpToken, getSharedContent, getShareStatus, listSharedDynamicCodes, openVaultShare, saveInboundShare, type DynamicCodeSource, type SharedItem, type ShareStatus, type VaultDynamicCode } from "./vaultApi";
 import { PENDING_SAVE_KEY, readShareAccessCode, rememberShareAccessCode, shareHandoffAfterRestore, shareLoginNext, shouldShowShareHandoff } from "./otpVaultShare";
 import { issuerStyle } from "./issuerStyle";
+import { renderRichText } from "../../lib/richText";
 import { readThemePreference, setThemePreference, type ThemePreference } from "../../lib/theme";
 import { scheduleClipboardClear } from "./otpDailyUse";
 import VaultToastMessage from "./VaultToastMessage";
@@ -32,6 +33,16 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [copied, setCopied] = useState("");
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
+  // 接收方公告（创建分享时的 Tips，Markdown）：过长自动折叠
+  const [tips, setTips] = useState("");
+  const [tipsExpanded, setTipsExpanded] = useState(false);
+  const [tipsOverflow, setTipsOverflow] = useState(false);
+  const tipsBodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = tipsBodyRef.current;
+    setTipsOverflow(Boolean(node && node.scrollHeight > 132));
+    if (!node) setTipsExpanded(false);
+  }, [tips]);
   const [ownShare, setOwnShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveCollapsed, setSaveCollapsed] = useState(false);
@@ -88,7 +99,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       const serverNow = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2);
       serverTimeOffset.current = serverNow - receivedAt;
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
-      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); setError("");
+      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); if (result.data.tips !== undefined) setTips(result.data.tips); setError("");
       if (result.data.name) setStatus((current) => current ? { ...current, name: result.data.name } : current);
       return true;
     } catch (contentError) {
@@ -266,6 +277,10 @@ export default function VaultSharePage({ token }: { token: string }) {
       <footer><ShieldCheck size={13} />访问会话不会超过原授权有效期</footer>
     </section> : <section className="share-content">
       <header><div><span>临时授权已验证</span><h1>{status?.name || "凭据内容"}</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
+      {tips ? <section className="share-tips" aria-label="给接收方的话">
+        <header><Megaphone size={14} /><b>Tip · 给接收方的话</b>{tipsOverflow ? <button type="button" onClick={() => setTipsExpanded((v) => !v)}>{tipsExpanded ? "收起" : "展开全部"}</button> : null}</header>
+        <div ref={tipsBodyRef} className={`share-tips-body${tipsExpanded ? "" : " is-collapsed"}`} dangerouslySetInnerHTML={{ __html: renderRichText(tips, "MARKDOWN") }} />
+      </section> : null}
       {usageTipOpen && hasInboundShare ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) dismissUsageTip(); }}><section className="vault-modal small share-usage-modal" role="dialog" aria-label="验证码使用说明">
         <header><div><small>USAGE TIP</small><h2>短信 / 邮箱验证码说明</h2><p>收到的验证码会自动出现在卡片上</p></div><button type="button" onClick={dismissUsageTip} aria-label="关闭"><X size={18} /></button></header>
         <div className="vault-share-scroll"><ul className="share-usage-list">
