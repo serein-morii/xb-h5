@@ -77,6 +77,7 @@ export default function VaultSharePage({ token }: { token: string }) {
     type: "otp-vault-share",
     shareName: status?.name || "",
     expiresAt: expireTime || "",
+    ...(tips ? { tips } : {}),
     rotationSeconds: 30,
     agentEndpoint: `${window.location.origin}/prod-api/otp/share/${encodeURIComponent(token)}/agent`,
     usage: "otp 为当前验证码，取出后立即使用；otpRemainingSeconds 归零后重新打开本链接获取新码。接口调用方式见 agentEndpoint。",
