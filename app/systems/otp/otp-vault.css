@@ -803,9 +803,13 @@ html.theme-dark .share-usage-icon.is-green { background: #16281f; color: #7fc9a1
 .share-tips-bar { width: 100%; min-height: 44px; margin: 12px 0 0; padding: 0 13px; display: flex; align-items: center; gap: 9px; border: 1px solid color-mix(in srgb, var(--share-accent, #6674cf) 28%, transparent); border-radius: 999px; color: var(--share-accent, #6674cf); background: color-mix(in srgb, var(--share-accent, #6674cf) 8%, transparent); font: inherit; cursor: pointer; text-align: left; }
 .share-tips-bar svg { flex: none; }
 .share-tips-bar b { flex: none; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
-.share-tips-bar span { min-width: 0; flex: 1; overflow: hidden; color: var(--share-ink, #232b3a); font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; opacity: .82; }
+.share-tips-bar span { min-width: 0; flex: 1; overflow: hidden; color: var(--share-text, #1c2340); font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; opacity: .88; }
 .share-tips-bar > svg:last-child { flex: none; opacity: .55; }
 .share-tips-modal { text-align: left; }
+html.theme-dark .share-tips-bar svg { color: #9da8f3; }
+html.theme-dark .share-tips-bar { border-color: rgba(157, 168, 243, .32); background: rgba(102, 116, 207, .16); }
+html.theme-dark .share-tips-body a { color: #9da8f3; }
+html.theme-dark .share-tips-body code, html.theme-dark .share-tips-body pre { background: rgba(238, 241, 232, .1); }
 .share-tips-modal h2 { margin: 2px 0 0; }
 .share-tips-body { color: var(--utility-text, #232b3a); font-size: 12.5px; line-height: 1.8; overflow-wrap: anywhere; }
 .share-tips-body :is(p, ul, ol) { margin: 0 0 8px; }
