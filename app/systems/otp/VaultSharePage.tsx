@@ -275,7 +275,6 @@ export default function VaultSharePage({ token }: { token: string }) {
       {tips ? <>
         <button type="button" className="share-tips-bar" onClick={() => setTipsOpen(true)} aria-label="查看公告全文">
           <Megaphone size={15} />
-          <b>公告</b>
           <span>{tipsPreview}</span>
           <ChevronRight size={15} />
         </button>
