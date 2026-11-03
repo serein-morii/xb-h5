@@ -799,21 +799,25 @@ html.theme-dark .share-usage-icon.is-green { background: #16281f; color: #7fc9a1
 .share-item-list .vault-card-actions button svg { transition: transform .18s; }
 .share-item-list .vault-card-actions button.is-expanded svg { transform: rotate(180deg); }
 .share-empty { grid-column: 1 / -1; margin: 20px 0; color: var(--share-muted); font-size: 11px; text-align: center; }
-/* 给接收方的话（公告卡）：标题下方，Markdown 渲染，过长折叠 */
-.share-tips { margin: 0 0 14px; border: 1px solid color-mix(in srgb, var(--share-muted, #7a8296) 26%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--share-muted, #7a8296) 7%, transparent); }
-.share-tips > header { display: flex; align-items: center; gap: 7px; padding: 10px 14px 8px; color: var(--share-muted); font-size: 10.5px; font-weight: 800; letter-spacing: .06em; }
-.share-tips > header svg { color: var(--share-accent, #6674cf); }
-.share-tips > header button { margin-left: auto; border: 0; padding: 2px 8px; border-radius: 999px; color: var(--share-accent, #6674cf); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
-.share-tips-body { padding: 0 14px 12px; color: var(--share-ink, #232b3a); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
-.share-tips-body.is-collapsed { max-height: 132px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 78%, transparent); mask-image: linear-gradient(#000 78%, transparent); }
-.share-tips-body :is(p, ul, ol) { margin: 0 0 6px; }
+/* 给接收方的话：标题下方的公告横幅，点击弹窗看全文（Markdown） */
+.share-tips-bar { width: 100%; min-height: 44px; margin: 0 0 14px; padding: 0 13px; display: flex; align-items: center; gap: 9px; border: 1px solid color-mix(in srgb, var(--share-accent, #6674cf) 28%, transparent); border-radius: 999px; color: var(--share-accent, #6674cf); background: color-mix(in srgb, var(--share-accent, #6674cf) 8%, transparent); font: inherit; cursor: pointer; text-align: left; }
+.share-tips-bar svg { flex: none; }
+.share-tips-bar b { flex: none; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.share-tips-bar span { min-width: 0; flex: 1; overflow: hidden; color: var(--share-ink, #232b3a); font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; opacity: .82; }
+.share-tips-bar > svg:last-child { flex: none; opacity: .55; }
+.share-tips-modal { text-align: left; }
+.share-tips-modal h2 { margin: 2px 0 0; }
+.share-tips-body { color: var(--utility-text, #232b3a); font-size: 12.5px; line-height: 1.8; overflow-wrap: anywhere; }
+.share-tips-body :is(p, ul, ol) { margin: 0 0 8px; }
 .share-tips-body :is(p, ul, ol):last-child { margin-bottom: 0; }
 .share-tips-body ul, .share-tips-body ol { padding-left: 18px; }
+.share-tips-body li { margin: 2px 0; }
 .share-tips-body code { padding: 1px 5px; border-radius: 5px; background: rgba(127, 127, 127, .14); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
-.share-tips-body pre { margin: 6px 0; padding: 8px 10px; overflow-x: auto; border-radius: 8px; background: rgba(127, 127, 127, .12); }
+.share-tips-body pre { margin: 8px 0; padding: 9px 11px; overflow-x: auto; border-radius: 8px; background: rgba(127, 127, 127, .12); }
 .share-tips-body pre code { padding: 0; background: none; }
-.share-tips-body a { color: var(--share-accent, #6674cf); }
+.share-tips-body a { color: #6674cf; }
 .share-tips-body strong { font-weight: 750; }
+.share-tips-body h1, .share-tips-body h2, .share-tips-body h3 { margin: 10px 0 6px; font-size: 13.5px; font-weight: 800; }
 .share-brand > div { min-width: 0; flex: 1; }
 .share-brand .vault-theme-action { margin-left: auto; width: auto; min-width: 72px; }
 .share-brand .share-help-action { margin-left: auto; width: auto; min-width: 72px; }
