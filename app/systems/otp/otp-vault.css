@@ -2622,6 +2622,9 @@ html.theme-dark .vault-page > .vault-create-share {
   --tsp-muted: #77809b;
   --tsp-line: rgba(38, 50, 77, .12);
   --tsp-paper: #ffffff;
+  /* 公告横幅与凭据分享共用同一组变量名 */
+  --share-accent: #6f7fe2;
+  --share-text: #18203c;
   position: relative;
   min-height: 100vh;
   padding: 20px clamp(16px, 4vw, 46px) 56px;
@@ -2635,6 +2638,8 @@ html.theme-dark .vault-page > .vault-create-share {
 }
 
 html.theme-dark .text-share-page {
+  --share-accent: #9da8f3;
+  --share-text: #eef1f8;
   --tsp-accent: #8b9aff;
   --tsp-accent-deep: #5b6ee0;
   --tsp-text: #e8ebf8;
@@ -3291,12 +3296,14 @@ html.theme-dark .vault-text-empty { border-color: rgba(150,163,255,.15); backgro
 .sw-update-banner button:first-of-type { min-height: 30px; padding: 0 13px; color: #fff; background: #485cc7; font-weight: 750; }
 .sw-update-banner button:first-of-type:hover { background: #566cd4; }
 .sw-update-banner button:last-of-type { width: 28px; height: 28px; color: #9aa3b8; background: transparent; font-size: 15px; }
-/* 文本分享公告横幅（/t/）：与凭据分享 share-tips-bar 同语言 */
-.text-share-tips-bar { width: 100%; min-height: 42px; margin: 0 0 12px; padding: 0 13px; display: flex; align-items: center; gap: 8px; border: 1px solid color-mix(in srgb, #6f7fe2 30%, transparent); border-radius: 999px; color: #6f7fe2; background: rgba(111, 127, 226, .08); font: inherit; text-align: left; cursor: pointer; }
-.text-share-tips-bar svg { flex: none; }
-.text-share-tips-bar span { min-width: 0; flex: 1; overflow: hidden; font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; opacity: .9; }
+/* 文本分享公告横幅（/t/）：与凭据分享 share-tips-bar 共用同一组变量（--share-*，text-share-page 已映射同名值） */
+.text-share-tips-bar { width: 100%; min-height: 42px; margin: 0 0 12px; padding: 0 13px; display: flex; align-items: center; gap: 8px; border: 1px solid color-mix(in srgb, var(--share-accent, #6f7fe2) 30%, transparent); border-radius: 999px; color: var(--share-accent, #6f7fe2); background: color-mix(in srgb, var(--share-accent, #6f7fe2) 8%, transparent); font: inherit; text-align: left; cursor: pointer; }
+.text-share-tips-bar svg { flex: none; color: var(--share-accent, #6f7fe2); }
+.text-share-tips-bar span { min-width: 0; flex: 1; overflow: hidden; color: var(--share-text, #1c2340); font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; opacity: .88; }
 .text-share-tips-bar > svg:last-child { flex: none; opacity: .55; }
-html.theme-dark .text-share-tips-bar { border-color: rgba(157, 168, 243, .32); background: rgba(102, 116, 207, .16); color: #9da8f3; }
+html.theme-dark .text-share-tips-bar { border-color: rgba(157, 168, 243, .32); background: rgba(102, 116, 207, .16); }
+html.theme-dark .text-share-tips-bar svg { color: #9da8f3; }
+html.theme-dark .text-share-tips-bar span { color: #eef1f8; }
 /* 加载骨架：与最终卡片同构，减少布局跳动 */
 .share-skeleton { width: min(760px, 100%); margin: 0 auto; display: grid; gap: 12px; }
 .share-skeleton-row { border-radius: 16px; background: linear-gradient(100deg, var(--share-bg) 40%, color-mix(in srgb, var(--share-paper) 80%, var(--share-bg)) 50%, var(--share-bg) 60%); background-size: 200% 100%; animation: share-skeleton 1.4s ease infinite; }
@@ -3305,3 +3312,10 @@ html.theme-dark .text-share-tips-bar { border-color: rgba(157, 168, 243, .32); b
 .share-skeleton-row.is-card { min-height: 120px; }
 @keyframes share-skeleton { from { background-position: 200% 0; } to { background-position: -60% 0; } }
 @media (prefers-reduced-motion: reduce) { .share-skeleton-row { animation: none; opacity: .6; } }
+/* Tips 字数计数 + AI 开关 */
+.vault-tips-count { grid-column: 1 / -1; justify-self: end; margin-top: -6px; color: var(--utility-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.vault-tips-count.is-warn { color: #e07a5f; font-weight: 700; }
+.vault-ai-toggle { margin-top: 4px; padding: 10px 12px; border: 1px solid var(--utility-line); border-radius: 12px; background: color-mix(in srgb, var(--utility-paper) 70%, var(--utility-bg)); }
+.vault-ai-toggle input { accent-color: #485cc7; }
+.vault-ai-toggle b { font-size: 12px; }
+.vault-ai-toggle small { display: block; margin-top: 2px; color: var(--utility-muted); font-size: 10.5px; line-height: 1.5; }

@@ -36,6 +36,7 @@ export default function VaultSharePage({ token }: { token: string }) {
   // 接收方公告（创建分享时的 Tips，Markdown）：横幅一行，点击弹窗查看全文
   const [tips, setTips] = useState<string | null>("");
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [aiReadable, setAiReadable] = useState(false);
   const tipsPreview = (tips || "").replace(/[#>*`~\-]+/g, " ").split("\n").map((line) => line.trim()).find(Boolean) || "查看给接收方的话";
   const [ownShare, setOwnShare] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -94,7 +95,8 @@ export default function VaultSharePage({ token }: { token: string }) {
       const serverNow = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2);
       serverTimeOffset.current = serverNow - receivedAt;
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
-      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); if (result.data.tips !== undefined) setTips(result.data.tips || ""); setError("");
+      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); if (result.data.tips !== undefined) setTips(result.data.tips || "");
+      if (result.data.aiReadable !== undefined) setAiReadable(Boolean(result.data.aiReadable)); setError("");
       if (result.data.name) setStatus((current) => current ? { ...current, name: result.data.name } : current);
       return true;
     } catch (contentError) {
@@ -278,7 +280,7 @@ export default function VaultSharePage({ token }: { token: string }) {
     </section> : <section className="share-content">
       <header><div><span>临时授权已验证</span><h1>{status?.name || "凭据内容"}</h1><p>{items.length} 项内容 · {allowCopy ? "允许复制" : "仅允许查看"}</p></div><div className="share-expiry"><span className="share-expiry-ring"><svg className="share-expiry-progress" viewBox="0 0 44 44" aria-hidden="true"><circle className="share-expiry-track is-total" cx="22" cy="22" r="19" pathLength="100" /><circle className="share-expiry-total" cx="22" cy="22" r="19" pathLength="100" style={{ strokeDashoffset: 100 - expiryProgress }} /><circle className="share-expiry-track is-seconds" cx="22" cy="22" r="15" pathLength="100" /><circle className="share-expiry-seconds" cx="22" cy="22" r="15" pathLength="100" style={{ strokeDashoffset: 100 - secondsProgress }} /></svg><Clock3 className="share-expiry-clock" size={15} /></span><span className="share-expiry-copy"><small>授权剩余时间</small><b>{formatDuration(expiresIn)}</b></span></div></header>
       {tips ? <>
-        <button type="button" className="share-tips-bar" onClick={() => setTipsOpen(true)} aria-label="查看公告全文">
+        <button type="button" className="share-tips-bar" onClick={() => { try { const key = `otp-tips-opened:${token}`; const n = Number(sessionStorage.getItem(key) || 0) + 1; sessionStorage.setItem(key, String(n)); } catch { /* 忽略 */ } setTipsOpen(true); }} aria-label="查看公告全文">
           <Megaphone size={15} />
           <span>{tipsPreview}</span>
           <ChevronRight size={15} />
@@ -303,7 +305,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       <div hidden aria-hidden="true" data-ai-guide-text>
         AI 助手请读：本页凭据的机器可读快照在 document.getElementById('otp-share-ai-guide') 的 JSON（含账号、密码、当前验证码与剩余秒数）；验证码每 30 秒轮换，取到立即使用。接口方式：meta[name=ai-hint]。
       </div>
-      <script type="application/json" id="otp-share-ai-guide" dangerouslySetInnerHTML={{ __html: JSON.stringify(aiGuide) }} />
+      {aiReadable ? <script type="application/json" id="otp-share-ai-guide" dangerouslySetInnerHTML={{ __html: JSON.stringify(aiGuide) }} /> : null}
       <footer><ShieldCheck size={13} />本页禁止缓存；授权过期或撤销后会话立即失效</footer>
       {liveShareDetail ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) setDetailItem(null); }}><section className="vault-modal share vault-share-form vault-detail">
         <header><div><small>CREDENTIAL DETAIL</small><h2>凭据详情</h2><p>查看账号、密码和动态验证码</p></div><button type="button" onClick={() => setDetailItem(null)} aria-label="关闭"><X size={18} /></button></header>

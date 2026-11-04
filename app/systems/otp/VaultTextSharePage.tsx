@@ -41,6 +41,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   // 接收方公告（创建/编辑时的 Tips，Markdown）：横幅一行 + 弹窗全文
   const [tips, setTips] = useState<string | null>(null);
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [aiReadable, setAiReadable] = useState(false);
   const serverOffset = useRef(0);
   const expiryTotal = useRef(0);
 
@@ -54,8 +55,10 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - (receivedAt + serverOffset.current)) / 1000));
       setContent(result.data.textContent || "");
       setTips(result.data.tips || null);
+      setAiReadable(Boolean(result.data.aiReadable));
       let guide = document.getElementById("otp-share-ai-guide") as HTMLScriptElement | null;
       if (!guide) { guide = document.createElement("script"); guide.type = "application/json"; guide.id = "otp-share-ai-guide"; document.body.appendChild(guide); }
+      if (!aiReadable) { guide.remove(); return; }
       guide.textContent = JSON.stringify({
         type: "otp-vault-text-share",
         shareName: result.data.name || "",
