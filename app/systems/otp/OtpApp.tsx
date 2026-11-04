@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppStartup, hideAppStartup } from "../../components/AppStartup";
+import ErrorBoundary from "../../components/ErrorBoundary";
 import { applyOpenGraph } from "../../lib/openGraph";
 import { APP_ROUTES } from "../../lib/pathConventions";
 import { resolveSubsystemPath } from "../../lib/subsystemHost";
@@ -15,6 +16,46 @@ const OtpVaultChangelogPage = lazy(() => import("./OtpVaultChangelogPage"));
 
 function Fallback() {
   return <AppStartup system="otp" message="正在加载安全组件" />;
+}
+
+/** 发现新版本时提示手动刷新：自动 reload 会打断正在查看的凭据/笔记 */
+function UpdateBanner() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+    let registration: ServiceWorkerRegistration | null = null;
+    const onUpdate = (event: Event) => {
+      const worker = (event.target as ServiceWorkerRegistration).installing;
+      if (!worker) return;
+      worker.addEventListener("statechange", () => {
+        // 新 SW 就绪并处于 waiting：说明有可用更新
+        if (worker.state === "installed" && navigator.serviceWorker.controller) setReady(true);
+      });
+    };
+    navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" })
+      .then((reg) => {
+        registration = reg;
+        reg.addEventListener("updatefound", onUpdate);
+        if (reg.waiting && navigator.serviceWorker.controller) setReady(true);
+        // 每 30 分钟静默查一次更新
+        const timer = window.setInterval(() => void reg.update(), 30 * 60 * 1000);
+        return () => window.clearInterval(timer);
+      })
+      .catch(() => undefined);
+    return () => registration?.removeEventListener("updatefound", onUpdate);
+  }, []);
+  if (!ready) return null;
+  const apply = () => {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((reg) => reg.waiting?.postMessage({ type: "SKIP_WAITING" }));
+      window.setTimeout(() => window.location.reload(), 300);
+    });
+  };
+  return <div className="sw-update-banner" role="status">
+    <span>OTP Vault 有新版本</span>
+    <button type="button" onClick={apply}>立即更新</button>
+    <button type="button" aria-label="关闭" onClick={() => setReady(false)}>×</button>
+  </div>;
 }
 
 /** OTP 独立壳：不经过主站 App，避免订单/黄桃/工具箱一起进来 */
@@ -44,7 +85,8 @@ export default function OtpApp() {
       const upgrading = Boolean(navigator.serviceWorker.controller);
       let reloading = false;
       const reloadOnUpgrade = () => {
-        if (!upgrading || reloading) return;
+        // 非分享页直接静默换版；分享/保险库页交给 UpdateBanner 让用户自己选时机
+        if (!upgrading || reloading || share || textShare) return;
         reloading = true;
         window.location.reload();
       };
@@ -52,14 +94,15 @@ export default function OtpApp() {
       void navigator.serviceWorker.register("/otp-sw.js", { updateViaCache: "none" }).then((registration) => registration.update());
       return () => navigator.serviceWorker.removeEventListener("controllerchange", reloadOnUpgrade);
     }
-  }, []);
+  }, [share, textShare]);
 
   return (
     <Suspense fallback={<Fallback />}>
-      {textShare ? <VaultTextSharePage token={textShare[1]} /> : share ? <VaultSharePage token={share[1]} /> : <>
+      {textShare ? <ErrorBoundary label="text-share"><VaultTextSharePage token={textShare[1]} /></ErrorBoundary> : share ? <ErrorBoundary label="share"><VaultSharePage token={share[1]} /></ErrorBoundary> : <>
         <OtpInstallHint />
-        {guide ? <OtpVaultGuidePage /> : changelog ? <OtpVaultChangelogPage /> : <OtpVaultPage />}
+        <ErrorBoundary label="vault">{guide ? <OtpVaultGuidePage /> : changelog ? <OtpVaultChangelogPage /> : <OtpVaultPage />}</ErrorBoundary>
       </>}
+      <UpdateBanner />
     </Suspense>
   );
 }

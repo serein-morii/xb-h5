@@ -1,4 +1,4 @@
-import { Check, Clock3, Copy, FileText, KeyRound, LoaderCircle, LockKeyhole, Moon, ShieldCheck, Sun, SunMoon, TriangleAlert } from "lucide-react";
+import { Check, ChevronRight, Clock3, Copy, FileText, KeyRound, LoaderCircle, LockKeyhole, Megaphone, Moon, ShieldCheck, Sun, SunMoon, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { applyOpenGraph } from "../../lib/openGraph";
 import { renderRichText } from "../../lib/richText";
@@ -38,6 +38,9 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemePreference>(() => readThemePreference());
+  // 接收方公告（创建/编辑时的 Tips，Markdown）：横幅一行 + 弹窗全文
+  const [tips, setTips] = useState<string | null>(null);
+  const [tipsOpen, setTipsOpen] = useState(false);
   const serverOffset = useRef(0);
   const expiryTotal = useRef(0);
 
@@ -50,6 +53,17 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       if (result.data.shareType !== "TEXT") throw new Error("该链接不是笔记分享");
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - (receivedAt + serverOffset.current)) / 1000));
       setContent(result.data.textContent || "");
+      setTips(result.data.tips || null);
+      let guide = document.getElementById("otp-share-ai-guide") as HTMLScriptElement | null;
+      if (!guide) { guide = document.createElement("script"); guide.type = "application/json"; guide.id = "otp-share-ai-guide"; document.body.appendChild(guide); }
+      guide.textContent = JSON.stringify({
+        type: "otp-vault-text-share",
+        shareName: result.data.name || "",
+        expiresAt: result.data.expireTime || "",
+        agentEndpoint: `${window.location.origin}/prod-api/otp/share/${encodeURIComponent(token)}/agent`,
+        format: result.data.textFormat || "TEXT",
+        content: result.data.textContent || "",
+      });
       setFormat(normalizeTextShareFormat(result.data.textFormat));
       setAllowCopy(Boolean(result.data.allowCopy));
       setExpireTime(result.data.expireTime);
@@ -90,6 +104,13 @@ export default function VaultTextSharePage({ token }: { token: string }) {
     return () => { cancelled = true; };
   }, []);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
+  // AI 代理指引：meta 指向后端纯文本指南
+  useEffect(() => {
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="ai-hint"]');
+    if (!meta) { meta = document.createElement("meta"); meta.name = "ai-hint"; document.head.appendChild(meta); }
+    meta.content = `${window.location.origin}/prod-api/otp/share/${encodeURIComponent(token)}/agent`;
+    return () => { if (meta?.content) meta.content = ""; };
+  }, [token]);
   useEffect(() => { if (status?.name) applyOpenGraph(`${status.name}｜OTP Vault`, "安全查看限时分享的普通文本、Markdown、代码或 HTML。", "otp"); }, [status?.name]);
 
   const expiresIn = expireTime ? Math.max(0, Math.ceil((new Date(normalizeDateTime(expireTime)).getTime() - (now + serverOffset.current)) / 1000)) : 0;
@@ -110,6 +131,7 @@ export default function VaultTextSharePage({ token }: { token: string }) {
   if ((!status && error) || (status && status.status !== "ACTIVE")) return <main className="text-share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开分享</h1><p>{error || "笔记分享已过期、撤销或达到访问次数限制。"}</p></section></main>;
 
   const gateVisible = !sessionToken || !content;
+  const tipsPreview = (tips || "").replace(/[#>*`~\-]+/g, " ").split("\n").map((line) => line.trim()).find(Boolean) || "查看给接收方的话";
   const formatLabel = textShareFormatLabel(format);
   return <main className={`text-share-page ${gateVisible ? "is-gate" : "is-open"}`}>
     <header className="text-share-header">
@@ -117,6 +139,16 @@ export default function VaultTextSharePage({ token }: { token: string }) {
       <button type="button" className="text-share-theme" onClick={toggleTheme} aria-label={`切换显示模式，当前${themeMode === "system" ? "跟随系统" : themeMode === "dark" ? "暗黑" : "亮色"}`}>{themeMode === "system" ? <SunMoon size={16} /> : themeMode === "dark" ? <Moon size={16} /> : <Sun size={16} />}<span>{themeMode === "system" ? "系统" : themeMode === "dark" ? "暗黑" : "亮色"}</span></button>
     </header>
 
+    {tips && !gateVisible ? <button type="button" className="text-share-tips-bar" onClick={() => setTipsOpen(true)} aria-label="查看公告全文">
+      <Megaphone size={14} />
+      <span>{tipsPreview}</span>
+      <ChevronRight size={14} />
+    </button> : null}
+    {tipsOpen && tips ? <div className="vault-modal-mask" onMouseDown={(event) => { if (event.target === event.currentTarget) setTipsOpen(false); }}><section className="vault-modal small share-tips-modal" role="dialog" aria-label="给接收方的话">
+      <header><div><small>ANNOUNCEMENT</small><h2>给接收方的话</h2><p>{status?.name || "临时笔记"} · 由分享者留下</p></div><button type="button" onClick={() => setTipsOpen(false)} aria-label="关闭"><X size={18} /></button></header>
+      <div className="vault-share-scroll share-tips-body" dangerouslySetInnerHTML={{ __html: renderRichText(tips, "MARKDOWN") }} />
+      <footer><div><button type="button" className="vault-primary" onClick={() => setTipsOpen(false)}>知道了</button></div></footer>
+    </section></div> : null}
     {gateVisible ? <section className="text-share-gate">
       <div className="text-share-gate-intro"><span className="text-share-medallion"><LockKeyhole size={23} /></span><div><small>受保护的临时分享</small><h1>{status?.name || "临时笔记"}</h1><p>验证前不会传输正文，内容只在授权有效期内开放。</p></div></div>
       <div className="text-share-meta">

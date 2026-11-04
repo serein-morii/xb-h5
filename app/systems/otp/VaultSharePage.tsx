@@ -253,7 +253,12 @@ export default function VaultSharePage({ token }: { token: string }) {
     <div className="share-handoff-progress"><i /></div>
     <footer><LockKeyhole size={13} />访问码验证后会立即从地址栏移除</footer>
   </section></main>;
-  if ((!status && !error) || (sessionToken && !items.length && !error)) return <main className="share-page"><section className="share-loading"><span className="share-vault-mark">OTP</span><LoaderCircle className="spin" size={20} /><p>正在检查临时授权…</p></section></main>;
+  if ((!status && !error) || (sessionToken && !items.length && !error)) return <main className="share-page"><div className="share-skeleton" aria-label="正在检查临时授权">
+      <div className="share-skeleton-row is-header" />
+      <div className="share-skeleton-row is-bar" />
+      <div className="share-skeleton-row is-card" />
+      <div className="share-skeleton-row is-card" />
+    </div></main>;
   if (!status && error) return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>无法打开授权</h1><p>{error}</p></section></main>;
   if (status && status.status !== "ACTIVE") return <main className="share-page"><section className="share-expired"><TriangleAlert size={20} /><span>OTP VAULT</span><h1>{statusMessage}</h1><p>请联系授权人重新创建一份临时授权。</p></section></main>;
 

@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { resolveShortLink } from "./systems/order/api";
 import { AppStartup } from "./components/AppStartup";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { APP_ROUTES } from "./lib/pathConventions";
 import { applyOpenGraph, resolveShareSurface } from "./lib/openGraph";
 import { collectSubsystemPrefixes, resolveSubsystemPath } from "./lib/subsystemHost";
@@ -102,5 +103,5 @@ export default function App() {
   const routeContent = <div className="page-transition" key={pathname}>{content}</div>;
   const body = wrapRouteContent(matchedRoute, routeContent);
 
-  return <Suspense fallback={<RouteFallback />}>{body}</Suspense>;
+  return <Suspense fallback={<RouteFallback />}><ErrorBoundary label={pathname}>{body}</ErrorBoundary></Suspense>;
 }
