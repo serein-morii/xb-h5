@@ -34,9 +34,9 @@ export default function VaultSharePage({ token }: { token: string }) {
   const [toast, setToast] = useState("");
   const [saved, setSaved] = useState(false);
   // 接收方公告（创建分享时的 Tips，Markdown）：横幅一行，点击弹窗查看全文
-  const [tips, setTips] = useState("");
+  const [tips, setTips] = useState<string | null>("");
   const [tipsOpen, setTipsOpen] = useState(false);
-  const tipsPreview = tips.replace(/[#>*`~\-]+/g, " ").split("\n").map((line) => line.trim()).find(Boolean) || "查看给接收方的话";
+  const tipsPreview = (tips || "").replace(/[#>*`~\-]+/g, " ").split("\n").map((line) => line.trim()).find(Boolean) || "查看给接收方的话";
   const [ownShare, setOwnShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveCollapsed, setSaveCollapsed] = useState(false);
@@ -94,7 +94,7 @@ export default function VaultSharePage({ token }: { token: string }) {
       const serverNow = result.data.serverTime + Math.round((receivedAt - requestedAt) / 2);
       serverTimeOffset.current = serverNow - receivedAt;
       expiryTotal.current ||= Math.max(1, Math.ceil((new Date(normalizeDateTime(result.data.expireTime)).getTime() - serverNow) / 1000));
-      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); if (result.data.tips !== undefined) setTips(result.data.tips); setError("");
+      setItems(result.data.items || []); setAllowCopy(Boolean(result.data.allowCopy)); setExpireTime(result.data.expireTime); if (result.data.tips !== undefined) setTips(result.data.tips || ""); setError("");
       if (result.data.name) setStatus((current) => current ? { ...current, name: result.data.name } : current);
       return true;
     } catch (contentError) {
